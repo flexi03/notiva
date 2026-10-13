@@ -1,0 +1,6 @@
+dist
+dist-electron
+release
+package-lock.json
+playwright-report
+test-results
