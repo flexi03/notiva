@@ -45,11 +45,21 @@ export function extractTags(markdown: string): string[] {
   return [...tags]
 }
 
-/** Rewrites [[Old]] / [[Old#h|label]] links to point at `newTarget`, keeping headings and labels. */
-export function renameWikiLinks(markdown: string, oldTarget: string, newTarget: string): string {
-  const old = oldTarget.toLowerCase()
+/**
+ * Rewrites wiki links whose target matches `shouldRename` to `newTarget`, keeping headings and labels.
+ * Pass a string to match a target case-insensitively.
+ */
+export function renameWikiLinks(
+  markdown: string,
+  shouldRename: string | ((target: string) => boolean),
+  newTarget: string,
+): string {
+  const matches =
+    typeof shouldRename === 'string'
+      ? (t: string) => t.toLowerCase() === shouldRename.toLowerCase()
+      : shouldRename
   return markdown.replace(WIKI_LINK, (full, target: string, heading?: string, label?: string) => {
-    if (target.trim().toLowerCase() !== old) return full
+    if (!matches(target.trim())) return full
     return `[[${newTarget}${heading ? `#${heading}` : ''}${label ? `|${label}` : ''}]]`
   })
 }

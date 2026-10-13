@@ -14,9 +14,10 @@ Stand der Entwicklung, nach Meilensteinen. ✅ fertig · 🚧 in Arbeit · ⏳ g
 - ✅ `blocks` – Markdown in Blöcke zerlegen/zusammensetzen (Quelltext bleibt exakt)
 - ✅ `markdown` – Rendering (Wiki-Links, Tags, Callouts, Aufgaben, KaTeX, Code) + DOMPurify
 - ✅ `vault` – Adapter: Speicher, Ordner/OPFS, Electron; Pfad-Wächter
-- ⏳ `workspace` – Index, Seitenbaum, Backlinks, Suche, Papierkorb
-- ⏳ `formula` – sichere Formeln ohne `eval`
-- ⏳ `database` – Schema, Filter, Sortierung, Gruppierung, Aggregation
+- ✅ `workspace` – Index, Seitenbaum, Link-Auflösung, Backlinks, Suche, Umbenennen (nur betroffene Links), Papierkorb
+- ✅ `formula` – sichere Formeln ohne `eval` (Tests fanden und schlossen Lücke über geerbte Schlüssel wie `constructor`)
+- ✅ `database` – Schema, Relationen/Rollups, Filter, Sortierung, Gruppierung, Aggregation (u. a. gewichteter Schnitt)
+- ✅ `dates` – Datumshilfen
 - ⏳ `templates` – Vorlagen & Pakete
 
 ## M3 – App-Oberfläche & Block-Editor ⏳
