@@ -38,3 +38,13 @@ Stand der Entwicklung, nach Meilensteinen. ✅ fertig · 🚧 in Arbeit · ⏳ g
 - E2E mit der echten Desktop-App (Abschottung, echte Dateien, Live-Änderungen, Pfad-Angriffe)
 
 ## M7 – E2E-, Layout-, Sicherheitstests, Feinschliff ⏳
+
+- ✅ Doku: README, AGENT.md, docs/ (Architektur, Dateiformat, Sicherheit, Design), GitHub-CI
+
+## Ideen für später ⏳
+
+- Synchronisation zwischen Geräten ohne Fremddienst (z. B. eigener Sync-Server auf dem Mac mini)
+- Import aus Notion-Export (Markdown + CSV), Export als HTML/PDF-Paket
+- Graph-Ansicht der Links, Timeline-Ansicht, wiederkehrende Aufgaben
+- Mobile Native-Hüllen (Capacitor) für App-Store-Builds
+- Code-Splitting (KaTeX/highlight.js nachladen) für schnelleren ersten Start
