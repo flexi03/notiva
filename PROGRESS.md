@@ -98,6 +98,9 @@ Stand der Entwicklung, nach Meilensteinen. ✅ fertig · 🚧 in Arbeit · ⏳ g
 - Moodle-Kursinfos (`moodleInfo`): Beschreibung, Abschnitte, Seiten, Ankündigungen → Kursseiten, Meldungen
 - Prüfungsplan (`examPlan`): neuestes PDF finden, Tabelle aus Textpositionen, Termine der offenen Module
 - Prüfintervalle je Quelle, PDF-Zoom (Pinch, ⌘+Mausrad), Einstellungen in Reitern, Papierkorb/Einstellungen oben rechts
+- Benachrichtigungen mit Ziel (aufklappen, zum Inhalt), „Neu seit dem letzten Abruf“ und Einrichtungshinweise unten links,
+  Studium anlegen mit einem Klick, eigene Semester, Menüleiste (⌘, ⌘[ ⌘]), Zurück/Vorwärts, Papierkorb/Einstellungen
+  verschiebbar, Antigravity (`agy`) statt Gemini CLI
 - Offen: Moodle-Studydashboard (LTI) nicht angebunden; weitere Studiengänge/POs als Katalog ergänzen
 
 ## Ideen für später ⏳
