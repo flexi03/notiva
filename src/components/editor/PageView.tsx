@@ -122,7 +122,7 @@ export function PageContent({
         />
       )}
       {/* Wide pages leave room on the right for the minimap on large screens. */}
-      <div className={cx(wide && railMode === 'minimap' && 'min-[1280px]:pr-24')}>
+      <div className={cx(wide && railMode === 'minimap' && 'min-[1280px]:pr-32')}>
         <article
           ref={articleRef}
           className={cx(

@@ -1,4 +1,4 @@
-import { layoutRail, railScale, readingProgress, scrollTargetFor, viewportBox } from '../minimap'
+import { railScale, readingProgress, scrollTargetFor, viewportBox } from '../minimap'
 import { taskProgress } from '../blocks'
 
 describe('railScale', () => {
@@ -36,23 +36,6 @@ describe('scrollTargetFor', () => {
   it('centres the clicked position and never scrolls above the top', () => {
     expect(scrollTargetFor(100, 0.1, 50, 400)).toBe(850)
     expect(scrollTargetFor(0, 0.1, 50, 400)).toBe(0)
-  })
-})
-
-describe('layoutRail', () => {
-  it('scales items and keeps tiny ones visible', () => {
-    expect(
-      layoutRail(
-        [
-          { top: 0, height: 40, kind: 'heading', level: 1, label: 'A' },
-          { top: 100, height: 5, kind: 'text' },
-        ],
-        0.1,
-      ),
-    ).toEqual([
-      { top: 0, height: 4, kind: 'heading', level: 1, label: 'A' },
-      { top: 10, height: 2, kind: 'text' },
-    ])
   })
 })
 

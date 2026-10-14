@@ -97,6 +97,31 @@ test.describe('Seitenrand: Minimap und Fortschritt', () => {
       .toBeGreaterThan(0)
   })
 
+  test('Minimap zeichnet die Seite im Detail', async ({ page }) => {
+    test.skip(isMobile(page), 'auf schmalen Bildschirmen gibt es nur den Fortschrittsbalken')
+    await go(page, '/#/p/Willkommen.md')
+    const canvas = page.getByTestId('minimap').locator('canvas')
+    await expect(canvas).toBeVisible()
+    // Many separate painted rows = text lines, not just a few block outlines.
+    await expect
+      .poll(() =>
+        canvas.evaluate((el: HTMLCanvasElement) => {
+          const ctx = el.getContext('2d')!
+          const { data, width, height } = ctx.getImageData(0, 0, el.width, el.height)
+          let rows = 0
+          let inRow = false
+          for (let y = 0; y < height; y++) {
+            let painted = false
+            for (let x = 0; x < width && !painted; x++) painted = data[(y * width + x) * 4 + 3]! > 0
+            if (painted && !inRow) rows++
+            inRow = painted
+          }
+          return rows
+        }),
+      )
+      .toBeGreaterThan(12)
+  })
+
   test('Klick in die Minimap scrollt die Seite', async ({ page }) => {
     test.skip(isMobile(page), 'auf schmalen Bildschirmen gibt es nur den Fortschrittsbalken')
     await page.setViewportSize({ width: 1440, height: 700 })

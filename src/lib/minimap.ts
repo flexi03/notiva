@@ -3,16 +3,6 @@
  * measures the DOM and draws.
  */
 
-export interface RailItem {
-  /** Offset from the top of the content in px. */
-  top: number
-  height: number
-  kind: 'heading' | 'text' | 'list' | 'box' | 'divider'
-  /** Heading level 1–6 (headings only). */
-  level?: number
-  label?: string
-}
-
 export interface RailBox {
   top: number
   height: number
@@ -56,13 +46,4 @@ export function scrollTargetFor(
   clientHeight: number,
 ): number {
   return Math.max(0, y / scale + contentOffset - clientHeight / 2)
-}
-
-/** Items scaled into the minimap; tiny blocks keep a minimum height so they stay visible. */
-export function layoutRail(items: RailItem[], scale: number, minHeight = 2): RailItem[] {
-  return items.map((item) => ({
-    ...item,
-    top: item.top * scale,
-    height: Math.max(minHeight, item.height * scale),
-  }))
 }

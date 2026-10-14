@@ -13,6 +13,9 @@
   --ink-3: #626a7c;
   --line: #dfe3ea;
   --line-strong: #c4cad6;
+  --git-added: #3f9b5a;
+  --git-modified: #3b7dd8;
+  --git-deleted: #c8463b;
   --accent: #2f5d50;
   --accent-soft: color-mix(in srgb, var(--accent) 12%, transparent);
   --on-accent: #ffffff;
@@ -55,6 +58,9 @@
   --ink-3: #7f8796;
   --line: #2b313b;
   --line-strong: #3b4350;
+  --git-added: #5cbf7a;
+  --git-modified: #6aa2ef;
+  --git-deleted: #e8776d;
   --on-accent: #10201b;
   --danger: #ff7b84;
   --shadow-pop: 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 30px rgb(0 0 0 / 0.45);

@@ -30,10 +30,10 @@ const RAIL_KIND: Partial<Record<ReturnType<typeof blockType>, string>> = {
   callout: 'box',
   divider: 'divider',
 }
+/** Extra space inside a block; the 8 px between blocks come from {@link InsertGap}. */
 const SPACING: Partial<Record<ReturnType<typeof blockType>, string>> = {
-  heading: 'pt-5 pb-0.5',
-  widget: 'py-2',
-  divider: 'py-1',
+  heading: 'pt-4',
+  widget: 'py-1',
 }
 
 export function Block({
@@ -74,11 +74,14 @@ export function Block({
   return (
     <div
       className={cx(
-        'group/block relative -mx-2 rounded-control px-2',
-        SPACING[type] ?? 'py-1',
+        'group/block relative -mx-2 rounded-control px-2 transition-colors',
+        SPACING[type],
         first && 'pt-0',
-        !editing && !isWidget && 'cursor-text',
+        // The whole block area is a click target – and shows itself on hover.
+        !editing && !isWidget && 'cursor-text hover:bg-hover',
+        editing && !isWidget && 'bg-surface ring-1 ring-line-strong',
       )}
+      onClick={onClick}
       data-block-id={block.id}
       data-rail={RAIL_KIND[type] ?? 'text'}
       {...(type === 'heading' ? { 'data-level': /^#+/.exec(block.text.trimStart())![0].length } : {})}
@@ -101,8 +104,8 @@ export function Block({
       )}
       <div
         className={cx(
-          'no-print absolute top-1 -left-14 flex items-center opacity-0 transition-opacity group-hover/block:opacity-100 focus-within:opacity-100 max-md:hidden',
-          type === 'heading' && 'top-5',
+          'no-print absolute top-0 -left-14 flex items-center opacity-0 transition-opacity group-hover/block:opacity-100 focus-within:opacity-100 max-md:hidden',
+          type === 'heading' && 'top-4',
         )}
       >
         <IconButton size="sm" label={t('editor.addBlock')} onClick={actions.onAddBelow}>
@@ -168,14 +171,28 @@ export function Block({
           </IconButton>
         </div>
       ) : block.text.trim() === '' ? (
-        <p className="text-ink-3" onClick={onClick}>
-          {t('editor.placeholder')}
-        </p>
+        <p className="text-ink-3">{t('editor.placeholder')}</p>
       ) : (
-        <div onClick={onClick}>
-          <MarkdownView markdown={block.text} from={pagePath} onToggleTask={actions.onToggleTask} />
-        </div>
+        <MarkdownView markdown={block.text} from={pagePath} onToggleTask={actions.onToggleTask} />
       )}
     </div>
+  )
+}
+
+/** The 8 px between two blocks: shows an insert line on hover and adds a paragraph there. */
+export function InsertGap({ onInsert }: { onInsert: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label={t('editor.insertBelow')}
+      onClick={onInsert}
+      className="no-print group/gap flex h-2 w-full items-center opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100 max-md:pointer-events-none [@media(pointer:coarse)]:pointer-events-none"
+    >
+      <span className="h-0.5 flex-1 rounded-full bg-accent/60" />
+      <span className="mx-1.5 flex size-4 items-center justify-center rounded-full bg-accent text-on-accent">
+        <Plus size={11} strokeWidth={3} />
+      </span>
+      <span className="h-0.5 flex-1 rounded-full bg-accent/60" />
+    </button>
   )
 }

@@ -64,6 +64,8 @@ export const en: Record<MessageKey, string> = {
 
   'editor.placeholder': 'Write something or type “/” for commands …',
   'editor.emptyPage': 'Empty page. Click here to write.',
+  'editor.continue': 'Click here to keep writing',
+  'editor.insertBelow': 'Insert paragraph here',
   'editor.addBlock': 'Add block',
   'editor.dragBlock': 'Drag to move, click for menu',
   'editor.deleteBlock': 'Delete block',

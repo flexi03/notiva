@@ -65,6 +65,8 @@ export const de = {
   'editor.placeholder': 'Schreib etwas oder tippe „/“ für Befehle …',
   'editor.emptyPage': 'Leere Seite. Klicke hier, um zu schreiben.',
   'editor.addBlock': 'Block hinzufügen',
+  'editor.continue': 'Hier klicken, um weiterzuschreiben',
+  'editor.insertBelow': 'Absatz hier einfügen',
   'editor.dragBlock': 'Ziehen zum Verschieben, Klicken für Menü',
   'editor.deleteBlock': 'Block löschen',
   'editor.duplicateBlock': 'Block duplizieren',

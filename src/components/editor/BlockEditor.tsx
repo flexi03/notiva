@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Plus } from 'lucide-react'
 import { useAction, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import {
@@ -11,7 +12,7 @@ import {
   type Block as BlockModel,
 } from '@/lib/blocks'
 import type { Page } from '@/lib/workspace'
-import { Block, type BlockActions } from './Block'
+import { Block, InsertGap, type BlockActions } from './Block'
 import type { Caret } from './BlockInput'
 
 const SAVE_DELAY = 400
@@ -158,19 +159,21 @@ export function BlockEditor({ page }: { page: Page }) {
   return (
     <div className="pb-8" aria-label={t('page.blocks')}>
       {blocks.map((block, i) => (
-        <Block
-          key={block.id}
-          block={block}
-          pagePath={page.path}
-          first={i === 0}
-          editing={editing?.id === block.id}
-          {...(editing?.id === block.id && editing.caret !== undefined ? { caret: editing.caret } : {})}
-          actions={actionsFor(block)}
-        />
+        <Fragment key={block.id}>
+          {i > 0 && <InsertGap onInsert={() => insertAt(i, '')} />}
+          <Block
+            block={block}
+            pagePath={page.path}
+            first={i === 0}
+            editing={editing?.id === block.id}
+            {...(editing?.id === block.id && editing.caret !== undefined ? { caret: editing.caret } : {})}
+            actions={actionsFor(block)}
+          />
+        </Fragment>
       ))}
       <button
         type="button"
-        className="no-print mt-1 block min-h-24 w-full cursor-text text-left text-ink-3"
+        className="no-print group/end mt-2 flex min-h-24 w-full cursor-text items-start gap-2 rounded-control border border-dashed border-transparent px-2 py-2 text-left text-[0.95em] text-ink-3 transition-colors hover:border-line-strong hover:bg-[color-mix(in_srgb,var(--hover)_45%,transparent)] focus-visible:border-accent"
         aria-label={t('editor.addBlock')}
         onClick={() => {
           const last = blocks[blocks.length - 1]
@@ -178,7 +181,10 @@ export function BlockEditor({ page }: { page: Page }) {
           else insertAt(blocks.length, '')
         }}
       >
-        {blocks.length === 0 ? t('editor.emptyPage') : ''}
+        <Plus size={16} className="mt-[0.2em] shrink-0 opacity-60 group-hover/end:opacity-100" aria-hidden />
+        <span className="group-hover/end:text-ink-2">
+          {blocks.length === 0 ? t('editor.emptyPage') : t('editor.continue')}
+        </span>
       </button>
     </div>
   )

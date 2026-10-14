@@ -48,6 +48,40 @@ test.describe('Editor', () => {
     )
   })
 
+  test('zeigt, wo man schreiben kann: Blockrand, Einfügen zwischen Blöcken, Seitenende', async ({ page }) => {
+    await newPage(page, 'Lücken')
+    await page.getByRole('button', { name: 'Block hinzufügen' }).last().click()
+    await page.keyboard.type('Erster')
+    await page.keyboard.press('Enter')
+    await page.keyboard.type('Zweiter')
+    await page.keyboard.press('Escape')
+    // A click into the empty space next to the text starts editing the block.
+    const second = page.locator('[data-block-id]').filter({ hasText: 'Zweiter' })
+    const box = (await second.boundingBox())!
+    await second.click({ position: { x: box.width - 20, y: box.height / 2 } })
+    await expect(page.getByRole('textbox', { name: /Schreib etwas/ })).toHaveValue('Zweiter')
+    await page.keyboard.press('Escape')
+    // The insert line between two blocks adds a paragraph exactly there.
+    if (await page.evaluate(() => matchMedia('(pointer: coarse)').matches)) {
+      // Touch screens have no hover: Enter at the end of a block opens a new one below.
+      await page.getByText('Erster').click()
+      await page.keyboard.press('End')
+      await page.keyboard.press('Enter')
+    } else {
+      const gap = page.getByRole('button', { name: 'Absatz hier einfügen' })
+      await gap.hover()
+      await expect(gap).toHaveCSS('opacity', '1')
+      await gap.click()
+    }
+    await page.keyboard.type('Mitte')
+    await page.keyboard.press('Escape')
+    // The visible area at the end continues the page.
+    await page.getByRole('button', { name: 'Block hinzufügen' }).last().click()
+    await page.keyboard.type('Ende')
+    await page.keyboard.press('Escape')
+    await expect(await source(page)).toHaveValue('Erster\n\nMitte\n\nZweiter\n\nEnde\n')
+  })
+
   test('hakt Aufgaben ab und speichert das', async ({ page }) => {
     await page
       .getByRole('button', { name: /Übungsblatt 3 LA/ })
