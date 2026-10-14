@@ -106,7 +106,7 @@ export function htmlToMarkdown(html: string): string {
     .split('\n')
     .map((line) =>
       line
-        .replace(/[ \t ]+/g, ' ')
+        .replace(/[ \t\u00a0]+/g, ' ')
         .trimEnd()
         .replace(/^ (?!-)/, ''),
     )
