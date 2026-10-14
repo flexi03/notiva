@@ -8,13 +8,17 @@ import { ToastHost } from './Toast'
 import { PromptHost } from './PromptHost'
 import { PeekHost } from './PeekHost'
 import { ScrollRootContext } from './scrollRoot'
-import { useAssistant } from '@/app/assistant'
+import { useGitSync } from '@/app/git'
+import { GitPanel } from '@/components/git/GitPanel'
+import { DiffSheet } from '@/components/git/DiffView'
+import { ActivityBar } from './ActivityBar'
 import { AssistantPanel } from '@/components/ai/AssistantPanel'
 
 /** Sidebar (drawer on small screens) + main area + global overlays and shortcuts. */
 export function AppShell({ children, overlays }: { children: ReactNode; overlays?: ReactNode }) {
   const ws = useWorkspace()
-  const { sidebarOpen, setSidebar, setSearch, setNewPage, route } = useApp()
+  const { sidebarOpen, setSidebar, setSearch, setNewPage, route, rightPanel } = useApp()
+  useGitSync()
   const actions = usePageActions(ws)
   const mainRef = useRef<HTMLElement>(null)
 
@@ -32,8 +36,10 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
         setSidebar(!useApp.getState().sidebarOpen)
       } else if (mod && e.key.toLowerCase() === 'j') {
         e.preventDefault()
-        const assistant = useAssistant.getState()
-        assistant.setOpen(!assistant.open)
+        useApp.getState().toggleRightPanel('assistant')
+      } else if (mod && e.shiftKey && e.key.toLowerCase() === 'g') {
+        e.preventDefault()
+        useApp.getState().toggleRightPanel('git')
       } else if (mod && e.shiftKey && e.key.toLowerCase() === 'd') {
         e.preventDefault()
         void actions.openToday()
@@ -66,7 +72,10 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
       <main ref={mainRef} className="min-w-0 flex-1 overflow-y-auto" id="main" data-route={routeHash(route)}>
         <ScrollRootContext value={mainRef}>{children}</ScrollRootContext>
       </main>
-      <AssistantPanel />
+      {rightPanel === 'assistant' && <AssistantPanel />}
+      {rightPanel === 'git' && <GitPanel />}
+      <ActivityBar />
+      <DiffSheet />
       {overlays}
       <PeekHost />
       <PromptHost />

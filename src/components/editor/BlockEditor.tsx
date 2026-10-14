@@ -1,4 +1,5 @@
-import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { usePageGitChanges } from '@/app/git'
 import { Plus } from 'lucide-react'
 import { useAction, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
@@ -54,6 +55,9 @@ export function BlockEditor({ page }: { page: Page }) {
       setBlocks(splitBlocks(page.body))
     }
   }, [page.body, editing])
+
+  const blockTexts = useMemo(() => blocks.map((b) => b.text), [blocks])
+  const gitChanges = usePageGitChanges(page, blockTexts)
 
   const commit = (next: BlockModel[], immediate = false) => {
     blocksRef.current = next
@@ -168,6 +172,7 @@ export function BlockEditor({ page }: { page: Page }) {
             editing={editing?.id === block.id}
             {...(editing?.id === block.id && editing.caret !== undefined ? { caret: editing.caret } : {})}
             actions={actionsFor(block)}
+            change={gitChanges?.blocks[i]}
           />
         </Fragment>
       ))}

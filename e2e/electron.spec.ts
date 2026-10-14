@@ -39,6 +39,7 @@ test('Renderer ist abgeschottet (kein Node, nur die Notiva-Brücke)', async () =
     process: 'undefined',
     bridge: [
       'aiRequest',
+      'git',
       'lastFolder',
       'mcpInfo',
       'onVaultChange',

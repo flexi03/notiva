@@ -19,6 +19,17 @@ contextBridge.exposeInMainWorld('notiva', {
     ipcRenderer.on('vault:changed', listener)
     return () => ipcRenderer.removeListener('vault:changed', listener)
   },
+  git: {
+    state: () => invoke('git:state'),
+    show: (rev: string, path: string) => invoke<string | null>('git:show', rev, path),
+    commit: (message: string, paths: string[]) => invoke<string>('git:commit', message, paths),
+    discard: (paths: string[]) => invoke<void>('git:discard', paths),
+    log: (limit: number, path: string | null) => invoke('git:log', limit, path),
+    commitFiles: (hash: string) => invoke('git:commitFiles', hash),
+    init: () => invoke('git:init'),
+    push: () => invoke<string>('git:push'),
+    pull: () => invoke<string>('git:pull'),
+  },
   vault: {
     open: (folder: string) => invoke<{ name: string }>('vault:open', folder),
     list: () => invoke('vault:list'),

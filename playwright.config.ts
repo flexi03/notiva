@@ -30,7 +30,7 @@ export default defineConfig({
     },
     { name: 'mobile', testIgnore: /electron/, use: { ...devices['iPhone 13'] } },
     // Launches the real desktop app (needs `npm run electron:build`, done by webServer).
-    { name: 'electron', testMatch: /electron\.spec\.ts/, fullyParallel: false },
+    { name: 'electron', testMatch: /electron.*\.spec\.ts/, fullyParallel: false, workers: 1 },
   ],
   webServer: {
     command:

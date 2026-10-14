@@ -23,6 +23,8 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { FsVault } from './vaultFs'
 import { parseAiRequest } from './aiRequest'
+import { GitRepo, type GitState } from './git'
+import { loadShellPath } from './shellPath'
 
 const DIST = path.join(__dirname, '..', 'dist')
 const CONFIG = () => path.join(process.env.NOTIVA_E2E_USERDATA ?? app.getPath('userData'), 'config.json')
@@ -65,6 +67,22 @@ function handle<A extends unknown[], R>(channel: string, fn: (...args: A) => Pro
 function requireVault(): FsVault {
   if (!vault) throw new Error('No vault open')
   return vault
+}
+
+const NO_REPO: GitState = {
+  isRepo: false,
+  branch: null,
+  head: null,
+  upstream: null,
+  ahead: 0,
+  behind: 0,
+  changes: [],
+}
+
+async function requireRepo(): Promise<GitRepo> {
+  const repo = await GitRepo.open(requireVault())
+  if (!repo) throw new Error('Kein Git-Repository')
+  return repo
 }
 
 function watchVault(root: string): void {
@@ -128,6 +146,22 @@ function registerIpc(): void {
       env: { ELECTRON_RUN_AS_NODE: '1' },
     }
   })
+  handle('git:state', async () => {
+    const repo = await GitRepo.open(requireVault())
+    return repo ? repo.state() : NO_REPO
+  })
+  handle('git:show', async (rev: unknown, p: unknown) => (await requireRepo()).show(String(rev), p as string))
+  handle('git:commit', async (message: unknown, paths: unknown) =>
+    (await requireRepo()).commit(message, paths),
+  )
+  handle('git:discard', async (paths: unknown) => (await requireRepo()).discard(paths))
+  handle('git:log', async (limit: unknown, p: unknown) =>
+    (await requireRepo()).log(Number(limit) || 50, p === null ? undefined : p),
+  )
+  handle('git:commitFiles', async (hash: unknown) => (await requireRepo()).commitFiles(hash))
+  handle('git:init', async () => (await GitRepo.init(requireVault())).state())
+  handle('git:push', async () => (await requireRepo()).push())
+  handle('git:pull', async () => (await requireRepo()).pull())
   handle('app:openExternal', async (url: unknown) => {
     if (typeof url === 'string' && /^(https?:|mailto:)/i.test(url)) await shell.openExternal(url)
   })
@@ -183,7 +217,8 @@ function createWindow(): void {
   void window.loadURL(process.env.NOTIVA_DEV_URL ?? 'app://notiva/index.html')
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  await loadShellPath()
   session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false))
   session.defaultSession.setPermissionCheckHandler(() => false)
   registerProtocol()

@@ -13,6 +13,12 @@ import { EmojiPicker } from './EmojiPicker'
 import { PageProperties } from './PageProperties'
 import { SourceEditor } from './SourceEditor'
 import { PageRail } from './PageRail'
+import { ChangeMarker } from './Block'
+import { usePageGitChanges } from '@/app/git'
+import type { Page } from '@/lib/workspace'
+
+const NO_BLOCKS: string[] = []
+const EMPTY_PAGE = { path: '', body: '', mtime: 0 } as Page
 
 const COVERS: Record<string, string> = {
   blue: 'var(--opt-blue)',
@@ -92,6 +98,7 @@ export function PageContent({
   const iconRef = useRef<HTMLButtonElement>(null)
   const articleRef = useRef<HTMLElement>(null)
   const railMode = useApp((s) => s.settings.pageRail)
+  const git = usePageGitChanges(page ?? EMPTY_PAGE, NO_BLOCKS)
 
   if (!page) return <EmptyState title={t('page.notFound')} />
 
@@ -182,7 +189,11 @@ export function PageContent({
           </header>
 
           {hasProperties && !source && (
-            <div className="mt-4 border-y border-line py-2">
+            <div
+              className="relative mt-4 border-y border-line py-2"
+              {...(git?.properties ? { 'data-change': 'modified' } : {})}
+            >
+              {git?.properties && <ChangeMarker change="modified" pagePath={page.path} />}
               <PageProperties page={page} />
             </div>
           )}
@@ -192,6 +203,11 @@ export function PageContent({
               <SourceEditor key={page.path} page={page} />
             ) : (
               <BlockEditor key={page.path} page={page} />
+            )}
+            {git?.deletedAtEnd && !source && (
+              <div className="relative h-0" data-change="deleted">
+                <ChangeMarker change="deleted" pagePath={page.path} />
+              </div>
             )}
           </div>
 

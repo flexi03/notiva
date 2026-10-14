@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react'
-import { ChevronRight, MoreHorizontal, PanelLeft, Sparkles, Star } from 'lucide-react'
-import { useAssistant } from '@/app/assistant'
+import { ChevronRight, GitBranch, MoreHorizontal, PanelLeft, Sparkles, Star } from 'lucide-react'
+import { gitAvailable, useGit } from '@/app/git'
 import { useApp, useWorkspace } from '@/app/store'
 import { usePageActions } from '@/app/hooks/usePageActions'
 import { t } from '@/i18n'
@@ -47,9 +47,11 @@ export function Topbar({ title, actions }: { title?: string; actions?: ReactNode
           </li>
         ))}
         <li className="min-w-0 truncate px-1.5 font-semibold text-ink">{page?.title ?? title}</li>
+        {page && <GitChip path={page.path} />}
       </ol>
       {actions}
       <AssistantToggle />
+      <GitToggle />
       {page && (
         <>
           <IconButton
@@ -79,11 +81,59 @@ export function Topbar({ title, actions }: { title?: string; actions?: ReactNode
   )
 }
 
+/** On phones there is no activity bar: the assistant gets a button in the top bar. */
 function AssistantToggle() {
-  const { open, setOpen } = useAssistant()
+  const open = useApp((s) => s.rightPanel === 'assistant')
+  const toggle = useApp((s) => s.toggleRightPanel)
   return (
-    <IconButton label={t('ai.toggle')} onClick={() => setOpen(!open)} active={open}>
+    <IconButton
+      label={t('ai.toggle')}
+      onClick={() => toggle('assistant')}
+      active={open}
+      className="min-[900px]:hidden"
+    >
       <Sparkles size={16} />
+    </IconButton>
+  )
+}
+
+/** "Geändert"/"Neu" next to the title when the page differs from the last commit. */
+function GitChip({ path }: { path: string }) {
+  const change = useGit((s) => s.state?.changes.find((c) => c.path === path))
+  const showDiff = useGit((s) => s.showDiff)
+  if (!change) return null
+  const isNew = change.status === 'untracked' || change.status === 'added'
+  return (
+    <li className="shrink-0">
+      <button
+        type="button"
+        onClick={() => showDiff({ path })}
+        title={t('git.showDiff', { path })}
+        className={cx(
+          'rounded-full border px-2 py-0.5 text-[12px] font-semibold hover:bg-hover',
+          isNew
+            ? 'border-[var(--git-added)] text-[var(--git-added)]'
+            : 'border-[var(--git-modified)] text-[var(--git-modified)]',
+        )}
+      >
+        {isNew ? t('git.pageNew') : t('git.pageChanged')}
+      </button>
+    </li>
+  )
+}
+
+function GitToggle() {
+  const open = useApp((s) => s.rightPanel === 'git')
+  const toggle = useApp((s) => s.toggleRightPanel)
+  if (!gitAvailable()) return null
+  return (
+    <IconButton
+      label={t('git.toggle')}
+      onClick={() => toggle('git')}
+      active={open}
+      className="min-[900px]:hidden"
+    >
+      <GitBranch size={16} />
     </IconButton>
   )
 }

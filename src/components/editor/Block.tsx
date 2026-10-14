@@ -2,6 +2,8 @@ import { useRef, useState, type DragEvent, type MouseEvent } from 'react'
 import { ArrowDown, ArrowUp, Copy, GripVertical, Pencil, Plus, Trash2 } from 'lucide-react'
 import { t } from '@/i18n'
 import { blockType, type Block as BlockModel } from '@/lib/blocks'
+import type { BlockChange } from '@/lib/diff'
+import { useGit } from '@/app/git'
 import { cx, IconButton, MenuList, Popover } from '@/components/ui'
 import { Widget } from '@/components/widgets/Widget'
 import { MarkdownView } from './MarkdownView'
@@ -43,6 +45,7 @@ export function Block({
   caret,
   actions,
   first,
+  change,
 }: {
   block: BlockModel
   pagePath: string
@@ -50,6 +53,8 @@ export function Block({
   caret?: Caret
   actions: BlockActions
   first: boolean
+  /** Git: how this block differs from the last commit. */
+  change?: BlockChange | undefined
 }) {
   const [menu, setMenu] = useState(false)
   const [drop, setDrop] = useState<'before' | 'after' | null>(null)
@@ -83,6 +88,7 @@ export function Block({
       )}
       onClick={onClick}
       data-block-id={block.id}
+      {...(change ? { 'data-change': change } : {})}
       data-rail={RAIL_KIND[type] ?? 'text'}
       {...(type === 'heading' ? { 'data-level': /^#+/.exec(block.text.trimStart())![0].length } : {})}
       onDragOver={onDragOver}
@@ -94,6 +100,7 @@ export function Block({
         setDrop(null)
       }}
     >
+      {change && <ChangeMarker change={change} pagePath={pagePath} />}
       {drop && (
         <div
           className={cx(
@@ -194,5 +201,31 @@ export function InsertGap({ onInsert }: { onInsert: () => void }) {
       </span>
       <span className="h-0.5 flex-1 rounded-full bg-accent/60" />
     </button>
+  )
+}
+
+/** Gutter marker like in VS Code: green = new, blue = changed, red wedge = something deleted here. */
+export function ChangeMarker({ change, pagePath }: { change: BlockChange; pagePath: string }) {
+  const showDiff = useGit((s) => s.showDiff)
+  return (
+    <button
+      type="button"
+      data-interactive
+      aria-label={t(`git.gutter.${change}`)}
+      title={t(`git.gutter.${change}`)}
+      onClick={(e) => {
+        e.stopPropagation()
+        showDiff({ path: pagePath })
+      }}
+      className={cx(
+        'no-print absolute -left-1.5 w-[3px] rounded-full transition-[width] hover:w-[5px]',
+        change === 'deleted'
+          ? 'top-0 h-0 w-0 rounded-none border-y-[5px] border-l-[6px] border-y-transparent border-l-[var(--git-deleted)] -translate-y-1/2'
+          : 'inset-y-0.5',
+        change === 'added' && 'bg-[var(--git-added)]',
+        change === 'modified' &&
+          'bg-[var(--git-modified)] bg-[repeating-linear-gradient(to_bottom,var(--git-modified)_0_3px,transparent_3px_5px)]',
+      )}
+    />
   )
 }

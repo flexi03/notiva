@@ -16,7 +16,6 @@ import {
   SquarePen,
   Tags,
   Trash2,
-  X,
 } from 'lucide-react'
 import { useAssistant } from '@/app/assistant'
 import { useApp, useWorkspace } from '@/app/store'
@@ -25,6 +24,7 @@ import type { Message, Part } from '@/lib/ai'
 import { AutoTextArea, Button, cx, IconButton } from '@/components/ui'
 import { MarkdownView } from '@/components/editor/MarkdownView'
 import { PageIcon } from '@/components/layout/PageIcon'
+import { SidePanel } from '@/components/layout/SidePanel'
 
 const TOOL_ICONS: Record<string, ReactNode> = {
   search_pages: <Search size={13} />,
@@ -55,7 +55,8 @@ function stepTarget(input: unknown): string {
 
 /** The AI chat docked at the right edge (overlay on small screens). */
 export function AssistantPanel() {
-  const { open, setOpen, configured, settings, messages, busy, error, send, stop, reset } = useAssistant()
+  const { configured, settings, messages, busy, error, send, stop, reset } = useAssistant()
+  const setRightPanel = useApp((s) => s.setRightPanel)
   const route = useApp((s) => s.route)
   const navigate = useApp((s) => s.navigate)
   const ws = useWorkspace()
@@ -65,23 +66,22 @@ export function AssistantPanel() {
   const page = route.name === 'page' ? ws.get(route.path) : undefined
 
   useEffect(() => {
-    if (open) input.current?.focus()
-  }, [open])
+    input.current?.focus()
+  }, [])
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight })
   }, [messages, busy])
   // On phones the panel covers the page: following a link should show the page.
+  const firstRoute = useRef(route)
   useEffect(() => {
-    if (window.innerWidth < 900) setOpen(false)
-  }, [route, setOpen])
+    if (route !== firstRoute.current && window.innerWidth < 900) setRightPanel(null)
+  }, [route, setRightPanel])
 
   const results = useMemo(() => {
     const map = new Map<string, Extract<Part, { type: 'tool_result' }>>()
     for (const m of messages) for (const p of m.parts) if (p.type === 'tool_result') map.set(p.id, p)
     return map
   }, [messages])
-
-  if (!open) return null
 
   const submit = (text = draft) => {
     if (!text.trim() || busy) return
@@ -95,32 +95,26 @@ export function AssistantPanel() {
   ]
 
   return (
-    <aside
-      aria-label={t('ai.title')}
-      className="no-print flex h-full w-full flex-col border-l border-line bg-surface max-[899px]:fixed max-[899px]:inset-0 max-[899px]:z-30 min-[900px]:w-[24rem] min-[900px]:shrink-0"
-    >
-      <header data-titlebar className="flex h-12 shrink-0 items-center gap-1 border-b border-line px-2">
-        <Sparkles size={16} className="ml-1.5 text-accent" aria-hidden />
-        <h2 className="min-w-0 flex-1 truncate px-1 text-[14px] font-semibold">
-          {t('ai.title')}
+    <SidePanel
+      title={t('ai.title')}
+      icon={<Sparkles size={16} />}
+      actions={
+        <>
           {configured && (
-            <span className="ml-2 text-[12.5px] font-normal text-ink-3">
+            <span className="truncate text-[12.5px] text-ink-3">
               {settings.model}
               {!settings.allowWrites && ` · ${t('ai.readOnly')}`}
             </span>
           )}
-        </h2>
-        <IconButton label={t('nav.settings')} onClick={() => navigate({ name: 'settings' })}>
-          <Settings2 size={16} />
-        </IconButton>
-        <IconButton label={t('ai.newChat')} onClick={reset} disabled={messages.length === 0 && !error}>
-          <SquarePen size={16} />
-        </IconButton>
-        <IconButton label={t('common.close')} onClick={() => setOpen(false)}>
-          <X size={17} />
-        </IconButton>
-      </header>
-
+          <IconButton label={t('nav.settings')} onClick={() => navigate({ name: 'settings' })}>
+            <Settings2 size={16} />
+          </IconButton>
+          <IconButton label={t('ai.newChat')} onClick={reset} disabled={messages.length === 0 && !error}>
+            <SquarePen size={16} />
+          </IconButton>
+        </>
+      }
+    >
       <div ref={scroller} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4" aria-live="polite">
         {!configured ? (
           <div className="space-y-3 rounded-panel border border-line bg-paper p-4">
@@ -202,7 +196,7 @@ export function AssistantPanel() {
           </div>
         </form>
       )}
-    </aside>
+    </SidePanel>
   )
 }
 

@@ -1,5 +1,39 @@
 import type { VaultAdapter, VaultFile } from './types'
 
+export type GitStatus = 'modified' | 'added' | 'deleted' | 'renamed' | 'untracked'
+export interface GitChange {
+  path: string
+  status: GitStatus
+  from?: string
+}
+export interface GitState {
+  isRepo: boolean
+  branch: string | null
+  head: string | null
+  upstream: string | null
+  ahead: number
+  behind: number
+  changes: GitChange[]
+}
+export interface GitCommit {
+  hash: string
+  short: string
+  author: string
+  date: string
+  subject: string
+}
+export interface GitBridge {
+  state(): Promise<GitState>
+  show(rev: string, path: string): Promise<string | null>
+  commit(message: string, paths: string[]): Promise<string>
+  discard(paths: string[]): Promise<void>
+  log(limit: number, path: string | null): Promise<GitCommit[]>
+  commitFiles(hash: string): Promise<GitChange[]>
+  init(): Promise<GitState>
+  push(): Promise<string>
+  pull(): Promise<string>
+}
+
 export interface McpLaunch {
   command: string
   args: string[]
@@ -21,6 +55,8 @@ export interface NotivaBridge {
     rename(from: string, to: string): Promise<void>
   }
   openExternal(url: string): Promise<void>
+  /** Git for the open folder (desktop app only). */
+  git?: GitBridge
   /** Command line for AI apps to start the MCP server on the open folder. */
   mcpInfo?(): Promise<McpLaunch>
   /** HTTP for the AI assistant (the renderer itself has no network access). */

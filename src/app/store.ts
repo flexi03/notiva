@@ -31,6 +31,8 @@ interface AppState {
   newPageOpen: { folder: string } | null
   /** Page shown in the side panel over the current screen. */
   peek: string | null
+  /** View in the right side bar (like VS Code's secondary side bar). */
+  rightPanel: RightPanel | null
   toast: Toast | null
   prompt: PromptRequest | null
   /** Asks for a text value with the app's dialog. Resolves null on cancel. */
@@ -44,6 +46,9 @@ interface AppState {
    */
   openEntry(path: string, event?: { metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }): void
   closePeek(): void
+  /** Opens the view, or closes it when it is already open. */
+  toggleRightPanel(panel: RightPanel): void
+  setRightPanel(panel: RightPanel | null): void
   syncRoute(): void
   updateSettings(patch: Partial<Settings>): void
   setSidebar(open: boolean): void
@@ -52,6 +57,8 @@ interface AppState {
   showToast(message: string, action?: Toast['action']): void
   dismissToast(): void
 }
+
+export type RightPanel = 'assistant' | 'git'
 
 let toastId = 0
 
@@ -63,6 +70,7 @@ export const useApp = create<AppState>((set, get) => ({
   searchOpen: false,
   newPageOpen: null,
   peek: null,
+  rightPanel: null,
   toast: null,
   prompt: null,
 
@@ -100,6 +108,8 @@ export const useApp = create<AppState>((set, get) => ({
     else set({ peek: path })
   },
   closePeek: () => set({ peek: null }),
+  toggleRightPanel: (panel) => set({ rightPanel: get().rightPanel === panel ? null : panel }),
+  setRightPanel: (rightPanel) => set({ rightPanel }),
   syncRoute() {
     set({ route: parseRoute(location.hash), peek: null })
   },

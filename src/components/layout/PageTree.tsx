@@ -7,6 +7,8 @@ import type { TreeNode } from '@/lib/workspace'
 import { cx, IconButton, MenuList, Popover } from '@/components/ui'
 import { PageIcon } from './PageIcon'
 import { pageMenuItems } from './pageMenu'
+import { useGit } from '@/app/git'
+import { StatusLetter } from '@/components/git/GitPanel'
 
 const EXPANDED_KEY = 'notiva.tree.expanded'
 
@@ -65,6 +67,10 @@ function TreeItem({
   const active = route.name === 'page' && route.path === node.page?.path
   const hasChildren = node.children.length > 0
   const folder = node.page ? node.page.path.slice(0, -3) : node.id
+  const change = useGit((s) =>
+    node.page ? s.state?.changes.find((c) => c.path === node.page!.path) : undefined,
+  )
+  const changedInside = useGit((s) => s.state?.changes.some((c) => c.path.startsWith(`${folder}/`)) ?? false)
 
   const onDrop = (e: DragEvent) => {
     e.preventDefault()
@@ -111,8 +117,25 @@ function TreeItem({
           onClick={() => (node.page ? openPage(node.page.path) : toggle(node.id))}
         >
           <PageIcon page={node.page} />
-          <span className="truncate">{node.title}</span>
+          <span
+            className={cx(
+              'truncate',
+              change && (change.status === 'untracked' || change.status === 'added')
+                ? 'text-[var(--git-added)]'
+                : change && 'text-[var(--git-modified)]',
+            )}
+          >
+            {node.title}
+          </span>
         </button>
+        {change ? (
+          <StatusLetter status={change.status} />
+        ) : (
+          changedInside &&
+          !isOpen && (
+            <span aria-hidden className="mr-1 size-1.5 shrink-0 rounded-full bg-[var(--git-modified)]" />
+          )
+        )}
         <div className="flex opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 max-md:opacity-100">
           {node.page && (
             <>

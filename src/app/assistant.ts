@@ -63,7 +63,6 @@ export function describeError(error: unknown, settings: AiSettings): string {
 }
 
 interface AssistantState {
-  open: boolean
   settings: AiSettings
   /** True once the user saved settings on this device. */
   configured: boolean
@@ -71,7 +70,6 @@ interface AssistantState {
   busy: boolean
   error: string | null
   controller: AbortController | null
-  setOpen(open: boolean): void
   saveSettings(settings: AiSettings): void
   send(text: string): Promise<void>
   stop(): void
@@ -79,14 +77,12 @@ interface AssistantState {
 }
 
 export const useAssistant = create<AssistantState>((set, get) => ({
-  open: false,
   ...loadSettings(),
   messages: [],
   busy: false,
   error: null,
   controller: null,
 
-  setOpen: (open) => set({ open }),
   saveSettings(settings) {
     const clean = parseAiSettings(settings)
     try {

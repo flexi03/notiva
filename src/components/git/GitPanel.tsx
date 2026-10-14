@@ -1,0 +1,378 @@
+import { useEffect, useMemo, useState } from 'react'
+import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  ChevronDown,
+  ChevronRight,
+  FileText,
+  GitBranch,
+  GitCommitHorizontal,
+  RefreshCw,
+  Undo2,
+} from 'lucide-react'
+import { gitAvailable, useGit } from '@/app/git'
+import { useApp, useWorkspace } from '@/app/store'
+import { t } from '@/i18n'
+import { diffLines, diffStats, type DiffStats } from '@/lib/diff'
+import { basename, dirname } from '@/lib/path'
+import type { GitChange, GitCommit, GitStatus } from '@/lib/vault'
+import { AutoTextArea, Button, Checkbox, cx, EmptyState, IconButton } from '@/components/ui'
+import { SidePanel } from '@/components/layout/SidePanel'
+import { DiffStatsLabel } from './DiffView'
+
+const LETTER: Record<GitStatus, string> = {
+  modified: 'M',
+  added: 'A',
+  deleted: 'D',
+  renamed: 'R',
+  untracked: 'U',
+}
+const COLOR: Record<GitStatus, string> = {
+  modified: 'text-[var(--git-modified)]',
+  renamed: 'text-[var(--git-modified)]',
+  added: 'text-[var(--git-added)]',
+  untracked: 'text-[var(--git-added)]',
+  deleted: 'text-[var(--git-deleted)]',
+}
+
+export function StatusLetter({ status }: { status: GitStatus }) {
+  return (
+    <span
+      className={cx('w-3 shrink-0 text-center text-[12px] font-bold', COLOR[status])}
+      title={t(`git.status.${status}`)}
+      aria-label={t(`git.status.${status}`)}
+    >
+      {LETTER[status]}
+    </span>
+  )
+}
+
+/** +/− line counts per changed file (only text files). */
+function useStats(changes: GitChange[]): Map<string, DiffStats> {
+  const ws = useWorkspace()
+  const head = useGit((s) => s.state?.head)
+  const [stats, setStats] = useState(new Map<string, DiffStats>())
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const next = new Map<string, DiffStats>()
+      for (const change of changes.slice(0, 200)) {
+        if (!/\.(md|txt|json|css|ya?ml|csv)$/i.test(change.path)) continue
+        const [old, now] = await Promise.all([
+          change.status === 'untracked' || change.status === 'added'
+            ? ''
+            : useGit.getState().headText(change.from ?? change.path),
+          change.status === 'deleted' ? '' : ws.vault.read(change.path).catch(() => ''),
+        ])
+        next.set(change.path, diffStats(diffLines(old ?? '', now)))
+      }
+      if (!cancelled) setStats(next)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [changes, head, ws, ws.version])
+  return stats
+}
+
+/** Source control view in the right side bar (like VS Code). */
+export function GitPanel() {
+  const { state, loading, refresh, act, showDiff } = useGit()
+  const [message, setMessage] = useState('')
+  const [excluded, setExcluded] = useState(new Set<string>())
+  const changes = useMemo(() => state?.changes ?? [], [state])
+  const stats = useStats(changes)
+  const selected = changes.filter((c) => !excluded.has(c.path))
+  const showToast = useApp((s) => s.showToast)
+
+  const commit = async () => {
+    const hash = await act((git) =>
+      git.commit(
+        message,
+        selected.map((c) => c.path),
+      ),
+    )
+    if (hash) {
+      setMessage('')
+      showToast(t('git.committed', { hash: hash.slice(0, 7) }))
+    }
+  }
+
+  const header = state?.isRepo && (
+    <>
+      <IconButton label={t('git.refresh')} onClick={() => void refresh()} disabled={loading}>
+        <RefreshCw size={15} className={cx(loading && 'animate-spin')} />
+      </IconButton>
+      <IconButton
+        label={t('git.pull')}
+        disabled={!state.upstream}
+        onClick={() =>
+          void act((git) => git.pull()).then((m) => m !== undefined && showToast(t('git.pulled')))
+        }
+      >
+        <ArrowDownToLine size={15} />
+      </IconButton>
+      <IconButton
+        label={t('git.push')}
+        disabled={!state.upstream}
+        onClick={() =>
+          void act((git) => git.push()).then((m) => m !== undefined && showToast(t('git.pushed')))
+        }
+      >
+        <ArrowUpFromLine size={15} />
+      </IconButton>
+    </>
+  )
+
+  return (
+    <SidePanel title={t('git.title')} icon={<GitBranch size={16} />} actions={header}>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {!gitAvailable() ? (
+          <EmptyState icon={<GitBranch size={22} />} title={t('git.desktopOnly')}>
+            {t('git.desktopOnlyHint')}
+          </EmptyState>
+        ) : !state ? (
+          <p className="p-4 text-sm text-ink-3">{t('common.loading')}</p>
+        ) : !state.isRepo ? (
+          <EmptyState
+            icon={<GitBranch size={22} />}
+            title={t('git.noRepo')}
+            action={
+              <Button variant="primary" onClick={() => void act((git) => git.init())}>
+                {t('git.init')}
+              </Button>
+            }
+          >
+            {t('git.noRepoHint')}
+          </EmptyState>
+        ) : (
+          <div className="space-y-4 p-3">
+            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-[13px] text-ink-2">
+              <span className="flex items-center gap-1 font-semibold text-ink">
+                <GitBranch size={13} /> {state.branch ?? 'HEAD'}
+              </span>
+              {state.upstream ? (
+                <>
+                  {state.ahead > 0 && <span>↑ {t('git.ahead', { count: state.ahead })}</span>}
+                  {state.behind > 0 && <span>↓ {t('git.behind', { count: state.behind })}</span>}
+                </>
+              ) : (
+                <span className="text-ink-3">{t('git.noUpstream')}</span>
+              )}
+            </p>
+
+            <form
+              className="space-y-2"
+              onSubmit={(e) => {
+                e.preventDefault()
+                void commit()
+              }}
+            >
+              <AutoTextArea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder={t('git.messagePlaceholder')}
+                aria-label={t('git.message')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault()
+                    void commit()
+                  }
+                }}
+                className="min-h-16"
+              />
+              <Button
+                type="submit"
+                variant="primary"
+                icon={<GitCommitHorizontal size={15} />}
+                disabled={!message.trim() || selected.length === 0}
+                className="w-full"
+              >
+                {t('git.commit', { count: selected.length })}
+              </Button>
+            </form>
+
+            <section aria-label={t('git.changes')}>
+              <h3 className="mb-1 flex items-center gap-2 px-1 text-[13px] font-semibold text-ink-2">
+                {changes.length > 0 && (
+                  <Checkbox
+                    label={t('git.selectAll')}
+                    checked={excluded.size === 0}
+                    onChange={(all) => setExcluded(all ? new Set() : new Set(changes.map((c) => c.path)))}
+                  />
+                )}
+                {t('git.changes')} <span className="font-normal text-ink-3">{changes.length}</span>
+              </h3>
+              {changes.length === 0 ? (
+                <p className="px-1 text-[13px] text-ink-3">{t('git.noChanges')}</p>
+              ) : (
+                <ul>
+                  {changes.map((change) => (
+                    <ChangeRow
+                      key={change.path}
+                      change={change}
+                      stats={stats.get(change.path)}
+                      selected={!excluded.has(change.path)}
+                      onSelect={(on) =>
+                        setExcluded((prev) => {
+                          const next = new Set(prev)
+                          if (on) next.delete(change.path)
+                          else next.add(change.path)
+                          return next
+                        })
+                      }
+                      onShow={() => showDiff({ path: change.path })}
+                    />
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <History />
+          </div>
+        )}
+      </div>
+    </SidePanel>
+  )
+}
+
+function ChangeRow({
+  change,
+  stats,
+  selected,
+  onSelect,
+  onShow,
+}: {
+  change: GitChange
+  stats: DiffStats | undefined
+  selected: boolean
+  onSelect: (on: boolean) => void
+  onShow: () => void
+}) {
+  const ws = useWorkspace()
+  const { openPage, ask } = useApp()
+  const act = useGit((s) => s.act)
+  const page = ws.get(change.path)
+  const folder = dirname(change.path)
+  const name = page?.title ?? basename(change.path).replace(/\.md$/, '')
+  return (
+    <li className="group flex items-center gap-1.5 rounded-control px-1 py-0.5 hover:bg-hover">
+      <Checkbox label={t('git.select', { path: change.path })} checked={selected} onChange={onSelect} />
+      <button
+        type="button"
+        onClick={onShow}
+        aria-label={t('git.showDiff', { path: change.path })}
+        className={cx(
+          'flex min-w-0 flex-1 items-baseline gap-1.5 py-0.5 text-left text-[13.5px]',
+          change.status === 'deleted' && 'line-through decoration-ink-3',
+        )}
+      >
+        <span className="truncate">{name}</span>
+        {folder && <span className="min-w-0 truncate text-[12px] text-ink-3">{folder}</span>}
+      </button>
+      {stats && <DiffStatsLabel {...stats} />}
+      <span className="flex opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+        {page && (
+          <IconButton size="sm" label={t('git.openPage')} onClick={() => openPage(page.path)}>
+            <FileText size={13} />
+          </IconButton>
+        )}
+        <IconButton
+          size="sm"
+          label={t('git.discard')}
+          onClick={async () => {
+            const ok = await ask({
+              title: t('git.discardConfirm', { path: change.path }),
+              label: t('git.discardHint'),
+              confirm: true,
+              danger: true,
+              confirmLabel: t('git.discard'),
+            })
+            if (ok !== null) await act((git) => git.discard([change.path]))
+          }}
+        >
+          <Undo2 size={13} />
+        </IconButton>
+      </span>
+      <StatusLetter status={change.status} />
+    </li>
+  )
+}
+
+function History() {
+  const [open, setOpen] = useState(false)
+  const [commits, setCommits] = useState<GitCommit[] | null>(null)
+  const head = useGit((s) => s.state?.head)
+  const act = useGit((s) => s.act)
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    void act((git) => git.log(50, null)).then((list) => !cancelled && setCommits(list ?? []))
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, head])
+  return (
+    <section aria-label={t('git.history')}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-1 px-1 text-[13px] font-semibold text-ink-2 hover:text-ink"
+      >
+        {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        {t('git.history')}
+      </button>
+      {open && (
+        <ul className="mt-1 space-y-0.5">
+          {commits?.length === 0 && <li className="px-1 text-[13px] text-ink-3">{t('git.historyEmpty')}</li>}
+          {commits?.map((c) => (
+            <CommitRow key={c.hash} commit={c} />
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+function CommitRow({ commit }: { commit: GitCommit }) {
+  const [files, setFiles] = useState<GitChange[] | null>(null)
+  const { act, showDiff } = useGit()
+  const date = new Date(commit.date)
+  return (
+    <li>
+      <button
+        type="button"
+        aria-expanded={files !== null}
+        onClick={() =>
+          files
+            ? setFiles(null)
+            : void act((git) => git.commitFiles(commit.hash)).then((f) => setFiles(f ?? []))
+        }
+        className="flex w-full items-baseline gap-2 rounded-control px-1 py-1 text-left hover:bg-hover"
+      >
+        <span className="min-w-0 flex-1 truncate text-[13.5px]">{commit.subject}</span>
+        <span className="shrink-0 text-[11.5px] text-ink-3 tabular-nums">
+          {date.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })} · {commit.short}
+        </span>
+      </button>
+      {files && (
+        <ul className="mb-1 ml-3 border-l border-line pl-2">
+          {files.map((f) => (
+            <li key={f.path}>
+              <button
+                type="button"
+                onClick={() => showDiff({ path: f.path, commit: commit.hash })}
+                className="flex w-full items-center gap-1.5 rounded-control px-1 py-0.5 text-left text-[13px] hover:bg-hover"
+              >
+                <StatusLetter status={f.status} />
+                <span className="truncate">{f.path}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </li>
+  )
+}
