@@ -83,7 +83,9 @@ function fakeMoodle(): Promise<{ server: Server; url: string; calls: string[] }>
             body.get('courseid') === '42'
               ? [
                   {
+                    id: 1,
                     name: 'Woche 1',
+                    summary: news.on ? '<p>Klausur am <b>03.02.</b></p>' : '<p>Klausurtermin folgt</p>',
                     modules: [
                       {
                         id: 77,
@@ -318,21 +320,24 @@ test('meldet Neuigkeiten aus Moodle im Benachrichtigungscenter', async () => {
   await window.getByRole('button', { name: 'Aktualisieren' }).click()
   const bar = window.getByRole('navigation', { name: 'Werkzeugleiste rechts' })
   const bell = bar.getByRole('button', { name: /Benachrichtigungen/ })
-  await expect(bell).toContainText('3')
+  await expect(bell).toContainText('4')
   await bell.click()
   const panel = window.getByRole('complementary', { name: 'Benachrichtigungen' })
   const list = panel.getByRole('list', { name: 'Benachrichtigungen' })
   await expect(list).toContainText('Neue Abgabe: Blatt 6')
   await expect(list).toContainText('Neue Unterlage: Vorlesung 2 – Skript')
   await expect(list).toContainText('Mitteilung: Raumänderung: heute H3')
+  // Changed course texts (section summary) – with the new text.
+  await expect(list).toContainText('Geändert: Woche 1')
+  await expect(list).toContainText('Klausur am 03.02.')
   await panel.getByRole('button', { name: 'Alle als gelesen markieren' }).click()
-  await expect(bell).not.toContainText('3')
+  await expect(bell).not.toContainText('4')
   // Stored on the device, not in the vault.
   expect(readFileSync(path.join(userData, 'notifications.json'), 'utf8')).toContain('Blatt 6')
   for (const file of allFiles(folder)) expect(readFileSync(file, 'utf8')).not.toContain('Raumänderung')
   // A second check finds nothing new.
   await window.getByRole('button', { name: 'Aktualisieren' }).click()
-  await expect(bell).not.toContainText('3')
+  await expect(bell).not.toContainText('4')
 })
 
 test('speichert neue Skripte automatisch – mit Fortschritt und Bestätigung', async () => {

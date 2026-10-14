@@ -48,6 +48,7 @@ import { examNews, type ExamSnapshot } from '../src/lib/ecampus'
 import { NotificationStore, parseNotifySettings, type NotifySettings } from './notifier'
 import { deadlineReminders, moodleNews, type AppNotification } from '../src/lib/notifications'
 import type { MoodleSnapshot } from '../src/lib/moodle'
+import { courseInfoNews } from '../src/lib/moodleInfo'
 
 const DIST = path.join(__dirname, '..', 'dist')
 const userFile = (name: string) => path.join(process.env.NOTIVA_E2E_USERDATA ?? app.getPath('userData'), name)
@@ -223,6 +224,12 @@ async function pollMoodle(): Promise<MoodleSnapshot> {
   const now = new Date()
   await notifications.add([
     ...moodleNews(previous, snapshot, { now, locale: LOCALE() }),
+    ...courseInfoNews(
+      previous?.info,
+      snapshot.info,
+      (id) => snapshot.courses.find((c) => c.id === id)?.name ?? 'Moodle',
+      now,
+    ),
     ...deadlineReminders(
       snapshot.events.map((e) => ({
         id: e.id,

@@ -2,6 +2,7 @@ import { installPack, studyPack } from '../packs'
 import { MemoryVault } from '../vault'
 import { Workspace } from '../workspace'
 import { moduleResults, type ExamRecord } from '../ecampus'
+import { courseInfoOf } from '../moodleInfo'
 import { HSD_BMI_2018 } from '../study/catalog'
 import { isOrgaCourse, matchExam, matchModuleName, nameScore } from '../study/match'
 import { studyState } from '../study/state'
@@ -223,6 +224,17 @@ describe('study folder sync', () => {
     expect(courses.find((c) => c.data.moodle === 'course:4')!.data.Art).toBe('Orga')
     // Second run: nothing left to do.
     expect(planStudySync(ws, 'Studium', state()).changes).toEqual([])
+  })
+
+  it('writes the Moodle texts into the course page', async () => {
+    const ws = await setup()
+    const info = { 'course:3': courseInfoOf('course:3', { course: { summary: '<p>Klausur am 03.02.</p>' } }) }
+    const plan = planStudySync(ws, 'Studium', state(), info)
+    await plan.apply()
+    const page = ws.rows('Studium/Kurse.md').find((r) => r.data.moodle === 'course:3')!
+    expect(page.body).toContain('Klausur am 03.02.')
+    expect(page.body).toContain('## Meine Notizen')
+    expect(planStudySync(ws, 'Studium', state(), info).changes).toEqual([])
   })
 
   it('adopts existing pages and keeps a status the user chose', async () => {

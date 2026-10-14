@@ -9,6 +9,7 @@
 import { propertyDef, type DatabaseDef } from './database'
 import type { FrontmatterData } from './frontmatter'
 import { toIsoDate } from './dates'
+import { courseInfoOf, type CourseInfo } from './moodleInfo'
 import type { Page, Workspace } from './workspace'
 
 export interface MoodleCourse {
@@ -72,6 +73,8 @@ export interface MoodleSnapshot {
   /** Why there are no materials (e.g. the site doesn't allow core_course_get_contents). */
   materialsError?: string
   notices?: MoodleNotice[]
+  /** Texts per course id ("course:42"): description, sections, pages, announcements. */
+  info?: Record<string, CourseInfo>
 }
 
 /** A name usable as file or folder name on every system (course folders for materials). */
@@ -224,6 +227,10 @@ export function snapshotFromWebService(
     contents?: Record<string, unknown>
     /** message_popup_get_popup_notifications */
     notices?: unknown
+    /** mod_page_get_pages_by_courses */
+    pages?: unknown
+    /** announcement discussions per course id */
+    discussions?: Record<string, unknown>
   },
   now = new Date(),
 ): MoodleSnapshot {
@@ -282,9 +289,22 @@ export function snapshotFromWebService(
         time: new Date(Number(n.timecreated ?? 0) * 1000).toISOString(),
       }
     })
+  const rawCourses = (Array.isArray(raw.courses) ? raw.courses : []).filter(isObject)
+  const texts: Record<string, CourseInfo> = {}
+  for (const c of courses) {
+    const id = c.id.slice('course:'.length)
+    if (!raw.contents || !(id in raw.contents)) continue
+    texts[c.id] = courseInfoOf(c.id, {
+      course: rawCourses.find((r) => text(r.id) === id),
+      contents: raw.contents[id],
+      pages: raw.pages,
+      discussions: raw.discussions?.[id],
+    })
+  }
   return {
     site: base,
     source: 'webservice',
+    ...(Object.keys(texts).length ? { info: texts } : {}),
     ...(user ? { user } : {}),
     fetchedAt: now.toISOString(),
     courses,

@@ -265,9 +265,41 @@ export class MoodleClient {
         onProgress(++done, ids.length, `Unterlagen: ${names.get(id) ?? id}`)
       }),
     )
+    // Course texts: pages and announcements (optional – not every Moodle allows them).
+    onProgress(ids.length, ids.length, 'Kursinfos und Ankündigungen')
+    const pageCourses = ids.filter((id) => modulesOf(contents[id]).some((m) => m.modname === 'page'))
+    const pages = pageCourses.length
+      ? await this.call(
+          site,
+          secret,
+          'mod_page_get_pages_by_courses',
+          Object.fromEntries(pageCourses.map((id, i) => [`courseids[${i}]`, id])),
+        ).catch(() => null)
+      : null
+    const discussions: Record<string, unknown> = {}
+    await Promise.all(
+      ids.map(async (id) => {
+        const forum = modulesOf(contents[id]).find(
+          (m) => m.modname === 'forum' && /ankündig|nachricht|news|announce/i.test(String(m.name ?? '')),
+        )
+        if (!forum?.instance) return
+        const forumid = Number(forum.instance)
+        discussions[id] = await this.call(site, secret, 'mod_forum_get_forum_discussions', {
+          forumid,
+          page: 0,
+          perpage: 10,
+        }).catch(() =>
+          this.call(site, secret, 'mod_forum_get_forum_discussions_paginated', {
+            forumid,
+            page: 0,
+            perpage: 10,
+          }).catch(() => null),
+        )
+      }),
+    )
     const snapshot = snapshotFromWebService(
       site,
-      { siteInfo, courses, events, grades, contents, notices },
+      { siteInfo, courses, events, grades, contents, notices, pages, discussions },
       now,
     )
     // No course delivered its contents: say why instead of showing empty lists.
@@ -275,6 +307,14 @@ export class MoodleClient {
       snapshot.materialsError = `Moodle gibt die Kursinhalte nicht heraus: ${lastError}`
     return snapshot
   }
+}
+
+/** The modules (activities) of a core_course_get_contents answer. */
+function modulesOf(contents: unknown): Array<{ modname?: unknown; name?: unknown; instance?: unknown }> {
+  if (!Array.isArray(contents)) return []
+  return contents.flatMap((section: { modules?: unknown }) =>
+    Array.isArray(section?.modules) ? (section.modules as Array<{ modname?: unknown }>) : [],
+  )
 }
 
 /**

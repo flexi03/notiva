@@ -8,6 +8,7 @@
 import { parseDatabaseDef, propertyDef, type DatabaseDef, type PropertyDef, type ViewDef } from '../database'
 import type { FrontmatterData, FrontmatterValue } from '../frontmatter'
 import { safeFileName } from '../moodle'
+import { courseInfoMarkdown, lastChange, type CourseInfo } from '../moodleInfo'
 import type { Workspace } from '../workspace'
 import { parse } from 'yaml'
 import { planModules } from './catalog'
@@ -223,7 +224,12 @@ export interface StudyPlan {
  * Compares the vault with the study state. `apply` writes it (pages first, so links resolve).
  * `folder` is the study folder ("Studium"), its databases are Module, Semester and Kurse.
  */
-export function planStudySync(ws: Workspace, folder: string, state: StudyState): StudyPlan {
+export function planStudySync(
+  ws: Workspace,
+  folder: string,
+  state: StudyState,
+  courseInfo: Record<string, CourseInfo> = {},
+): StudyPlan {
   const changes: StudyChange[] = []
   const steps: Array<() => Promise<string | void>> = []
   const modulesDb = `${folder}/Module.md`
@@ -386,10 +392,25 @@ export function planStudySync(ws: Workspace, folder: string, state: StudyState):
     ...state.orga.map((c) => ({ c, m: undefined, art: 'Orga' })),
     ...state.other.map((c) => ({ c, m: undefined, art: 'Sonstiges' })),
   ]
-  const existing = new Set(courseRows().map((r) => r.data.moodle))
-  for (const { c, m } of allCourses)
-    if (!existing.has(c.id))
+  const existing = new Map(courseRows().map((r) => [String(r.data.moodle), r]))
+  const bodyFor = (id: string, previous: string) =>
+    courseInfo[id] ? courseInfoMarkdown(courseInfo[id], previous) : null
+  for (const { c, m } of allCourses) {
+    const row = existing.get(c.id)
+    if (!row)
       changes.push({ kind: 'create', what: 'course', title: c.name, detail: m ? m.module.name : 'Orga' })
+    else {
+      const body = bodyFor(c.id, row.body)
+      if (body !== null && body !== row.body)
+        changes.push({
+          kind: 'update',
+          what: 'course',
+          path: row.path,
+          title: row.title,
+          detail: 'Infos aus Moodle',
+        })
+    }
+  }
   steps.push(async () => {
     const known = new Map(courseRows().map((r) => [String(r.data.moodle), r]))
     for (const { c, m, art } of allCourses) {
@@ -402,13 +423,22 @@ export function planStudySync(ws: Workspace, folder: string, state: StudyState):
         ...(modulePath ? { Modul: [link(ws, modulePath)] } : {}),
         Ordner: `${folder}/Unterlagen/${safeFileName(c.name)}`,
       }
+      const changed = courseInfo[c.id] ? lastChange(courseInfo[c.id]!) : undefined
+      if (changed) values.Geändert = changed.slice(0, 10)
       const row = known.get(c.id)
       if (row) {
         const diff: FrontmatterData = {}
         for (const [k, v] of Object.entries(values)) if (!same(row.data[k], v)) diff[k] = v
-        if (Object.keys(diff).length) await ws.save(row.path, { data: { ...row.data, ...diff } })
+        const body = bodyFor(c.id, row.body)
+        if (Object.keys(diff).length || (body !== null && body !== row.body))
+          await ws.save(row.path, {
+            data: { ...row.data, ...diff },
+            ...(body !== null ? { body } : {}),
+          })
       } else {
-        await ws.createRow(coursesDb, c.name, values)
+        const path = await ws.createRow(coursesDb, c.name, values)
+        const body = bodyFor(c.id, '')
+        if (body !== null) await ws.save(path, { body })
       }
     }
   })
