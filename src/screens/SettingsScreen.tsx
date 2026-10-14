@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import { ACCENTS, MARKERS, type AccentId, type MarkerId, type Settings } from '@/lib/settings'
@@ -78,9 +78,12 @@ export function SettingsScreen() {
     }
   }
 
-  useEffect(() => {
+  // A link to another tab (#/settings/ai) while the screen is open.
+  const [seen, setSeen] = useState(requested)
+  if (requested !== seen) {
+    setSeen(requested)
     if (requested && (TABS as readonly string[]).includes(requested)) setTab(requested as Tab)
-  }, [requested])
+  }
 
   return (
     <>
