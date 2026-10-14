@@ -216,6 +216,8 @@ export class MoodleClient {
     config: MoodleConfig,
     now = new Date(),
     onProgress: (done: number, total: number, text: string) => void = () => {},
+    /** Course contents (files, texts) only when due; otherwise they come from `previous`. */
+    options: { contents?: boolean; previous?: MoodleSnapshot | null } = {},
   ): Promise<MoodleSnapshot> {
     if (config.mode === 'calendar')
       return snapshotFromIcs(await this.request(config.secret), config.site, now)
@@ -240,12 +242,15 @@ export class MoodleClient {
     ])
     // Materials per course (scripts, slides, links); a course that fails is just skipped.
     const contents: Record<string, unknown> = {}
-    const ids = Array.isArray(courses)
-      ? courses
-          .map((c: unknown) => String((c as { id?: unknown }).id ?? ''))
-          .filter(Boolean)
-          .slice(0, 40)
-      : []
+    const ids =
+      options.contents === false
+        ? []
+        : Array.isArray(courses)
+          ? courses
+              .map((c: unknown) => String((c as { id?: unknown }).id ?? ''))
+              .filter(Boolean)
+              .slice(0, 40)
+          : []
     const names = new Map(
       (Array.isArray(courses) ? courses : []).map((c: { id?: unknown; fullname?: unknown }) => [
         String(c.id ?? ''),
@@ -302,6 +307,10 @@ export class MoodleClient {
       { siteInfo, courses, events, grades, contents, notices, pages, discussions },
       now,
     )
+    if (options.contents === false && options.previous) {
+      if (options.previous.materials) snapshot.materials = options.previous.materials
+      if (options.previous.info) snapshot.info = options.previous.info
+    }
     // No course delivered its contents: say why instead of showing empty lists.
     if (ids.length && Object.values(contents).every((c) => c === null))
       snapshot.materialsError = `Moodle gibt die Kursinhalte nicht heraus: ${lastError}`

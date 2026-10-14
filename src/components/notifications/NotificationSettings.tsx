@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { t } from '@/i18n'
-import { electronBridge, type NotifySettings } from '@/lib/vault'
+import { electronBridge, type CheckKind, type NotifySettings } from '@/lib/vault'
 import { Select, Switch } from '@/components/ui'
 import { Row } from '@/screens/settingsLayout'
+
+const CHECKS: CheckKind[] = ['moodle', 'materials', 'courseInfo', 'grades', 'examPlan']
 
 /** Settings → Benachrichtigungen: system banners and how often Moodle is checked (desktop). */
 export function NotificationSettingsSection() {
@@ -24,19 +26,26 @@ export function NotificationSettingsSection() {
           label={t('notify.system')}
         />
       </Row>
-      <Row label={t('notify.interval')} hint={t('notify.intervalHint')}>
-        <Select
-          aria-label={t('notify.interval')}
-          value={String(settings.intervalMinutes)}
-          onChange={(e) => save({ intervalMinutes: Number(e.target.value) })}
-        >
-          {[5, 15, 30, 60, 120].map((m) => (
-            <option key={m} value={m}>
-              {t('notify.minutes', { count: m })}
-            </option>
-          ))}
-        </Select>
-      </Row>
+      <p className="text-[13px] text-ink-3">{t('notify.intervalHint')}</p>
+      {CHECKS.map((kind) => (
+        <Row key={kind} label={t(`notify.check.${kind}`)}>
+          <Select
+            aria-label={t(`notify.check.${kind}`)}
+            value={String(settings.intervals[kind])}
+            onChange={(e) => save({ intervals: { ...settings.intervals, [kind]: Number(e.target.value) } })}
+          >
+            {[0, 5, 15, 30, 60, 180, 360, 720, 1440].map((m) => (
+              <option key={m} value={m}>
+                {m === 0
+                  ? t('notify.manual')
+                  : m < 60
+                    ? t('notify.minutes', { count: m })
+                    : t('notify.hours', { count: m / 60 })}
+              </option>
+            ))}
+          </Select>
+        </Row>
+      ))}
     </>
   )
 }

@@ -98,9 +98,13 @@ export interface MoodleBridge {
   onPolled(callback: () => void): () => void
 }
 
+export type CheckKind = 'moodle' | 'materials' | 'courseInfo' | 'grades' | 'examPlan'
+
 export interface NotifySettings {
   system: boolean
   intervalMinutes: number
+  /** Minutes per background check; 0 = only by hand. */
+  intervals: Record<CheckKind, number>
 }
 
 export interface NotificationBridge {

@@ -5,24 +5,64 @@
 import { promises as fs } from 'node:fs'
 import { mergeNotifications, parseNotifications, type AppNotification } from '../src/lib/notifications'
 
+/** What Notiva checks in the background, each on its own interval (minutes; 0 = only by hand). */
+export const CHECKS = ['moodle', 'materials', 'courseInfo', 'grades', 'examPlan'] as const
+export type CheckKind = (typeof CHECKS)[number]
+export const INTERVAL_OPTIONS = [0, 5, 15, 30, 60, 180, 360, 720, 1440]
+
 export interface NotifySettings {
   /** System notifications (banner) for news. */
   system: boolean
-  /** Minutes between Moodle checks. */
+  /** Minutes between Moodle checks (dates, messages) – same as intervals.moodle (older settings). */
   intervalMinutes: number
+  intervals: Record<CheckKind, number>
 }
 
-export const DEFAULT_NOTIFY: NotifySettings = { system: true, intervalMinutes: 15 }
+export const DEFAULT_INTERVALS: Record<CheckKind, number> = {
+  moodle: 15,
+  materials: 60,
+  courseInfo: 60,
+  grades: 30,
+  examPlan: 1440,
+}
+
+export const DEFAULT_NOTIFY: NotifySettings = {
+  system: true,
+  intervalMinutes: DEFAULT_INTERVALS.moodle,
+  intervals: DEFAULT_INTERVALS,
+}
+
+const minutes = (v: unknown, fallback: number) => {
+  const n = Number(v)
+  if (!Number.isFinite(n) || v === null || v === '') return fallback
+  if (n <= 0) return 0
+  return Math.min(10_080, Math.max(5, Math.round(n)))
+}
 
 export function parseNotifySettings(raw: unknown): NotifySettings {
   const r = (typeof raw === 'object' && raw !== null ? raw : {}) as Record<string, unknown>
-  const minutes = Number(r.intervalMinutes)
+  const given = (typeof r.intervals === 'object' && r.intervals !== null ? r.intervals : {}) as Record<
+    string,
+    unknown
+  >
+  const legacy = minutes(r.intervalMinutes, DEFAULT_INTERVALS.moodle) || DEFAULT_INTERVALS.moodle
+  const intervals = Object.fromEntries(
+    CHECKS.map((k) => [k, minutes(given[k], k === 'moodle' ? legacy : DEFAULT_INTERVALS[k])]),
+  ) as Record<CheckKind, number>
   return {
     system: typeof r.system === 'boolean' ? r.system : DEFAULT_NOTIFY.system,
-    intervalMinutes: Number.isFinite(minutes)
-      ? Math.min(240, Math.max(5, Math.round(minutes)))
-      : DEFAULT_NOTIFY.intervalMinutes,
+    intervalMinutes: intervals.moodle,
+    intervals,
   }
+}
+
+/** Which checks are due now (never run = due; 0 = never by itself). */
+export function dueChecks(
+  intervals: Record<CheckKind, number>,
+  last: Partial<Record<CheckKind, number>>,
+  now: number,
+): CheckKind[] {
+  return CHECKS.filter((k) => intervals[k] > 0 && now - (last[k] ?? 0) >= intervals[k] * 60_000)
 }
 
 export class NotificationStore {

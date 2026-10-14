@@ -45,7 +45,13 @@ import { clearMoodleSession, openMoodlePage, ssoLogin } from './moodleWindow'
 import { WhisperEngine } from './whisper'
 import { Ecampus, NeedsLogin } from './ecampus'
 import { examNews, type ExamSnapshot } from '../src/lib/ecampus'
-import { NotificationStore, parseNotifySettings, type NotifySettings } from './notifier'
+import {
+  dueChecks,
+  NotificationStore,
+  parseNotifySettings,
+  type CheckKind,
+  type NotifySettings,
+} from './notifier'
 import { deadlineReminders, moodleNews, type AppNotification } from '../src/lib/notifications'
 import type { MoodleSnapshot } from '../src/lib/moodle'
 import { courseInfoNews } from '../src/lib/moodleInfo'
@@ -208,16 +214,21 @@ function focusNotification(id: string | null): void {
 const LOCALE = () => (app.getLocale().startsWith('de') ? 'de-DE' : 'en-US')
 
 /** Fetches Moodle, stores the snapshot and turns the differences into notifications. */
-async function pollMoodle(): Promise<MoodleSnapshot> {
+async function pollMoodle(contents = true): Promise<MoodleSnapshot> {
   const config = await loadMoodle()
   if (!config) throw new Error('Moodle ist nicht verbunden')
-  const snapshot = await moodleClient.fetch(config, new Date(), (done, total, text) =>
-    window?.webContents.send('moodle:progress', { done, total, text }),
-  )
   const previous = await fs
     .readFile(MOODLE_SNAPSHOT(), 'utf8')
     .then((text) => JSON.parse(text) as MoodleSnapshot)
     .catch(() => null)
+  const snapshot = await moodleClient.fetch(
+    config,
+    new Date(),
+    (done, total, text) => window?.webContents.send('moodle:progress', { done, total, text }),
+    { contents, previous },
+  )
+  lastRun.moodle = Date.now()
+  if (contents) lastRun.materials = lastRun.courseInfo = Date.now()
   await fs.writeFile(MOODLE_SNAPSHOT(), JSON.stringify(snapshot), { mode: 0o600 })
   // The app saves new materials into the vault (its folder logic lives in the renderer).
   window?.webContents.send('moodle:polled')
@@ -249,14 +260,15 @@ let pollTimer: ReturnType<typeof setTimeout> | null = null
 /** eCampus exam results (HISinOne) – own login session, results snapshot in the profile. */
 const ecampus = new Ecampus(userFile(''), path.join(__dirname, 'moodlePreload.cjs'))
 const ecampusProgress = (text: string) => window?.webContents.send('ecampus:progress', text)
-let lastEcampusCheck = 0
+/** When each background check last ran (this app run). */
+const lastRun: Partial<Record<CheckKind, number>> = {}
 
 /** Fetches the results and turns changes into notifications. */
 async function pollEcampus(): Promise<ExamSnapshot> {
   const previous = await ecampus.snapshot()
   try {
     const next = await ecampus.fetch(ecampusProgress)
-    lastEcampusCheck = Date.now()
+    lastRun.grades = Date.now()
     await notifications.add(examNews(previous, next))
     window?.webContents.send('ecampus:polled')
     return next
@@ -279,20 +291,30 @@ async function pollEcampus(): Promise<ExamSnapshot> {
 const whisper = new WhisperEngine(userFile('whisper-models'), (url, init) => net.fetch(url, init))
 const whisperProgress = (event: object) => window?.webContents.send('whisper:progress', event)
 
-/** Checks Moodle now and then every few minutes (settings) – quietly, errors only end this round. */
-async function schedulePolling(delay?: number): Promise<void> {
+/**
+ * Background checks: every minute, whatever is due by its own interval (settings) runs – quietly,
+ * errors only end that round. Moodle contents (files, course texts) only when one of them is due.
+ */
+async function schedulePolling(delay = 60_000): Promise<void> {
   if (pollTimer) clearTimeout(pollTimer)
-  const minutes = parseNotifySettings((await readConfig()).notify).intervalMinutes
-  pollTimer = setTimeout(
-    async () => {
-      if (await loadMoodle()) await pollMoodle().catch(() => undefined)
-      // Exam results change rarely: at most every 30 minutes.
-      if ((await ecampus.config()) && Date.now() - lastEcampusCheck > 30 * 60_000)
-        await pollEcampus().catch(() => undefined)
-      void schedulePolling()
-    },
-    delay ?? minutes * 60_000,
-  )
+  pollTimer = setTimeout(async () => {
+    const { intervals } = parseNotifySettings((await readConfig()).notify)
+    const due = dueChecks(intervals, lastRun, Date.now())
+    if (
+      (due.includes('moodle') || due.includes('materials') || due.includes('courseInfo')) &&
+      (await loadMoodle())
+    )
+      await pollMoodle(due.includes('materials') || due.includes('courseInfo')).catch(() => undefined)
+    if (due.includes('grades') && (await ecampus.config())) {
+      lastRun.grades = Date.now()
+      await pollEcampus().catch(() => undefined)
+    }
+    if (due.includes('examPlan')) {
+      lastRun.examPlan = Date.now()
+      window?.webContents.send('examplan:due')
+    }
+    void schedulePolling()
+  }, delay)
 }
 
 function mcpLaunch(): McpLaunch {
@@ -540,7 +562,7 @@ function registerIpc(): void {
   handle('ecampus:connect', async (raw: unknown) => {
     const previous = await ecampus.snapshot()
     const snapshot = await ecampus.login(window, raw, ecampusProgress)
-    lastEcampusCheck = Date.now()
+    lastRun.grades = Date.now()
     await notifications.add(examNews(previous, snapshot))
     return snapshot
   })
