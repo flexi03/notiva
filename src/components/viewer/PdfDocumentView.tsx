@@ -11,6 +11,7 @@ import {
   ScanLine,
   Sparkles,
   StickyNote,
+  Type,
 } from 'lucide-react'
 import { useAnnotations } from '@/app/annotations'
 import { useAssistant } from '@/app/assistant'
@@ -148,6 +149,7 @@ export function PdfDocumentView({
 
   const tools: Array<[Tool, string, React.ReactNode]> = [
     ['select', t('viewer.tool.select'), <MousePointer2 key="s" size={15} />],
+    ['text', t('viewer.tool.text'), <Type key="t" size={15} />],
     ['pen', t('viewer.tool.pen'), <PenLine key="p" size={15} />],
     ['note', t('viewer.tool.note'), <StickyNote key="n" size={15} />],
     ['erase', t('viewer.tool.erase'), <Eraser key="e" size={15} />],
@@ -272,6 +274,7 @@ export function PdfDocumentView({
                   setPanel(true)
                   setActiveId(id)
                 }}
+                onUpdate={(id, patch) => void notes.update(id, patch)}
               />
             )}
           />

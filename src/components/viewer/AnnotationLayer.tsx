@@ -1,10 +1,19 @@
-import { useRef, useState, type PointerEvent } from 'react'
+import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import { StickyNote } from 'lucide-react'
 import { t } from '@/i18n'
 import { newAnnotationId, type Annotation, type AnnotationColor } from '@/lib/annotations'
 import { cx } from '@/components/ui'
 
-export type Tool = 'select' | 'pen' | 'note' | 'erase'
+export type Tool = 'select' | 'text' | 'pen' | 'note' | 'erase'
+
+/** Darker shades for text written on the page (yellow text on white would be unreadable). */
+export const TEXT_COLORS: Record<AnnotationColor, string> = {
+  yellow: '#a16207',
+  green: '#15803d',
+  blue: '#1d4ed8',
+  pink: '#be185d',
+  red: '#dc2626',
+}
 
 export const COLOR_VALUES: Record<AnnotationColor, string> = {
   yellow: '#facc15',
@@ -28,6 +37,7 @@ export function AnnotationLayer({
   onAdd,
   onRemove,
   onOpen,
+  onUpdate,
   activeId,
 }: {
   page: number
@@ -39,10 +49,15 @@ export function AnnotationLayer({
   onAdd: (a: Annotation) => void
   onRemove: (id: string) => void
   onOpen: (id: string) => void
+  onUpdate: (id: string, patch: Partial<Annotation>) => void
   activeId: string | null
 }) {
   const svg = useRef<SVGSVGElement>(null)
   const [stroke, setStroke] = useState<Array<[number, number]> | null>(null)
+  /** A text box being written: a new one (`id` null) or an existing one. */
+  const [editing, setEditing] = useState<{ id: string | null; x: number; y: number } | null>(null)
+  const drag = useRef<{ id: string; dx: number; dy: number } | null>(null)
+  const [dragPos, setDragPos] = useState<{ id: string; x: number; y: number } | null>(null)
   const mine = annotations.filter((a) => a.page === page)
 
   const point = (e: PointerEvent): [number, number] => {
@@ -54,6 +69,10 @@ export function AnnotationLayer({
     if (tool === 'pen') {
       e.currentTarget.setPointerCapture(e.pointerId)
       setStroke([point(e)])
+    } else if (tool === 'text' && e.target === e.currentTarget) {
+      const [x, y] = point(e)
+      e.preventDefault()
+      setEditing({ id: null, x, y: y - 8 })
     } else if (tool === 'note' && e.target === e.currentTarget) {
       const [x, y] = point(e)
       const id = newAnnotationId()
@@ -62,11 +81,55 @@ export function AnnotationLayer({
     }
   }
 
-  const capture = tool === 'pen' || tool === 'note'
+  const capture = tool === 'pen' || tool === 'note' || tool === 'text'
+
+  const finishText = (value: string) => {
+    const text = value.trim()
+    const current = editing
+    setEditing(null)
+    if (!current) return
+    if (current.id === null) {
+      if (text)
+        onAdd({
+          id: newAnnotationId(),
+          type: 'text',
+          page,
+          x: current.x,
+          y: current.y,
+          w: 220,
+          size: 12,
+          text,
+          color,
+        })
+    } else if (!text) onRemove(current.id)
+    else onUpdate(current.id, { text })
+  }
+
+  /** Text boxes can be dragged; a click without moving edits them. */
+  const startDrag = (e: PointerEvent<HTMLDivElement>, a: Extract<Annotation, { type: 'text' }>) => {
+    if (tool === 'erase') return onRemove(a.id)
+    if (tool === 'pen' || tool === 'note') return
+    e.stopPropagation()
+    e.currentTarget.setPointerCapture(e.pointerId)
+    const [px, py] = point(e)
+    drag.current = { id: a.id, dx: px - a.x, dy: py - a.y }
+  }
+  const moveDrag = (e: PointerEvent<HTMLDivElement>) => {
+    if (!drag.current) return
+    const [px, py] = point(e)
+    setDragPos({ id: drag.current.id, x: px - drag.current.dx, y: py - drag.current.dy })
+  }
+  const endDrag = (a: Extract<Annotation, { type: 'text' }>) => {
+    const started = drag.current
+    drag.current = null
+    if (started && dragPos?.id === a.id && Math.hypot(dragPos.x - a.x, dragPos.y - a.y) > 2)
+      onUpdate(a.id, { x: dragPos.x, y: dragPos.y })
+    else if (started) setEditing({ id: a.id, x: a.x, y: a.y })
+    setDragPos(null)
+  }
   return (
     <svg
       ref={svg}
-      aria-hidden={tool === 'select' ? undefined : true}
       className={cx(
         'absolute inset-0 z-[2]',
         capture ? 'cursor-crosshair touch-none' : 'pointer-events-none',
@@ -120,6 +183,45 @@ export function AnnotationLayer({
               strokeLinejoin="round"
             />
           )
+        if (a.type === 'text') {
+          if (editing?.id === a.id) return null
+          const pos = dragPos?.id === a.id ? dragPos : a
+          return (
+            <foreignObject
+              key={a.id}
+              x={pos.x}
+              y={pos.y}
+              width={a.w}
+              height={2000}
+              className="overflow-visible"
+            >
+              <div
+                data-annotation={a.id}
+                data-testid="text-annotation"
+                role="button"
+                tabIndex={0}
+                aria-label={t('viewer.textBox', { text: a.text })}
+                onPointerDown={(e) => startDrag(e, a)}
+                onPointerMove={moveDrag}
+                onPointerUp={() => endDrag(a)}
+                onKeyDown={(e) => e.key === 'Enter' && setEditing({ id: a.id, x: a.x, y: a.y })}
+                className={cx(
+                  'pointer-events-auto w-fit max-w-full cursor-move rounded-[2px] px-[2px] whitespace-pre-wrap hover:outline hover:outline-1 hover:outline-dashed',
+                  a.id === activeId && 'outline outline-1 outline-dashed',
+                )}
+                style={{
+                  color: TEXT_COLORS[a.color],
+                  fontSize: a.size,
+                  lineHeight: 1.25,
+                  fontFamily: 'var(--font-ui)',
+                  outlineColor: TEXT_COLORS[a.color],
+                }}
+              >
+                {a.text}
+              </div>
+            </foreignObject>
+          )
+        }
         return (
           <foreignObject
             key={a.id}
@@ -146,6 +248,15 @@ export function AnnotationLayer({
           </foreignObject>
         )
       })}
+      {editing && (
+        <foreignObject x={editing.x} y={editing.y} width={240} height={400} className="overflow-visible">
+          <TextBoxEditor
+            initial={editing.id ? textOf(mine, editing.id) : ''}
+            color={TEXT_COLORS[mine.find((a) => a.id === editing.id)?.color ?? color]}
+            onDone={finishText}
+          />
+        </foreignObject>
+      )}
       {stroke && (
         <polyline
           points={stroke.map((p) => p.join(',')).join(' ')}
@@ -168,4 +279,42 @@ function simplify(points: Array<[number, number]>): Array<[number, number]> {
     if (!last || Math.hypot(p[0] - last[0], p[1] - last[1]) >= 1) out.push(p)
   }
   return out
+}
+
+function textOf(list: Annotation[], id: string): string {
+  const a = list.find((x) => x.id === id)
+  return a && a.type === 'text' ? a.text : ''
+}
+
+function TextBoxEditor({
+  initial,
+  color,
+  onDone,
+}: {
+  initial: string
+  color: string
+  onDone: (text: string) => void
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null)
+  useEffect(() => {
+    // After the click that placed the box: focus without the browser taking it back.
+    const timer = setTimeout(() => ref.current?.focus(), 0)
+    return () => clearTimeout(timer)
+  }, [])
+  return (
+    <textarea
+      ref={ref}
+      defaultValue={initial}
+      aria-label={t('viewer.textBoxInput')}
+      placeholder={t('viewer.textBoxPlaceholder')}
+      rows={Math.max(2, initial.split('\n').length + 1)}
+      onBlur={(e) => onDone(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape' || (e.key === 'Enter' && (e.metaKey || e.ctrlKey))) e.currentTarget.blur()
+      }}
+      onPointerDown={(e) => e.stopPropagation()}
+      className="pointer-events-auto w-[220px] resize rounded-[3px] border border-dashed bg-white/90 p-1 outline-none"
+      style={{ color, borderColor: color, fontSize: 12, lineHeight: 1.25, fontFamily: 'var(--font-ui)' }}
+    />
+  )
 }

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Highlighter, PenLine, StickyNote, Trash2 } from 'lucide-react'
+import { Highlighter, PenLine, StickyNote, Trash2, Type } from 'lucide-react'
 import { useApp } from '@/app/store'
 import { t } from '@/i18n'
 import type { Annotation } from '@/lib/annotations'
@@ -69,6 +69,8 @@ export function NotesPanel({
                       <Highlighter size={15} />
                     ) : a.type === 'note' ? (
                       <StickyNote size={15} />
+                    ) : a.type === 'text' ? (
+                      <Type size={15} />
                     ) : (
                       <PenLine size={15} />
                     )}
@@ -87,7 +89,7 @@ export function NotesPanel({
                     <span className="line-clamp-3 block text-[13px]">
                       {a.type === 'highlight'
                         ? `„${a.text ?? ''}“`
-                        : a.type === 'note'
+                        : a.type === 'note' || a.type === 'text'
                           ? a.text || t('viewer.emptyNote')
                           : t('viewer.drawing')}
                     </span>
@@ -101,7 +103,7 @@ export function NotesPanel({
                     <Trash2 size={13} />
                   </IconButton>
                 </div>
-                {a.id === activeId && a.type !== 'ink' && (
+                {a.id === activeId && (a.type === 'note' || a.type === 'highlight') && (
                   <AutoTextArea
                     autoFocus={a.type === 'note' && !a.text}
                     aria-label={a.type === 'note' ? t('viewer.noteText') : t('viewer.comment')}

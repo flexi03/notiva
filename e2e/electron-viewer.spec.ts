@@ -95,3 +95,35 @@ test('zeichnet mit dem Stift, setzt Notizen und radiert', async () => {
   await expect.poll(notes).not.toContain('type: ink')
   expect(notes()).toContain('type: highlight')
 })
+
+test('schreibt Text direkt auf die Seite, verschiebt und ändert ihn', async () => {
+  await window.getByRole('radio', { name: 'Text schreiben' }).click()
+  const page1 = (await window.locator('[data-page="1"]').boundingBox())!
+  await window.mouse.click(page1.x + page1.width * 0.55, page1.y + page1.height * 0.6)
+  const input = window.getByRole('textbox', { name: 'Text auf der Seite' })
+  await expect(input).toBeFocused()
+  await input.fill('Klausur: BFS!')
+  await input.press('Escape')
+  const box = window.getByTestId('text-annotation')
+  await expect(box).toHaveText('Klausur: BFS!')
+  await expect.poll(notes).toContain('type: text')
+  expect(notes()).toContain('Klausur: BFS!')
+
+  // Drag it a bit to the left.
+  const before = (await box.boundingBox())!
+  await window.mouse.move(before.x + 5, before.y + 5)
+  await window.mouse.down()
+  await window.mouse.move(before.x - 60, before.y + 5, { steps: 6 })
+  await window.mouse.up()
+  await expect.poll(async () => (await box.boundingBox())!.x).toBeLessThan(before.x - 40)
+  await expect(input).toHaveCount(0)
+
+  // A click without moving edits it.
+  await box.click()
+  await input.fill('Klausur: BFS und DFS!')
+  await input.press('Escape')
+  await expect.poll(notes).toContain('Klausur: BFS und DFS!')
+  await expect(window.getByRole('list', { name: 'Markierungen und Notizen' })).toContainText(
+    'Klausur: BFS und DFS!',
+  )
+})

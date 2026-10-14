@@ -35,6 +35,18 @@ export type Annotation =
       width: number
       points: Array<[number, number]>
     }
+  /** Text written directly onto the page (x/y = top left, w = box width, size = font size in pt). */
+  | {
+      id: string
+      type: 'text'
+      page: number
+      x: number
+      y: number
+      w: number
+      size: number
+      text: string
+      color: AnnotationColor
+    }
 
 export function notesPathFor(pdfPath: string): string {
   return joinPath(dirname(pdfPath), `${basename(pdfPath).replace(/\.pdf$/i, '')} (Notizen).md`)
@@ -92,6 +104,22 @@ export function parseAnnotations(raw: unknown): Annotation[] {
       const y = num(r.y)
       if (x === null || y === null) continue
       out.push({ id, type: 'note', page, x, y, text: text(r.text) ?? '', color: color(r.color) })
+    } else if (r.type === 'text') {
+      const x = num(r.x)
+      const y = num(r.y)
+      const t = text(r.text)
+      if (x === null || y === null || !t) continue
+      out.push({
+        id,
+        type: 'text',
+        page,
+        x,
+        y,
+        w: Math.min(800, Math.max(40, num(r.w) ?? 220)),
+        size: Math.min(48, Math.max(6, num(r.size) ?? 12)),
+        text: t,
+        color: color(r.color),
+      })
     } else if (r.type === 'ink') {
       const points = parsePoints(r.points)
       if (points.length < 2) continue
