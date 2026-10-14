@@ -1,5 +1,7 @@
 import { Code2, ExternalLink, FileText, Plus } from 'lucide-react'
 import { createCodeFolder } from '@/components/code/CodeFolder'
+import { useRecent } from '@/app/recent'
+import { MATERIAL_CATEGORIES } from '@/lib/moodle'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import { toIsoDate } from '@/lib/dates'
@@ -93,21 +95,7 @@ export function Related({ from }: { from: string }) {
                       )}
                     </div>
                     {list.length > 0 && (
-                      <ul className="mt-0.5 ml-3 border-l border-line pl-2" aria-label={t('related.files')}>
-                        {list.slice(0, 40).map((f) => (
-                          <li key={f.path}>
-                            <button
-                              type="button"
-                              className="flex items-center gap-1 text-left text-[13px] text-ink-2 hover:underline"
-                              onClick={() => navigate({ name: 'file', path: f.path })}
-                            >
-                              <FileText size={12} className="shrink-0" />
-                              {f.path.slice(String(p.data.Ordner).length + 1)}
-                            </button>
-                          </li>
-                        ))}
-                        {list.length > 40 && <li className="text-[12px] text-ink-3">+{list.length - 40}</li>}
-                      </ul>
+                      <CourseFiles folder={String(p.data.Ordner)} files={list.map((f) => f.path)} />
                     )}
                   </li>
                 )
@@ -126,13 +114,11 @@ export function Related({ from }: { from: string }) {
           icon={<Code2 size={13} />}
           onClick={() =>
             void run(async () => {
-              const name = await useApp
-                .getState()
-                .ask({
-                  title: t('code.askName'),
-                  initial: t('code.defaultName'),
-                  confirmLabel: t('code.create'),
-                })
+              const name = await useApp.getState().ask({
+                title: t('code.askName'),
+                initial: t('code.defaultName'),
+                confirmLabel: t('code.create'),
+              })
               if (name?.trim())
                 navigate({ name: 'page', path: await createCodeFolder(ws, from, name.trim()) })
             })
@@ -141,6 +127,56 @@ export function Related({ from }: { from: string }) {
           {t('code.create')}
         </Button>
       </div>
+    </div>
+  )
+}
+
+/**
+ * Files of a course: recently opened first, then by kind (lecture, lab & exercises, other) – the
+ * folders Notiva saves Moodle files into. Each group can be collapsed.
+ */
+function CourseFiles({ folder, files }: { folder: string; files: string[] }) {
+  const navigate = useApp((s) => s.navigate)
+  const recentAll = useRecent((s) => s.files)
+  const recent = recentAll.filter((r) => files.includes(r.path)).slice(0, 3)
+  const groups = new Map<string, string[]>()
+  for (const f of files) {
+    const rest = f.slice(folder.length + 1)
+    const head = rest.includes('/') ? rest.slice(0, rest.indexOf('/')) : ''
+    const group = (MATERIAL_CATEGORIES as readonly string[]).includes(head) ? head : t('related.otherFiles')
+    groups.set(group, [...(groups.get(group) ?? []), f])
+  }
+  const order = [...MATERIAL_CATEGORIES, t('related.otherFiles')]
+  const item = (f: string) => (
+    <li key={f}>
+      <button
+        type="button"
+        className="flex items-center gap-1 text-left text-[13px] text-ink-2 hover:underline"
+        onClick={() => navigate({ name: 'file', path: f })}
+      >
+        <FileText size={12} className="shrink-0" />
+        {f.split('/').pop()}
+      </button>
+    </li>
+  )
+  return (
+    <div className="mt-0.5 ml-3 space-y-1 border-l border-line pl-2" aria-label={t('related.files')}>
+      {recent.length > 0 && (
+        <div>
+          <p className="text-[12px] font-semibold text-ink-3">{t('related.recent')}</p>
+          <ul>{recent.map((r) => item(r.path))}</ul>
+        </div>
+      )}
+      {order
+        .filter((g) => groups.has(g))
+        .map((g) => (
+          <details key={g} open={g === 'Vorlesung' || groups.size === 1}>
+            <summary className="cursor-pointer text-[12.5px] font-semibold text-ink-2">
+              {g} ({groups.get(g)!.length})
+            </summary>
+            <ul>{groups.get(g)!.slice(0, 80).map(item)}</ul>
+          </details>
+        ))}
     </div>
   )
 }

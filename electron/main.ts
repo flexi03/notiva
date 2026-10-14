@@ -54,7 +54,7 @@ import {
   type NotifySettings,
 } from './notifier'
 import { deadlineReminders, moodleNews, type AppNotification } from '../src/lib/notifications'
-import type { MoodleSnapshot } from '../src/lib/moodle'
+import { materialCategory, type MoodleSnapshot } from '../src/lib/moodle'
 import { courseInfoNews } from '../src/lib/moodleInfo'
 import { findPlanLinks, type PlanLink } from '../src/lib/examPlan'
 
@@ -535,7 +535,13 @@ function registerIpc(): void {
     if (typeof folder !== 'string' || folder.length > 300) throw new Error('Ungültiger Ordner')
     const course = snapshot.courses.find((c) => c.id === material.courseId)?.name ?? 'Kurs'
     const { bytes, filename } = await downloadMaterial((url, init) => net.fetch(url, init), config, material)
-    const target = [folder.replace(/^\/+|\/+$/g, ''), safeFileName(course), filename]
+    // Unterlagen/<Kurs>/<Vorlesung | Praktikum & Übung | Sonstiges>/<Datei>
+    const target = [
+      folder.replace(/^\/+|\/+$/g, ''),
+      safeFileName(course),
+      materialCategory(material),
+      filename,
+    ]
       .filter(Boolean)
       .join('/')
     await requireVault().write(target, bytes)

@@ -1,6 +1,8 @@
 import {
   Award,
   CalendarDays,
+  Code2,
+  FileText,
   GraduationCap,
   LayoutTemplate,
   LogOut,
@@ -12,6 +14,7 @@ import {
 } from 'lucide-react'
 import { moodleAvailable } from '@/app/moodle'
 import type { ReactNode } from 'react'
+import { useRecent } from '@/app/recent'
 import { useApp, useWorkspace } from '@/app/store'
 import { usePageActions } from '@/app/hooks/usePageActions'
 import { forgetVault } from '@/app/vaults'
@@ -55,6 +58,17 @@ export function Sidebar() {
   const { route, navigate, setSearch, settings, openPage, setWorkspace } = useApp()
   const actions = usePageActions(ws)
   const favorites = settings.favorites.map((p) => ws.get(p)).filter((p) => p !== undefined)
+  // Code folders (lab projects) and recently opened files – one click away.
+  const codePages = ws.all().filter((p) => p.data.code === true)
+  const codeLabel = (page: (typeof codePages)[number]) => {
+    const parent = ws.get(`${page.path.slice(0, page.path.lastIndexOf('/'))}.md`)
+    return parent ? `${page.title} · ${parent.title}` : page.title
+  }
+  const assets = new Set(ws.assets().map((f) => f.path))
+  const recent = useRecent((s) => s.files)
+    .map((f) => f.path)
+    .filter((p) => assets.has(p))
+    .slice(0, 5)
   const tags = [...ws.tags()].slice(0, 12)
   const mac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
 
@@ -137,6 +151,34 @@ export function Sidebar() {
                 label={page.title}
                 active={route.name === 'page' && route.path === page.path}
                 onClick={() => openPage(page.path)}
+              />
+            ))}
+          </>
+        )}
+        {codePages.length > 0 && (
+          <>
+            <SectionLabel>{t('nav.code')}</SectionLabel>
+            {codePages.map((page) => (
+              <NavButton
+                key={page.path}
+                icon={<Code2 size={14} />}
+                label={codeLabel(page)}
+                active={route.name === 'page' && route.path === page.path}
+                onClick={() => openPage(page.path)}
+              />
+            ))}
+          </>
+        )}
+        {recent.length > 0 && (
+          <>
+            <SectionLabel>{t('nav.recent')}</SectionLabel>
+            {recent.map((path) => (
+              <NavButton
+                key={path}
+                icon={<FileText size={14} />}
+                label={path.split('/').pop()!}
+                active={route.name === 'file' && route.path === path}
+                onClick={() => navigate({ name: 'file', path })}
               />
             ))}
           </>

@@ -89,6 +89,27 @@ export function safeFileName(name: string, fallback = 'Datei'): string {
   return clean || fallback
 }
 
+export const MATERIAL_CATEGORIES = ['Vorlesung', 'Praktikum & Übung', 'Sonstiges'] as const
+export type MaterialCategory = (typeof MATERIAL_CATEGORIES)[number]
+
+/**
+ * Lecture or lab/exercise? From the Moodle section, the activity name and the file name
+ * ("Praktikum 3", "Übungsblatt", "Labor", "Aufgabe" vs. "Vorlesung", "Folien", "Skript", "Kapitel").
+ */
+export function materialCategory(
+  m: Pick<MoodleMaterial, 'section' | 'title' | 'filename'>,
+): MaterialCategory {
+  const lab =
+    /praktik|labor|\blab\b|übung|uebung|exercise|tutorium|aufgabe|blatt|assignment|testat|abgabe|projekt/i
+  const lecture =
+    /vorlesung|folien|skript|kapitel|lecture|slides|chapter|\bvl\b|\bvl ?\d|einheit|woche|week|unit/i
+  for (const text of [m.title, m.filename ?? '', m.section]) {
+    if (lab.test(text)) return 'Praktikum & Übung'
+    if (lecture.test(text)) return 'Vorlesung'
+  }
+  return 'Sonstiges'
+}
+
 /* ---------- iCalendar (Moodle: Kalender → Exportieren → Kalender-URL) ---------- */
 
 export interface IcsEvent {

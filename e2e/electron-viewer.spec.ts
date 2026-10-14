@@ -40,6 +40,8 @@ test('öffnet das PDF aus dem Seitenbaum', async () => {
   await tree.getByRole('button', { name: 'Graphen.pdf' }).click()
   await expect(window.getByTestId('pdf-pages')).toHaveText('/ 3')
   await expect(window.locator('[data-page="1"] .textLayer')).toContainText('Vorlesung 3: Graphen')
+  // Recently opened files are one click away in the sidebar.
+  await expect(tree).toContainText('Zuletzt geöffnet')
   // Pinch / ⌘ + scroll wheel zooms the document.
   await window.locator('[data-page="1"]').hover()
   await window.keyboard.down('Control')

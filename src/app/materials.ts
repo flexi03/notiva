@@ -51,15 +51,14 @@ export async function saveMaterial(ws: Workspace, material: MoodleMaterial): Pro
   return path
 }
 
-/** Files worth keeping locally: scripts, slides, sheets, notebooks … (not videos, max. 100 MB). */
-const DOCUMENT = /\.(pdf|pptx?|docx?|xlsx?|odt|odp|ods|txt|md|csv|ipynb|tex|zip)$/i
+/** Every file of a course is kept (scripts, slides, code, data, archives …) – up to 100 MB each. */
+const MAX_SIZE = 100_000_000
 
 /** New or updated documents of the last fetch that are not in the vault yet. */
 export async function missingMaterials(ws: Workspace, snapshot: MoodleSnapshot): Promise<MoodleMaterial[]> {
   const entries = await loadEntries(ws)
   return (snapshot.materials ?? []).filter((m) => {
-    if (m.kind !== 'file' || !m.filename || !DOCUMENT.test(m.filename) || (m.size ?? 0) > 100_000_000)
-      return false
+    if (m.kind !== 'file' || !m.filename || (m.size ?? 0) > MAX_SIZE) return false
     const saved = entries[m.id]
     return !saved || (!!m.modified && !!saved.modified && m.modified > saved.modified)
   })

@@ -10,6 +10,7 @@ import {
   planMoodleImport,
   snapshotFromIcs,
   snapshotFromWebService,
+  materialCategory,
 } from '../moodle'
 
 const now = new Date(2026, 9, 14, 10)
@@ -280,5 +281,18 @@ describe('course materials', () => {
         time: new Date(1790000000 * 1000).toISOString(),
       },
     ])
+  })
+})
+
+describe('material categories', () => {
+  it('tells lecture, lab/exercise and other files apart', () => {
+    const c = (title: string, section = '', filename = 'x.pdf') =>
+      materialCategory({ title, section, filename })
+    expect(c('Vorlesung 3 – Folien')).toBe('Vorlesung')
+    expect(c('Skript Kapitel 2')).toBe('Vorlesung')
+    expect(c('Übungsblatt 4')).toBe('Praktikum & Übung')
+    expect(c('Aufgabe', 'Praktikum')).toBe('Praktikum & Übung')
+    expect(c('Datensatz', 'Labor', 'daten.csv')).toBe('Praktikum & Übung')
+    expect(c('Klausurinfos', 'Allgemeines')).toBe('Sonstiges')
   })
 })

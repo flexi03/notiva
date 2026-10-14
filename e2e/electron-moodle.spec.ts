@@ -343,10 +343,10 @@ test('meldet Neuigkeiten aus Moodle im Benachrichtigungscenter', async () => {
 
 test('speichert neue Skripte automatisch – mit Fortschritt und Bestätigung', async () => {
   // The fetches above already saved the course's PDFs into the vault.
-  const saved = path.join(folder, 'Studium/Unterlagen/Lineare Algebra/vl01.pdf')
+  const saved = path.join(folder, 'Studium/Unterlagen/Lineare Algebra/Vorlesung/vl01.pdf')
   await expect.poll(() => existsSync(saved)).toBe(true)
   expect(readFileSync(saved).subarray(0, 4).toString()).toBe('%PDF')
-  expect(existsSync(path.join(folder, 'Studium/Unterlagen/Lineare Algebra/vl02.pdf'))).toBe(true)
+  expect(existsSync(path.join(folder, 'Studium/Unterlagen/Lineare Algebra/Vorlesung/vl02.pdf'))).toBe(true)
   expect(moodle.calls).toContain('file:/webservice/pluginfile.php/1/vl01.pdf')
 
   // A manual refresh shows its progress and ends with a confirmation.

@@ -23,6 +23,7 @@ import { moodleAvailable, useMoodle } from '@/app/moodle'
 import { autoSyncStudy, setupHint } from '@/app/study'
 import { announce } from '@/app/progress'
 import { runCommand } from '@/app/commands'
+import { useRecent } from '@/app/recent'
 import { t } from '@/i18n'
 import type { NotificationKind } from '@/lib/notifications'
 import { syncExamPlan } from '@/app/examPlan'
@@ -37,6 +38,11 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
   const { sidebarOpen, setSidebar, setSearch, setNewPage, route, rightPanel, leftView } = useApp()
   useGitSync()
   useNotificationSync(ws)
+  // Recently opened files (sidebar, module pages).
+  useEffect(() => useRecent.getState().load(ws.vault.name), [ws])
+  useEffect(() => {
+    if (route.name === 'file') useRecent.getState().touch(route.path)
+  }, [route])
   // What is still missing (study folder, Moodle, eCampus) – once per opened folder.
   useEffect(() => {
     const timer = setTimeout(() => void setupHint(ws).catch(() => undefined), 1500)

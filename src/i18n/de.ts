@@ -20,6 +20,8 @@ export const de = {
   'nav.templates': 'Vorlagen',
   'nav.back': 'Zurück',
   'nav.forward': 'Vorwärts',
+  'nav.code': 'Code',
+  'nav.recent': 'Zuletzt geöffnet',
   'nav.trash': 'Papierkorb',
   'nav.settings': 'Einstellungen',
   'nav.today': 'Heute',
@@ -654,6 +656,8 @@ export const de = {
   'related.empty':
     'Noch nichts verknüpft – Mitschriften, Kurse, Prüfungen und Aufgaben mit diesem Modul erscheinen hier.',
   'related.newNote': 'Neue Mitschrift',
+  'related.recent': 'Zuletzt geöffnet',
+  'related.otherFiles': 'Weitere Dateien',
   'related.files': 'Unterlagen',
   'related.openMoodle': 'In Moodle öffnen',
   'related.other': 'Weitere Verweise',
