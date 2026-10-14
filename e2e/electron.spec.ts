@@ -43,6 +43,7 @@ test('Renderer ist abgeschottet (kein Node, nur die Notiva-Brücke)', async () =
       'git',
       'lastFolder',
       'mcpInfo',
+      'microphone',
       'moodle',
       'notifications',
       'onVaultChange',
@@ -50,7 +51,9 @@ test('Renderer ist abgeschottet (kein Node, nur die Notiva-Brücke)', async () =
       'openWithSystem',
       'pickFolder',
       'platform',
+      'transcribe',
       'vault',
+      'whisper',
     ],
     origin: 'app://notiva',
   })

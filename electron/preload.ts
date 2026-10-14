@@ -12,6 +12,31 @@ contextBridge.exposeInMainWorld('notiva', {
   lastFolder: () => invoke<string | null>('app:lastFolder'),
   openExternal: (url: string) => invoke<void>('app:openExternal', url),
   openWithSystem: (path: string) => invoke<void>('vault:openWithSystem', path),
+  microphone: () => invoke<boolean>('app:microphone'),
+  whisper: {
+    status: () => invoke('whisper:status'),
+    install: () => invoke<void>('whisper:install'),
+    download: (id: string) => invoke<void>('whisper:download', id),
+    remove: (id: string) => invoke<void>('whisper:remove', id),
+    transcribe: (request: {
+      model: string
+      language: string
+      fields: Record<string, string>
+      audio: Uint8Array
+    }) => invoke<{ status: number; body: string }>('whisper:transcribe', request),
+    onProgress(callback: (event: { kind: string; text?: string; done?: number; total?: number }) => void) {
+      const listener = (_e: unknown, event: { kind: string; text?: string; done?: number; total?: number }) =>
+        callback(event)
+      ipcRenderer.on('whisper:progress', listener)
+      return () => ipcRenderer.removeListener('whisper:progress', listener)
+    },
+  },
+  transcribe: (request: {
+    url: string
+    headers: Record<string, string>
+    fields: Record<string, string>
+    audio: Uint8Array
+  }) => invoke<{ status: number; body: string }>('transcribe', request),
   mcpInfo: () => invoke<{ command: string; args: string[]; env: Record<string, string> }>('app:mcpInfo'),
   aiCli: {
     detect: () => invoke('ai:cli:detect'),

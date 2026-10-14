@@ -47,7 +47,7 @@ test.describe('Sicherheit', () => {
     await openDemo(page)
     const csp = await page.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content')
     expect(csp).toContain("script-src 'self'")
-    // Only local AI servers and the known AI APIs – never arbitrary hosts.
+    // Only local AI/Whisper servers and the known AI and speech APIs – never arbitrary hosts.
     const connect = /connect-src ([^;]+)/.exec(csp ?? '')![1]!.split(' ')
     expect(connect).toEqual([
       "'self'",
@@ -56,6 +56,7 @@ test.describe('Sicherheit', () => {
       'https://api.anthropic.com',
       'https://openrouter.ai',
       'https://api.openai.com',
+      'https://api.groq.com',
     ])
     expect(csp).toContain("object-src 'none'")
     const executed = await page.evaluate(() => {

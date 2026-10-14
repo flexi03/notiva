@@ -110,6 +110,29 @@ export interface NotificationBridge {
   onOpen(callback: (id: string | null) => void): () => void
 }
 
+export interface WhisperStatus {
+  server: string | null
+  brew: boolean
+  models: Array<{ id: string; label: string; size: number; downloaded: boolean }>
+  running: boolean
+}
+
+export interface WhisperBridge {
+  status(): Promise<WhisperStatus>
+  install(): Promise<void>
+  download(id: string): Promise<void>
+  remove(id: string): Promise<void>
+  transcribe(request: {
+    model: string
+    language: string
+    fields: Record<string, string>
+    audio: Uint8Array
+  }): Promise<{ status: number; body: string }>
+  onProgress(
+    callback: (event: { kind: string; text?: string; done?: number; total?: number }) => void,
+  ): () => void
+}
+
 /** API exposed by electron/preload.ts via contextBridge. Paths are validated again in the main process. */
 export interface NotivaBridge {
   platform: string
@@ -125,6 +148,17 @@ export interface NotivaBridge {
     rename(from: string, to: string): Promise<void>
   }
   openExternal(url: string): Promise<void>
+  /** Local speech to text with whisper.cpp (desktop). */
+  whisper?: WhisperBridge
+  /** Asks the OS for microphone access (macOS); true if granted. */
+  microphone?(): Promise<boolean>
+  /** Sends one audio chunk to a transcription API (main process). */
+  transcribe?(request: {
+    url: string
+    headers: Record<string, string>
+    fields: Record<string, string>
+    audio: Uint8Array
+  }): Promise<{ status: number; body: string }>
   /** Opens a vault file with the system's default app (desktop). */
   openWithSystem?(path: string): Promise<void>
   /** AI command line tools (Claude Code, Codex, Gemini) – desktop app only. */

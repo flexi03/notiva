@@ -18,6 +18,7 @@ import {
   protocol,
   safeStorage,
   session,
+  systemPreferences,
   shell,
   type IpcMainInvokeEvent,
 } from 'electron'
@@ -41,6 +42,7 @@ import {
   type MoodleConfig,
 } from './moodle'
 import { clearMoodleSession, openMoodlePage, ssoLogin } from './moodleWindow'
+import { WhisperEngine } from './whisper'
 import { NotificationStore, parseNotifySettings, type NotifySettings } from './notifier'
 import { deadlineReminders, moodleNews, type AppNotification } from '../src/lib/notifications'
 import type { MoodleSnapshot } from '../src/lib/moodle'
@@ -57,6 +59,13 @@ const CSP =
 // E2E tests (unpackaged only): a fresh profile per run, so browser storage never leaks between runs.
 if (!app.isPackaged && process.env.NOTIVA_E2E_USERDATA)
   app.setPath('userData', process.env.NOTIVA_E2E_USERDATA)
+// E2E tests: a WAV file instead of the real microphone (never records the room, no OS prompt).
+if (!app.isPackaged && process.env.NOTIVA_E2E_FAKE_AUDIO) {
+  app.commandLine.appendSwitch('use-fake-device-for-media-stream')
+  app.commandLine.appendSwitch('use-file-for-fake-audio-capture', process.env.NOTIVA_E2E_FAKE_AUDIO)
+  // The sandboxed audio service could not read the file.
+  app.commandLine.appendSwitch('disable-features', 'AudioServiceOutOfProcess,AudioServiceSandbox')
+}
 
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true } },
@@ -204,6 +213,10 @@ async function pollMoodle(): Promise<MoodleSnapshot> {
 }
 
 let pollTimer: ReturnType<typeof setTimeout> | null = null
+
+/** Local speech to text (whisper.cpp) – models live in the app profile. */
+const whisper = new WhisperEngine(userFile('whisper-models'), (url, init) => net.fetch(url, init))
+const whisperProgress = (event: object) => window?.webContents.send('whisper:progress', event)
 
 /** Checks Moodle now and then every few minutes (settings) – quietly, errors only end this round. */
 async function schedulePolling(delay?: number): Promise<void> {
@@ -419,6 +432,62 @@ function registerIpc(): void {
     const error = await shell.openPath(absolute)
     if (error) throw new Error(error)
   })
+  // Speech to text for the lecture mode: the renderer has no network, the main process sends it.
+  handle('transcribe', async (raw: unknown) => {
+    const r = (typeof raw === 'object' && raw !== null ? raw : {}) as Record<string, unknown>
+    const url = new URL(String(r.url))
+    if ((url.protocol !== 'https:' && url.protocol !== 'http:') || url.username || url.password)
+      throw new Error('Nur http(s)-Adressen')
+    if (!(r.audio instanceof Uint8Array) || r.audio.length > 25_000_000)
+      throw new Error('Ungültige Audiodaten')
+    const form = new FormData()
+    for (const [key, value] of Object.entries((r.fields ?? {}) as Record<string, unknown>))
+      if (/^[a-z_]{1,40}$/.test(key) && typeof value === 'string' && value.length <= 2000)
+        form.append(key, value)
+    form.append('file', new Blob([r.audio.slice()], { type: 'audio/wav' }), 'chunk.wav')
+    const headers: Record<string, string> = {}
+    const auth = (r.headers as Record<string, unknown> | undefined)?.authorization
+    if (typeof auth === 'string' && auth.length < 1000 && !/[\r\n]/.test(auth)) headers.authorization = auth
+    try {
+      const response = await net.fetch(url.toString(), {
+        method: 'POST',
+        body: form,
+        headers,
+        signal: AbortSignal.timeout(120_000),
+      })
+      return { status: response.status, body: (await response.text()).slice(0, 2_000_000) }
+    } catch (error) {
+      return { status: 0, body: (error as Error).message }
+    }
+  })
+  handle('whisper:status', async () => whisper.status())
+  handle('whisper:install', async () => whisper.install(whisperProgress))
+  handle('whisper:download', async (id: unknown) => whisper.download(String(id), whisperProgress))
+  handle('whisper:remove', async (id: unknown) => whisper.removeModel(String(id)))
+  handle('whisper:transcribe', async (raw: unknown) => {
+    const r = (typeof raw === 'object' && raw !== null ? raw : {}) as Record<string, unknown>
+    if (!(r.audio instanceof Uint8Array) || r.audio.length > 25_000_000)
+      throw new Error('Ungültige Audiodaten')
+    const fields: Record<string, string> = {}
+    for (const [key, value] of Object.entries((r.fields ?? {}) as Record<string, unknown>))
+      if (/^[a-z_]{1,40}$/.test(key) && typeof value === 'string' && value.length <= 2000) fields[key] = value
+    try {
+      return await whisper.transcribe(
+        String(r.model),
+        /^[a-z]{0,2}$/.test(String(r.language)) ? String(r.language) : 'de',
+        fields,
+        r.audio,
+      )
+    } catch (error) {
+      return { status: 0, body: (error as Error).message }
+    }
+  })
+  // macOS asks the user once for microphone access (lecture mode).
+  handle('app:microphone', async () => {
+    if (process.platform !== 'darwin' || (!app.isPackaged && process.env.NOTIVA_E2E_USERDATA)) return true
+    if (systemPreferences.getMediaAccessStatus('microphone') === 'granted') return true
+    return systemPreferences.askForMediaAccess('microphone')
+  })
   handle('app:openExternal', async (url: unknown) => {
     if (typeof url === 'string' && /^(https?:|mailto:)/i.test(url)) await shell.openExternal(url)
   })
@@ -476,8 +545,21 @@ function createWindow(): void {
 
 app.whenReady().then(async () => {
   await loadShellPath()
-  session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false))
-  session.defaultSession.setPermissionCheckHandler(() => false)
+  // Only Notiva's own window may use the microphone (lecture mode) – audio only, nothing else.
+  const ownAudio = (
+    wc: Electron.WebContents | null,
+    permission: string,
+    details: { mediaTypes?: string[] } = {},
+  ) =>
+    wc === window?.webContents &&
+    permission === 'media' &&
+    (details.mediaTypes ?? ['audio']).every((t) => t === 'audio')
+  session.defaultSession.setPermissionRequestHandler((wc, permission, callback, details) =>
+    callback(ownAudio(wc, permission, details as { mediaTypes?: string[] })),
+  )
+  session.defaultSession.setPermissionCheckHandler((wc, permission, _origin, details) =>
+    ownAudio(wc, permission, { mediaTypes: details.mediaType ? [details.mediaType] : ['audio'] }),
+  )
   registerProtocol()
   registerIpc()
   createWindow()
@@ -489,7 +571,9 @@ app.whenReady().then(async () => {
   })
 })
 
+app.on('will-quit', () => whisper.stop())
 app.on('window-all-closed', () => {
+  whisper.stop()
   for (const child of cliRuns.values()) child.kill()
   watcher?.close()
   if (process.platform !== 'darwin') app.quit()

@@ -38,7 +38,9 @@ export function NotesPanel({
   const openPage = useApp((s) => s.openPage)
   const sorted = [...annotations].sort((a, b) => a.page - b.page)
   const activeRef = useRef<HTMLLIElement>(null)
-  useEffect(() => activeRef.current?.scrollIntoView({ block: 'nearest' }), [activeId])
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ block: 'nearest' })
+  }, [activeId])
 
   return (
     <aside

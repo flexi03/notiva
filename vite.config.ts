@@ -46,7 +46,13 @@ export default defineConfig({
   base: './',
   plugins: [react(), tailwindcss(), pdfjsAssets()],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
-  build: { outDir: 'dist', sourcemap: true, chunkSizeWarningLimit: 1600 },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+    chunkSizeWarningLimit: 1600,
+    // Scripts (audio worklet, pdf.js worker) must stay files: the CSP forbids data: scripts.
+    assetsInlineLimit: (file) => (/\.(m?js)$/.test(file) ? false : undefined),
+  },
   test: {
     globals: true,
     environment: 'jsdom',

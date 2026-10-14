@@ -2,7 +2,7 @@ import { useEffect, useRef, type ReactNode } from 'react'
 import { useApp, useWorkspace } from '@/app/store'
 import { usePageActions } from '@/app/hooks/usePageActions'
 import { routeHash } from '@/lib/route'
-import { cx } from '@/components/ui'
+import { cx, ErrorBoundary } from '@/components/ui'
 import { Sidebar } from './Sidebar'
 import { ToastHost } from './Toast'
 import { PromptHost } from './PromptHost'
@@ -84,23 +84,29 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
         data-left-view={leftView ?? 'pages'}
       >
         <div className={cx('h-full', leftView ? 'w-[24rem] max-[899px]:w-[min(26rem,100vw)]' : 'w-[17rem]')}>
-          {leftView === 'assistant' ? (
-            <AssistantPanel />
-          ) : leftView === 'git' ? (
-            <GitPanel />
-          ) : leftView === 'notifications' ? (
-            <NotificationPanel />
-          ) : (
-            <Sidebar />
-          )}
+          <ErrorBoundary resetKey={leftView ?? 'pages'}>
+            {leftView === 'assistant' ? (
+              <AssistantPanel />
+            ) : leftView === 'git' ? (
+              <GitPanel />
+            ) : leftView === 'notifications' ? (
+              <NotificationPanel />
+            ) : (
+              <Sidebar />
+            )}
+          </ErrorBoundary>
         </div>
       </div>
       <main ref={mainRef} className="min-w-0 flex-1 overflow-y-auto" id="main" data-route={routeHash(route)}>
-        <ScrollRootContext value={mainRef}>{children}</ScrollRootContext>
+        <ScrollRootContext value={mainRef}>
+          <ErrorBoundary resetKey={routeHash(route)}>{children}</ErrorBoundary>
+        </ScrollRootContext>
       </main>
-      {rightPanel === 'assistant' && <AssistantPanel />}
-      {rightPanel === 'git' && <GitPanel />}
-      {rightPanel === 'notifications' && <NotificationPanel />}
+      <ErrorBoundary resetKey={rightPanel ?? ''}>
+        {rightPanel === 'assistant' && <AssistantPanel />}
+        {rightPanel === 'git' && <GitPanel />}
+        {rightPanel === 'notifications' && <NotificationPanel />}
+      </ErrorBoundary>
       <ActivityBar side="right" />
       <DiffSheet />
       <MoodleImportDialog />

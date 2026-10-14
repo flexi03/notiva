@@ -9,6 +9,7 @@ import { electronBridge } from '@/lib/vault'
 import { Button, EmptyState, IconButton, Spinner } from '@/components/ui'
 import { Topbar } from '@/components/layout/Topbar'
 import { PdfDocumentView } from '@/components/viewer/PdfDocumentView'
+import { LecturePanel } from '@/components/lecture/LecturePanel'
 
 /** A non-Markdown file of the vault: PDFs in Notiva's viewer, images inline, others via the system. */
 export function FileScreen({ path, page }: { path: string; page?: number }) {
@@ -70,7 +71,7 @@ export function FileScreen({ path, page }: { path: string; page?: number }) {
             {state.error}
           </p>
         ) : state.doc ? (
-          <PdfDocumentView doc={state.doc} path={path} name={name} initialPage={page} />
+          <PdfDocumentView doc={state.doc} path={path} name={name} initialPage={page} Side={LecturePanel} />
         ) : state.url ? (
           <div className="flex h-full items-start justify-center overflow-auto bg-sunken p-6">
             <img src={state.url} alt={name} className="max-w-full shadow-[var(--shadow-pop)]" />

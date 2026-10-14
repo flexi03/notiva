@@ -31,6 +31,13 @@ import { PdfViewer, type PdfViewerHandle } from './PdfViewer'
 
 const ZOOMS = [0.5, 0.67, 0.8, 1, 1.25, 1.5, 2, 3]
 
+export interface SideProps {
+  page: number
+  jump: (page: number) => void
+  doc: PDFDocumentProxy
+  path: string
+}
+
 interface Selection {
   page: number
   rects: Rect[]
@@ -53,7 +60,7 @@ export function PdfDocumentView({
   name: string
   initialPage?: number | undefined
   /** Extra content at the top of the side panel (e.g. the lecture mode). */
-  Side?: React.ComponentType<{ page: number; jump: (page: number) => void }> | undefined
+  Side?: React.ComponentType<SideProps> | undefined
 }) {
   const viewer = useRef<PdfViewerHandle>(null)
   const notes = useAnnotations(path)
@@ -315,7 +322,7 @@ export function PdfDocumentView({
           notesPath={notes.notesPath}
         >
           {Side ? (
-            <Side page={current} jump={goTo} />
+            <Side page={current} jump={goTo} doc={doc} path={path} />
           ) : (
             <p className="flex items-start gap-1.5 border-b border-line px-3 py-2 text-[12.5px] text-ink-3">
               <NotebookPen size={14} aria-hidden className="mt-0.5 shrink-0" /> {t('viewer.storedHint')}

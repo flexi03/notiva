@@ -95,7 +95,10 @@
       "target": [
         "dmg",
         "zip"
-      ]
+      ],
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "Notiva nimmt im Vorlesungsmodus auf, um ein Transkript zu erstellen."
+      }
     },
     "win": {
       "target": [
