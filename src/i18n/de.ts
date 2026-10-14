@@ -373,6 +373,12 @@ export const de = {
   'ai.setup.text':
     'Wähle ein Modell. Kostenlos und lokal geht es mit Ollama oder LM Studio – dann verlässt nichts deinen Rechner.',
   'ai.setup.open': 'Einstellungen öffnen',
+  'page.aiCustomize': 'Mit KI anpassen …',
+  'ai.customizeDashboard':
+    'Passe das Dashboard „{title}“ an mein Studium an. Lies dazu meine Seiten und Dateien (z. B. Modulhandbuch, Notenspiegel, Stundenplan) und frag mich nach allem, was fehlt. Schlag mir die Änderungen zuerst vor.',
+  'ai.customizeDatabase':
+    'Passe die Datenbank „{title}“ an mich an: Welche Eigenschaften, Optionen und Ansichten fehlen mir? Nutze meine Seiten und Dateien und schlag die Änderungen zuerst vor.',
+  'ai.suggest.dashboard': 'Passe dieses Dashboard an mein Studium an',
   'ai.suggest.summarize': 'Fasse diese Seite zusammen',
   'ai.suggest.tasks': 'Leite Aufgaben aus dieser Seite ab und häng sie als Checkliste an',
   'ai.suggest.quiz': 'Stell mir 5 Prüfungsfragen zu dieser Seite',
@@ -394,6 +400,13 @@ export const de = {
   'ai.tool.rename_page': 'Benennt um',
   'ai.tool.move_page': 'Verschiebt',
   'ai.tool.trash_page': 'Legt in den Papierkorb',
+  'ai.tool.notiva_format': 'Liest die Format-Hilfe',
+  'ai.tool.list_widgets': 'Liest Kacheln von',
+  'ai.tool.update_widget': 'Passt Kacheln an auf',
+  'ai.tool.remove_widget': 'Entfernt Kacheln von',
+  'ai.tool.update_database': 'Erweitert Datenbank',
+  'ai.tool.list_files': 'Listet Dateien',
+  'ai.tool.read_file': 'Liest Datei',
   'ai.toolFailed': 'fehlgeschlagen',
   'ai.confirm.trash_page': '„{page}“ in den Papierkorb legen?',
   'ai.confirm.replace_page_body': 'Inhalt von „{page}“ komplett ersetzen?',

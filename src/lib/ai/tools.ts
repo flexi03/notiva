@@ -4,8 +4,13 @@
  * its input first: model output is untrusted.
  */
 import {
+  COLORS,
   FILTER_OPS,
+  PROPERTY_TYPES,
+  VIEW_TYPES,
   applyFilters,
+  parseDatabaseDef,
+  serializeDatabaseDef,
   applySorts,
   propertyDef,
   toStoredValue,
@@ -16,8 +21,11 @@ import {
 } from '../database'
 import type { FrontmatterData, FrontmatterValue } from '../frontmatter'
 import type { FormulaValue } from '../formula'
-import { dirname, isInside } from '../path'
-import { resolveFilterDates } from '../widgets'
+import { dirname, extname, isInside } from '../path'
+import { pdfText } from '../pdfText'
+import { findWidgets, parseWidget, resolveFilterDates, widgetBlock, type WidgetSpec } from '../widgets'
+import { parse as parseYaml } from 'yaml'
+import { FORMAT_GUIDE } from './guide'
 import type { Page, Workspace } from '../workspace'
 import { InputError, validate, type JsonSchema } from './schema'
 
@@ -165,6 +173,73 @@ const filterSchema: JsonSchema = {
     },
     required: ['property', 'op'],
   },
+}
+
+/** File types read_file returns as text. */
+const TEXT_FILES = new Set([
+  'txt',
+  'md',
+  'csv',
+  'tsv',
+  'json',
+  'ics',
+  'yaml',
+  'yml',
+  'xml',
+  'html',
+  'htm',
+  'tex',
+  'bib',
+])
+const MAX_FILE = 25 * 1024 * 1024
+
+/**
+ * Checks a widget written by the AI: valid YAML, known tile types, existing databases/views/pages.
+ * Problems the dashboard would silently skip become errors the model can fix.
+ */
+function checkWidget(ws: Workspace, page: Page, yaml: string): WidgetSpec {
+  const { widget, error } = parseWidget(yaml)
+  if (!widget) throw new InputError(`Widget ungültig: ${error ?? 'unbekannt'}. Format: notiva_format`)
+  const problems: string[] = []
+  const database = (ref: string | undefined, what: string) => {
+    if (!ref) return null
+    const db = ws.findDatabase(ref, page.path)
+    if (!db) problems.push(`${what}: Datenbank „${ref}“ gibt es nicht (list_databases)`)
+    return db
+  }
+  if (widget.type === 'tiles') {
+    const raw = (parseYaml(yaml) as { tiles?: unknown }).tiles
+    const count = Array.isArray(raw) ? raw.length : 0
+    if (widget.tiles.length === 0) problems.push('mindestens eine Kachel nötig')
+    if (count !== widget.tiles.length)
+      problems.push(`${count - widget.tiles.length} Kachel(n) mit unbekanntem oder fehlendem „type“`)
+    widget.tiles.forEach((tile, i) => {
+      const what = `Kachel ${i + 1} (${tile.title ?? tile.type})`
+      const db = database(tile.source, what)
+      for (const prop of [
+        tile.property,
+        tile.weight,
+        tile.dateProperty,
+        tile.show,
+        ...(tile.filter ?? []).map((f) => f.property),
+      ]) {
+        if (db?.database && prop && prop !== TITLE && !propertyDef(db.database, prop))
+          problems.push(`${what}: Eigenschaft „${prop}“ fehlt in „${db.title}“`)
+      }
+      if (tile.type === 'link' && tile.page && !ws.resolveLink(tile.page, page.path))
+        problems.push(`${what}: Seite „${tile.page}“ gibt es nicht`)
+      if (['stat', 'progress', 'countdown', 'list'].includes(tile.type) && !tile.source)
+        problems.push(`${what}: „source“ fehlt`)
+    })
+  } else {
+    const db = database(widget.source, 'Ansicht')
+    if (db?.database && widget.view && !db.database.views.some((v) => v.name === widget.view))
+      problems.push(
+        `Ansicht „${widget.view}“ fehlt in „${db.title}“ (vorhanden: ${db.database.views.map((v) => v.name).join(', ')})`,
+      )
+  }
+  if (problems.length) throw new InputError(`Widget nicht gespeichert:\n- ${problems.join('\n- ')}`)
+  return widget
 }
 
 export const TOOLS: ToolDef[] = [
@@ -473,6 +548,300 @@ export const TOOLS: ToolDef[] = [
     },
   },
   {
+    name: 'notiva_format',
+    description:
+      'Erklärt Notivas Formate: Kacheln/Widgets, Datenbanken, Filter, das Studien-Dashboard. Vor dem Anpassen von Dashboards oder Datenbanken lesen.',
+    readOnly: true,
+    inputSchema: { type: 'object', properties: {} },
+    async run() {
+      return { guide: FORMAT_GUIDE }
+    },
+  },
+  {
+    name: 'list_widgets',
+    description:
+      'Zeigt die Widgets (Kachel-Blöcke und eingebettete Ansichten) einer Seite mit Nummer und YAML – für update_widget.',
+    readOnly: true,
+    inputSchema: { type: 'object', properties: { page: pageRef() }, required: ['page'] },
+    async run({ ws }, input) {
+      const page = resolvePage(ws, input.page)
+      return {
+        path: page.path,
+        widgets: findWidgets(page.body).map((w, index) => {
+          const { widget, error } = parseWidget(w.yaml)
+          return {
+            index,
+            type: widget?.type ?? 'ungültig',
+            ...(widget?.type === 'tiles' ? { tiles: widget.tiles.length } : {}),
+            ...(error ? { error } : {}),
+            yaml: w.yaml,
+          }
+        }),
+      }
+    },
+  },
+  {
+    name: 'update_widget',
+    description:
+      'Ersetzt ein Widget einer Seite (index aus list_widgets) oder fügt mit index = -1 ein neues am Ende an. Das YAML wird geprüft (Kachel-Typen, Datenbanken, Eigenschaften, Ansichten) – bei Fehlern bleibt die Seite unverändert.',
+    readOnly: false,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        page: pageRef(),
+        index: { type: 'number', description: 'Nummer des Widgets, -1 = neu am Ende', minimum: -1 },
+        yaml: { type: 'string', description: 'YAML ohne die ```notiva-Zäune, Format: notiva_format' },
+      },
+      required: ['page', 'index', 'yaml'],
+    },
+    async run({ ws }, input) {
+      const page = resolvePage(ws, input.page)
+      const yaml = String(input.yaml)
+        .replace(/^```notiva[^\n]*\n?|\n?```\s*$/g, '')
+        .trim()
+      const widget = checkWidget(ws, page, yaml)
+      const index = Math.round(Number(input.index))
+      const widgets = findWidgets(page.body)
+      let body: string
+      if (index === -1) {
+        const base = page.body.trimEnd()
+        body = `${base}${base ? '\n\n' : ''}${widgetBlock(yaml)}\n`
+      } else {
+        const target = widgets[index]
+        if (!target) throw new InputError(`Widget ${index} gibt es nicht (Seite hat ${widgets.length})`)
+        body = page.body.slice(0, target.start) + widgetBlock(yaml) + page.body.slice(target.end)
+      }
+      await ws.save(page.path, { body })
+      return {
+        path: page.path,
+        type: widget.type,
+        ...(widget.type === 'tiles' ? { tiles: widget.tiles.length } : {}),
+      }
+    },
+  },
+  {
+    name: 'remove_widget',
+    description: 'Entfernt ein Widget (index aus list_widgets) von einer Seite.',
+    readOnly: false,
+    destructive: true,
+    inputSchema: {
+      type: 'object',
+      properties: { page: pageRef(), index: { type: 'number', minimum: 0 } },
+      required: ['page', 'index'],
+    },
+    async run({ ws }, input) {
+      const page = resolvePage(ws, input.page)
+      const target = findWidgets(page.body)[Math.round(Number(input.index))]
+      if (!target) throw new InputError('Widget nicht gefunden – list_widgets zeigt die Nummern')
+      const body = (
+        page.body.slice(0, target.start).trimEnd() +
+        '\n\n' +
+        page.body.slice(target.end).trimStart()
+      ).trim()
+      await ws.save(page.path, { body: body ? `${body}\n` : '' })
+      return { path: page.path }
+    },
+  },
+  {
+    name: 'update_database',
+    description:
+      'Erweitert eine Datenbank: neue Eigenschaften, neue Auswahl-Optionen oder neue Ansichten. Löscht und überschreibt nichts.',
+    readOnly: false,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        database: pageRef('Datenbank (Pfad oder Titel)'),
+        add_properties: {
+          type: 'array',
+          maxItems: 20,
+          items: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              type: { type: 'string', enum: PROPERTY_TYPES },
+              options: {
+                type: 'array',
+                items: { type: 'string' },
+                maxItems: 50,
+                description: 'select/multiSelect',
+              },
+              formula: { type: 'string', description: 'formula' },
+              relationTo: { type: 'string', description: 'relation: Ziel-Datenbank' },
+              decimals: { type: 'number', minimum: 0, maximum: 6 },
+            },
+            required: ['name', 'type'],
+          },
+        },
+        add_options: {
+          type: 'array',
+          maxItems: 20,
+          items: {
+            type: 'object',
+            properties: {
+              property: { type: 'string' },
+              values: { type: 'array', items: { type: 'string' }, maxItems: 50 },
+              color: { type: 'string', enum: COLORS },
+            },
+            required: ['property', 'values'],
+          },
+        },
+        add_views: {
+          type: 'array',
+          maxItems: 10,
+          items: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              type: { type: 'string', enum: VIEW_TYPES },
+              groupBy: { type: 'string' },
+              dateProperty: { type: 'string' },
+              properties: { type: 'array', items: { type: 'string' }, maxItems: 30 },
+              filter: filterSchema,
+              sort: {
+                type: 'array',
+                maxItems: 5,
+                items: {
+                  type: 'object',
+                  properties: {
+                    property: { type: 'string' },
+                    direction: { type: 'string', enum: ['asc', 'desc'] },
+                  },
+                  required: ['property'],
+                },
+              },
+            },
+            required: ['name', 'type'],
+          },
+        },
+      },
+      required: ['database'],
+    },
+    async run({ ws }, input) {
+      const db = resolveDatabase(ws, input.database)
+      const def = structuredClone(db.database)
+      const has = (name: string) =>
+        name.toLowerCase() === TITLE.toLowerCase() ||
+        def.properties.some((p) => p.name.toLowerCase() === name.toLowerCase())
+      const added: string[] = []
+      for (const raw of (input.add_properties ?? []) as Array<Record<string, unknown>>) {
+        const name = String(raw.name).trim()
+        if (!name) throw new InputError('Eigenschaft ohne Namen')
+        if (has(name)) throw new InputError(`Eigenschaft „${name}“ gibt es schon`)
+        const prop: Record<string, unknown> = { name, type: raw.type }
+        if (Array.isArray(raw.options)) prop.options = raw.options.map(String)
+        if (raw.formula !== undefined) prop.formula = String(raw.formula)
+        if (raw.decimals !== undefined) prop.decimals = raw.decimals
+        if (raw.type === 'relation') {
+          const target = resolveDatabase(ws, raw.relationTo)
+          prop.database = target.path
+        }
+        def.properties.push(parseDatabaseDef({ properties: [prop] })!.properties[0]!)
+        added.push(`Eigenschaft ${name}`)
+      }
+      for (const raw of (input.add_options ?? []) as Array<Record<string, unknown>>) {
+        const prop = def.properties.find((p) => p.name === raw.property)
+        if (!prop || (prop.type !== 'select' && prop.type !== 'multiSelect'))
+          throw new InputError(`„${String(raw.property)}“ ist keine Auswahl-Eigenschaft`)
+        prop.options ??= []
+        for (const value of (raw.values as unknown[]).map((v) => String(v).trim()).filter(Boolean)) {
+          if (prop.options.some((o) => o.value === value)) continue
+          const color =
+            (raw.color as (typeof COLORS)[number] | undefined) ?? COLORS[prop.options.length % COLORS.length]!
+          prop.options.push({ value, color })
+          added.push(`Option ${prop.name}: ${value}`)
+        }
+      }
+      for (const raw of (input.add_views ?? []) as Array<Record<string, unknown>>) {
+        const name = String(raw.name).trim()
+        if (def.views.some((v) => v.name === name)) throw new InputError(`Ansicht „${name}“ gibt es schon`)
+        const view = parseDatabaseDef({ views: [raw] })!.views[0]!
+        for (const prop of [
+          view.groupBy,
+          view.dateProperty,
+          ...(view.properties ?? []),
+          ...(view.filter ?? []).map((f) => f.property),
+        ])
+          if (prop && !has(prop)) throw new InputError(`Ansicht „${name}“: Eigenschaft „${prop}“ fehlt`)
+        if (view.type === 'board' && !view.groupBy) throw new InputError('Board braucht groupBy')
+        if (view.type === 'calendar' && !view.dateProperty)
+          throw new InputError('Kalender braucht dateProperty')
+        def.views.push(view)
+        added.push(`Ansicht ${name}`)
+      }
+      if (added.length === 0)
+        throw new InputError('Nichts zu ändern: add_properties, add_options oder add_views angeben')
+      await ws.updateDatabase(db.path, () => parseDatabaseDef(serializeDatabaseDef(def))!)
+      return { path: db.path, added }
+    },
+  },
+  {
+    name: 'list_files',
+    description:
+      'Listet die Dateien im Ordner, die keine Seiten sind (PDFs, Bilder, CSV …) – z. B. Modulhandbuch, Notenspiegel, Stundenplan. Lesen mit read_file.',
+    readOnly: true,
+    inputSchema: {
+      type: 'object',
+      properties: { folder: { type: 'string', description: 'Nur in diesem Ordner (optional)' } },
+    },
+    async run({ ws }, input) {
+      const folder = folderOf(ws, input.folder)
+      return {
+        files: ws
+          .assets()
+          .filter((f) => !folder || isInside(f.path, folder))
+          .slice(0, 300)
+          .map((f) => ({ path: f.path, size: f.size, readable: readable(f.path) })),
+      }
+    },
+  },
+  {
+    name: 'read_file',
+    description:
+      'Liest eine Datei aus dem Ordner als Text: PDF (Text wird erkannt), CSV, TXT, JSON, ICS (Kalender) u. a. Bilder kann es nicht lesen.',
+    readOnly: true,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'Pfad aus list_files' },
+        offset: {
+          type: 'number',
+          minimum: 0,
+          description: 'Ab diesem Zeichen weiterlesen (bei langen Dateien)',
+        },
+      },
+      required: ['path'],
+    },
+    async run({ ws }, input) {
+      const path = String(input.path).trim()
+      const file = ws.assets().find((f) => f.path === path)
+      if (!file) throw new InputError(`Datei „${path}“ nicht gefunden (list_files)`)
+      if (!readable(path))
+        throw new InputError(
+          `Dateityp ${extname(path) || '(ohne Endung)'} kann nicht als Text gelesen werden`,
+        )
+      if (file.size > MAX_FILE) throw new InputError('Datei ist zu groß (max. 25 MB)')
+      let text: string
+      let pages: number | undefined
+      if (extname(path).toLowerCase() === '.pdf') {
+        const result = await pdfText(await ws.vault.readBinary(path))
+        text = result.text
+        pages = result.pages
+        if (!text.replace(/--- Seite \d+ ---/g, '').trim())
+          throw new InputError('Das PDF enthält keinen Text (vermutlich eingescannt).')
+      } else text = await ws.vault.read(path)
+      const offset = Math.max(0, Math.round(Number(input.offset ?? 0)))
+      const chunk = text.slice(offset, offset + MAX_BODY)
+      return {
+        path,
+        ...(pages ? { pages } : {}),
+        text: chunk,
+        ...(offset + MAX_BODY < text.length
+          ? { more: true, nextOffset: offset + MAX_BODY, length: text.length }
+          : {}),
+      }
+    },
+  },
+  {
     name: 'rename_page',
     description: 'Benennt eine Seite um; Links auf sie werden überall angepasst.',
     readOnly: false,
@@ -517,6 +886,11 @@ export const TOOLS: ToolDef[] = [
     },
   },
 ]
+
+function readable(path: string): boolean {
+  const ext = extname(path).slice(1).toLowerCase()
+  return ext === 'pdf' || TEXT_FILES.has(ext)
+}
 
 export function findTool(name: string): ToolDef | undefined {
   return TOOLS.find((t) => t.name === name)

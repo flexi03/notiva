@@ -186,6 +186,23 @@ export function widgetSource(blockText: string): string {
   return blockText.replace(/^```notiva[^\n]*\n?/, '').replace(/\n?```\s*$/, '')
 }
 
+export interface WidgetLocation {
+  /** Offsets of the whole fenced block in the body. */
+  start: number
+  end: number
+  yaml: string
+}
+
+/** All top-level ```notiva blocks of a Markdown body, in order. */
+export function findWidgets(body: string): WidgetLocation[] {
+  const found: WidgetLocation[] = []
+  const fence = /^```notiva[^\n]*\n([\s\S]*?)^```[ \t]*$/gm
+  for (let m = fence.exec(body); m; m = fence.exec(body)) {
+    found.push({ start: m.index, end: m.index + m[0].length, yaml: (m[1] ?? '').replace(/\n$/, '') })
+  }
+  return found
+}
+
 export function widgetBlock(yaml: string): string {
   return `\`\`\`notiva\n${yaml.trimEnd()}\n\`\`\``
 }

@@ -42,7 +42,9 @@ test.describe('KI und Änderungen links oder rechts', () => {
     await page.reload()
     await page.getByRole('button', { name: /Demo ausprobieren/ }).click()
     await expect(
-      page.getByRole('navigation', { name: 'Werkzeugleiste rechts' }).getByRole('button', { name: /KI-Assistent/ }),
+      page
+        .getByRole('navigation', { name: 'Werkzeugleiste rechts' })
+        .getByRole('button', { name: /KI-Assistent/ }),
     ).toBeVisible()
   })
 
@@ -53,7 +55,10 @@ test.describe('KI und Änderungen links oder rechts', () => {
     const git = page.getByRole('complementary', { name: 'Änderungen' })
     await expect(git).toHaveAttribute('data-side', 'left')
     await git.getByRole('button', { name: 'Nach rechts verschieben' }).click()
-    await expect(page.getByRole('complementary', { name: 'Änderungen' })).toHaveAttribute('data-side', 'right')
+    await expect(page.getByRole('complementary', { name: 'Änderungen' })).toHaveAttribute(
+      'data-side',
+      'right',
+    )
     await page
       .getByRole('complementary', { name: 'Änderungen' })
       .getByRole('button', { name: 'Nach links verschieben' })

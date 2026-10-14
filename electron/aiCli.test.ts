@@ -35,7 +35,10 @@ describe('Claude Code command line', () => {
     expect(allowedTools(true)).toContain('mcp__notiva__create_page')
     expect(allowedTools(true)).not.toContain('mcp__notiva__trash_page')
     expect(allowedTools(true)).not.toContain('mcp__notiva__replace_page_body')
-    expect(allowedTools(false).every((t) => /search|list|read|query|backlinks/.test(t))).toBe(true)
+    expect(allowedTools(true)).not.toContain('mcp__notiva__remove_widget')
+    expect(allowedTools(true)).toContain('mcp__notiva__update_widget')
+    expect(allowedTools(false).every((t) => /search|list|read|query|backlinks|format/.test(t))).toBe(true)
+    expect(allowedTools(false)).not.toContain('mcp__notiva__update_widget')
     const args = cliArgs({ ...base, allowWrites: false }, mcp)
     const config = JSON.parse(args[args.indexOf('--mcp-config') + 1]!) as {
       mcpServers: { notiva: { args: string[] } }

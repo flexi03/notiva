@@ -3,6 +3,7 @@ import { MemoryVault } from '../vault'
 import { Workspace } from '../workspace'
 import { runTool, TOOLS } from '../ai/tools'
 import { validate } from '../ai/schema'
+import { MODULHANDBUCH_PDF } from '@/test/fixtures/pdf'
 
 const now = new Date(2026, 9, 14, 10)
 
@@ -181,18 +182,25 @@ describe('AI tools: safety', () => {
   })
 
   it('marks destructive tools and keeps read-only tools side-effect free', async () => {
-    expect(TOOLS.filter((t) => t.destructive).map((t) => t.name)).toEqual(['replace_page_body', 'trash_page'])
+    expect(TOOLS.filter((t) => t.destructive).map((t) => t.name)).toEqual([
+      'replace_page_body',
+      'remove_widget',
+      'trash_page',
+    ])
     const { ws, call } = await setup()
+    await ws.writeFile('notiz.txt', 'Text')
     const version = ws.version
     for (const tool of TOOLS.filter((t) => t.readOnly)) {
       const input =
-        tool.name === 'search_pages'
-          ? { query: 'Modul' }
-          : tool.name === 'query_database'
-            ? { database: 'Module' }
-            : tool.inputSchema.required?.includes('page')
-              ? { page: 'Module' }
-              : {}
+        tool.name === 'read_file'
+          ? { path: 'notiz.txt' }
+          : tool.name === 'search_pages'
+            ? { query: 'Modul' }
+            : tool.name === 'query_database'
+              ? { database: 'Module' }
+              : tool.inputSchema.required?.includes('page')
+                ? { page: 'Module' }
+                : {}
       expect((await call(tool.name, input)).ok).toBe(true)
     }
     expect(ws.version).toBe(version)
@@ -203,6 +211,139 @@ describe('AI tools: safety', () => {
       for (const key of tool.inputSchema.required ?? [])
         expect(tool.inputSchema.properties).toHaveProperty(key)
       expect(() => validate(tool.inputSchema, {})).toSatisfy(() => true)
+    }
+  })
+})
+
+describe('AI tools: dashboard and files', () => {
+  it('explains the formats', async () => {
+    const { call } = await setup()
+    const guide = (await call('notiva_format', {})).data as { guide: string }
+    expect(guide.guide).toContain('weightedAvg')
+    expect(guide.guide).toContain('countdown')
+  })
+
+  it('lists and replaces a widget without touching the rest of the page', async () => {
+    const { ws, call } = await setup()
+    const list = (await call('list_widgets', { page: 'Studium' })).data as {
+      widgets: Array<{ index: number; type: string; yaml: string; tiles?: number }>
+    }
+    expect(list.widgets[0]).toMatchObject({ index: 0, type: 'tiles', tiles: 11 })
+    const before = ws.get('Studium.md')!.body
+    const yaml = list.widgets[0]!.yaml.replace('columns: 4', 'columns: 3')
+    const result = await call('update_widget', { page: 'Studium', index: 0, yaml })
+    expect(result.ok).toBe(true)
+    const after = ws.get('Studium.md')!.body
+    expect(after).toBe(before.replace('columns: 4', 'columns: 3'))
+  })
+
+  it('rejects widgets the dashboard could not show', async () => {
+    const { ws, call } = await setup()
+    const before = ws.get('Studium.md')!.body
+    const bad = await call('update_widget', {
+      page: 'Studium',
+      index: -1,
+      yaml: 'type: tiles\ntiles:\n  - { type: stat, source: Studium/Gibtsnicht }\n  - { type: chart }\n  - { type: stat, source: Studium/Module, property: Farbe }',
+    })
+    expect(bad.ok).toBe(false)
+    expect(bad.text).toContain('Gibtsnicht')
+    expect(bad.text).toContain('unbekanntem')
+    expect(bad.text).toContain('Farbe')
+    const view = await call('update_widget', {
+      page: 'Studium',
+      index: -1,
+      yaml: 'type: view\nsource: Studium/Module\nview: Gibtsnicht',
+    })
+    expect(view.text).toContain('vorhanden: Board')
+    expect(ws.get('Studium.md')!.body).toBe(before)
+  })
+
+  it('appends and removes widgets', async () => {
+    const { ws, call } = await setup()
+    const count = () => (ws.get('Studium.md')!.body.match(/```notiva/g) ?? []).length
+    const n = count()
+    const add = await call('update_widget', {
+      page: 'Studium',
+      index: -1,
+      yaml: 'type: tiles\ntiles:\n  - { type: countdown, title: Nächste Abgabe, source: Studium/Aufgaben, dateProperty: Fällig }',
+    })
+    expect(add.ok).toBe(true)
+    expect(count()).toBe(n + 1)
+    expect(await call('remove_widget', { page: 'Studium', index: n })).toMatchObject({ ok: true })
+    expect(count()).toBe(n)
+  })
+
+  it('extends a database with properties, options and views', async () => {
+    const { ws, call } = await setup()
+    const result = await call('update_database', {
+      database: 'Studium/Module',
+      add_properties: [
+        { name: 'Moodle', type: 'url' },
+        { name: 'Schwerpunkt', type: 'select', options: ['KI', 'Web'] },
+      ],
+      add_options: [{ property: 'Prüfungsform', values: ['Portfolio', 'Klausur'] }],
+      add_views: [{ name: 'Nach Schwerpunkt', type: 'board', groupBy: 'Schwerpunkt' }],
+    })
+    expect(result.ok).toBe(true)
+    const def = ws.get('Studium/Module.md')!.database!
+    expect(def.properties.find((p) => p.name === 'Moodle')?.type).toBe('url')
+    expect(def.properties.find((p) => p.name === 'Prüfungsform')?.options?.map((o) => o.value)).toContain(
+      'Portfolio',
+    )
+    expect(def.views.map((v) => v.name)).toContain('Nach Schwerpunkt')
+    // Nothing existing is lost.
+    expect(def.properties.find((p) => p.name === 'Note')).toBeTruthy()
+    expect(
+      (
+        await call('update_database', {
+          database: 'Studium/Module',
+          add_properties: [{ name: 'ECTS', type: 'text' }],
+        })
+      ).text,
+    ).toContain('gibt es schon')
+    expect(
+      (
+        await call('update_database', {
+          database: 'Studium/Module',
+          add_views: [{ name: 'X', type: 'board' }],
+        })
+      ).text,
+    ).toContain('groupBy')
+  })
+
+  it('reads PDFs and text files from the folder', async () => {
+    const { ws, call } = await setup()
+    await ws.writeFile('Unterlagen/Modulhandbuch.pdf', MODULHANDBUCH_PDF)
+    await ws.writeFile('Unterlagen/noten.csv', 'Modul;Note\nAnalysis;1,7\n')
+    await ws.writeFile('Unterlagen/foto.png', new Uint8Array([137, 80, 78, 71]))
+    const files = (await call('list_files', { folder: 'Unterlagen' })).data as {
+      files: Array<{ path: string; readable: boolean }>
+    }
+    expect(files.files.map((f) => [f.path, f.readable])).toEqual([
+      ['Unterlagen/Modulhandbuch.pdf', true],
+      ['Unterlagen/noten.csv', true],
+      ['Unterlagen/foto.png', false],
+    ])
+    const pdf = (await call('read_file', { path: 'Unterlagen/Modulhandbuch.pdf' })).data as {
+      text: string
+      pages: number
+    }
+    expect(pdf.text).toContain('Analysis 9 ECTS')
+    expect(
+      ((await call('read_file', { path: 'Unterlagen/noten.csv' })).data as { text: string }).text,
+    ).toContain('1,7')
+    expect((await call('read_file', { path: 'Unterlagen/foto.png' })).ok).toBe(false)
+    expect((await call('read_file', { path: '../etc/passwd' })).ok).toBe(false)
+  })
+})
+
+describe('AI tools: labels', () => {
+  it('every tool has a label in the chat (de + en)', async () => {
+    const { de } = await import('@/i18n/de')
+    const { en } = await import('@/i18n/en')
+    for (const tool of TOOLS) {
+      expect(Object.keys(de)).toContain(`ai.tool.${tool.name}`)
+      expect(Object.keys(en)).toContain(`ai.tool.${tool.name}`)
     }
   })
 })

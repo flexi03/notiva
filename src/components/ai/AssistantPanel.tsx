@@ -5,7 +5,10 @@ import {
   Database,
   FilePlus2,
   FileText,
+  BookOpen,
   FolderInput,
+  LayoutGrid,
+  Paperclip,
   Link2,
   ListTree,
   Pencil,
@@ -27,6 +30,7 @@ import { AutoTextArea, Button, cx, IconButton } from '@/components/ui'
 import { MarkdownView } from '@/components/editor/MarkdownView'
 import { PageIcon } from '@/components/layout/PageIcon'
 import { SidePanel } from '@/components/layout/SidePanel'
+import { findWidgets } from '@/lib/widgets'
 
 const TOOL_ICONS: Record<string, ReactNode> = {
   search_pages: <Search size={13} />,
@@ -45,13 +49,20 @@ const TOOL_ICONS: Record<string, ReactNode> = {
   rename_page: <Pencil size={13} />,
   move_page: <FolderInput size={13} />,
   trash_page: <Trash2 size={13} />,
+  notiva_format: <BookOpen size={13} />,
+  list_widgets: <LayoutGrid size={13} />,
+  update_widget: <LayoutGrid size={13} />,
+  remove_widget: <Trash2 size={13} />,
+  update_database: <Database size={13} />,
+  list_files: <Paperclip size={13} />,
+  read_file: <Paperclip size={13} />,
 }
 
 /** "Liest Studium/Module.md" – what the call is about, from its most telling argument. */
 function stepTarget(input: unknown): string {
   if (typeof input !== 'object' || input === null) return ''
   const r = input as Record<string, unknown>
-  const value = r.page ?? r.database ?? r.query ?? r.title ?? r.folder
+  const value = r.page ?? r.database ?? r.path ?? r.query ?? r.title ?? r.folder
   return typeof value === 'string' ? value : ''
 }
 
@@ -91,6 +102,7 @@ export function AssistantPanel() {
     void send(text)
   }
   const suggestions = [
+    ...(page && findWidgets(page.body).length > 0 ? [t('ai.suggest.dashboard')] : []),
     ...(page ? [t('ai.suggest.summarize'), t('ai.suggest.tasks'), t('ai.suggest.quiz')] : []),
     t('ai.suggest.week'),
     t('ai.suggest.find'),

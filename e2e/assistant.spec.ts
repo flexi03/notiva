@@ -104,6 +104,40 @@ test.describe('KI-Assistent', () => {
     await expect(peek(page)).toContainText('Hoch')
   })
 
+  test('passt das Studien-Dashboard über das Seitenmenü an', async ({ page }) => {
+    await openWithAi(page)
+    const bodies = await fakeModel(page, (body) => {
+      const tools = body.messages.filter((m) => m.role === 'tool')
+      if (tools.length === 0) return toolCall('list_widgets', { page: 'Studium' })
+      if (tools.length === 1)
+        return toolCall('update_widget', {
+          page: 'Studium',
+          index: -1,
+          yaml: 'type: tiles\ntiles:\n  - { type: countdown, title: Nächste Abgabe, icon: 📮, source: Studium/Aufgaben, dateProperty: Fällig }',
+        })
+      return { content: 'Ich habe eine Kachel „Nächste Abgabe“ ergänzt: [[Studium]]' }
+    })
+    await page.locator('#main').getByRole('button', { name: 'Mehr' }).click()
+    await page.getByRole('menuitem', { name: 'Mit KI anpassen …' }).click()
+    // The prompt is only prefilled – the user sees and can change it before sending.
+    const input = panel(page).getByRole('textbox', { name: 'Frag etwas oder gib eine Aufgabe …' })
+    await expect(input).toHaveValue(/Passe das Dashboard „Studium“ an mein Studium an/)
+    expect(bodies).toHaveLength(0)
+    await input.press('Enter')
+    await expect(panel(page)).toContainText('Ich habe eine Kachel „Nächste Abgabe“ ergänzt')
+    await expect(panel(page)).toContainText('Passt Kacheln an auf Studium')
+    await expect(page.locator('#main')).toContainText('Nächste Abgabe')
+    expect(bodies[0]!.tools!.map((t) => t.function.name)).toEqual(
+      expect.arrayContaining([
+        'notiva_format',
+        'list_widgets',
+        'update_widget',
+        'update_database',
+        'read_file',
+      ]),
+    )
+  })
+
   test('fragt vor dem Löschen und respektiert ein Nein', async ({ page }) => {
     await openWithAi(page)
     await fakeModel(page, (body) =>

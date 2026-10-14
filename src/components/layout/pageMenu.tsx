@@ -1,4 +1,7 @@
-import { Copy, Download, Pencil, Printer, Star, Trash2 } from 'lucide-react'
+import { Copy, Download, Pencil, Printer, Sparkles, Star, Trash2 } from 'lucide-react'
+import { useAssistant } from '@/app/assistant'
+import { useApp } from '@/app/store'
+import { findWidgets } from '@/lib/widgets'
 import { t } from '@/i18n'
 import type { Workspace } from '@/lib/workspace'
 import type { MenuItem } from '@/components/ui'
@@ -33,6 +36,16 @@ export function pageMenuItems(
       onSelect: () => void actions.exportMarkdown(path),
     },
   ]
+  // Dashboards and databases: let the AI adapt them (the prompt is only prefilled, not sent).
+  if (page && (page.database || findWidgets(page.body).length > 0))
+    items.push({
+      label: t('page.aiCustomize'),
+      icon: <Sparkles size={14} />,
+      onSelect: () => {
+        useAssistant.getState().setDraft(customizePrompt(page.title, !!page.database))
+        useApp.getState().openView('assistant')
+      },
+    })
   if (extra.print)
     items.push({ label: t('page.print'), icon: <Printer size={14} />, onSelect: () => window.print() })
   items.push('divider', {
@@ -42,4 +55,8 @@ export function pageMenuItems(
     onSelect: () => void actions.trash(path),
   })
   return items
+}
+
+export function customizePrompt(title: string, database: boolean): string {
+  return t(database ? 'ai.customizeDatabase' : 'ai.customizeDashboard', { title })
 }

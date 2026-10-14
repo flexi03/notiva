@@ -10,5 +10,5 @@
     "noEmit": true,
     "types": ["node", "vitest/globals"]
   },
-  "include": ["vite.config.ts", "playwright.config.ts", "e2e", "electron", "mcp", "scripts"]
+  "include": ["vite.config.ts", "playwright.config.ts", "e2e", "electron", "mcp", "scripts", "src/lib/pdfjs-worker.d.ts"]
 }
