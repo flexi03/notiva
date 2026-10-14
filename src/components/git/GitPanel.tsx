@@ -125,7 +125,7 @@ export function GitPanel() {
   )
 
   return (
-    <SidePanel title={t('git.title')} icon={<GitBranch size={16} />} actions={header}>
+    <SidePanel view="git" title={t('git.title')} icon={<GitBranch size={16} />} actions={header}>
       <div className="min-h-0 flex-1 overflow-y-auto">
         {!gitAvailable() ? (
           <EmptyState icon={<GitBranch size={22} />} title={t('git.desktopOnly')}>

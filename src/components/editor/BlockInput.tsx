@@ -166,7 +166,7 @@ export function BlockInput({
       apply(rest)
       const context = rest.text.trim()
       useAssistant.getState().setDraft(context ? `Zu „${context.slice(0, 400)}“: ` : '')
-      useApp.getState().setRightPanel('assistant')
+      useApp.getState().openView('assistant')
       callbacks.onDone()
       return
     }

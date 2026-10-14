@@ -55,12 +55,12 @@ function stepTarget(input: unknown): string {
   return typeof value === 'string' ? value : ''
 }
 
-/** The AI chat docked at the right edge (overlay on small screens). */
+/** The AI chat in a side bar (left or right, overlay on small screens). */
 export function AssistantPanel() {
   const { configured, settings, messages, sent, busy, error, send, stop, reset, draft, setDraft } =
     useAssistant()
   const [promptOpen, setPromptOpen] = useState(false)
-  const setRightPanel = useApp((s) => s.setRightPanel)
+  const closeView = useApp((s) => s.closeView)
   const route = useApp((s) => s.route)
   const navigate = useApp((s) => s.navigate)
   const ws = useWorkspace()
@@ -77,8 +77,8 @@ export function AssistantPanel() {
   // On phones the panel covers the page: following a link should show the page.
   const firstRoute = useRef(route)
   useEffect(() => {
-    if (route !== firstRoute.current && window.innerWidth < 900) setRightPanel(null)
-  }, [route, setRightPanel])
+    if (route !== firstRoute.current && window.innerWidth < 900) closeView('assistant')
+  }, [route, closeView])
 
   const results = useMemo(() => {
     const map = new Map<string, Extract<Part, { type: 'tool_result' }>>()
@@ -98,6 +98,7 @@ export function AssistantPanel() {
 
   return (
     <SidePanel
+      view="assistant"
       title={t('ai.title')}
       icon={<Sparkles size={16} />}
       actions={

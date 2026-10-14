@@ -83,8 +83,8 @@ export function Topbar({ title, actions }: { title?: string; actions?: ReactNode
 
 /** On phones there is no activity bar: the assistant gets a button in the top bar. */
 function AssistantToggle() {
-  const open = useApp((s) => s.rightPanel === 'assistant')
-  const toggle = useApp((s) => s.toggleRightPanel)
+  const open = useApp((s) => s.rightPanel === 'assistant' || (s.sidebarOpen && s.leftView === 'assistant'))
+  const toggle = useApp((s) => s.toggleView)
   return (
     <IconButton
       label={t('ai.toggle')}
@@ -123,8 +123,8 @@ function GitChip({ path }: { path: string }) {
 }
 
 function GitToggle() {
-  const open = useApp((s) => s.rightPanel === 'git')
-  const toggle = useApp((s) => s.toggleRightPanel)
+  const open = useApp((s) => s.rightPanel === 'git' || (s.sidebarOpen && s.leftView === 'git'))
+  const toggle = useApp((s) => s.toggleView)
   if (!gitAvailable()) return null
   return (
     <IconButton

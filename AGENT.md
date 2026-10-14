@@ -40,7 +40,8 @@ src/app/            store.ts (zustand: Workspace, Route, Einstellungen, Dialoge,
                     git.ts (Git-Status, Diffs, Randmarkierungen), hooks/ (useTheme, usePageActions)
 src/components/     ui/ (Design-System), layout/ (Shell, Seitenleiste, Topbar), editor/ (Block-Editor,
                     Seitenansicht, Minimap), database/ (Ansichten, Zellen, Schema), widgets/ (Kacheln, Einbettungen),
-                    ai/ (Assistent, Prompt-Editor), git/ (Änderungen, Diff), layout/ (u. a. ActivityBar, SidePanel)
+                    ai/ (Assistent, Prompt-Editor), git/ (Änderungen, Diff), layout/ (u. a. ActivityBar links/rechts, SidePanel;
+                    Seite je Ansicht in `useApp().viewSides`, pro Gerät gespeichert)
 src/screens/        Start, Tag, Suche, Neue Seite, Vorlagen, Papierkorb, Einstellungen, Willkommen
 electron/           main.ts (sicherer Hauptprozess), preload.ts (Brücke), vaultFs.ts (Dateizugriff, auch für MCP),
                     aiRequest.ts (geprüfte KI-Anfragen), aiCli.ts (Claude Code & Co.), git.ts (git-CLI),

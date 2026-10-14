@@ -132,6 +132,17 @@ button {
 [data-shell='electron-darwin'] nav [data-titlebar] {
   padding-top: 2.4rem;
 }
+[data-shell='electron-darwin'] [data-activity='left'] {
+  padding-top: 2.6rem;
+  -webkit-app-region: drag;
+}
+[data-shell='electron-darwin'] [data-activity='left'] button {
+  -webkit-app-region: no-drag;
+}
+/* A view in the left side bar: its header sits right of the traffic lights. */
+[data-shell='electron-darwin'] [data-side='left'] header[data-titlebar] {
+  padding-left: 2rem;
+}
 [data-shell='electron-darwin'] [data-sidebar='closed'] header[data-titlebar] {
   padding-left: 5rem;
 }
