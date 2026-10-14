@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useMoodle } from '@/app/moodle'
+import { ipcMessage, useMoodle } from '@/app/moodle'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import { formatDate } from '@/lib/dates'
@@ -50,12 +50,7 @@ function ImportBody({ onDone }: { onDone: () => void }) {
       .moodle!.fetch()
       .then((s) => !cancelled && setSnapshot(s))
       .catch((e: unknown) => {
-        if (!cancelled)
-          setError(
-            e instanceof Error
-              ? e.message.replace(/^Error invoking remote method '[^']+': (\w*Error: )?/, '')
-              : String(e),
-          )
+        if (!cancelled) setError(ipcMessage(e))
       })
     return () => {
       cancelled = true

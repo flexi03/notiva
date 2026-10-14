@@ -8,6 +8,7 @@
 import { snapshotFromIcs, snapshotFromWebService, type MoodleSnapshot } from '../src/lib/moodle'
 
 export type MoodleConnect =
+  | { mode: 'browser'; site: string }
   | { mode: 'login'; site: string; username: string; password: string }
   | { mode: 'token'; site: string; token: string }
   | { mode: 'calendar'; url: string }
@@ -71,6 +72,7 @@ export function parseConnect(raw: unknown): MoodleConnect {
     if (!/^[a-zA-Z0-9]{16,128}$/.test(token)) throw new MoodleError('Der Token sieht nicht richtig aus')
     return { mode: 'token', site: siteRoot(r.site), token }
   }
+  if (r.mode === 'browser') return { mode: 'browser', site: siteRoot(r.site) }
   if (r.mode === 'login') {
     const username = str(r.username, 200).trim()
     const password = str(r.password, 500)
@@ -168,7 +170,7 @@ export class MoodleClient {
   }
 
   /** Checks the access and returns what is stored (without the password). */
-  async connect(request: MoodleConnect): Promise<MoodleConfig> {
+  async connect(request: Exclude<MoodleConnect, { mode: 'browser' }>): Promise<MoodleConfig> {
     if (request.mode === 'calendar') {
       const text = await this.request(request.url)
       if (!text.includes('BEGIN:VCALENDAR')) throw new MoodleError('Der Link liefert keinen Kalender')

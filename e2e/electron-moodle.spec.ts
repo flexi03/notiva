@@ -13,6 +13,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { studyPack } from '../src/lib/packs/study'
 import { expandPack } from '../src/lib/templates'
+import { ssoAnswer } from '../electron/moodleSso'
 
 const TOKEN = 'tok1234567890abcdef'
 const day = 86_400
@@ -21,6 +22,7 @@ const now = Math.floor(Date.now() / 1000)
 /** A small fake Moodle: token login and the web service functions Notiva uses. */
 function fakeMoodle(): Promise<{ server: Server; url: string; calls: string[] }> {
   const calls: string[] = []
+  let base = ''
   const server = createServer((req, res) => {
     let raw = ''
     req.on('data', (c: Buffer) => (raw += c.toString()))
@@ -29,6 +31,20 @@ function fakeMoodle(): Promise<{ server: Server; url: string; calls: string[] }>
       const send = (data: unknown) => {
         res.setHeader('content-type', 'application/json')
         res.end(JSON.stringify(data))
+      }
+      // Moodle app sign-in: the university login page, then the redirect with the token.
+      if (req.url?.startsWith('/admin/tool/mobile/launch.php')) {
+        const passport = new URL(req.url, 'http://x').searchParams.get('passport') ?? ''
+        res.setHeader('content-type', 'text/html; charset=utf-8')
+        return res.end(
+          `<!doctype html><title>Uni-Login</title><form method="post" action="/sso"><input type="hidden" name="passport" value="${passport}"><label>Code <input name="code"></label><button>Anmelden</button></form>`,
+        )
+      }
+      if (req.url === '/sso') {
+        calls.push(`sso:${body.get('code')}`)
+        res.statusCode = 303
+        res.setHeader('location', ssoAnswer(base, body.get('passport') ?? '', TOKEN))
+        return res.end()
       }
       if (req.url === '/login/token.php') {
         calls.push(`login:${body.get('username')}:${body.get('service')}`)
@@ -79,7 +95,8 @@ function fakeMoodle(): Promise<{ server: Server; url: string; calls: string[] }>
   return new Promise((resolve) =>
     server.listen(0, '127.0.0.1', () => {
       const address = server.address() as { port: number }
-      resolve({ server, url: `http://127.0.0.1:${address.port}`, calls })
+      base = `http://127.0.0.1:${address.port}`
+      resolve({ server, url: base, calls })
     }),
   )
 }
@@ -122,6 +139,7 @@ function allFiles(dir: string): string[] {
 }
 
 test('meldet sich an, ohne das Passwort zu speichern', async () => {
+  await section().getByRole('radio', { name: 'Benutzername' }).click()
   await section().getByRole('textbox', { name: 'Moodle-Adresse' }).fill(moodle.url)
   await section().getByRole('textbox', { name: 'Benutzername' }).fill('alex')
   await section().getByLabel('Passwort').fill('falsch')
@@ -173,4 +191,32 @@ test('trennt und löscht den Zugang', async () => {
   await section().getByRole('button', { name: 'Trennen' }).click()
   await expect(section().getByRole('button', { name: 'Verbinden' })).toBeVisible()
   expect(existsSync(path.join(userData, 'moodle.bin'))).toBe(false)
+})
+
+test('meldet sich über den Uni-Login (SSO mit 2FA) im eigenen Fenster an', async () => {
+  await section().getByRole('radio', { name: 'Uni-Login' }).click()
+  await section().getByRole('textbox', { name: 'Moodle-Adresse' }).fill(moodle.url)
+  const popup = app.waitForEvent('window')
+  await section().getByRole('button', { name: 'Anmeldefenster öffnen' }).click()
+  const login = await popup
+  await expect(login).toHaveTitle('Uni-Login')
+  // The login window has no Notiva bridge.
+  expect(await login.evaluate(() => typeof (window as { notiva?: unknown }).notiva)).toBe('undefined')
+  await login.getByLabel('Code').fill('123456')
+  await login.getByRole('button', { name: 'Anmelden' }).click()
+  await expect(section().getByRole('status')).toHaveText(`Verbunden mit ${moodle.url} als Alex Beispiel.`)
+  expect(moodle.calls).toContain('sso:123456')
+})
+
+test('zeigt die Kurse und öffnet sie in der App', async () => {
+  await window.getByRole('button', { name: 'Moodle', exact: true }).click()
+  const courses = window.getByRole('list', { name: 'Kurse' })
+  await expect(courses).toContainText('Betriebssysteme')
+  await expect(courses).toContainText('Blatt 5')
+  const popup = app.waitForEvent('window')
+  await window.getByRole('button', { name: '„Lineare Algebra“ in Notiva öffnen' }).click()
+  const page = await popup
+  await page.waitForLoadState()
+  expect(page.url()).toBe(`${moodle.url}/course/view.php?id=42`)
+  await page.close()
 })

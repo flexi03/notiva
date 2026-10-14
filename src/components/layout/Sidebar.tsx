@@ -1,4 +1,15 @@
-import { CalendarDays, LayoutTemplate, LogOut, Plus, Search, Settings, Star, Trash2 } from 'lucide-react'
+import {
+  CalendarDays,
+  GraduationCap,
+  LayoutTemplate,
+  LogOut,
+  Plus,
+  Search,
+  Settings,
+  Star,
+  Trash2,
+} from 'lucide-react'
+import { moodleAvailable } from '@/app/moodle'
 import type { ReactNode } from 'react'
 import { useApp, useWorkspace } from '@/app/store'
 import { usePageActions } from '@/app/hooks/usePageActions'
@@ -96,6 +107,14 @@ export function Sidebar() {
           active={route.name === 'templates'}
           onClick={() => navigate({ name: 'templates' })}
         />
+        {moodleAvailable() && (
+          <NavButton
+            icon={<GraduationCap size={15} />}
+            label={t('nav.moodle')}
+            active={route.name === 'moodle'}
+            onClick={() => navigate({ name: 'moodle' })}
+          />
+        )}
       </div>
 
       <div className="mt-1 min-h-0 flex-1 overflow-y-auto px-2 pb-2">

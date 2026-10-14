@@ -35,6 +35,7 @@ contextBridge.exposeInMainWorld('notiva', {
     disconnect: () => invoke('moodle:disconnect'),
     fetch: () => invoke('moodle:fetch'),
     snapshot: () => invoke('moodle:snapshot'),
+    open: (url: string, external: boolean) => invoke<void>('moodle:open', url, external),
   },
   git: {
     state: () => invoke('git:state'),

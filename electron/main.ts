@@ -28,7 +28,15 @@ import { GitRepo, type GitState } from './git'
 import { loadShellPath } from './shellPath'
 import { cliArgs, detectClis, parseCliRequest, startCli, type CliInfo, type McpLaunch } from './aiCli'
 import type { ChildProcess } from 'node:child_process'
-import { MoodleClient, parseConnect, parseStoredConfig, statusOf, type MoodleConfig } from './moodle'
+import {
+  checkUrl,
+  MoodleClient,
+  parseConnect,
+  parseStoredConfig,
+  statusOf,
+  type MoodleConfig,
+} from './moodle'
+import { clearMoodleSession, openMoodlePage, ssoLogin } from './moodleWindow'
 
 const DIST = path.join(__dirname, '..', 'dist')
 const userFile = (name: string) => path.join(process.env.NOTIVA_E2E_USERDATA ?? app.getPath('userData'), name)
@@ -245,12 +253,19 @@ function registerIpc(): void {
     return { ...statusOf(config), ...(config ? { remembered: moodleRemembered } : {}) }
   })
   handle('moodle:connect', async (raw: unknown) => {
-    const config = await moodleClient.connect(parseConnect(raw))
+    const request = parseConnect(raw)
+    // University login (Microsoft, 2FA …) in a Moodle window, like the Moodle app.
+    const config = await moodleClient.connect(
+      request.mode === 'browser'
+        ? { mode: 'token', site: request.site, token: (await ssoLogin(window, request.site)).token }
+        : request,
+    )
     const remembered = await saveMoodle(config)
     return { ...statusOf(config), remembered }
   })
   handle('moodle:disconnect', async () => {
     await saveMoodle(null)
+    await clearMoodleSession()
     return statusOf(null)
   })
   handle('moodle:fetch', async () => {
@@ -259,6 +274,15 @@ function registerIpc(): void {
     const snapshot = await moodleClient.fetch(config)
     await fs.writeFile(MOODLE_SNAPSHOT(), JSON.stringify(snapshot), { mode: 0o600 })
     return snapshot
+  })
+  // Moodle pages open in a Notiva window with the university login – or in the system browser.
+  handle('moodle:open', async (raw: unknown, external: unknown) => {
+    const config = await loadMoodle()
+    const url = checkUrl(raw)
+    if (!config || url.origin !== new URL(config.site).origin)
+      throw new Error('Nur Seiten des verbundenen Moodle')
+    if (external === true) await shell.openExternal(url.toString())
+    else openMoodlePage(window, url.toString())
   })
   handle('moodle:snapshot', async () => {
     if (!(await loadMoodle())) return null

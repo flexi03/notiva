@@ -77,6 +77,7 @@ export interface MoodleBridge {
   status(): Promise<MoodleStatus>
   connect(
     request:
+      | { mode: 'browser'; site: string }
       | { mode: 'login'; site: string; username: string; password: string }
       | { mode: 'token'; site: string; token: string }
       | { mode: 'calendar'; url: string },
@@ -85,6 +86,8 @@ export interface MoodleBridge {
   fetch(): Promise<MoodleSnapshot>
   /** The last fetched data (null if never fetched or not connected). */
   snapshot(): Promise<MoodleSnapshot | null>
+  /** Opens a page of the connected Moodle in an app window (with the login) or the browser. */
+  open(url: string, external: boolean): Promise<void>
 }
 
 /** API exposed by electron/preload.ts via contextBridge. Paths are validated again in the main process. */

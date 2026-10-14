@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react'
-import { moodleAvailable, useMoodle } from '@/app/moodle'
+import { ipcMessage, moodleAvailable, useMoodle } from '@/app/moodle'
 import { useApp } from '@/app/store'
 import { t } from '@/i18n'
 import { Button, Field, Segmented, TextInput } from '@/components/ui'
 
-type Mode = 'login' | 'calendar' | 'token'
+type Mode = 'browser' | 'login' | 'calendar' | 'token'
 
 /** Settings → Moodle: connect once, then fetch courses and deadlines into the study dashboard. */
 export function MoodleSection() {
   const { status, refresh, connect, disconnect, setImportOpen } = useMoodle()
   const showToast = useApp((s) => s.showToast)
-  const [mode, setMode] = useState<Mode>('login')
+  const [mode, setMode] = useState<Mode>('browser')
   const [site, setSite] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -58,21 +58,19 @@ export function MoodleSection() {
     setError(null)
     try {
       const result = await connect(
-        mode === 'calendar'
-          ? { mode, url: secret }
-          : mode === 'token'
-            ? { mode, site, token: secret }
-            : { mode, site, username, password },
+        mode === 'browser'
+          ? { mode, site }
+          : mode === 'calendar'
+            ? { mode, url: secret }
+            : mode === 'token'
+              ? { mode, site, token: secret }
+              : { mode, site, username, password },
       )
       setPassword('')
       setSecret('')
       showToast(t('moodle.connectedToast', { site: result.site ?? '' }))
     } catch (e) {
-      setError(
-        e instanceof Error
-          ? e.message.replace(/^Error invoking remote method '[^']+': (\w*Error: )?/, '')
-          : String(e),
-      )
+      setError(ipcMessage(e))
     } finally {
       setBusy(false)
     }
@@ -95,6 +93,7 @@ export function MoodleSection() {
           setError(null)
         }}
         options={[
+          { value: 'browser', label: t('moodle.mode.browser') },
           { value: 'login', label: t('moodle.mode.login') },
           { value: 'calendar', label: t('moodle.mode.calendar') },
           { value: 'token', label: t('moodle.mode.token') },
@@ -136,7 +135,7 @@ export function MoodleSection() {
           </Field>
         </div>
       )}
-      {mode !== 'login' && (
+      {(mode === 'calendar' || mode === 'token') && (
         <Field label={mode === 'calendar' ? t('moodle.calendarUrl') : t('moodle.token')}>
           <TextInput
             type={mode === 'token' ? 'password' : 'url'}
@@ -157,7 +156,13 @@ export function MoodleSection() {
         </p>
       )}
       <Button type="submit" variant="primary" disabled={busy}>
-        {busy ? t('moodle.connecting') : t('moodle.connect')}
+        {busy
+          ? mode === 'browser'
+            ? t('moodle.waitingLogin')
+            : t('moodle.connecting')
+          : mode === 'browser'
+            ? t('moodle.openLogin')
+            : t('moodle.connect')}
       </Button>
     </form>
   )

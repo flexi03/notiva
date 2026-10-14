@@ -1,3 +1,4 @@
+import { MoodleScreen } from '@/screens/MoodleScreen'
 import { useEffect, useState } from 'react'
 import { useApp } from '@/app/store'
 import { autoOpen } from '@/app/vaults'
@@ -66,6 +67,8 @@ export function App() {
         <SettingsScreen />
       ) : route.name === 'templates' ? (
         <TemplatesScreen />
+      ) : route.name === 'moodle' ? (
+        <MoodleScreen />
       ) : (
         <HomeScreen />
       )}

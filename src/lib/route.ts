@@ -9,6 +9,7 @@ export type Route =
   | { name: 'trash' }
   | { name: 'settings' }
   | { name: 'templates' }
+  | { name: 'moodle' }
 
 function decode(part: string): string | null {
   try {
@@ -35,6 +36,7 @@ export function parseRoute(hash: string): Route {
     case 'trash':
     case 'settings':
     case 'templates':
+    case 'moodle':
       return { name: head }
     default:
       return { name: 'home' }
