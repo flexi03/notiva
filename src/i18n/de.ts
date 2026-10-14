@@ -655,6 +655,8 @@ export const de = {
   'git.noUpstream': 'ohne Remote',
   'git.message': 'Commit-Nachricht',
   'git.messagePlaceholder': 'Was hast du geändert?',
+  'git.autoMessage': 'Vorschlag',
+  'git.autoMessageHint': 'Automatische Nachricht mit allen Änderungen wiederherstellen',
   'git.commit': 'Commit ({count})',
   'git.committed': 'Gesichert als {hash}',
   'git.changes': 'Änderungen',

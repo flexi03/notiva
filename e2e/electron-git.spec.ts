@@ -71,6 +71,11 @@ test('markiert geänderte Zeilen und zeigt den Diff', async () => {
   await window.keyboard.press('Escape')
 })
 
+test('schlägt eine Commit-Nachricht mit allen Änderungen vor', async () => {
+  const field = panel().getByRole('textbox', { name: 'Commit-Nachricht' })
+  await expect(field).toHaveValue('Notiz geändert\n\nGeändert:\n- Notiz.md (+1 −1)')
+})
+
 test('committet ausgewählte Änderungen', async () => {
   await panel().getByRole('textbox', { name: 'Commit-Nachricht' }).fill('Zeile ergänzt')
   await panel().getByRole('button', { name: 'Commit (1)' }).click()

@@ -13,6 +13,7 @@ import {
 import { gitAvailable, useGit } from '@/app/git'
 import { useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
+import { commitMessage } from '@/lib/commitMessage'
 import { diffLines, diffStats, type DiffStats } from '@/lib/diff'
 import { basename, dirname } from '@/lib/path'
 import type { GitChange, GitCommit, GitStatus } from '@/lib/vault'
@@ -78,12 +79,17 @@ function useStats(changes: GitChange[]): Map<string, DiffStats> {
 /** Source control view in the right side bar (like VS Code). */
 export function GitPanel() {
   const { state, loading, refresh, act, showDiff } = useGit()
-  const [message, setMessage] = useState('')
+  /** null = the automatic message (follows the selection); a string once the user edits it. */
+  const [custom, setCustom] = useState<string | null>(null)
   const [excluded, setExcluded] = useState(new Set<string>())
   const changes = useMemo(() => state?.changes ?? [], [state])
   const stats = useStats(changes)
   const selected = changes.filter((c) => !excluded.has(c.path))
   const showToast = useApp((s) => s.showToast)
+  const auto = commitMessage(
+    selected.map((c) => ({ ...c, added: stats.get(c.path)?.added, removed: stats.get(c.path)?.removed })),
+  )
+  const message = custom ?? auto
 
   const commit = async () => {
     const hash = await act((git) =>
@@ -93,7 +99,7 @@ export function GitPanel() {
       ),
     )
     if (hash) {
-      setMessage('')
+      setCustom(null)
       showToast(t('git.committed', { hash: hash.slice(0, 7) }))
     }
   }
@@ -170,7 +176,7 @@ export function GitPanel() {
             >
               <AutoTextArea
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
+                onChange={(e) => setCustom(e.target.value)}
                 placeholder={t('git.messagePlaceholder')}
                 aria-label={t('git.message')}
                 onKeyDown={(e) => {
@@ -181,15 +187,22 @@ export function GitPanel() {
                 }}
                 className="min-h-16"
               />
-              <Button
-                type="submit"
-                variant="primary"
-                icon={<GitCommitHorizontal size={15} />}
-                disabled={!message.trim() || selected.length === 0}
-                className="w-full"
-              >
-                {t('git.commit', { count: selected.length })}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  icon={<GitCommitHorizontal size={15} />}
+                  disabled={!message.trim() || selected.length === 0}
+                  className="flex-1"
+                >
+                  {t('git.commit', { count: selected.length })}
+                </Button>
+                {custom !== null && (
+                  <Button variant="ghost" onClick={() => setCustom(null)} title={t('git.autoMessageHint')}>
+                    {t('git.autoMessage')}
+                  </Button>
+                )}
+              </div>
             </form>
 
             <section aria-label={t('git.changes')}>

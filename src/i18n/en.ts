@@ -650,6 +650,8 @@ export const en: Record<MessageKey, string> = {
   'git.noUpstream': 'no remote',
   'git.message': 'Commit message',
   'git.messagePlaceholder': 'What did you change?',
+  'git.autoMessage': 'Suggestion',
+  'git.autoMessageHint': 'Restore the automatic message listing all changes',
   'git.commit': 'Commit ({count})',
   'git.committed': 'Saved as {hash}',
   'git.changes': 'Changes',
