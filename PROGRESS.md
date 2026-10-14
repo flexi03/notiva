@@ -81,6 +81,10 @@ Stand der Entwicklung, nach Meilensteinen. ✅ fertig · 🚧 in Arbeit · ⏳ g
 - ✅ Vorlesungsmodus: Aufnahme, Transkript lokal mit whisper.cpp (von Notiva eingerichtet) oder per API (OpenAI mit
   Sprechern, Groq), Folien folgen automatisch, Mitschrift-Seite, Zusammenfassung durch den Assistenten
 - ✅ Automatisch speichern an/aus (Standard an), ⌘S
+- ✅ Git: automatische Commit-Nachricht mit allen Änderungen
+- ✅ Moodle-Unterlagen werden automatisch in den Ordner gespeichert; Fortschrittsanzeige für längere Vorgänge
+- ✅ eCampus (HISinOne): Noten/Leistungen per Microsoft-Login, Hintergrundprüfung, Benachrichtigung, Übernahme in
+  die Module, Seite „Noten & Leistungen“
 - ✅ Fehler gefunden und behoben: leere Zeile nach Frontmatter ging verloren; eingeklappte Seitenleiste lag über der
   linken Leiste; Fensterknöpfe (macOS) auf der Trennlinie; scrollIntoView-Promise als Effekt-Rückgabe riss die
   Oberfläche ab; Anmerkungsebene vor Screenreadern versteckt; Whisper-Server überlebte die App
