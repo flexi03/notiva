@@ -18,15 +18,22 @@ export default defineConfig({
     timezoneId: 'Europe/Berlin',
   },
   projects: [
-    { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } },
+    {
+      name: 'desktop',
+      testIgnore: /electron/,
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
+    },
     {
       name: 'tablet',
+      testIgnore: /electron/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 820, height: 1180 }, hasTouch: true },
     },
-    { name: 'mobile', use: { ...devices['iPhone 13'] } },
+    { name: 'mobile', testIgnore: /electron/, use: { ...devices['iPhone 13'] } },
+    // Launches the real desktop app (needs `npm run electron:build`, done by webServer).
+    { name: 'electron', testMatch: /electron\.spec\.ts/, fullyParallel: false },
   ],
   webServer: {
-    command: 'npm run build && npx vite preview --port 4173 --strictPort',
+    command: 'npm run build && npm run electron:build && npx vite preview --port 4173 --strictPort',
     url: 'http://localhost:4173',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

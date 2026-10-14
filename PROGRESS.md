@@ -28,6 +28,13 @@ Stand der Entwicklung, nach Meilensteinen. ✅ fertig · 🚧 in Arbeit · ⏳ g
 
 ## M5 – Dashboards, Vorlagen, Studien-Dashboard ⏳
 
-## M6 – Electron ⏳
+## M6 – Electron ✅
+
+- Sicherer Hauptprozess: contextIsolation, Sandbox, kein Node im Renderer, `app://`-Protokoll mit CSP,
+  Navigation/neue Fenster gesperrt, Berechtigungen abgelehnt, IPC nur vom eigenen Fenster
+- `FsVault`: Zugriff nur im gewählten Ordner (auch gegen Symlink-Ausbrüche), atomares Schreiben
+- Dateiüberwachung: Änderungen von außen (iCloud, Syncthing, Git, andere Editoren) erscheinen sofort
+- macOS-Fensterleiste integriert; Pakete per `npm run dist:mac|win|linux` (electron-builder)
+- E2E mit der echten Desktop-App (Abschottung, echte Dateien, Live-Änderungen, Pfad-Angriffe)
 
 ## M7 – E2E-, Layout-, Sicherheitstests, Feinschliff ⏳

@@ -106,3 +106,23 @@ button {
     min-width: 24px;
   }
 }
+
+/* Desktop app (Electron): the top bars double as window drag areas. */
+[data-shell^='electron'] [data-titlebar] {
+  -webkit-app-region: drag;
+}
+[data-shell^='electron'] [data-titlebar] :is(button, a, input, [role='button']) {
+  -webkit-app-region: no-drag;
+}
+/* macOS: room for the traffic lights (hiddenInset title bar). */
+[data-shell='electron-darwin'] nav [data-titlebar] {
+  padding-top: 2.4rem;
+}
+[data-shell='electron-darwin'] [data-sidebar='closed'] header[data-titlebar] {
+  padding-left: 5rem;
+}
+@media (max-width: 899px) {
+  [data-shell='electron-darwin'] header[data-titlebar] {
+    padding-left: 5rem;
+  }
+}

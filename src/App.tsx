@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useApp } from '@/app/store'
 import { autoOpen } from '@/app/vaults'
+import { electronBridge } from '@/lib/vault'
 import { useTheme } from '@/app/hooks/useTheme'
 import { t } from '@/i18n'
 import { Spinner } from '@/components/ui'
@@ -31,6 +32,17 @@ export function App() {
       .catch(() => undefined)
       .finally(() => setBooting(false))
   }, [setWorkspace])
+
+  // Pick up changes made outside Notiva (other editors, iCloud/Syncthing/Git).
+  useEffect(() => {
+    if (!ws) return
+    const reload = () => void ws.reload().catch(() => undefined)
+    const bridge = electronBridge()
+    if (bridge) return bridge.onVaultChange(reload)
+    if (ws.vault.kind !== 'directory') return
+    window.addEventListener('focus', reload)
+    return () => window.removeEventListener('focus', reload)
+  }, [ws])
 
   if (booting) return <Spinner label={t('common.loading')} />
   if (!ws) return <WelcomeScreen />

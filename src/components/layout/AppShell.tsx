@@ -34,7 +34,7 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
   }, [setSearch, setNewPage, setSidebar, actions])
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full" data-sidebar={sidebarOpen ? 'open' : 'closed'}>
       {sidebarOpen && (
         <div
           className="no-print fixed inset-0 z-30 bg-[rgb(10_14_20/0.35)] min-[900px]:hidden"

@@ -48,7 +48,7 @@ export function Sidebar() {
 
   return (
     <nav aria-label={t('nav.pages')} className="flex h-full flex-col bg-sunken">
-      <div className="flex items-center gap-2 px-3 pt-3 pb-2">
+      <div data-titlebar className="flex items-center gap-2 px-3 pt-3 pb-2">
         <span
           aria-hidden
           className="flex size-7 items-center justify-center rounded-[7px] bg-accent text-[15px] font-bold text-on-accent"

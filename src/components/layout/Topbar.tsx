@@ -17,7 +17,10 @@ export function Topbar({ title, actions }: { title?: string; actions?: ReactNode
   const crumbs = page ? ws.breadcrumbs(page.path) : []
 
   return (
-    <header className="no-print sticky top-0 z-20 flex h-12 items-center gap-1 border-b border-transparent bg-paper/90 px-2 backdrop-blur">
+    <header
+      data-titlebar
+      className="no-print sticky top-0 z-20 flex h-12 items-center gap-1 border-b border-transparent bg-paper/90 px-2 backdrop-blur"
+    >
       <IconButton
         label={t('nav.toggleSidebar')}
         onClick={() => setSidebar(!sidebarOpen)}

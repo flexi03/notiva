@@ -15,6 +15,8 @@ export interface NotivaBridge {
     rename(from: string, to: string): Promise<void>
   }
   openExternal(url: string): Promise<void>
+  /** Subscribes to file changes in the vault (other apps, sync). Returns an unsubscribe function. */
+  onVaultChange(callback: () => void): () => void
 }
 
 declare global {
