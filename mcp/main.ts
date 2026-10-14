@@ -6,6 +6,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { Workspace } from '../src/lib/workspace'
 import { readFile } from 'node:fs/promises'
 import type { MoodleSnapshot } from '../src/lib/moodle'
+import type { ExamSnapshot } from '../src/lib/ecampus'
 import { createServer, folderVault } from './server'
 
 const USAGE = `Notiva MCP-Server
@@ -39,7 +40,21 @@ async function main(): Promise<void> {
         }
       }
     : undefined
-  const server = createServer(ws, { readOnly: args.includes('--read-only'), ...(moodle ? { moodle } : {}) })
+  const examsFile = process.env.NOTIVA_ECAMPUS_SNAPSHOT
+  const exams = examsFile
+    ? async () => {
+        try {
+          return JSON.parse(await readFile(examsFile, 'utf8')) as ExamSnapshot
+        } catch {
+          return null
+        }
+      }
+    : undefined
+  const server = createServer(ws, {
+    readOnly: args.includes('--read-only'),
+    ...(moodle ? { moodle } : {}),
+    ...(exams ? { exams } : {}),
+  })
   await server.connect(new StdioServerTransport())
   process.stderr.write(`notiva-mcp: ${ws.all().length} Seiten in ${folder}\n`)
 }

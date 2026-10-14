@@ -1,0 +1,190 @@
+import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test'
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { createServer, type Server } from 'node:http'
+import os from 'node:os'
+import path from 'node:path'
+import { studyPack } from '../src/lib/packs/study'
+import { expandPack } from '../src/lib/templates'
+import { QIS_RESULTS_HTML } from '../src/test/fixtures/qis'
+
+/**
+ * A small HISinOne/QIS: login, exam administration with an iframe, QIS menu → "Notenspiegel" →
+ * degree tree → results list. The session id ("asi") changes on every visit of the exam page.
+ */
+const fake = {
+  sessions: new Set<string>(),
+  asi: '',
+  results: QIS_RESULTS_HTML,
+  log: [] as string[],
+}
+
+function page(body: string, loggedIn: boolean) {
+  return `<!doctype html><html><head><meta charset="utf-8"><title>eCampus</title></head><body>${
+    loggedIn ? '<a href="/qisserver/rds?state=user&type=4" id="logoutButton">Abmelden</a>' : ''
+  }${body}</body></html>`
+}
+
+function startFake(): Promise<{ server: Server; url: string }> {
+  const server = createServer((req, res) => {
+    const url = new URL(req.url ?? '/', 'http://x')
+    const cookie = /sess=([a-z0-9]+)/.exec(req.headers.cookie ?? '')?.[1]
+    const loggedIn = !!cookie && fake.sessions.has(cookie)
+    const send = (html: string) => {
+      res.setHeader('content-type', 'text/html; charset=utf-8')
+      res.end(html)
+    }
+    const loginForm = page(
+      '<form method="post" action="/login"><label>Benutzer <input name="asdf"></label><label>Passwort <input type="password" name="fdsa"></label><button>Anmelden</button></form>',
+      false,
+    )
+    fake.log.push(url.pathname + url.search)
+    if (url.pathname === '/login' && req.method === 'POST') {
+      const id = Math.random().toString(36).slice(2)
+      fake.sessions.add(id)
+      res.statusCode = 302
+      res.setHeader('set-cookie', `sess=${id}; Path=/`)
+      res.setHeader('location', '/qisserver/pages/cs/sys/portal/hisinoneStartPage.faces')
+      return res.end()
+    }
+    if (url.pathname.endsWith('hisinoneStartPage.faces'))
+      return send(loggedIn ? page('<h1>Startseite</h1>', true) : loginForm)
+    if (url.pathname.endsWith('hisinoneIframePage.faces')) {
+      if (!loggedIn) return send(loginForm)
+      fake.asi = Math.random().toString(36).slice(2)
+      return send(
+        page(
+          `<iframe src="/qisserver/rds?state=change&type=1&moduleParameter=studyPOSMenu&next=menu.vm&asi=${fake.asi}" width="900" height="600"></iframe>`,
+          true,
+        ),
+      )
+    }
+    if (url.pathname === '/qisserver/rds') {
+      if (!loggedIn || url.searchParams.get('asi') !== fake.asi)
+        return send(page('<p>Ihre Sitzung ist abgelaufen.</p>', false))
+      const next = url.searchParams.get('next')
+      const asi = `asi=${fake.asi}`
+      if (url.searchParams.get('state') === 'change')
+        return send(
+          page(
+            `<a href="/qisserver/rds?state=info&${asi}">Info über angemeldete Prüfungen</a> <a href="/qisserver/rds?state=notenspiegelStudent&next=tree.vm&nextdir=qispos/notenspiegel/student&${asi}">Notenspiegel</a>`,
+            true,
+          ),
+        )
+      if (next === 'tree.vm')
+        return send(
+          page(
+            `<a href="/qisserver/rds?state=notenspiegelStudent&next=tree.vm&expand=1&${asi}">Abschluss 84 Bachelor Informatik</a> <a title="Leistungen für Abschluss 84 Bachelor Informatik anzeigen" href="/qisserver/rds?state=notenspiegelStudent&next=list.vm&nextdir=qispos/notenspiegel/student&nodeID=auswahlBaum%7Cabschluss%3Aabschl%3D84&${asi}"><img alt="Leistungen anzeigen"></a>`,
+            true,
+          ),
+        )
+      if (next === 'list.vm')
+        return send(
+          fake.results.replace('<body>', '<body><a href="/qisserver/rds?state=user&type=4">Abmelden</a>'),
+        )
+    }
+    res.statusCode = 404
+    res.end()
+  })
+  return new Promise((resolve) =>
+    server.listen(0, '127.0.0.1', () =>
+      resolve({ server, url: `http://127.0.0.1:${(server.address() as { port: number }).port}` }),
+    ),
+  )
+}
+
+let app: ElectronApplication
+let window: Page
+let folder: string
+let userData: string
+let ecampus: Awaited<ReturnType<typeof startFake>>
+const section = () => window.getByRole('region', { name: 'eCampus (Noten)' })
+
+test.beforeAll(async () => {
+  ecampus = await startFake()
+  folder = mkdtempSync(path.join(os.tmpdir(), 'notiva-e2e-ecampus-'))
+  userData = mkdtempSync(path.join(os.tmpdir(), 'notiva-e2e-user-'))
+  for (const file of expandPack(studyPack, '', {}).files) {
+    mkdirSync(path.dirname(path.join(folder, file.path)), { recursive: true })
+    writeFileSync(path.join(folder, file.path), file.content)
+  }
+  app = await electron.launch({
+    args: ['.'],
+    env: { ...process.env, NOTIVA_E2E_FOLDER: folder, NOTIVA_E2E_USERDATA: userData },
+  })
+  window = await app.firstWindow()
+  await window.getByRole('button', { name: 'Ordner wählen' }).click()
+  await window.getByRole('button', { name: 'Einstellungen' }).click()
+})
+
+test.afterAll(async () => {
+  await app?.close()
+  ecampus?.server.close()
+})
+
+test('meldet sich an und findet die Leistungsübersicht selbst', async () => {
+  await section()
+    .getByRole('button', { name: /Adressen anpassen/ })
+    .click()
+  await section()
+    .getByRole('textbox', { name: 'eCampus-Startseite' })
+    .fill(`${ecampus.url}/qisserver/pages/cs/sys/portal/hisinoneStartPage.faces`)
+  await section()
+    .getByRole('textbox', { name: 'Seite der Prüfungsverwaltung' })
+    .fill(`${ecampus.url}/qisserver/pages/cs/sys/portal/hisinoneIframePage.faces?id=Pruefungsverwaltung`)
+  const popup = app.waitForEvent('window')
+  await section().getByRole('button', { name: 'Anmelden & Leistungen holen' }).click()
+  const login = await popup
+  // Progress is visible while the user signs in.
+  await expect(window.getByTestId('progress-task').filter({ hasText: 'eCampus: Anmeldung' })).toBeVisible()
+  await login.getByLabel('Benutzer').fill('alex')
+  await login.getByLabel('Passwort').fill('geheim')
+  await login.getByRole('button', { name: 'Anmelden' }).click()
+  await expect(
+    window.getByTestId('progress-task').filter({ hasText: '5 Leistungen aus eCampus gelesen' }),
+  ).toBeVisible({ timeout: 20_000 })
+  await expect(section().getByRole('status')).toContainText('5 Einträge')
+  expect(fake.log.some((l) => l.includes('next=list.vm'))).toBe(true)
+  // The login is in the app profile – the password nowhere.
+  expect(readFileSync(path.join(userData, 'ecampus.json'), 'utf8')).not.toContain('geheim')
+})
+
+test('zeigt Noten, Schnitt und ECTS und übernimmt sie in die Module', async () => {
+  await section().getByRole('button', { name: 'Leistungen ansehen' }).click()
+  const table = window.getByRole('table', { name: 'Leistungen' })
+  await expect(table).toContainText('Lineare Algebra')
+  await expect(table).toContainText('1,3')
+  await expect(window.getByText('ECTS bestanden')).toBeVisible()
+  await window.getByRole('button', { name: 'In Module übernehmen …' }).click()
+  const dialog = window.getByRole('dialog', { name: 'Leistungen in die Module übernehmen' })
+  await expect(dialog).toContainText('Mathematik 1')
+  await dialog.getByRole('button', { name: /übernehmen/ }).click()
+  await expect(
+    window.getByTestId('progress-task').filter({ hasText: 'Module aus eCampus aktualisiert' }),
+  ).toBeVisible()
+  await expect
+    .poll(() => readFileSync(path.join(folder, 'Studium/Module/Lineare Algebra.md'), 'utf8'))
+    .toContain('Note: 1.3')
+  expect(readFileSync(path.join(folder, 'Studium/Module/Lineare Algebra.md'), 'utf8')).toContain(
+    'Status: Bestanden',
+  )
+})
+
+test('prüft im Hintergrund mit neuer Sitzung und meldet neue Noten', async () => {
+  fake.results = QIS_RESULTS_HTML.replace('<td></td><td>angemeldet</td>', '<td>2,0</td><td>bestanden</td>')
+  await window.getByRole('button', { name: 'Aktualisieren' }).click()
+  await expect(window.getByRole('table', { name: 'Leistungen' })).toContainText('2,0')
+  const bell = window
+    .getByRole('navigation', { name: 'Werkzeugleiste rechts' })
+    .getByRole('button', { name: /Benachrichtigungen/ })
+  await bell.click()
+  await expect(window.getByRole('complementary', { name: 'Benachrichtigungen' })).toContainText('Datenbanken')
+  await bell.click()
+})
+
+test('sagt Bescheid, wenn die Anmeldung abgelaufen ist', async () => {
+  fake.sessions.clear()
+  await window.getByRole('button', { name: 'Aktualisieren' }).click()
+  await expect(window.getByRole('alert').filter({ hasText: 'Anmeldung ist abgelaufen' }).first()).toBeVisible({
+    timeout: 20_000,
+  })
+})

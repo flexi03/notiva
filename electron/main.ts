@@ -43,6 +43,8 @@ import {
 } from './moodle'
 import { clearMoodleSession, openMoodlePage, ssoLogin } from './moodleWindow'
 import { WhisperEngine } from './whisper'
+import { Ecampus, NeedsLogin } from './ecampus'
+import { examNews, type ExamSnapshot } from '../src/lib/ecampus'
 import { NotificationStore, parseNotifySettings, type NotifySettings } from './notifier'
 import { deadlineReminders, moodleNews, type AppNotification } from '../src/lib/notifications'
 import type { MoodleSnapshot } from '../src/lib/moodle'
@@ -218,6 +220,35 @@ async function pollMoodle(): Promise<MoodleSnapshot> {
 
 let pollTimer: ReturnType<typeof setTimeout> | null = null
 
+/** eCampus exam results (HISinOne) – own login session, results snapshot in the profile. */
+const ecampus = new Ecampus(userFile(''), path.join(__dirname, 'moodlePreload.cjs'))
+const ecampusProgress = (text: string) => window?.webContents.send('ecampus:progress', text)
+let lastEcampusCheck = 0
+
+/** Fetches the results and turns changes into notifications. */
+async function pollEcampus(): Promise<ExamSnapshot> {
+  const previous = await ecampus.snapshot()
+  try {
+    const next = await ecampus.fetch(ecampusProgress)
+    lastEcampusCheck = Date.now()
+    await notifications.add(examNews(previous, next))
+    window?.webContents.send('ecampus:polled')
+    return next
+  } catch (error) {
+    if (error instanceof NeedsLogin)
+      await notifications.add([
+        {
+          id: `ecampus-login:${new Date().toISOString().slice(0, 10)}`,
+          kind: 'notice',
+          title: 'eCampus: bitte neu anmelden',
+          body: 'Die Anmeldung ist abgelaufen – Einstellungen → eCampus → Anmelden.',
+          time: new Date().toISOString(),
+        },
+      ])
+    throw error
+  }
+}
+
 /** Local speech to text (whisper.cpp) – models live in the app profile. */
 const whisper = new WhisperEngine(userFile('whisper-models'), (url, init) => net.fetch(url, init))
 const whisperProgress = (event: object) => window?.webContents.send('whisper:progress', event)
@@ -229,6 +260,9 @@ async function schedulePolling(delay?: number): Promise<void> {
   pollTimer = setTimeout(
     async () => {
       if (await loadMoodle()) await pollMoodle().catch(() => undefined)
+      // Exam results change rarely: at most every 30 minutes.
+      if ((await ecampus.config()) && Date.now() - lastEcampusCheck > 30 * 60_000)
+        await pollEcampus().catch(() => undefined)
       void schedulePolling()
     },
     delay ?? minutes * 60_000,
@@ -242,7 +276,11 @@ function mcpLaunch(): McpLaunch {
   return {
     command: process.execPath,
     args: [script, requireVault().root],
-    env: { ELECTRON_RUN_AS_NODE: '1', NOTIVA_MOODLE_SNAPSHOT: MOODLE_SNAPSHOT() },
+    env: {
+      ELECTRON_RUN_AS_NODE: '1',
+      NOTIVA_MOODLE_SNAPSHOT: MOODLE_SNAPSHOT(),
+      NOTIVA_ECAMPUS_SNAPSHOT: ecampus.snapshotFile,
+    },
   }
 }
 
@@ -464,6 +502,25 @@ function registerIpc(): void {
       return { status: 0, body: (error as Error).message }
     }
   })
+  handle('ecampus:status', async () => {
+    const config = await ecampus.config()
+    const snapshot = await ecampus.snapshot()
+    return {
+      connected: !!config,
+      ...(config ?? {}),
+      ...(snapshot ? { fetchedAt: snapshot.fetchedAt, count: snapshot.records.length } : {}),
+    }
+  })
+  handle('ecampus:connect', async (raw: unknown) => {
+    const previous = await ecampus.snapshot()
+    const snapshot = await ecampus.login(window, raw, ecampusProgress)
+    lastEcampusCheck = Date.now()
+    await notifications.add(examNews(previous, snapshot))
+    return snapshot
+  })
+  handle('ecampus:fetch', async () => pollEcampus())
+  handle('ecampus:snapshot', async () => ecampus.snapshot())
+  handle('ecampus:disconnect', async () => ecampus.disconnect())
   handle('whisper:status', async () => whisper.status())
   handle('whisper:install', async () => whisper.install(whisperProgress))
   handle('whisper:download', async (id: unknown) => whisper.download(String(id), whisperProgress))

@@ -54,6 +54,7 @@ export interface AgentOptions {
   signal?: AbortSignal
   now?: Date
   moodle?: ToolContext['moodle']
+  exams?: ToolContext['exams']
 }
 
 export function toolSpecs(readOnly = false): ToolSpec[] {
@@ -77,6 +78,7 @@ export async function runAgent(options: AgentOptions): Promise<Message[]> {
     signal,
     now,
     moodle,
+    exams,
   } = options
   const messages = options.messages.slice()
   const tools = toolSpecs(readOnly)
@@ -101,7 +103,7 @@ export async function runAgent(options: AgentOptions): Promise<Message[]> {
         continue
       }
       const outcome = await runTool(
-        { ws, ...(now ? { now } : {}), ...(moodle ? { moodle } : {}) },
+        { ws, ...(now ? { now } : {}), ...(moodle ? { moodle } : {}), ...(exams ? { exams } : {}) },
         call.name,
         call.input,
       )

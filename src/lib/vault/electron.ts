@@ -1,5 +1,6 @@
 import type { MoodleSnapshot } from '../moodle'
 import type { AppNotification } from '../notifications'
+import type { ExamSnapshot } from '../ecampus'
 import type { VaultAdapter, VaultFile } from './types'
 
 export type GitStatus = 'modified' | 'added' | 'deleted' | 'renamed' | 'untracked'
@@ -114,6 +115,26 @@ export interface NotificationBridge {
   onOpen(callback: (id: string | null) => void): () => void
 }
 
+export interface EcampusStatus {
+  connected: boolean
+  startUrl?: string
+  examsUrl?: string
+  resultsUrl?: string
+  fetchedAt?: string
+  count?: number
+}
+
+export interface EcampusBridge {
+  status(): Promise<EcampusStatus>
+  /** Opens the sign-in window; resolves when the results list was found. */
+  connect(config: { startUrl: string; examsUrl: string }): Promise<ExamSnapshot>
+  fetch(): Promise<ExamSnapshot>
+  snapshot(): Promise<ExamSnapshot | null>
+  disconnect(): Promise<void>
+  onProgress(callback: (text: string) => void): () => void
+  onPolled(callback: () => void): () => void
+}
+
 export interface WhisperStatus {
   server: string | null
   brew: boolean
@@ -152,6 +173,8 @@ export interface NotivaBridge {
     rename(from: string, to: string): Promise<void>
   }
   openExternal(url: string): Promise<void>
+  /** eCampus exam results (desktop). */
+  ecampus?: EcampusBridge
   /** Local speech to text with whisper.cpp (desktop). */
   whisper?: WhisperBridge
   /** Asks the OS for microphone access (macOS); true if granted. */

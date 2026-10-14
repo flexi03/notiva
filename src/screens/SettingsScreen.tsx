@@ -7,6 +7,7 @@ import { exportVault } from './exportVault'
 import { Row, Section } from './settingsLayout'
 import { AiSettingsSection, McpSection } from './AiSettings'
 import { MoodleSection } from '@/components/moodle/MoodleSettings'
+import { EcampusSection } from '@/components/ecampus/EcampusSettings'
 import { TranscriptionSettingsSection } from '@/components/lecture/TranscriptionSettings'
 import { NotificationSettingsSection } from '@/components/notifications/NotificationSettings'
 import { PromptEditor } from '@/components/ai/PromptEditor'
@@ -189,6 +190,10 @@ export function SettingsScreen() {
 
         <Section title={t('settings.moodle')}>
           <MoodleSection />
+        </Section>
+
+        <Section title={t('ecampus.title')}>
+          <EcampusSection />
         </Section>
 
         <Section title={t('transcribe.title')}>

@@ -1,3 +1,4 @@
+import { GradesScreen } from '@/screens/GradesScreen'
 import { CourseScreen } from '@/screens/CourseScreen'
 import { FileScreen } from '@/screens/FileScreen'
 import { MoodleScreen } from '@/screens/MoodleScreen'
@@ -75,6 +76,8 @@ export function App() {
         ) : (
           <MoodleScreen />
         )
+      ) : route.name === 'grades' ? (
+        <GradesScreen />
       ) : route.name === 'file' ? (
         <FileScreen key={route.path} path={route.path} {...(route.page ? { page: route.page } : {})} />
       ) : (

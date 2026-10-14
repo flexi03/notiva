@@ -21,6 +21,7 @@ import type { Workspace } from '@/lib/workspace'
 import { electronBridge } from '@/lib/vault'
 import { moodleAvailable, useMoodle } from '@/app/moodle'
 import { syncMaterials } from '@/app/materials'
+import { useEcampus } from '@/app/ecampus'
 
 /** Sidebar (drawer on small screens) + main area + global overlays and shortcuts. */
 export function AppShell({ children, overlays }: { children: ReactNode; overlays?: ReactNode }) {
@@ -28,6 +29,7 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
   const { sidebarOpen, setSidebar, setSearch, setNewPage, route, rightPanel, leftView } = useApp()
   useGitSync()
   useNotificationSync(ws)
+  useEffect(() => electronBridge()?.ecampus?.onPolled(() => void useEcampus.getState().refresh()), [])
   // Unsaved changes (autosave off): ask before the window closes.
   useEffect(() => {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {

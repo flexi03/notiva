@@ -1,4 +1,5 @@
 import {
+  Award,
   CalendarDays,
   GraduationCap,
   LayoutTemplate,
@@ -113,6 +114,14 @@ export function Sidebar() {
             label={t('nav.moodle')}
             active={route.name === 'moodle'}
             onClick={() => navigate({ name: 'moodle' })}
+          />
+        )}
+        {moodleAvailable() && (
+          <NavButton
+            icon={<Award size={15} />}
+            label={t('nav.grades')}
+            active={route.name === 'grades'}
+            onClick={() => navigate({ name: 'grades' })}
           />
         )}
       </div>

@@ -13,6 +13,23 @@ contextBridge.exposeInMainWorld('notiva', {
   openExternal: (url: string) => invoke<void>('app:openExternal', url),
   openWithSystem: (path: string) => invoke<void>('vault:openWithSystem', path),
   microphone: () => invoke<boolean>('app:microphone'),
+  ecampus: {
+    status: () => invoke('ecampus:status'),
+    connect: (config: object) => invoke('ecampus:connect', config),
+    fetch: () => invoke('ecampus:fetch'),
+    snapshot: () => invoke('ecampus:snapshot'),
+    disconnect: () => invoke<void>('ecampus:disconnect'),
+    onProgress(callback: (text: string) => void) {
+      const listener = (_e: unknown, text: string) => callback(text)
+      ipcRenderer.on('ecampus:progress', listener)
+      return () => ipcRenderer.removeListener('ecampus:progress', listener)
+    },
+    onPolled(callback: () => void) {
+      const listener = () => callback()
+      ipcRenderer.on('ecampus:polled', listener)
+      return () => ipcRenderer.removeListener('ecampus:polled', listener)
+    },
+  },
   whisper: {
     status: () => invoke('whisper:status'),
     install: () => invoke<void>('whisper:install'),

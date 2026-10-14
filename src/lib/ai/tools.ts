@@ -28,6 +28,7 @@ import { parse as parseYaml } from 'yaml'
 import { FORMAT_GUIDE } from './guide'
 import { applyMoodleImport, importTargets, planMoodleImport, type MoodleSnapshot } from '../moodle'
 import { toIsoDate } from '../dates'
+import { finalResults, type ExamSnapshot } from '../ecampus'
 import type { Page, Workspace } from '../workspace'
 import { InputError, validate, type JsonSchema } from './schema'
 
@@ -36,6 +37,8 @@ export interface ToolContext {
   now?: Date
   /** Current Moodle data – only in the desktop app (fresh) and its MCP server (last fetch). */
   moodle?: () => Promise<MoodleSnapshot | null>
+  /** Exam results from eCampus (last check) – desktop app and its MCP server. */
+  exams?: () => Promise<ExamSnapshot | null>
 }
 
 export interface ToolDef {
@@ -914,6 +917,35 @@ export const TOOLS: ToolDef[] = [
         created: plan.filter((p) => p.kind === 'create').map((p) => p.title),
         updated: plan.filter((p) => p.kind === 'update').map((p) => p.title),
         paths: touched,
+      }
+    },
+  },
+  {
+    name: 'exam_results',
+    description:
+      'Liest die Prüfungsleistungen aus eCampus: jede Prüfung mit Note, Status (bestanden/nicht bestanden/angemeldet), ECTS, Semester, Versuch und Datum, dazu Schnitt und ECTS-Summe.',
+    readOnly: true,
+    inputSchema: { type: 'object', properties: {} },
+    async run(ctx) {
+      const snap = ctx.exams ? await ctx.exams() : null
+      if (!snap)
+        throw new InputError(
+          'eCampus ist nicht verbunden. Der Nutzer kann es in der Desktop-App unter Einstellungen → eCampus verbinden.',
+        )
+      const final = finalResults(snap.records).filter((r) => r.status === 'passed')
+      const weighted = final.filter((r) => r.grade !== undefined && r.credits)
+      const average = weighted.length
+        ? Math.round(
+            (weighted.reduce((s, r) => s + r.grade! * r.credits!, 0) /
+              weighted.reduce((s, r) => s + r.credits!, 0)) *
+              100,
+          ) / 100
+        : null
+      return {
+        fetchedAt: snap.fetchedAt,
+        average,
+        creditsPassed: final.reduce((s, r) => s + (r.credits ?? 0), 0),
+        records: snap.records.map(({ id: _id, ...r }) => r),
       }
     },
   },

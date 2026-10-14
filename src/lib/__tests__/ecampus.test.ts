@@ -96,3 +96,56 @@ describe('eCampus results', () => {
     expect(news[0]!.body).toContain('Note 2,0')
   })
 })
+
+describe('finding the way to the results', () => {
+  it('reads the login state and links of a page', async () => {
+    const { pageState, extractTables } = await import('../ecampus')
+    const doc = new DOMParser().parseFromString(
+      '<a href="https://e.example/rds?state=user&type=4">Abmelden</a><a href="https://e.example/rds?state=notenspiegelStudent&asi=X">Notenspiegel</a>',
+      'text/html',
+    )
+    const state = pageState(doc, extractTables)
+    expect(state).toMatchObject({ loggedIn: true, loginPage: false, tables: [] })
+    expect(state.links).toHaveLength(2)
+    const login = new DOMParser().parseFromString(
+      '<form><input name="asdf"><input type="password" name="fdsa"></form>',
+      'text/html',
+    )
+    expect(pageState(login, extractTables)).toMatchObject({ loggedIn: false, loginPage: true })
+  })
+
+  it('walks QIS: Notenspiegel, then the degree', async () => {
+    const { pickResultsLink } = await import('../ecampus')
+    const menu = [
+      { text: 'Info über angemeldete Prüfungen', title: '', href: 'https://e/rds?state=a' },
+      { text: 'Notenspiegel', title: '', href: 'https://e/rds?state=notenspiegelStudent&next=tree.vm&asi=1' },
+      { text: 'Abmelden', title: '', href: 'https://e/rds?state=user&type=4' },
+    ]
+    expect(pickResultsLink(menu, new Set())?.text).toBe('Notenspiegel')
+    const tree = [
+      {
+        text: 'Abschluss 84 Bachelor',
+        title: '',
+        href: 'https://e/rds?state=notenspiegelStudent&next=tree.vm&expand=1',
+      },
+      {
+        text: '',
+        title: 'Leistungen für Abschluss 84 Bachelor anzeigen',
+        href: 'https://e/rds?state=notenspiegelStudent&next=list.vm&asi=1',
+      },
+    ]
+    expect(pickResultsLink(tree, new Set())?.title).toContain('anzeigen')
+    expect(pickResultsLink([{ text: 'Startseite', title: '', href: 'https://e/' }], new Set())).toBeNull()
+  })
+
+  it('moves a remembered results URL into the current session', async () => {
+    const { withSessionAsi } = await import('../ecampus')
+    expect(
+      withSessionAsi(
+        'https://e/qisserver/rds?state=notenspiegelStudent&next=list.vm&nodeID=x&asi=OLD',
+        'https://e/qisserver/rds?state=change&asi=NEW',
+      ),
+    ).toBe('https://e/qisserver/rds?state=notenspiegelStudent&next=list.vm&nodeID=x&asi=NEW')
+    expect(withSessionAsi('https://e/a?asi=1', 'https://e/b')).toBeNull()
+  })
+})

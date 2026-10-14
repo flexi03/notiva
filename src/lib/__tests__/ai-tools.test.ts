@@ -30,7 +30,16 @@ async function setup(moodle: MoodleSnapshot | null = MOODLE) {
   const ws = await Workspace.open(new MemoryVault())
   await installPack(ws, studyPack, {}, '', now)
   const call = async (name: string, input: unknown) => {
-    const outcome = await runTool({ ws, now, moodle: async () => moodle }, name, input)
+    const outcome = await runTool(
+      {
+        ws,
+        now,
+        moodle: async () => moodle,
+        exams: async () => ({ site: 'x', fetchedAt: now.toISOString(), records: [] }),
+      },
+      name,
+      input,
+    )
     return { ...outcome, data: outcome.ok ? (JSON.parse(outcome.text) as unknown) : null }
   }
   return { ws, call }

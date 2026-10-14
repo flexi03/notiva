@@ -59,6 +59,7 @@ const TOOL_ICONS: Record<string, ReactNode> = {
   read_file: <Paperclip size={13} />,
   moodle_overview: <GraduationCap size={13} />,
   import_moodle: <GraduationCap size={13} />,
+  exam_results: <GraduationCap size={13} />,
 }
 
 /** "Liest Studium/Module.md" – what the call is about, from its most telling argument. */

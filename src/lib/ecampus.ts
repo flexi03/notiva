@@ -275,3 +275,87 @@ export function examNews(
   }
   return news
 }
+
+/* ---------- finding the way to the results (desktop app drives the eCampus window) ---------- */
+
+export interface PageLink {
+  text: string
+  title: string
+  href: string
+}
+
+export interface PageState {
+  url: string
+  /** A logout link is visible → signed in. */
+  loggedIn: boolean
+  /** A login form or the identity provider is shown. */
+  loginPage: boolean
+  links: PageLink[]
+  tables: RawTable[]
+}
+
+/**
+ * Runs inside an eCampus frame (stringified, self-contained): login state, links and result tables.
+ * Uses {@link extractTables} passed in as `extract`.
+ */
+export function pageState(doc: Document, extract: (doc: Document) => RawTable[]): PageState {
+  const text = (el: Element | null) => (el?.textContent ?? '').replace(/\s+/g, ' ').trim()
+  const anchors = Array.from(doc.querySelectorAll('a[href]')) as HTMLAnchorElement[]
+  const loggedIn = anchors.some((a) => /abmelden|logout/i.test(`${text(a)} ${a.title} ${a.id}`))
+  const loginPage =
+    /login\.microsoftonline\.com|\/idp\/|\/saml/i.test(doc.location?.href ?? '') ||
+    (!!doc.querySelector('input[type="password"]') && !loggedIn)
+  return {
+    url: doc.location?.href ?? '',
+    loggedIn,
+    loginPage,
+    links: anchors
+      .slice(0, 400)
+      .map((a) => ({ text: text(a).slice(0, 120), title: (a.title || '').slice(0, 160), href: a.href })),
+    tables: extract(doc),
+  }
+}
+
+/**
+ * The most promising link on the way to the results list (QIS: "Notenspiegel" / "Leistungen
+ * anzeigen", then in the degree tree "Leistungen für … anzeigen"). Null if nothing fits.
+ */
+export function pickResultsLink(links: PageLink[], visited: Set<string>): PageLink | null {
+  const score = (l: PageLink) => {
+    const s = `${l.text} ${l.title}`.toLowerCase()
+    if (visited.has(l.href) || !/^https?:/i.test(l.href) || /abmelden|logout|drucken|pdf|hilfe/.test(s))
+      return 0
+    let points = 0
+    if (/notenspiegel/.test(s) || /notenspiegel/i.test(l.href)) points += 5
+    if (/leistungen.*anzeigen|leistungsübersicht|prüfungsergebnisse|meine leistungen|alle leistungen/.test(s))
+      points += 6
+    if (/anzeigen/.test(s) && /leistung|note|abschluss|prüfung/.test(s)) points += 3
+    if (/list\.vm|state=notenspiegel/i.test(l.href)) points += 2
+    if (/info über angemeldete|anmeldung|abmeldung|bescheinigung/.test(s)) points -= 4
+    return points
+  }
+  let best: PageLink | null = null
+  let bestScore = 2
+  for (const l of links) {
+    const sc = score(l)
+    if (sc > bestScore) {
+      best = l
+      bestScore = sc
+    }
+  }
+  return best
+}
+
+/** QIS URLs carry the session ("asi=…"): put the current session into a remembered results URL. */
+export function withSessionAsi(remembered: string, current: string): string | null {
+  try {
+    const asi = new URL(current).searchParams.get('asi')
+    if (!asi) return null
+    const url = new URL(remembered)
+    if (!url.searchParams.has('asi')) return null
+    url.searchParams.set('asi', asi)
+    return url.toString()
+  } catch {
+    return null
+  }
+}

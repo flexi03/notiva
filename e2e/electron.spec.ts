@@ -40,6 +40,7 @@ test('Renderer ist abgeschottet (kein Node, nur die Notiva-Brücke)', async () =
     bridge: [
       'aiCli',
       'aiRequest',
+      'ecampus',
       'git',
       'lastFolder',
       'mcpInfo',
@@ -166,6 +167,7 @@ test('startet den MCP-Server für den offenen Ordner mit der App selbst', async 
   expect(info.env).toEqual({
     ELECTRON_RUN_AS_NODE: '1',
     NOTIVA_MOODLE_SNAPSHOT: expect.stringMatching(/moodle-snapshot\.json$/),
+    NOTIVA_ECAMPUS_SNAPSHOT: expect.stringMatching(/ecampus-snapshot\.json$/),
   })
   // Speak MCP with the exact command line AI apps would use.
   const child = spawn(info.command, info.args, { env: { ...process.env, ...info.env } })
