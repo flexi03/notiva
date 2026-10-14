@@ -82,7 +82,7 @@ export function GradesScreen() {
           <EmptyState
             title={t('grades.notConnected')}
             action={
-              <Button variant="primary" onClick={() => navigate({ name: 'settings' })}>
+              <Button variant="primary" onClick={() => navigate({ name: 'settings', section: 'study' })}>
                 {t('grades.connect')}
               </Button>
             }

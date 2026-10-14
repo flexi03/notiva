@@ -129,7 +129,7 @@ export function AssistantPanel() {
             <ScrollText size={16} />
           </IconButton>
           <PromptDialog open={promptOpen} onClose={() => setPromptOpen(false)} />
-          <IconButton label={t('nav.settings')} onClick={() => navigate({ name: 'settings' })}>
+          <IconButton label={t('nav.settings')} onClick={() => navigate({ name: 'settings', section: 'ai' })}>
             <Settings2 size={16} />
           </IconButton>
           <IconButton label={t('ai.newChat')} onClick={reset} disabled={messages.length === 0 && !error}>
@@ -374,7 +374,7 @@ function SetupCard() {
             >
               {t('ai.setup.useClaude')}
             </Button>
-            <Button variant="ghost" onClick={() => navigate({ name: 'settings' })}>
+            <Button variant="ghost" onClick={() => navigate({ name: 'settings', section: 'ai' })}>
               {t('ai.setup.other')}
             </Button>
           </div>
@@ -382,7 +382,7 @@ function SetupCard() {
       ) : (
         <>
           <p className="text-sm text-ink-2">{t('ai.setup.text')}</p>
-          <Button variant="primary" onClick={() => navigate({ name: 'settings' })}>
+          <Button variant="primary" onClick={() => navigate({ name: 'settings', section: 'ai' })}>
             {t('ai.setup.open')}
           </Button>
         </>

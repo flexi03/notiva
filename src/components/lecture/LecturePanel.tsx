@@ -86,7 +86,7 @@ export function LecturePanel({ page, jump, doc, path }: SideProps) {
             >
               {t('lecture.start')}
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => navigate({ name: 'settings' })}>
+            <Button variant="ghost" size="sm" onClick={() => navigate({ name: 'settings', section: 'ai' })}>
               {t('lecture.settings')}
             </Button>
           </div>

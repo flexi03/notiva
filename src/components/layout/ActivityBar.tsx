@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Bell, Files, GitBranch, Sparkles } from 'lucide-react'
+import { Bell, Files, GitBranch, Settings, Sparkles, Trash2 } from 'lucide-react'
 import { unreadCount, useNotifications } from '@/app/notifications'
 import { useGit } from '@/app/git'
 import { useApp, VIEWS, type Side, type ViewId } from '@/app/store'
@@ -26,8 +26,7 @@ export function ActivityBar({ side }: { side: Side }) {
   const [over, setOver] = useState(false)
   const views = VIEWS.filter((v) => sides[v] === side)
   const target = dragging !== null && sides[dragging] !== side
-  // The right bar only exists when it holds a view – or while a view is dragged to it.
-  if (side === 'right' && views.length === 0 && !target) return null
+  // The right bar always holds trash and settings (desktop), next to the notifications.
 
   return (
     <nav
@@ -57,12 +56,40 @@ export function ActivityBar({ side }: { side: Side }) {
       {views.map((view) => (
         <ViewItem key={view} view={view} side={side} />
       ))}
+      {side === 'right' && <AppItems />}
       {target && (
         <span className="mt-1 px-1 text-center text-[10px] leading-tight text-ink-3" aria-hidden>
           {t('views.dropHere')}
         </span>
       )}
     </nav>
+  )
+}
+
+/** Trash and settings: app places, not views – at the top right next to the notifications. */
+function AppItems() {
+  const route = useApp((s) => s.route)
+  const navigate = useApp((s) => s.navigate)
+  return (
+    <>
+      <span aria-hidden className="my-1 h-px w-6 bg-line" />
+      <BarButton
+        label={t('nav.trash')}
+        active={route.name === 'trash'}
+        side="right"
+        onClick={() => navigate({ name: 'trash' })}
+      >
+        <Trash2 size={18} />
+      </BarButton>
+      <BarButton
+        label={t('nav.settings')}
+        active={route.name === 'settings'}
+        side="right"
+        onClick={() => navigate({ name: 'settings' })}
+      >
+        <Settings size={18} />
+      </BarButton>
+    </>
   )
 }
 

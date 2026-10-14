@@ -82,7 +82,10 @@ export function NotificationPanel() {
       <IconButton label={t('notify.markAll')} onClick={() => void markRead('all')} disabled={unread === 0}>
         <CheckCheck size={16} />
       </IconButton>
-      <IconButton label={t('notify.settings')} onClick={() => navigate({ name: 'settings' })}>
+      <IconButton
+        label={t('notify.settings')}
+        onClick={() => navigate({ name: 'settings', section: 'checks' })}
+      >
         <Settings2 size={16} />
       </IconButton>
     </>

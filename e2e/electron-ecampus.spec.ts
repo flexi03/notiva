@@ -163,6 +163,7 @@ test.beforeAll(async () => {
   window = await app.firstWindow()
   await window.getByRole('button', { name: 'Ordner wählen' }).click()
   await window.getByRole('button', { name: 'Einstellungen' }).click()
+  await window.getByRole('tab', { name: 'Studium' }).click()
 })
 
 test.afterAll(async () => {

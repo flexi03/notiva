@@ -179,7 +179,8 @@ export function Sidebar() {
         )}
       </div>
 
-      <div className="space-y-px border-t border-line px-2 py-2">
+      {/* On wide screens trash and settings sit top right (activity bar). */}
+      <div className="space-y-px border-t border-line px-2 py-2 min-[900px]:hidden">
         <NavButton
           icon={<Trash2 size={15} />}
           label={t('nav.trash')}

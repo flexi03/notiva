@@ -42,7 +42,7 @@ export function MoodleScreen() {
       icon={<GraduationCap size={28} />}
       title={t('moodle.screen.notConnected')}
       action={
-        <Button variant="primary" onClick={() => navigate({ name: 'settings' })}>
+        <Button variant="primary" onClick={() => navigate({ name: 'settings', section: 'study' })}>
           {t('moodle.screen.connect')}
         </Button>
       }

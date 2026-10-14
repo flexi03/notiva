@@ -7,7 +7,7 @@ export type Route =
   | { name: 'tag'; tag: string }
   | { name: 'search'; query: string }
   | { name: 'trash' }
-  | { name: 'settings' }
+  | { name: 'settings'; section?: string }
   | { name: 'templates' }
   | { name: 'moodle'; course?: string }
   | { name: 'grades' }
@@ -35,8 +35,9 @@ export function parseRoute(hash: string): Route {
       return rest ? { name: 'tag', tag: rest.toLowerCase() } : { name: 'home' }
     case 'search':
       return { name: 'search', query: rest ?? '' }
-    case 'trash':
     case 'settings':
+      return rest && /^[a-z]+$/.test(rest) ? { name: 'settings', section: rest } : { name: 'settings' }
+    case 'trash':
     case 'templates':
     case 'grades':
       return { name: head }
@@ -66,6 +67,8 @@ export function routeHash(route: Route): string {
       return `#/search/${encodeURIComponent(route.query)}`
     case 'moodle':
       return route.course ? `#/moodle/${encodeURIComponent(route.course)}` : '#/moodle'
+    case 'settings':
+      return route.section ? `#/settings/${route.section}` : '#/settings'
     case 'file':
       return `#/f/${encodeURIComponent(route.page ? `${route.path}#page=${route.page}` : route.path)}`
     default:
