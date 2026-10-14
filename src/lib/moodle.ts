@@ -69,6 +69,8 @@ export interface MoodleSnapshot {
   events: MoodleEvent[]
   grades: Array<{ course: string; grade: string }>
   materials?: MoodleMaterial[]
+  /** Why there are no materials (e.g. the site doesn't allow core_course_get_contents). */
+  materialsError?: string
   notices?: MoodleNotice[]
 }
 

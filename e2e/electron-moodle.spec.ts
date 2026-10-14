@@ -335,24 +335,26 @@ test('meldet Neuigkeiten aus Moodle im Benachrichtigungscenter', async () => {
   await expect(bell).not.toContainText('3')
 })
 
-test('speichert ein Skript aus dem Kurs und zeigt es im Viewer', async () => {
+test('speichert neue Skripte automatisch – mit Fortschritt und Bestätigung', async () => {
+  // The fetches above already saved the course's PDFs into the vault.
+  const saved = path.join(folder, 'Studium/Unterlagen/Lineare Algebra/vl01.pdf')
+  await expect.poll(() => existsSync(saved)).toBe(true)
+  expect(readFileSync(saved).subarray(0, 4).toString()).toBe('%PDF')
+  expect(existsSync(path.join(folder, 'Studium/Unterlagen/Lineare Algebra/vl02.pdf'))).toBe(true)
+  expect(moodle.calls).toContain('file:/webservice/pluginfile.php/1/vl01.pdf')
+
+  // A manual refresh shows its progress and ends with a confirmation.
   await window.getByRole('button', { name: 'Moodle', exact: true }).click()
+  await window.getByRole('button', { name: 'Aktualisieren' }).click()
+  await expect(
+    window.getByTestId('progress-task').filter({ hasText: 'Moodle abgerufen: 2 Kurse, 2 Unterlagen' }).last(),
+  ).toBeVisible()
+
   await window.getByRole('button', { name: 'Unterlagen (2)' }).click()
   const week = window.getByRole('region', { name: 'Woche 1' })
-  await expect(week).toContainText('Vorlesung 2 – Skript')
-  await week
-    .getByRole('listitem')
-    .filter({ hasText: 'Vorlesung 1' })
-    .getByRole('button', { name: 'Speichern & öffnen' })
-    .click()
+  const row = week.getByRole('listitem').filter({ hasText: 'Vorlesung 1' })
+  await expect(row).toContainText('in Notiva gespeichert')
+  await row.getByRole('button', { name: 'Öffnen', exact: true }).click()
   await expect(window.getByTestId('pdf-pages')).toHaveText('/ 1')
   await expect(window.locator('.textLayer')).toContainText('Modulhandbuch Informatik')
-  const saved = path.join(folder, 'Studium/Unterlagen/Lineare Algebra/vl01.pdf')
-  expect(readFileSync(saved).subarray(0, 4).toString()).toBe('%PDF')
-  expect(moodle.calls).toContain('file:/webservice/pluginfile.php/1/vl01.pdf')
-  // Back in the course it is marked as saved and opens without downloading again.
-  await window.goBack()
-  await expect(week.getByRole('listitem').filter({ hasText: 'Vorlesung 1' })).toContainText(
-    'in Notiva gespeichert',
-  )
 })

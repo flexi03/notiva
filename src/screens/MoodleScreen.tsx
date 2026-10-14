@@ -156,6 +156,11 @@ export function MoodleScreen() {
             </>
           )}
         </div>
+        {snapshot?.materialsError && (
+          <p role="alert" className="mb-4 text-sm text-danger">
+            {snapshot.materialsError}
+          </p>
+        )}
         {snapshot && error && (
           <p role="alert" className="mb-4 text-sm text-danger">
             {error}

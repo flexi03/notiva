@@ -11,6 +11,7 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import { ipcMessage, useMoodle } from '@/app/moodle'
+import { withProgress } from '@/app/progress'
 import { isPdf, loadMaterialMap, saveMaterial, type MaterialMap } from '@/app/materials'
 import { useApp, useWorkspace } from '@/app/store'
 import { getLanguage, t } from '@/i18n'
@@ -74,13 +75,19 @@ export function CourseScreen({ courseId }: { courseId: string }) {
 
   const downloadAll = () =>
     withBusy('all', async () => {
-      let count = 0
-      for (const m of materials.filter((x) => x.kind === 'file' && !map[x.id])) {
-        await saveMaterial(ws, m)
-        count++
-      }
+      const todo = materials.filter((x) => x.kind === 'file' && !map[x.id])
+      await withProgress(
+        t('materials.saving'),
+        async (task) => {
+          for (const [i, m] of todo.entries()) {
+            task.update(i, todo.length, m.filename ?? m.title)
+            await saveMaterial(ws, m)
+          }
+          return todo.length
+        },
+        { success: (count) => t('course.downloaded', { count }) },
+      )
       reloadMap()
-      showToast(t('course.downloaded', { count }))
     })
 
   if (!snapshot) return <Spinner label={t('moodle.import.loading')} />
@@ -124,7 +131,9 @@ export function CourseScreen({ courseId }: { courseId: string }) {
           )}
         </div>
         {materials.length === 0 ? (
-          <p className="text-sm text-ink-2">{t('course.noMaterials')}</p>
+          <p role={snapshot.materialsError ? 'alert' : undefined} className="text-sm text-ink-2">
+            {snapshot.materialsError ?? t('course.noMaterials')}
+          </p>
         ) : (
           sections.map(([section, items]) => (
             <section key={section} aria-label={section} className="mb-6">

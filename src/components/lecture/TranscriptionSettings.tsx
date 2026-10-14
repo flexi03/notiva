@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { CheckCircle2, Download, Trash2 } from 'lucide-react'
 import { loadTranscribeSettings, saveTranscribeSettings, sendChunk } from '@/app/lecture/session'
 import { ipcMessage } from '@/app/moodle'
+import { withProgress } from '@/app/progress'
 import { t } from '@/i18n'
 import { encodeWav } from '@/lib/lecture/audio'
 import {
@@ -163,7 +164,22 @@ function LocalWhisper({ model, onModel }: { model: string; onModel: (model: stri
             size="sm"
             variant="primary"
             disabled={!!busy}
-            onClick={() => void run('install', () => bridge.install())}
+            onClick={() =>
+              void run('install', () =>
+                withProgress(
+                  t('transcribe.installing'),
+                  async (task) => {
+                    const off = bridge.onProgress((e) => e.text && task.detail(e.text))
+                    try {
+                      await bridge.install()
+                    } finally {
+                      off()
+                    }
+                  },
+                  { success: () => t('transcribe.installed') },
+                ),
+              )
+            }
           >
             {busy === 'install' ? t('transcribe.installing') : t('transcribe.install')}
           </Button>
@@ -203,7 +219,30 @@ function LocalWhisper({ model, onModel }: { model: string; onModel: (model: stri
                   size="sm"
                   icon={<Download size={13} />}
                   disabled={!!busy}
-                  onClick={() => void run(`dl-${m.id}`, () => bridge.download(m.id))}
+                  onClick={() =>
+                    void run(`dl-${m.id}`, () =>
+                      withProgress(
+                        t('transcribe.downloading', { name: m.label }),
+                        async (task) => {
+                          const off = bridge.onProgress(
+                            (e) =>
+                              e.total &&
+                              task.update(
+                                e.done ?? 0,
+                                e.total,
+                                `${Math.round((e.done ?? 0) / 1e6)} / ${Math.round(e.total / 1e6)} MB`,
+                              ),
+                          )
+                          try {
+                            await bridge.download(m.id)
+                          } finally {
+                            off()
+                          }
+                        },
+                        { success: () => t('transcribe.downloaded', { name: m.label }) },
+                      ),
+                    )
+                  }
                 >
                   {busy === `dl-${m.id}` && progress?.total
                     ? `${Math.round(((progress.done ?? 0) / progress.total) * 100)} %`

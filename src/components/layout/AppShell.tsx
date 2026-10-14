@@ -5,6 +5,7 @@ import { routeHash } from '@/lib/route'
 import { cx, ErrorBoundary } from '@/components/ui'
 import { Sidebar } from './Sidebar'
 import { ToastHost } from './Toast'
+import { ProgressHost } from './ProgressHost'
 import { PromptHost } from './PromptHost'
 import { PeekHost } from './PeekHost'
 import { ScrollRootContext } from './scrollRoot'
@@ -19,6 +20,7 @@ import { taskReminders, useNotifications } from '@/app/notifications'
 import type { Workspace } from '@/lib/workspace'
 import { electronBridge } from '@/lib/vault'
 import { moodleAvailable, useMoodle } from '@/app/moodle'
+import { syncMaterials } from '@/app/materials'
 
 /** Sidebar (drawer on small screens) + main area + global overlays and shortcuts. */
 export function AppShell({ children, overlays }: { children: ReactNode; overlays?: ReactNode }) {
@@ -35,8 +37,16 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
   }, [ws])
   useEffect(() => {
-    if (moodleAvailable()) void useMoodle.getState().refresh()
-  }, [])
+    if (!moodleAvailable()) return
+    void useMoodle.getState().refresh()
+    // After every Moodle check (also in the background): fresh data, new documents into the vault.
+    return electronBridge()?.moodle?.onPolled(async () => {
+      const snapshot = await electronBridge()!.moodle!.snapshot()
+      if (!snapshot) return
+      useMoodle.setState({ snapshot })
+      if (useApp.getState().settings.moodleAutoSave) void syncMaterials(ws, snapshot).catch(() => undefined)
+    })
+  }, [ws])
   const actions = usePageActions(ws)
   const mainRef = useRef<HTMLElement>(null)
 
@@ -125,6 +135,7 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
       <PeekHost />
       <PromptHost />
       <ToastHost />
+      <ProgressHost />
     </div>
   )
 }

@@ -91,6 +91,10 @@ export interface MoodleBridge {
   open(url: string, external: boolean): Promise<void>
   /** Saves a material of the last fetch into the vault (below `folder`); returns its path. */
   download(id: string, folder: string): Promise<{ path: string }>
+  /** Steps of a running fetch (courses, materials per course). */
+  onProgress(callback: (event: { done: number; total: number; text: string }) => void): () => void
+  /** A fetch finished (also the regular background check). */
+  onPolled(callback: () => void): () => void
 }
 
 export interface NotifySettings {

@@ -526,6 +526,8 @@ export class Workspace {
 
   /** Drops pending changes and reloads from disk. */
   async discardUnsaved(): Promise<void> {
+    // Read these pages fresh from disk – never reuse the in-memory (discarded) version.
+    for (const path of this.pending.keys()) this.pages.delete(path)
     this.pending.clear()
     await this.reload()
   }

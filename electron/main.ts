@@ -189,12 +189,16 @@ const LOCALE = () => (app.getLocale().startsWith('de') ? 'de-DE' : 'en-US')
 async function pollMoodle(): Promise<MoodleSnapshot> {
   const config = await loadMoodle()
   if (!config) throw new Error('Moodle ist nicht verbunden')
-  const snapshot = await moodleClient.fetch(config)
+  const snapshot = await moodleClient.fetch(config, new Date(), (done, total, text) =>
+    window?.webContents.send('moodle:progress', { done, total, text }),
+  )
   const previous = await fs
     .readFile(MOODLE_SNAPSHOT(), 'utf8')
     .then((text) => JSON.parse(text) as MoodleSnapshot)
     .catch(() => null)
   await fs.writeFile(MOODLE_SNAPSHOT(), JSON.stringify(snapshot), { mode: 0o600 })
+  // The app saves new materials into the vault (its folder logic lives in the renderer).
+  window?.webContents.send('moodle:polled')
   const now = new Date()
   await notifications.add([
     ...moodleNews(previous, snapshot, { now, locale: LOCALE() }),

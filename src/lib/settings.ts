@@ -28,6 +28,8 @@ export interface Settings {
   spellcheck: boolean
   /** Save changes right away (default) – or only on ⌘S / „Speichern“. */
   autosave: boolean
+  /** Save new/updated Moodle documents (scripts, slides …) into the vault automatically. */
+  moodleAutoSave: boolean
   /** Database entries and cards open in a side panel ("peek") or as a full page. */
   openEntries: 'peek' | 'page'
   /** Right edge of a page: minimap with reading progress, progress only, or nothing. */
@@ -49,6 +51,7 @@ export const DEFAULT_SETTINGS: Settings = {
   language: 'de',
   spellcheck: true,
   autosave: true,
+  moodleAutoSave: true,
   openEntries: 'peek',
   pageRail: 'minimap',
   dailyFolder: 'Tagesnotizen',
@@ -79,6 +82,7 @@ export function parseSettings(raw: unknown): Settings {
     language: pick(['de', 'en'] as const, r.language, d.language),
     spellcheck: typeof r.spellcheck === 'boolean' ? r.spellcheck : d.spellcheck,
     autosave: typeof r.autosave === 'boolean' ? r.autosave : d.autosave,
+    moodleAutoSave: typeof r.moodleAutoSave === 'boolean' ? r.moodleAutoSave : d.moodleAutoSave,
     openEntries: pick(['peek', 'page'] as const, r.openEntries, d.openEntries),
     pageRail: pick(['minimap', 'progress', 'off'] as const, r.pageRail, d.pageRail),
     dailyFolder:

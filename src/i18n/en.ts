@@ -510,6 +510,8 @@ export const en: Record<MessageKey, string> = {
     'Explain this passage from “{name}” (page {page}) clearly, with an example:\n\n> {text}',
   'viewer.storedHint':
     'Highlights and notes go into a notes page next to the PDF – the PDF itself stays unchanged.',
+  'transcribe.downloading': 'Downloading Whisper model “{name}” …',
+  'transcribe.downloaded': 'Whisper model “{name}” is ready',
   'transcribe.title': 'Transcription',
   'transcribe.intro':
     'For the lecture mode: speech becomes text. Best locally – free, offline, nothing leaves your computer.',
@@ -568,6 +570,15 @@ export const en: Record<MessageKey, string> = {
   'autosave.shortcut': 'Save (⌘S)',
   'autosave.saved': '{count} page(s) saved',
   'autosave.nothing': 'Everything is saved',
+  'moodle.fetching': 'Fetching Moodle …',
+  'moodle.fetched': 'Moodle fetched: {courses} courses, {materials} materials, {events} dates',
+  'moodle.autoSave': 'Save new materials automatically',
+  'moodle.autoSaveHint':
+    'Scripts, slides and other documents go into the folder next to the study dashboard; you get notified.',
+  'materials.saving': 'Saving materials …',
+  'materials.saved': '{count} material(s) saved from Moodle',
+  'materials.failed': 'Materials could not be saved: {names}',
+  'moodle.import.applying': 'Importing into the dashboard …',
   'moodle.desktopOnly':
     'Connect Moodle in the desktop app – the browser may not query other servers directly.',
   'moodle.intro':

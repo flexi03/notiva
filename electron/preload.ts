@@ -63,6 +63,16 @@ contextBridge.exposeInMainWorld('notiva', {
     snapshot: () => invoke('moodle:snapshot'),
     open: (url: string, external: boolean) => invoke<void>('moodle:open', url, external),
     download: (id: string, folder: string) => invoke<{ path: string }>('moodle:download', id, folder),
+    onProgress(callback: (event: { done: number; total: number; text: string }) => void) {
+      const listener = (_e: unknown, event: { done: number; total: number; text: string }) => callback(event)
+      ipcRenderer.on('moodle:progress', listener)
+      return () => ipcRenderer.removeListener('moodle:progress', listener)
+    },
+    onPolled(callback: () => void) {
+      const listener = () => callback()
+      ipcRenderer.on('moodle:polled', listener)
+      return () => ipcRenderer.removeListener('moodle:polled', listener)
+    },
   },
   notifications: {
     list: () => invoke('notifications:list'),

@@ -222,11 +222,17 @@ export class MoodleClient {
     }
   }
 
-  async fetch(config: MoodleConfig, now = new Date()): Promise<MoodleSnapshot> {
+  async fetch(
+    config: MoodleConfig,
+    now = new Date(),
+    onProgress: (done: number, total: number, text: string) => void = () => {},
+  ): Promise<MoodleSnapshot> {
     if (config.mode === 'calendar')
       return snapshotFromIcs(await this.request(config.secret), config.site, now)
     const { site, secret } = config
+    onProgress(0, 1, 'Anmeldung prüfen')
     const siteInfo = await this.call(site, secret, 'core_webservice_get_site_info')
+    onProgress(0, 1, 'Kurse und Termine')
     const userId = (siteInfo as { userid?: number }).userid ?? config.userId ?? 0
     const from = Math.floor(now.getTime() / 1000) - 86_400
     const [courses, events, grades, notices] = await Promise.all([
@@ -250,14 +256,34 @@ export class MoodleClient {
           .filter(Boolean)
           .slice(0, 40)
       : []
+    const names = new Map(
+      (Array.isArray(courses) ? courses : []).map((c: { id?: unknown; fullname?: unknown }) => [
+        String(c.id ?? ''),
+        String(c.fullname ?? ''),
+      ]),
+    )
+    let done = 0
+    let lastError = ''
     await Promise.all(
       ids.map(async (id) => {
-        contents[id] = await this.call(site, secret, 'core_course_get_contents', { courseid: id }).catch(
-          () => null,
-        )
+        try {
+          contents[id] = await this.call(site, secret, 'core_course_get_contents', { courseid: id })
+        } catch (error) {
+          contents[id] = null
+          lastError = (error as Error).message
+        }
+        onProgress(++done, ids.length, `Unterlagen: ${names.get(id) ?? id}`)
       }),
     )
-    return snapshotFromWebService(site, { siteInfo, courses, events, grades, contents, notices }, now)
+    const snapshot = snapshotFromWebService(
+      site,
+      { siteInfo, courses, events, grades, contents, notices },
+      now,
+    )
+    // No course delivered its contents: say why instead of showing empty lists.
+    if (ids.length && Object.values(contents).every((c) => c === null))
+      snapshot.materialsError = `Moodle gibt die Kursinhalte nicht heraus: ${lastError}`
+    return snapshot
   }
 }
 

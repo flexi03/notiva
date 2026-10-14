@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ipcMessage, useMoodle } from '@/app/moodle'
-import { useAction, useApp, useWorkspace } from '@/app/store'
+import { withProgress } from '@/app/progress'
+import { useAction, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import { formatDate } from '@/lib/dates'
 import {
@@ -36,7 +37,6 @@ export function MoodleImportDialog() {
 function ImportBody({ onDone }: { onDone: () => void }) {
   const ws = useWorkspace()
   const run = useAction()
-  const showToast = useApp((s) => s.showToast)
   const [snapshot, setSnapshot] = useState<MoodleSnapshot | null>(null)
   const [error, setError] = useState<string | null>(null)
   const targets = useMemo(() => importTargets(ws), [ws])
@@ -157,9 +157,10 @@ function ImportBody({ onDone }: { onDone: () => void }) {
             onClick={() => {
               setApplying(true)
               void run(async () => {
-                await applyMoodleImport(ws, chosen)
-                showToast(t('moodle.import.done', { count: chosen.length }))
                 onDone()
+                await withProgress(t('moodle.import.applying'), async () => applyMoodleImport(ws, chosen), {
+                  success: () => t('moodle.import.done', { count: chosen.length }),
+                })
               }).finally(() => setApplying(false))
             }}
           >

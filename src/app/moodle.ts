@@ -1,4 +1,6 @@
 import { create } from 'zustand'
+import { withProgress } from '@/app/progress'
+import { t } from '@/i18n'
 import type { MoodleSnapshot } from '@/lib/moodle'
 import { electronBridge, type MoodleBridge, type MoodleStatus } from '@/lib/vault'
 
@@ -43,7 +45,25 @@ export const useMoodle = create<MoodleState>((set) => ({
     if (!bridge || !useMoodle.getState().status?.connected) return null
     set({ loading: true, error: null })
     try {
-      const snapshot = await bridge.fetch()
+      const snapshot = await withProgress(
+        t('moodle.fetching'),
+        async (task) => {
+          const off = bridge.onProgress((e) => task.update(e.done, e.total, e.text))
+          try {
+            return await bridge.fetch()
+          } finally {
+            off()
+          }
+        },
+        {
+          success: (s) =>
+            t('moodle.fetched', {
+              courses: s.courses.length,
+              materials: s.materials?.length ?? 0,
+              events: s.events.length,
+            }),
+        },
+      )
       set({ snapshot, loading: false })
       return snapshot
     } catch (e) {

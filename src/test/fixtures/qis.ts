@@ -1,0 +1,18 @@
+/** A results page like QIS/HISinOne "Leistungen anzeigen" (Notenspiegel), shortened. */
+export const QIS_RESULTS_HTML = `<!doctype html><html><body>
+<table border="0" align="left" width="100%">
+<tr>
+  <th class="tabelle1_ueber">Prüfungsnr.</th><th class="tabelle1_ueber">Prüfungstext</th><th class="tabelle1_ueber">Semester</th>
+  <th class="tabelle1_ueber">Note</th><th class="tabelle1_ueber">Status</th><th class="tabelle1_ueber">Credits</th>
+  <th class="tabelle1_ueber">Vermerk</th><th class="tabelle1_ueber">Versuch</th><th class="tabelle1_ueber">Prüfungsdatum</th>
+</tr>
+<tr><td class="qis_konto" colspan="9">Grundlagen der Informatik</td></tr>
+<tr><td class="tabelle1_alignleft">1010</td><td class="tabelle1_alignleft">Mathematik 1</td><td>WiSe 24/25</td><td>2,3</td><td>bestanden</td><td>5,0</td><td></td><td>1</td><td>03.02.2025</td></tr>
+<tr><td>1020</td><td>Programmierung 1</td><td>WiSe 24/25</td><td>5,0</td><td>nicht bestanden</td><td>0,0</td><td></td><td>1</td><td>10.02.2025</td></tr>
+<tr><td>1020</td><td>Programmierung 1</td><td>SoSe 25</td><td>1,7</td><td>bestanden</td><td>5,0</td><td></td><td>2</td><td>15.07.2025</td></tr>
+<tr><td class="qis_konto" colspan="9">Vertiefung</td></tr>
+<tr><td>2030</td><td>Datenbanken</td><td>SoSe 26</td><td></td><td>angemeldet</td><td></td><td></td><td>1</td><td></td></tr>
+<tr><td>2040</td><td>Lineare Algebra</td><td>WiSe 25/26</td><td>1,3</td><td>BE</td><td>9,0</td><td></td><td>1</td><td>20.02.2026</td></tr>
+</table>
+<table><tr><th>Legende</th></tr><tr><td>BE = bestanden</td></tr></table>
+</body></html>`

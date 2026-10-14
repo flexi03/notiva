@@ -513,6 +513,8 @@ export const de = {
     'Erklär mir diese Stelle aus „{name}“ (Seite {page}) verständlich, mit Beispiel:\n\n> {text}',
   'viewer.storedHint':
     'Markierungen und Notizen landen in einer Notizseite neben dem PDF – das PDF bleibt unverändert.',
+  'transcribe.downloading': 'Lade Whisper-Modell „{name}“ …',
+  'transcribe.downloaded': 'Whisper-Modell „{name}“ ist bereit',
   'transcribe.title': 'Transkription',
   'transcribe.intro':
     'Für den Vorlesungsmodus: Sprache wird zu Text. Am besten lokal – kostenlos, offline, nichts verlässt deinen Rechner.',
@@ -572,6 +574,15 @@ export const de = {
   'autosave.shortcut': 'Speichern (⌘S)',
   'autosave.saved': '{count} Seite(n) gespeichert',
   'autosave.nothing': 'Alles ist gespeichert',
+  'moodle.fetching': 'Moodle wird abgerufen …',
+  'moodle.fetched': 'Moodle abgerufen: {courses} Kurse, {materials} Unterlagen, {events} Termine',
+  'moodle.autoSave': 'Neue Unterlagen automatisch speichern',
+  'moodle.autoSaveHint':
+    'Skripte, Folien und andere Dokumente landen im Ordner neben dem Studien-Dashboard; du wirst benachrichtigt.',
+  'materials.saving': 'Unterlagen werden gespeichert …',
+  'materials.saved': '{count} Unterlage(n) aus Moodle gespeichert',
+  'materials.failed': 'Unterlagen konnten nicht gespeichert werden: {names}',
+  'moodle.import.applying': 'Übernehme ins Dashboard …',
   'moodle.desktopOnly':
     'Moodle lässt sich in der Desktop-App verbinden – der Browser darf andere Server nicht direkt abfragen.',
   'moodle.intro':

@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { ipcMessage, moodleAvailable, useMoodle } from '@/app/moodle'
 import { useApp } from '@/app/store'
 import { t } from '@/i18n'
-import { Button, Field, Segmented, TextInput } from '@/components/ui'
+import { Button, Field, Segmented, Switch, TextInput } from '@/components/ui'
+import { Row } from '@/screens/settingsLayout'
 
 type Mode = 'browser' | 'login' | 'calendar' | 'token'
 
@@ -10,6 +11,7 @@ type Mode = 'browser' | 'login' | 'calendar' | 'token'
 export function MoodleSection() {
   const { status, refresh, connect, disconnect, setImportOpen } = useMoodle()
   const showToast = useApp((s) => s.showToast)
+  const autoSave = useApp((s) => s.settings.moodleAutoSave)
   const [mode, setMode] = useState<Mode>('browser')
   const [site, setSite] = useState('')
   const [username, setUsername] = useState('')
@@ -49,6 +51,13 @@ export function MoodleSection() {
             {t('moodle.disconnect')}
           </Button>
         </div>
+        <Row label={t('moodle.autoSave')} hint={t('moodle.autoSaveHint')}>
+          <Switch
+            label={t('moodle.autoSave')}
+            checked={autoSave}
+            onChange={(v) => useApp.getState().updateSettings({ moodleAutoSave: v })}
+          />
+        </Row>
         <p className="text-[13px] text-ink-3">{t('moodle.aiHint')}</p>
       </>
     )
