@@ -30,7 +30,9 @@ import { AnnotationLayer, COLOR_VALUES, type Tool } from './AnnotationLayer'
 import { NotesPanel } from './NotesPanel'
 import { PdfViewer, type PdfViewerHandle } from './PdfViewer'
 
-const ZOOMS = [0.5, 0.67, 0.8, 1, 1.25, 1.5, 2, 3]
+const ZOOMS = [0.5, 0.67, 0.8, 1, 1.25, 1.5, 2, 3, 4]
+const MIN_ZOOM = 0.4
+const MAX_ZOOM = 4
 
 export interface SideProps {
   page: number
@@ -83,9 +85,47 @@ export function PdfDocumentView({
   const goTo = useCallback((page: number) => viewer.current?.scrollToPage(page, true), [])
 
   const step = (dir: 1 | -1) => {
-    const i = ZOOMS.findIndex((z) => z >= zoom - 0.001)
-    setZoom(ZOOMS[Math.min(ZOOMS.length - 1, Math.max(0, (i < 0 ? 3 : i) + dir))]!)
+    setZoom((z) =>
+      dir > 0
+        ? (ZOOMS.find((x) => x > z + 0.001) ?? MAX_ZOOM)
+        : ([...ZOOMS].reverse().find((x) => x < z - 0.001) ?? MIN_ZOOM),
+    )
   }
+
+  // Pinch (trackpad), ⌘/Strg + Mausrad and ⌘/Strg + Plus/Minus/0 zoom the PDF, not the app.
+  const area = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = area.current
+    if (!el) return
+    let pending = 1
+    let frame = 0
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return
+      e.preventDefault()
+      pending *= Math.exp(-e.deltaY * 0.01)
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        const factor = pending
+        pending = 1
+        setZoom((z) => Math.round(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z * factor)) * 20) / 20)
+      })
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey) return
+      if (e.key === '+' || e.key === '=') setZoom((z) => ZOOMS.find((x) => x > z + 0.001) ?? MAX_ZOOM)
+      else if (e.key === '-') setZoom((z) => [...ZOOMS].reverse().find((x) => x < z - 0.001) ?? MIN_ZOOM)
+      else if (e.key === '0') setZoom(1)
+      else return
+      e.preventDefault()
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    window.addEventListener('keydown', onKey)
+    return () => {
+      cancelAnimationFrame(frame)
+      el.removeEventListener('wheel', onWheel)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [])
 
   /** Text selected in a page → floating bar for highlighting. */
   const onMouseUp = () => {
@@ -223,17 +263,13 @@ export function PdfDocumentView({
             ))}
           </div>
           <span className="flex-1" />
-          <IconButton label={t('file.zoomOut')} onClick={() => step(-1)} disabled={zoom <= ZOOMS[0]!}>
+          <IconButton label={t('file.zoomOut')} onClick={() => step(-1)} disabled={zoom <= MIN_ZOOM}>
             <Minus size={15} />
           </IconButton>
           <span className="w-12 text-center text-[12.5px] text-ink-2 tabular-nums">
             {Math.round(zoom * 100)} %
           </span>
-          <IconButton
-            label={t('file.zoomIn')}
-            onClick={() => step(1)}
-            disabled={zoom >= ZOOMS[ZOOMS.length - 1]!}
-          >
+          <IconButton label={t('file.zoomIn')} onClick={() => step(1)} disabled={zoom >= MAX_ZOOM}>
             <Plus size={15} />
           </IconButton>
           <IconButton label={t('file.fitWidth')} onClick={() => setZoom(1)} active={zoom === 1}>
@@ -248,7 +284,7 @@ export function PdfDocumentView({
             <PanelRight size={15} />
           </IconButton>
         </div>
-        <div className="relative min-h-0 flex-1" onMouseUp={onMouseUp}>
+        <div ref={area} className="relative min-h-0 flex-1" onMouseUp={onMouseUp}>
           <PdfViewer
             ref={viewer}
             doc={doc}

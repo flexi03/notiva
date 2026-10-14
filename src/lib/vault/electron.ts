@@ -180,9 +180,7 @@ export interface NotivaBridge {
   /** eCampus exam results (desktop). */
   ecampus?: EcampusBridge
   examPlan?: {
-    fetch(
-      url: string,
-    ): Promise<{
+    fetch(url: string): Promise<{
       url: string
       name: string
       bytes: Uint8Array
