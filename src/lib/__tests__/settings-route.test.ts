@@ -64,3 +64,18 @@ describe('routes', () => {
     },
   )
 })
+
+describe('routes for Moodle courses and files', () => {
+  it('round-trips', async () => {
+    const { parseRoute, routeHash } = await import('../route')
+    for (const route of [
+      { name: 'moodle' as const },
+      { name: 'moodle' as const, course: 'course:42' },
+      { name: 'file' as const, path: 'Studium/Unterlagen/LA/vl 01.pdf' },
+      { name: 'file' as const, path: 'a.pdf', page: 7 },
+    ])
+      expect(parseRoute(routeHash(route))).toEqual(route)
+    expect(parseRoute('#/f/..%2Fetc%2Fpasswd')).toEqual({ name: 'home' })
+    expect(parseRoute('#/moodle/evil')).toEqual({ name: 'moodle' })
+  })
+})

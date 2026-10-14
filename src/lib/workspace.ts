@@ -51,8 +51,13 @@ export interface TreeNode {
   title: string
   icon?: string
   page: Page | null
+  /** Set for documents (PDF, slides …) shown in the tree; `id` is then the file path. */
+  file?: string
   children: TreeNode[]
 }
+
+/** Files that appear in the page tree next to the notes (scripts, slides …). */
+export const TREE_FILES = /\.(pdf|pptx?|docx?|xlsx?|odt|odp|ods|key|pages|epub)$/i
 
 export interface TrashEntry {
   id: string
@@ -284,11 +289,21 @@ export class Workspace {
         ensureFolder(dirname(page.path)).children.push(created)
       }
     }
+    for (const file of this.assets()) {
+      if (!TREE_FILES.test(file.path)) continue
+      ensureFolder(dirname(file.path)).children.push({
+        id: file.path,
+        title: basename(file.path),
+        file: file.path,
+        page: null,
+        children: [],
+      })
+    }
     // Folders that only contain database rows must still appear (they are the database itself).
     const prune = (node: TreeNode): boolean => {
       node.children = node.children.filter(prune)
       if (node.page?.database) node.children = []
-      return node.page !== null || node.children.length > 0
+      return node.page !== null || node.file !== undefined || node.children.length > 0
     }
     root.children = root.children.filter(prune)
     const sortNodes = (list: TreeNode[]) => {

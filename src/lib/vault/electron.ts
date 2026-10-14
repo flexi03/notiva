@@ -89,6 +89,8 @@ export interface MoodleBridge {
   snapshot(): Promise<MoodleSnapshot | null>
   /** Opens a page of the connected Moodle in an app window (with the login) or the browser. */
   open(url: string, external: boolean): Promise<void>
+  /** Saves a material of the last fetch into the vault (below `folder`); returns its path. */
+  download(id: string, folder: string): Promise<{ path: string }>
 }
 
 export interface NotifySettings {
@@ -123,6 +125,8 @@ export interface NotivaBridge {
     rename(from: string, to: string): Promise<void>
   }
   openExternal(url: string): Promise<void>
+  /** Opens a vault file with the system's default app (desktop). */
+  openWithSystem?(path: string): Promise<void>
   /** AI command line tools (Claude Code, Codex, Gemini) – desktop app only. */
   aiCli?: CliBridge
   /** Git for the open folder (desktop app only). */

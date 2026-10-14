@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App'
 import './styles/index.css'
+import './styles/pdf.css'
 
 // Lets CSS adapt to the desktop shell (e.g. macOS traffic lights in the title bar area).
 if (window.notiva) document.documentElement.dataset.shell = `electron-${window.notiva.platform}`

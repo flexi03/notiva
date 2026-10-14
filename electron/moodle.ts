@@ -5,7 +5,12 @@
  * - the calendar link (Kalender → Exportieren), which needs no password but only has dates.
  * The secret (token or calendar link) is stored encrypted with the OS keychain (safeStorage).
  */
-import { snapshotFromIcs, snapshotFromWebService, type MoodleSnapshot } from '../src/lib/moodle'
+import {
+  snapshotFromIcs,
+  snapshotFromWebService,
+  type MoodleMaterial,
+  type MoodleSnapshot,
+} from '../src/lib/moodle'
 
 export type MoodleConnect =
   | { mode: 'browser'; site: string }
@@ -33,6 +38,29 @@ type Fetch = (url: string, init?: RequestInit) => Promise<Response>
 
 const TIMEOUT = 30_000
 const MAX_RESPONSE = 10_000_000
+const MAX_FILE = 250_000_000
+
+const EXTENSIONS: Record<string, string> = {
+  'application/pdf': 'pdf',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+  'application/zip': 'zip',
+  'text/plain': 'txt',
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+}
+
+/** A file name that is safe on every OS (no folders, no reserved characters). */
+export function safeFileName(name: string, fallback = 'Datei'): string {
+  const clean = name
+    .normalize('NFC')
+    // eslint-disable-next-line no-control-regex -- control characters are exactly what must go
+    .replace(/[\\/:*?"<>|\u0000-\u001f]/g, '-')
+    .replace(/\s+/g, ' ')
+    .replace(/^[.\s-]+|[.\s]+$/g, '')
+    .slice(0, 120)
+  return clean || fallback
+}
 
 /** https only (http just for localhost, e.g. tests); no credentials in the URL. */
 export function checkUrl(raw: unknown): URL {
@@ -231,6 +259,53 @@ export class MoodleClient {
     )
     return snapshotFromWebService(site, { siteInfo, courses, events, grades, contents, notices }, now)
   }
+}
+
+/**
+ * Downloads a material. Moodle files get the token (only ever sent to the Moodle server itself);
+ * plain links are fetched as they are and must point to a file, not a web page.
+ */
+export async function downloadMaterial(
+  fetchFn: Fetch,
+  config: MoodleConfig,
+  material: MoodleMaterial,
+): Promise<{ bytes: Uint8Array; filename: string }> {
+  if (material.kind === 'page')
+    throw new MoodleError('Moodle-Seiten lassen sich nur öffnen, nicht herunterladen')
+  const url = checkUrl(material.url)
+  const site = new URL(config.site)
+  const own = url.origin === site.origin
+  if (own) {
+    if (config.mode !== 'webservice')
+      throw new MoodleError('Für Dateien aus Moodle bitte mit dem Uni-Login verbinden')
+    url.pathname = url.pathname
+      .replace(/\/pluginfile\.php/, '/webservice/pluginfile.php')
+      .replace('/webservice/webservice/', '/webservice/')
+    url.searchParams.set('token', config.secret)
+  }
+  let response: Response
+  try {
+    response = await fetchFn(url.toString(), { signal: AbortSignal.timeout(120_000), redirect: 'follow' })
+  } catch (error) {
+    throw new MoodleError(`Download fehlgeschlagen: ${(error as Error).message}`)
+  }
+  if (own && response.url && new URL(response.url).origin !== site.origin)
+    throw new MoodleError('Moodle hat auf einen anderen Server umgeleitet')
+  if (!response.ok) throw new MoodleError(`Download fehlgeschlagen (Fehler ${response.status})`)
+  const type = (response.headers.get('content-type') ?? '').split(';')[0]!.trim().toLowerCase()
+  if (type === 'text/html')
+    throw new MoodleError(
+      own
+        ? 'Moodle hat statt der Datei eine Webseite geliefert – bitte neu verbinden.'
+        : 'Der Link führt zu einer Webseite, nicht zu einer Datei – öffne ihn im Browser.',
+    )
+  if (Number(response.headers.get('content-length') ?? 0) > MAX_FILE)
+    throw new MoodleError('Datei ist zu groß (max. 250 MB)')
+  const bytes = new Uint8Array(await response.arrayBuffer())
+  if (bytes.length > MAX_FILE) throw new MoodleError('Datei ist zu groß (max. 250 MB)')
+  let filename = material.filename ?? decodeURIComponent(url.pathname.split('/').pop() ?? '')
+  if (!/\.[a-z0-9]{2,5}$/i.test(filename)) filename = `${material.title}.${EXTENSIONS[type] ?? 'bin'}`
+  return { bytes, filename: safeFileName(filename) }
 }
 
 export function statusOf(config: MoodleConfig | null): MoodleStatus {

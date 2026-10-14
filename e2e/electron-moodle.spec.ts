@@ -14,6 +14,7 @@ import path from 'node:path'
 import { studyPack } from '../src/lib/packs/study'
 import { expandPack } from '../src/lib/templates'
 import { ssoAnswer } from '../electron/moodleSso'
+import { MODULHANDBUCH_PDF } from '../src/test/fixtures/pdf'
 
 const TOKEN = 'tok1234567890abcdef'
 /** Switched on later: Moodle then has a new assignment, a new script and a forum message. */
@@ -41,6 +42,16 @@ function fakeMoodle(): Promise<{ server: Server; url: string; calls: string[] }>
         return res.end(
           `<!doctype html><title>Uni-Login</title><form method="post" action="/sso"><input type="hidden" name="passport" value="${passport}"><label>Code <input name="code"></label><button>Anmelden</button></form>`,
         )
+      }
+      if (req.url?.startsWith('/webservice/pluginfile.php/')) {
+        const url = new URL(req.url, 'http://x')
+        calls.push(`file:${url.pathname}`)
+        if (url.searchParams.get('token') !== TOKEN) {
+          res.setHeader('content-type', 'text/html')
+          return res.end('<html>Login</html>')
+        }
+        res.setHeader('content-type', 'application/pdf')
+        return res.end(Buffer.from(MODULHANDBUCH_PDF))
       }
       if (req.url === '/sso') {
         calls.push(`sso:${body.get('code')}`)
@@ -322,4 +333,26 @@ test('meldet Neuigkeiten aus Moodle im Benachrichtigungscenter', async () => {
   // A second check finds nothing new.
   await window.getByRole('button', { name: 'Aktualisieren' }).click()
   await expect(bell).not.toContainText('3')
+})
+
+test('speichert ein Skript aus dem Kurs und zeigt es im Viewer', async () => {
+  await window.getByRole('button', { name: 'Moodle', exact: true }).click()
+  await window.getByRole('button', { name: 'Unterlagen (2)' }).click()
+  const week = window.getByRole('region', { name: 'Woche 1' })
+  await expect(week).toContainText('Vorlesung 2 – Skript')
+  await week
+    .getByRole('listitem')
+    .filter({ hasText: 'Vorlesung 1' })
+    .getByRole('button', { name: 'Speichern & öffnen' })
+    .click()
+  await expect(window.getByTestId('pdf-pages')).toHaveText('/ 1')
+  await expect(window.locator('.textLayer')).toContainText('Modulhandbuch Informatik')
+  const saved = path.join(folder, 'Studium/Unterlagen/Lineare Algebra/vl01.pdf')
+  expect(readFileSync(saved).subarray(0, 4).toString()).toBe('%PDF')
+  expect(moodle.calls).toContain('file:/webservice/pluginfile.php/1/vl01.pdf')
+  // Back in the course it is marked as saved and opens without downloading again.
+  await window.goBack()
+  await expect(week.getByRole('listitem').filter({ hasText: 'Vorlesung 1' })).toContainText(
+    'in Notiva gespeichert',
+  )
 })

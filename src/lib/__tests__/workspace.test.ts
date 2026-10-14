@@ -227,3 +227,23 @@ describe('saves keep the file format (small Git diffs)', () => {
     await expect(ws.saveSource('A.md', '---\na: [\n---\n')).rejects.toThrow()
   })
 })
+
+describe('documents in the tree', () => {
+  it('shows PDFs and slides in their folder, not images', async () => {
+    const vault = new MemoryVault('Test', {
+      'Studium.md': '# Studium',
+      'Studium/Unterlagen/LA/vl01.pdf': '%PDF',
+      'Studium/Unterlagen/LA/folien.pptx': 'x',
+      'Studium/bild.png': 'PNG',
+    })
+    const ws = await Workspace.open(vault)
+    const studium = ws.tree().find((n) => n.id === 'Studium.md')!
+    const la = studium.children[0]!.children[0]!
+    expect(la.title).toBe('LA')
+    expect(la.children.map((n) => [n.title, n.file])).toEqual([
+      ['folien.pptx', 'Studium/Unterlagen/LA/folien.pptx'],
+      ['vl01.pdf', 'Studium/Unterlagen/LA/vl01.pdf'],
+    ])
+    expect(JSON.stringify(ws.tree())).not.toContain('bild.png')
+  })
+})

@@ -9,7 +9,8 @@ export type Route =
   | { name: 'trash' }
   | { name: 'settings' }
   | { name: 'templates' }
-  | { name: 'moodle' }
+  | { name: 'moodle'; course?: string }
+  | { name: 'file'; path: string; page?: number }
 
 function decode(part: string): string | null {
   try {
@@ -36,8 +37,16 @@ export function parseRoute(hash: string): Route {
     case 'trash':
     case 'settings':
     case 'templates':
-    case 'moodle':
       return { name: head }
+    case 'moodle':
+      return rest && /^course:\d+$/.test(rest) ? { name: 'moodle', course: rest } : { name: 'moodle' }
+    case 'f': {
+      if (!rest) return { name: 'home' }
+      const [path, page] = rest.split('#page=')
+      if (!path || !isSafePath(path) || path.endsWith('.md')) return { name: 'home' }
+      const n = Number(page)
+      return Number.isInteger(n) && n > 0 ? { name: 'file', path, page: n } : { name: 'file', path }
+    }
     default:
       return { name: 'home' }
   }
@@ -53,6 +62,10 @@ export function routeHash(route: Route): string {
       return `#/tag/${encodeURIComponent(route.tag)}`
     case 'search':
       return `#/search/${encodeURIComponent(route.query)}`
+    case 'moodle':
+      return route.course ? `#/moodle/${encodeURIComponent(route.course)}` : '#/moodle'
+    case 'file':
+      return `#/f/${encodeURIComponent(route.page ? `${route.path}#page=${route.page}` : route.path)}`
     default:
       return `#/${route.name}`
   }

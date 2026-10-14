@@ -1,5 +1,12 @@
 // @vitest-environment node
-import { MoodleClient, parseConnect, parseStoredConfig, siteRoot } from './moodle'
+import {
+  downloadMaterial,
+  MoodleClient,
+  parseConnect,
+  parseStoredConfig,
+  safeFileName,
+  siteRoot,
+} from './moodle'
 
 type Handler = (url: URL, body: URLSearchParams) => unknown
 
@@ -133,5 +140,67 @@ describe('MoodleClient', () => {
     expect((await client.fetch(config)).events[0]!.title).toBe('Blatt 2')
     const notIcs = fakeMoodle(() => '<html/>')
     await expect(notIcs.client.connect({ mode: 'calendar', url })).rejects.toThrow('keinen Kalender')
+  })
+})
+
+describe('downloadMaterial', () => {
+  const config = { mode: 'webservice' as const, site: SITE, secret: 'secrettoken123456' }
+  const file = {
+    id: 'file:77:vl01.pdf',
+    courseId: 'course:42',
+    section: 'Woche 1',
+    title: 'VL 1',
+    kind: 'file' as const,
+    filename: 'vl01.pdf',
+    url: `${SITE}/pluginfile.php/1/mod_resource/content/1/vl01.pdf`,
+  }
+  const fetchWith = (type: string, finalUrl?: string) => {
+    const urls: string[] = []
+    const fn = async (url: string) => {
+      urls.push(url)
+      const res = new Response(new Uint8Array([37, 80, 68, 70]), { headers: { 'content-type': type } })
+      Object.defineProperty(res, 'url', { value: finalUrl ?? url })
+      return res
+    }
+    return { fn, urls }
+  }
+
+  it('adds the token only for Moodle itself and uses the web service file path', async () => {
+    const { fn, urls } = fetchWith('application/pdf')
+    const result = await downloadMaterial(fn, config, file)
+    expect(result.filename).toBe('vl01.pdf')
+    expect(urls[0]).toBe(
+      `${SITE}/webservice/pluginfile.php/1/mod_resource/content/1/vl01.pdf?token=secrettoken123456`,
+    )
+    const external = fetchWith('application/pdf')
+    await downloadMaterial(external.fn, config, {
+      ...file,
+      kind: 'url',
+      filename: undefined,
+      url: 'https://skript.example.org/la.pdf',
+    })
+    expect(external.urls[0]).toBe('https://skript.example.org/la.pdf')
+  })
+
+  it('refuses web pages, foreign redirects and Moodle pages', async () => {
+    await expect(
+      downloadMaterial(fetchWith('text/html').fn, config, {
+        ...file,
+        kind: 'url',
+        url: 'https://x.example/',
+      }),
+    ).rejects.toThrow('Webseite')
+    await expect(
+      downloadMaterial(fetchWith('application/pdf', 'https://evil.example/x').fn, config, file),
+    ).rejects.toThrow('anderen Server')
+    await expect(
+      downloadMaterial(fetchWith('application/pdf').fn, config, { ...file, kind: 'page' }),
+    ).rejects.toThrow()
+  })
+
+  it('makes safe file names', () => {
+    expect(safeFileName('../../etc/passwd')).toBe('etc-passwd')
+    expect(safeFileName('VL 3: Graphen?.pdf')).toBe('VL 3- Graphen-.pdf')
+    expect(safeFileName('...')).toBe('Datei')
   })
 })

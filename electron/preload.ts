@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('notiva', {
   pickFolder: () => invoke<string | null>('app:pickFolder'),
   lastFolder: () => invoke<string | null>('app:lastFolder'),
   openExternal: (url: string) => invoke<void>('app:openExternal', url),
+  openWithSystem: (path: string) => invoke<void>('vault:openWithSystem', path),
   mcpInfo: () => invoke<{ command: string; args: string[]; env: Record<string, string> }>('app:mcpInfo'),
   aiCli: {
     detect: () => invoke('ai:cli:detect'),
@@ -36,6 +37,7 @@ contextBridge.exposeInMainWorld('notiva', {
     fetch: () => invoke('moodle:fetch'),
     snapshot: () => invoke('moodle:snapshot'),
     open: (url: string, external: boolean) => invoke<void>('moodle:open', url, external),
+    download: (id: string, folder: string) => invoke<{ path: string }>('moodle:download', id, folder),
   },
   notifications: {
     list: () => invoke('notifications:list'),

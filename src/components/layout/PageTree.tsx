@@ -1,5 +1,5 @@
 import { useRef, useState, type DragEvent } from 'react'
-import { ChevronRight, MoreHorizontal, Plus } from 'lucide-react'
+import { ChevronRight, FileText, MoreHorizontal, Plus } from 'lucide-react'
 import { useApp, useWorkspace } from '@/app/store'
 import { usePageActions } from '@/app/hooks/usePageActions'
 import { t } from '@/i18n'
@@ -59,17 +59,20 @@ function TreeItem({
 }) {
   const ws = useWorkspace()
   const actions = usePageActions(ws)
-  const { route, openPage } = useApp()
+  const { route, openPage, navigate } = useApp()
   const [menu, setMenu] = useState(false)
   const [dropTarget, setDropTarget] = useState(false)
   const moreRef = useRef<HTMLButtonElement>(null)
   const isOpen = expanded.has(node.id)
-  const active = route.name === 'page' && route.path === node.page?.path
+  const active =
+    (route.name === 'page' && route.path === node.page?.path) ||
+    (route.name === 'file' && route.path === node.file)
   const hasChildren = node.children.length > 0
   const folder = node.page ? node.page.path.slice(0, -3) : node.id
-  const change = useGit((s) =>
-    node.page ? s.state?.changes.find((c) => c.path === node.page!.path) : undefined,
-  )
+  const change = useGit((s) => {
+    const path = node.page?.path ?? node.file
+    return path ? s.state?.changes.find((c) => c.path === path) : undefined
+  })
   const changedInside = useGit((s) => s.state?.changes.some((c) => c.path.startsWith(`${folder}/`)) ?? false)
 
   const onDrop = (e: DragEvent) => {
@@ -114,9 +117,19 @@ function TreeItem({
         <button
           type="button"
           className="flex min-w-0 flex-1 items-center gap-2 self-stretch text-left"
-          onClick={() => (node.page ? openPage(node.page.path) : toggle(node.id))}
+          onClick={() =>
+            node.page
+              ? openPage(node.page.path)
+              : node.file
+                ? navigate({ name: 'file', path: node.file })
+                : toggle(node.id)
+          }
         >
-          <PageIcon page={node.page} />
+          {node.file ? (
+            <FileText size={15} aria-hidden className="shrink-0 text-ink-3" />
+          ) : (
+            <PageIcon page={node.page} />
+          )}
           <span
             className={cx(
               'truncate',

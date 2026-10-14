@@ -97,15 +97,26 @@ export function MoodleScreen() {
                 </li>
               ))}
             </ul>
-            {page && (
+            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
               <button
                 type="button"
-                onClick={() => openPage(page)}
-                className="mt-3 self-start text-[13px] font-semibold text-accent hover:underline"
+                onClick={() => navigate({ name: 'moodle', course: course.id })}
+                className="text-[13px] font-semibold text-accent hover:underline"
               >
-                {t('moodle.screen.notivaPage')}
+                {t('moodle.screen.materials', {
+                  count: (snapshot.materials ?? []).filter((m) => m.courseId === course.id).length,
+                })}
               </button>
-            )}
+              {page && (
+                <button
+                  type="button"
+                  onClick={() => openPage(page)}
+                  className="text-[13px] font-semibold text-accent hover:underline"
+                >
+                  {t('moodle.screen.notivaPage')}
+                </button>
+              )}
+            </div>
           </li>
         )
       })}

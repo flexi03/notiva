@@ -1,3 +1,5 @@
+import { CourseScreen } from '@/screens/CourseScreen'
+import { FileScreen } from '@/screens/FileScreen'
 import { MoodleScreen } from '@/screens/MoodleScreen'
 import { useEffect, useState } from 'react'
 import { useApp } from '@/app/store'
@@ -68,7 +70,13 @@ export function App() {
       ) : route.name === 'templates' ? (
         <TemplatesScreen />
       ) : route.name === 'moodle' ? (
-        <MoodleScreen />
+        route.course ? (
+          <CourseScreen key={route.course} courseId={route.course} />
+        ) : (
+          <MoodleScreen />
+        )
+      ) : route.name === 'file' ? (
+        <FileScreen key={route.path} path={route.path} {...(route.page ? { page: route.page } : {})} />
       ) : (
         <HomeScreen />
       )}

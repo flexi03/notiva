@@ -35,6 +35,8 @@ import {
   MoodleClient,
   parseConnect,
   parseStoredConfig,
+  downloadMaterial,
+  safeFileName,
   statusOf,
   type MoodleConfig,
 } from './moodle'
@@ -387,6 +389,22 @@ function registerIpc(): void {
     if (external === true) await shell.openExternal(url.toString())
     else openMoodlePage(window, url.toString())
   })
+  // Saves a course material from the last fetch into the vault: <folder>/<course>/<file>.
+  handle('moodle:download', async (id: unknown, folder: unknown) => {
+    const config = await loadMoodle()
+    if (!config) throw new Error('Moodle ist nicht verbunden')
+    const snapshot = JSON.parse(await fs.readFile(MOODLE_SNAPSHOT(), 'utf8')) as MoodleSnapshot
+    const material = snapshot.materials?.find((m) => m.id === id)
+    if (!material) throw new Error('Unterlage nicht gefunden – bitte Moodle aktualisieren')
+    if (typeof folder !== 'string' || folder.length > 300) throw new Error('Ungültiger Ordner')
+    const course = snapshot.courses.find((c) => c.id === material.courseId)?.name ?? 'Kurs'
+    const { bytes, filename } = await downloadMaterial((url, init) => net.fetch(url, init), config, material)
+    const target = [folder.replace(/^\/+|\/+$/g, ''), safeFileName(course), filename]
+      .filter(Boolean)
+      .join('/')
+    await requireVault().write(target, bytes)
+    return { path: target }
+  })
   handle('moodle:snapshot', async () => {
     if (!(await loadMoodle())) return null
     try {
@@ -394,6 +412,12 @@ function registerIpc(): void {
     } catch {
       return null
     }
+  })
+  // Opens a vault file (e.g. slides as .pptx) with the system's default app.
+  handle('vault:openWithSystem', async (p: unknown) => {
+    const absolute = await requireVault().resolve(p as string)
+    const error = await shell.openPath(absolute)
+    if (error) throw new Error(error)
   })
   handle('app:openExternal', async (url: unknown) => {
     if (typeof url === 'string' && /^(https?:|mailto:)/i.test(url)) await shell.openExternal(url)
