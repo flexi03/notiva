@@ -247,7 +247,7 @@ function checkWidget(ws: Workspace, page: Page, yaml: string): WidgetSpec {
       if (['stat', 'progress', 'countdown', 'list'].includes(tile.type) && !tile.source)
         problems.push(`${what}: „source“ fehlt`)
     })
-  } else {
+  } else if (widget.type === 'view') {
     const db = database(widget.source, 'Ansicht')
     if (db?.database && widget.view && !db.database.views.some((v) => v.name === widget.view))
       problems.push(

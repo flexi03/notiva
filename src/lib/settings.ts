@@ -30,6 +30,8 @@ export interface Settings {
   autosave: boolean
   /** Save new/updated Moodle documents (scripts, slides …) into the vault automatically. */
   moodleAutoSave: boolean
+  /** After each eCampus/Moodle check: update modules, semesters and courses of the study folder. */
+  studyAutoSync: boolean
   /** Database entries and cards open in a side panel ("peek") or as a full page. */
   openEntries: 'peek' | 'page'
   /** Right edge of a page: minimap with reading progress, progress only, or nothing. */
@@ -52,6 +54,7 @@ export const DEFAULT_SETTINGS: Settings = {
   spellcheck: true,
   autosave: true,
   moodleAutoSave: true,
+  studyAutoSync: true,
   openEntries: 'peek',
   pageRail: 'minimap',
   dailyFolder: 'Tagesnotizen',
@@ -83,6 +86,7 @@ export function parseSettings(raw: unknown): Settings {
     spellcheck: typeof r.spellcheck === 'boolean' ? r.spellcheck : d.spellcheck,
     autosave: typeof r.autosave === 'boolean' ? r.autosave : d.autosave,
     moodleAutoSave: typeof r.moodleAutoSave === 'boolean' ? r.moodleAutoSave : d.moodleAutoSave,
+    studyAutoSync: typeof r.studyAutoSync === 'boolean' ? r.studyAutoSync : d.studyAutoSync,
     openEntries: pick(['peek', 'page'] as const, r.openEntries, d.openEntries),
     pageRail: pick(['minimap', 'progress', 'off'] as const, r.pageRail, d.pageRail),
     dailyFolder:

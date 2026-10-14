@@ -1,4 +1,5 @@
 import type { TemplatePack } from '../templates'
+import { COURSE_DB, MODULE_PROPERTIES, MODULE_ROW_TEMPLATE, MODULE_VIEWS } from '../study/sync'
 
 /**
  * Study planner: dashboard + semesters, modules, exams, tasks, timetable, notes and templates.
@@ -9,52 +10,34 @@ const SEMESTER = `---
 icon: 🗓️
 database:
   properties:
+    - { name: Zeitraum, type: text }
     - { name: Status, type: select, options: [{ value: Geplant, color: gray }, { value: Aktiv, color: blue }, { value: Abgeschlossen, color: green }] }
     - { name: Beginn, type: date }
     - { name: Ende, type: date }
     - { name: Module, type: relation, database: "{{name}}/Module.md" }
     - { name: ECTS, type: rollup, relation: Module, property: ECTS, aggregation: sum }
     - { name: Schnitt, type: rollup, relation: Module, property: Note, aggregation: avg }
+    - { name: ECTS Plan, type: number }
+    - { name: ECTS erreicht, type: number }
   views:
-    - { name: Alle, type: table, sort: [{ property: Beginn, direction: asc }], properties: [Status, Beginn, Ende, Module, ECTS, Schnitt] }
-    - { name: Kacheln, type: gallery, properties: [Status, ECTS, Schnitt] }
+    - { name: Alle, type: table, sort: [{ property: Beginn, direction: asc }], properties: [Zeitraum, Status, Beginn, Ende, ECTS, ECTS Plan, ECTS erreicht, Schnitt] }
+    - { name: Kacheln, type: gallery, properties: [Zeitraum, Status, ECTS erreicht] }
 ---
-Alle Semester mit ihren Modulen. ECTS und Schnitt werden aus den verknüpften Modulen berechnet.
+Jedes Semester hat eine eigene Übersichtsseite mit seinen Modulen, Prüfungen und Aufgaben. Öffne das aktuelle Semester, um nur das zu sehen.
 `
 
 const MODULE = `---
 icon: 📚
 database:
-  properties:
-    - { name: Status, type: select, options: [{ value: Geplant, color: gray }, { value: Laufend, color: blue }, { value: Bestanden, color: green }, { value: Nicht bestanden, color: red }] }
+  properties:${MODULE_PROPERTIES}
     - { name: Semester, type: relation, database: "{{name}}/Semester.md" }
-    - { name: ECTS, type: number }
-    - { name: Note, type: number, decimals: 1 }
-    - { name: Art, type: select, options: [{ value: Pflicht, color: purple }, { value: Wahlpflicht, color: orange }, { value: Wahl, color: yellow }] }
-    - { name: Prüfungsform, type: select, options: [Klausur, Mündlich, Hausarbeit, Projekt, Testat] }
-    - { name: Dozent, type: text }
-    - { name: Link, type: url }
-    - { name: Bestanden, type: formula, formula: 'if(Note > 0 and Note <= 4, "✓", "")' }
-  views:
-    - { name: Board, type: board, groupBy: Status, properties: [Semester, ECTS, Note, Art] }
-    - { name: Tabelle, type: table, sort: [{ property: Semester, direction: asc }], properties: [Status, Semester, ECTS, Note, Art, Prüfungsform, Dozent, Bestanden] }
-    - { name: Kacheln, type: gallery, properties: [Status, ECTS, Note] }
-    - { name: Nach Semester, type: list, groupBy: Semester, properties: [Status, ECTS, Note] }
+  views:${MODULE_VIEWS}
   rowTemplate: |
-    ## Inhalte
-
-    - 
-
-    ## Prüfung
-
-    > [!info] Prüfungsform, erlaubte Hilfsmittel, Termin
-
-    ## Ressourcen
-
-    - Skript:
-    - Übungen:
+${MODULE_ROW_TEMPLATE.split('\n')
+  .map((l) => (l ? `    ${l}` : ''))
+  .join('\n')}
 ---
-Alle Module deines Studiums. Neue Einträge über **＋ Neu** – Note und ECTS fließen automatisch ins Dashboard.
+Alle Module deines Studiums nach Prüfungsordnung. Oben umschalten: **Dieses Semester**, **Nächstes Semester**, **Studienverlauf** (nach Fachsemester) oder **Offen** (was noch fehlt). Jede Modulseite sammelt Moodle-Kurs, Unterlagen, Mitschriften, Prüfungen und Aufgaben des Moduls.
 `
 
 const EXAMS = `---
@@ -112,12 +95,71 @@ database:
 Dein Stundenplan für das aktuelle Semester.
 `
 
+const NOTES = `---
+icon: 🗒️
+database:
+  properties:
+    - { name: Modul, type: relation, database: "{{name}}/Module.md" }
+    - { name: Datum, type: date }
+    - { name: Art, type: select, options: [{ value: Vorlesung, color: blue }, { value: Übung, color: green }, { value: Lernzettel, color: yellow }, { value: Transkript, color: purple }] }
+  views:
+    - { name: Nach Modul, type: list, groupBy: Modul, sort: [{ property: Datum, direction: desc }], properties: [Datum, Art] }
+    - { name: Neueste, type: table, sort: [{ property: Datum, direction: desc }], properties: [Modul, Datum, Art] }
+  rowTemplate: |
+    ## Kernaussagen
+
+    - 
+
+    ## Notizen
+
+    ## Fragen
+
+    - [ ] 
+---
+Deine Mitschriften zu Vorlesungen und Übungen – jede gehört zu einem Modul und erscheint auf dessen Seite.
+`
+
+const ORGA = `---
+icon: 🧭
+---
+Alles, was nicht zu einem einzelnen Modul gehört: Prüfungsplan, Fristen, Studieninfos und allgemeine Moodle-Kurse.
+
+## Prüfungen und Fristen
+
+- Prüfungsplan: Notiva holt ihn unter **Studium → Prüfungsplan** und trägt deine Termine in [[{{name}}/Prüfungen|Prüfungen]] ein.
+- Anmeldezeitraum: 
+- Rückmeldung / Semesterbeitrag: 
+
+## Allgemeine Kurse aus Moodle
+
+\`\`\`notiva
+type: view
+source: "{{name}}/Kurse"
+view: Alle
+filter: [{ property: Art, op: neq, value: Modul }]
+\`\`\`
+
+## Wichtige Links
+
+- 
+
+## Notizen
+
+- 
+`
+
 const DASHBOARD = `---
 icon: 🎓
 cover: blue
 width: wide
 ---
-Willkommen in deinem Studien-Dashboard für **{{studiengang}}**. Alles hier ist Markdown – Kacheln, Ansichten und Datenbanken kannst du frei anpassen (Block anklicken).
+Willkommen in deinem Studium **{{studiengang}}**. Alles hier ist Markdown – Kacheln, Ansichten und Datenbanken kannst du frei anpassen (Block anklicken).
+
+> [!info] Wo steht was?
+> - **Dieses Semester** (unten) – Module, die du gerade belegst, wiederholst oder nachholst. Andere Semester: [[{{name}}/Semester|Semester]] (je Semester eine Seite).
+> - **[[{{name}}/Module|Module]]** – alle Module der Prüfungsordnung mit Status, Versuchen und Note. Die **Modulseite** ist der Ort für alles zu einem Fach: Moodle-Infos, Unterlagen, Mitschriften, Prüfungen und deine Notizen.
+> - **[[{{name}}/Orga|Orga]]** – Prüfungsplan, Fristen, Studieninfos und allgemeine Kurse.
+> - **[[{{name}}/Mitschriften|Mitschriften]]** – Notizen aus Vorlesungen, je Modul verknüpft.
 
 \`\`\`notiva
 type: tiles
@@ -129,12 +171,22 @@ tiles:
   - { type: countdown, title: Nächste Prüfung, icon: ⏳, source: "{{name}}/Prüfungen", dateProperty: Datum }
   - { type: stat, title: Offene Aufgaben, icon: 📌, source: "{{name}}/Aufgaben", aggregation: count, filter: [{ property: Status, op: neq, value: Erledigt }] }
   - { type: list, title: Diese Woche fällig, icon: 🔥, span: 2, source: "{{name}}/Aufgaben", show: Fällig, limit: 5, sort: [{ property: Fällig, direction: asc }], filter: [{ property: Fällig, op: nextDays, value: 7 }, { property: Status, op: neq, value: Erledigt }] }
-  - { type: stat, title: Module laufend, icon: 📖, source: "{{name}}/Module", aggregation: count, filter: [{ property: Status, op: eq, value: Laufend }] }
+  - { type: stat, title: Module laufend, icon: 📖, source: "{{name}}/Module", aggregation: count, filter: [{ property: Status, op: eq, value: In Vorlesung }] }
   - { type: link, page: "{{name}}/Module", description: Alle Module & Noten }
   - { type: link, page: "{{name}}/Prüfungen", description: Termine & Anmeldung }
   - { type: link, page: "{{name}}/Stundenplan", description: Deine Woche }
   - { type: link, page: "{{name}}/Semester", description: Überblick je Semester }
 \`\`\`
+
+## Dieses Semester
+
+\`\`\`notiva
+type: view
+source: "{{name}}/Module"
+view: Dieses Semester
+\`\`\`
+
+## Aufgaben
 
 \`\`\`notiva
 type: view
@@ -142,11 +194,7 @@ source: "{{name}}/Aufgaben"
 view: Board
 \`\`\`
 
-\`\`\`notiva
-type: view
-source: "{{name}}/Module"
-view: Board
-\`\`\`
+## Prüfungen
 
 \`\`\`notiva
 type: view
@@ -155,8 +203,9 @@ view: Anstehend
 \`\`\`
 
 > [!tip] So geht's
-> - Neue Vorlesungsnotiz: **Neue Seite → Aus Vorlage → Vorlesungsnotiz**
-> - Noten eintragen: Modul öffnen und *Note* + *Status: Bestanden* setzen – Schnitt und ECTS aktualisieren sich.
+> - Neue Mitschrift: auf der Modulseite **Neue Mitschrift** – oder Mitschriften → ＋ Neu.
+> - Mit eCampus und Moodle verbunden? **Studium aktualisieren** (Noten & Leistungen) füllt Module, Versuche und Semester selbst.
+> - Noten von Hand: Modul öffnen und *Note* + *Status: Bestanden* setzen – Schnitt und ECTS aktualisieren sich.
 > - Eigene Kachel: diesen Block bearbeiten und eine Zeile kopieren.
 `
 
@@ -241,48 +290,46 @@ export const studyPack: TemplatePack = {
     { path: '{{name}}/Prüfungen.md', content: EXAMS },
     { path: '{{name}}/Aufgaben.md', content: TASKS },
     { path: '{{name}}/Stundenplan.md', content: TIMETABLE },
-    {
-      path: '{{name}}/Mitschriften.md',
-      content:
-        '---\nicon: 🗒️\n---\nVorlesungsnotizen und Lernzettel. Neue Notiz: Unterseite aus Vorlage erstellen.\n',
-    },
+    { path: '{{name}}/Mitschriften.md', content: NOTES },
+    { path: '{{name}}/Kurse.md', content: COURSE_DB('{{name}}') },
+    { path: '{{name}}/Orga.md', content: ORGA },
     { path: '{{name}}/Vorlagen/Vorlesungsnotiz.md', content: LECTURE_TEMPLATE },
     { path: '{{name}}/Vorlagen/Lernzettel.md', content: CHEATSHEET_TEMPLATE },
     row(
       'Semester',
       '1. Semester',
-      'Status: Abgeschlossen\nBeginn: {{date-200}}\nEnde: {{date-60}}\nModule: ["[[Analysis I]]", "[[Programmieren I]]"]',
+      'Zeitraum: {{semester-1}}\nStatus: Abgeschlossen\nBeginn: {{date-200}}\nEnde: {{date-60}}\nModule: ["[[Analysis I]]", "[[Programmieren I]]"]',
     ),
     row(
       'Semester',
       '2. Semester',
-      'Status: Aktiv\nBeginn: {{semesterStart}}\nEnde: {{semesterEnd}}\nModule: ["[[Lineare Algebra]]", "[[Datenbanken]]", "[[Software Engineering]]"]',
+      'Zeitraum: {{semester}}\nStatus: Aktiv\nBeginn: {{semesterStart}}\nEnde: {{semesterEnd}}\nModule: ["[[Lineare Algebra]]", "[[Datenbanken]]", "[[Software Engineering]]"]',
     ),
     row(
       'Module',
       'Analysis I',
-      'Status: Bestanden\nSemester: ["[[1. Semester]]"]\nECTS: 9\nNote: 2.3\nArt: Pflicht\nPrüfungsform: Klausur',
+      'Status: Bestanden\nSemester: ["[[1. Semester]]"]\nBelegt: ["{{semester-1}}"]\nBestanden im: {{semester-1}}\nVersuche: 1\nFachsemester: 1\nECTS: 9\nNote: 2.3\nArt: Pflicht\nPrüfungsform: Klausur',
       '## Inhalte\n\n- Folgen und Reihen\n- Stetigkeit, Differenzierbarkeit\n- Integralrechnung\n',
     ),
     row(
       'Module',
       'Programmieren I',
-      'Status: Bestanden\nSemester: ["[[1. Semester]]"]\nECTS: 6\nNote: 1.7\nArt: Pflicht\nPrüfungsform: Projekt',
+      'Status: Bestanden\nSemester: ["[[1. Semester]]"]\nBelegt: ["{{semester-1}}"]\nBestanden im: {{semester-1}}\nVersuche: 2\nVerlauf: "1. {{semester-1}}: 5,0 · 2. {{semester-1}}: 1,7 ✓"\nFachsemester: 1\nECTS: 6\nNote: 1.7\nArt: Pflicht\nPrüfungsform: Projekt',
     ),
     row(
       'Module',
       'Lineare Algebra',
-      'Status: Laufend\nSemester: ["[[2. Semester]]"]\nECTS: 9\nArt: Pflicht\nPrüfungsform: Klausur',
+      'Status: In Vorlesung\nSemester: ["[[2. Semester]]"]\nBelegt: ["{{semester}}"]\nFachsemester: 2\nPraktikum: Offen\nECTS: 9\nArt: Pflicht\nPrüfungsform: Klausur',
     ),
     row(
       'Module',
       'Datenbanken',
-      'Status: Laufend\nSemester: ["[[2. Semester]]"]\nECTS: 6\nArt: Pflicht\nPrüfungsform: Klausur',
+      'Status: In Vorlesung\nSemester: ["[[2. Semester]]"]\nBelegt: ["{{semester}}"]\nFachsemester: 2\nPraktikum: Offen\nECTS: 6\nArt: Pflicht\nPrüfungsform: Klausur',
     ),
     row(
       'Module',
       'Software Engineering',
-      'Status: Laufend\nSemester: ["[[2. Semester]]"]\nECTS: 6\nArt: Wahlpflicht\nPrüfungsform: Projekt',
+      'Status: In Vorlesung\nSemester: ["[[2. Semester]]"]\nBelegt: ["{{semester}}"]\nFachsemester: 2\nPraktikum: Offen\nECTS: 6\nArt: Wahlpflicht\nPrüfungsform: Projekt',
     ),
     row(
       'Prüfungen',

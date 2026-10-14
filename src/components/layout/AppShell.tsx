@@ -20,6 +20,7 @@ import { taskReminders, useNotifications } from '@/app/notifications'
 import type { Workspace } from '@/lib/workspace'
 import { electronBridge } from '@/lib/vault'
 import { moodleAvailable, useMoodle } from '@/app/moodle'
+import { autoSyncStudy } from '@/app/study'
 import { syncMaterials } from '@/app/materials'
 import { useEcampus } from '@/app/ecampus'
 
@@ -29,7 +30,14 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
   const { sidebarOpen, setSidebar, setSearch, setNewPage, route, rightPanel, leftView } = useApp()
   useGitSync()
   useNotificationSync(ws)
-  useEffect(() => electronBridge()?.ecampus?.onPolled(() => void useEcampus.getState().refresh()), [])
+  useEffect(
+    () =>
+      electronBridge()?.ecampus?.onPolled(() => {
+        void useEcampus.getState().refresh()
+        if (useApp.getState().settings.studyAutoSync) void autoSyncStudy(ws).catch(() => undefined)
+      }),
+    [ws],
+  )
   // Unsaved changes (autosave off): ask before the window closes.
   useEffect(() => {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -46,7 +54,8 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
       const snapshot = await electronBridge()!.moodle!.snapshot()
       if (!snapshot) return
       useMoodle.setState({ snapshot })
-      if (useApp.getState().settings.moodleAutoSave) void syncMaterials(ws, snapshot).catch(() => undefined)
+      if (useApp.getState().settings.moodleAutoSave) await syncMaterials(ws, snapshot).catch(() => undefined)
+      if (useApp.getState().settings.studyAutoSync) void autoSyncStudy(ws).catch(() => undefined)
     })
   }, [ws])
   const actions = usePageActions(ws)

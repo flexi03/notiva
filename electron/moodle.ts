@@ -5,6 +5,7 @@
  * - the calendar link (Kalender → Exportieren), which needs no password but only has dates.
  * The secret (token or calendar link) is stored encrypted with the OS keychain (safeStorage).
  */
+import { safeFileName } from '../src/lib/moodle'
 import {
   snapshotFromIcs,
   snapshotFromWebService,
@@ -51,17 +52,6 @@ const EXTENSIONS: Record<string, string> = {
 }
 
 /** A file name that is safe on every OS (no folders, no reserved characters). */
-export function safeFileName(name: string, fallback = 'Datei'): string {
-  const clean = name
-    .normalize('NFC')
-    // eslint-disable-next-line no-control-regex -- control characters are exactly what must go
-    .replace(/[\\/:*?"<>|\u0000-\u001f]/g, '-')
-    .replace(/\s+/g, ' ')
-    .replace(/^[.\s-]+|[.\s]+$/g, '')
-    .slice(0, 120)
-  return clean || fallback
-}
-
 /** https only (http just for localhost, e.g. tests); no credentials in the URL. */
 export function checkUrl(raw: unknown): URL {
   if (typeof raw !== 'string' || raw.length > 2000) throw new MoodleError('Ungültige Adresse')
@@ -360,3 +350,5 @@ export function parseStoredConfig(text: string): MoodleConfig | null {
     return null
   }
 }
+
+export { safeFileName }

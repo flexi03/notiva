@@ -154,7 +154,7 @@ describe('import into the study dashboard', () => {
     expect(plan.find((p) => p.key === 'course:43')).toMatchObject({
       kind: 'create',
       title: 'Betriebssysteme & Netze',
-      values: { Status: 'Laufend', Link: 'https://moodle.example.org/course/view.php?id=43' },
+      values: { Status: 'In Vorlesung', Link: 'https://moodle.example.org/course/view.php?id=43' },
     })
     expect(plan.find((p) => p.key === 'event:501')).toMatchObject({
       kind: 'create',

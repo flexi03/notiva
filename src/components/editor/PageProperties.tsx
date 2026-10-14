@@ -49,7 +49,10 @@ export function PageProperties({ page }: { page: Page }) {
     )
   }
 
-  const entries = Object.entries(page.data).filter(([k]) => !RESERVED.has(k))
+  // Nested settings (e.g. "studium:") are not properties – they stay in the file, untouched.
+  const entries = Object.entries(page.data).filter(
+    ([k, v]) => !RESERVED.has(k) && !(typeof v === 'object' && v !== null && !Array.isArray(v)),
+  )
   return (
     <dl className="grid grid-cols-[minmax(7rem,11rem)_1fr] gap-y-px text-[14px]">
       {entries.map(([key, value]) => (

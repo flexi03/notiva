@@ -1,18 +1,11 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { ChevronRight, RefreshCw } from 'lucide-react'
 import { ecampusAvailable, useEcampus } from '@/app/ecampus'
-import { withProgress } from '@/app/progress'
-import { useAction, useApp, useWorkspace } from '@/app/store'
+import { useApp } from '@/app/store'
 import { getLanguage, t } from '@/i18n'
-import {
-  moduleResults,
-  planExamImport,
-  resultSummary,
-  type ExamRecord,
-  type ModuleResult,
-} from '@/lib/ecampus'
-import { applyMoodleImport, importTargets } from '@/lib/moodle'
-import { Button, Checkbox, cx, Dialog, EmptyState } from '@/components/ui'
+import { moduleResults, resultSummary, type ExamRecord, type ModuleResult } from '@/lib/ecampus'
+import { Button, cx, EmptyState } from '@/components/ui'
+import { StudySyncDialog } from '@/components/study/StudySyncDialog'
 import { Topbar } from '@/components/layout/Topbar'
 
 const STATUS_CLASS: Record<ExamRecord['status'] | ModuleResult['status'], string> = {
@@ -32,8 +25,7 @@ export function GradesScreen() {
     if (ecampusAvailable()) void refresh()
   }, [refresh])
 
-  const records = snapshot?.records ?? []
-  const results = useMemo(() => moduleResults(records), [records])
+  const results = useMemo(() => moduleResults(snapshot?.records ?? []), [snapshot])
   const { credits, average, passed } = resultSummary(results)
   const [open, setOpen] = useState<Set<string>>(new Set())
   const toggle = (key: string) =>
@@ -67,8 +59,8 @@ export function GradesScreen() {
               >
                 {t('moodle.screen.refresh')}
               </Button>
-              <Button variant="primary" disabled={!records.length} onClick={() => setImportOpen(true)}>
-                {t('grades.import')}
+              <Button variant="primary" onClick={() => setImportOpen(true)}>
+                {t('study.sync')}
               </Button>
             </>
           )}
@@ -212,89 +204,7 @@ export function GradesScreen() {
           </>
         )}
       </div>
-      {importOpen && <GradesImportDialog records={records} onClose={() => setImportOpen(false)} />}
+      {importOpen && <StudySyncDialog onClose={() => setImportOpen(false)} />}
     </>
-  )
-}
-
-function GradesImportDialog({ records, onClose }: { records: ExamRecord[]; onClose: () => void }) {
-  const ws = useWorkspace()
-  const run = useAction()
-  const modulesDb = importTargets(ws).find((x) => x.modules)?.modules
-  const plan = useMemo(
-    () => (modulesDb ? planExamImport(ws, records, modulesDb) : []),
-    [ws, records, modulesDb],
-  )
-  const [skipped, setSkipped] = useState(new Set<string>())
-  const chosen = plan.filter((p) => !skipped.has(p.key))
-  const detail = (values: Record<string, unknown>) =>
-    Object.entries(values)
-      .filter(([k]) => k !== 'pruefung')
-      .map(([k, v]) => `${k}: ${String(v)}`)
-      .join(' · ')
-  return (
-    <Dialog open onClose={onClose} title={t('grades.importTitle')} size="lg" closeLabel={t('common.close')}>
-      {!modulesDb ? (
-        <p className="text-sm">{t('moodle.import.noTarget')}</p>
-      ) : plan.length === 0 ? (
-        <p role="status" className="text-sm text-accent">
-          {t('grades.upToDate')}
-        </p>
-      ) : (
-        <ul className="divide-y divide-line rounded-panel border border-line">
-          {plan.map((p) => (
-            <li key={p.key}>
-              <label className="flex cursor-pointer items-start gap-2.5 px-3 py-2 hover:bg-hover">
-                <Checkbox
-                  checked={!skipped.has(p.key)}
-                  onChange={(on) =>
-                    setSkipped((s) => {
-                      const next = new Set(s)
-                      if (on) next.delete(p.key)
-                      else next.add(p.key)
-                      return next
-                    })
-                  }
-                  label={p.title}
-                  className="mt-0.5"
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm">
-                    {p.title}{' '}
-                    <span className="text-[12px] text-ink-3">
-                      {p.kind === 'create' ? t('grades.newModule') : ''}
-                    </span>
-                  </span>
-                  <span className="block text-[12.5px] text-ink-3">
-                    {detail(p.kind === 'create' ? p.values : p.changes)}
-                  </span>
-                </span>
-              </label>
-            </li>
-          ))}
-        </ul>
-      )}
-      <div className="mt-4 flex justify-end gap-2">
-        <Button variant="ghost" onClick={onClose}>
-          {plan.length ? t('common.cancel') : t('common.close')}
-        </Button>
-        {plan.length > 0 && (
-          <Button
-            variant="primary"
-            disabled={!chosen.length}
-            onClick={() => {
-              onClose()
-              void run(() =>
-                withProgress(t('moodle.import.applying'), () => applyMoodleImport(ws, chosen), {
-                  success: () => t('grades.imported', { count: chosen.length }),
-                }),
-              )
-            }}
-          >
-            {t('moodle.import.apply', { count: chosen.length })}
-          </Button>
-        )}
-      </div>
-    </Dialog>
   )
 }

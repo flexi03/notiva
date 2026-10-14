@@ -74,6 +74,18 @@ export interface MoodleSnapshot {
   notices?: MoodleNotice[]
 }
 
+/** A name usable as file or folder name on every system (course folders for materials). */
+export function safeFileName(name: string, fallback = 'Datei'): string {
+  const clean = name
+    .normalize('NFC')
+    // eslint-disable-next-line no-control-regex -- control characters are exactly what must go
+    .replace(/[\\/:*?"<>|\u0000-\u001f]/g, '-')
+    .replace(/\s+/g, ' ')
+    .replace(/^[.\s-]+|[.\s]+$/g, '')
+    .slice(0, 120)
+  return clean || fallback
+}
+
 /* ---------- iCalendar (Moodle: Kalender → Exportieren → Kalender-URL) ---------- */
 
 export interface IcsEvent {
@@ -386,6 +398,8 @@ export function importTargets(ws: Workspace): ImportTarget[] {
         : null
     if (!role) continue
     const target = byFolder.get(folder) ?? { folder }
+    // "Module" beats "Kurse" (the study folder has both: modules and their Moodle courses).
+    if (role === 'modules' && target.modules && /^(module|modules)$/i.test(db.title)) target.modules = db.path
     target[role] ??= db.path
     byFolder.set(folder, target)
   }
@@ -428,12 +442,21 @@ export function planMoodleImport(
   /** Module page per Moodle course id and per (short) name – for linking tasks. */
   const modules = new Map<string, string>()
 
-  if (target.modules && moduleDb) {
+  // A study folder set up with a PO: modules come from the PO, courses go to "Kurse" (study sync).
+  const studyManaged = !!ws.get(`${target.folder}.md`)?.data.studium
+  const byCourse = new Map<string, string>()
+  if (target.modules)
+    for (const r of ws.rows(target.modules))
+      if (Array.isArray(r.data.kurse)) for (const id of r.data.kurse) byCourse.set(String(id), r.path)
+  if (studyManaged) for (const [id, path] of byCourse) modules.set(id, path)
+
+  if (target.modules && moduleDb && !studyManaged) {
     const known = rowsByKey(ws, target.modules)
     const byName = new Map(ws.rows(target.modules).map((r) => [norm(r.title), r.path]))
     for (const course of snapshot.courses) {
       const existing =
         known.get(course.id)?.path ??
+        byCourse.get(course.id) ??
         byName.get(norm(course.name)) ??
         (course.shortname ? byName.get(norm(course.shortname)) : undefined)
       if (existing) {
@@ -455,7 +478,7 @@ export function planMoodleImport(
         continue
       }
       const values: FrontmatterData = { moodle: course.id }
-      const status = option(moduleDb, 'Status', ['Laufend'])
+      const status = option(moduleDb, 'Status', ['In Vorlesung', 'Laufend'])
       if (status) values.Status = status
       if (course.url && propertyDef(moduleDb, 'Link')?.type === 'url') values.Link = course.url
       plan.push({

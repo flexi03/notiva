@@ -28,6 +28,7 @@ import { addDays, daysBetween, parseDate, startOfDay, toIsoDate } from './dates'
 import { sanitizeData, type FrontmatterValue } from './frontmatter'
 import type { FormulaValue } from './formula'
 import type { Workspace } from './workspace'
+import { resolveTermPlaceholder } from './study/terms'
 
 export const TILE_TYPES = ['stat', 'progress', 'countdown', 'list', 'link', 'text', 'week'] as const
 export type TileType = (typeof TILE_TYPES)[number]
@@ -66,6 +67,8 @@ export interface TileSpec {
 export type WidgetSpec =
   | { type: 'tiles'; columns?: number; tiles: TileSpec[] }
   | { type: 'view'; source: string; view?: string; limit?: number; filter?: Filter[] }
+  /** Everything linked to the page, grouped by database (module page: courses, notes, exams …). */
+  | { type: 'related' }
 
 export interface WidgetParseResult {
   widget: WidgetSpec | null
@@ -147,7 +150,8 @@ export function parseWidget(source: string): WidgetParseResult {
   } catch (error) {
     return { widget: null, error: (error as Error).message }
   }
-  if (!isObject(raw)) return { widget: null, error: 'Widget braucht „type: tiles“ oder „type: view“' }
+  if (!isObject(raw))
+    return { widget: null, error: 'Widget braucht „type: tiles“, „type: view“ oder „type: related“' }
   const data = sanitizeData(raw)
   if (data.type === 'tiles') {
     const tiles = (Array.isArray(data.tiles) ? data.tiles : [])
@@ -178,6 +182,7 @@ export function parseWidget(source: string): WidgetParseResult {
       },
     }
   }
+  if (data.type === 'related') return { widget: { type: 'related' } }
   return { widget: null, error: `Unbekannter Widget-Typ: ${String(data.type)}` }
 }
 
@@ -209,11 +214,17 @@ export function widgetBlock(yaml: string): string {
 
 /* ---------- computing ---------- */
 
-/** Replaces relative date values ("today", "today+7") in filters. */
+/**
+ * Replaces relative values in filters: dates ("today", "today+7") and semesters ("@semester",
+ * "@nextSemester", "@lastSemester" → "WiSe 26/27").
+ */
 export function resolveFilterDates(filters: Filter[] | undefined, now: Date): Filter[] | undefined {
   return filters?.map((f) => {
-    const match = typeof f.value === 'string' ? /^today([+-]\d+)?$/i.exec(f.value.trim()) : null
-    return match ? { ...f, value: toIsoDate(addDays(now, Number(match[1] ?? 0))) } : f
+    if (typeof f.value !== 'string') return f
+    const match = /^today([+-]\d+)?$/i.exec(f.value.trim())
+    if (match) return { ...f, value: toIsoDate(addDays(now, Number(match[1] ?? 0))) }
+    const term = resolveTermPlaceholder(f.value, now)
+    return term ? { ...f, value: term } : f
   })
 }
 

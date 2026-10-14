@@ -89,11 +89,45 @@ type: view
 source: Studium/Aufgaben
 view: Board
 ```
+
+```notiva
+type: related
+```
 ````
+
+`type: related` zeigt alle Seiten, die auf diese Seite verweisen, nach Datenbank gruppiert (auf
+Modulseiten: Kurse, Mitschriften, Prüfungen, Aufgaben). Hat ein verweisender Eintrag `Ordner: <Pfad>`,
+werden die Dateien darin mit aufgelistet (Unterlagen aus Moodle).
+
+Filterwerte können relativ sein: `today`, `today+7` (Datum) sowie `@semester`, `@nextSemester`,
+`@lastSemester` (Semester als Text, z. B. `WiSe 26/27`).
+
+## Studium
+
+Das Studien-Dashboard (`Studium.md`) kann eine Prüfungsordnung tragen:
+
+```yaml
+studium:
+  programm: hsd-bmi-2018   # Studiengang + PO aus src/lib/study/catalog.ts
+  beginn: WiSe 24/25       # erstes Semester
+```
+
+Dann gleicht Notiva den Ordner mit PO, eCampus und Moodle ab („Studium aktualisieren“, nach jedem Abruf
+automatisch). Einträge werden über Schlüssel wiedergefunden, die Notiva setzt:
+
+| Datenbank | Schlüssel | Notiva schreibt |
+| --- | --- | --- |
+| Module | `modul: BMI 01` | Nr, Status (+ `statusAuto`), Belegt (Semester), Fachsemester, ECTS, Note, Versuche, Verlauf, Bestanden im, Art, Bereich, Prüfungsform, Voraussetzung, Angebot, Lehrform, `pruefung`, `kurse` (Moodle-IDs); Praktikum und Link nur, wenn leer |
+| Semester | `fachsemester: 5` | Zeitraum, Status, Beginn, Ende, ECTS Plan, ECTS erreicht |
+| Kurse | `moodle: course:42` | Art (Modul/Orga/Sonstiges), Modul, Semester, Link, Ordner |
+
+Einen Status, den du selbst gesetzt hast, überschreibt Notiva erst, wenn sich die Fakten ändern
+(z. B. bestanden). Text, Notizen und eigene Eigenschaften bleiben unberührt.
 
 ## Vorlagen
 
 Platzhalter: `{{title}}`, `{{date}}`, `{{date:DD.MM.YYYY}}`, `{{date+7}}`, `{{time}}`, `{{weekday}}`,
+`{{semester}}` (aktuelles Semester, `{{semester+1}}` das nächste),
 eigene Variablen in Paketen; `{{title|yaml}}` setzt den Wert sicher in YAML ein.
 
 ## Einstellungen

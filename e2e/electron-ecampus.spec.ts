@@ -173,24 +173,37 @@ test('zeigt Noten, Schnitt und ECTS und übernimmt sie in die Module', async () 
   await table.getByRole('button', { name: /Programmierung 1/ }).click()
   await expect(table).toContainText('2. Versuch')
   await expect(table).toContainText('nicht bestanden')
-  await window.getByRole('button', { name: 'In Module übernehmen …' }).click()
-  const dialog = window.getByRole('dialog', { name: 'Leistungen in die Module übernehmen' })
-  await expect(dialog).toContainText('Mathematik 1')
-  await dialog.getByRole('button', { name: /übernehmen/ }).click()
+  await window.getByRole('button', { name: 'Studium aktualisieren …' }).click()
+  const dialog = window.getByRole('dialog', { name: 'Studium aktualisieren' })
+  await dialog.getByRole('combobox', { name: 'Studiengang und Prüfungsordnung' }).selectOption({ index: 1 })
+  await dialog.getByRole('combobox', { name: 'Erstes Semester' }).selectOption('WiSe 24/25')
+  await expect(dialog).toContainText('5. Fachsemester (WiSe 26/27)')
+  await expect(dialog).toContainText('Objektorientierte Programmierung 1')
+  await dialog.getByRole('button', { name: /Änderungen übernehmen/ }).click()
   await expect(
-    window.getByTestId('progress-task').filter({ hasText: 'Module aus eCampus aktualisiert' }),
-  ).toBeVisible()
+    window.getByTestId('progress-task').filter({ hasText: 'Änderungen im Studium übernommen' }),
+  ).toBeVisible({
+    timeout: 20_000,
+  })
   await expect
     .poll(() => readFileSync(path.join(folder, 'Studium/Module/Lineare Algebra.md'), 'utf8'))
     .toContain('Note: 1.3')
-  expect(readFileSync(path.join(folder, 'Studium/Module/Lineare Algebra.md'), 'utf8')).toContain(
-    'Status: Bestanden',
-  )
+  const la = readFileSync(path.join(folder, 'Studium/Module/Lineare Algebra.md'), 'utf8')
+  expect(la).toContain('Status: Bestanden')
+  expect(la).toContain('Versuche: 1')
+  const math = readFileSync(path.join(folder, 'Studium/Module/Mathematik 1.md'), 'utf8')
+  expect(math).toContain('Nr: BMI 05')
+  expect(math).toContain('type: related')
+  expect(readFileSync(path.join(folder, 'Studium.md'), 'utf8')).toContain('beginn: WiSe 24/25')
+  // The dashboard opens and shows this semester's modules.
+  await expect(window.getByRole('heading', { name: 'Dieses Semester' })).toBeVisible()
+  await expect(window.getByRole('region', { name: 'Module laufend' })).toBeVisible()
+  await window.getByRole('button', { name: 'Noten & Leistungen' }).click()
 })
 
 test('prüft im Hintergrund mit neuer Sitzung und meldet neue Noten', async () => {
   fake.results = QIS_RESULTS_HTML.replace('<td></td><td>angemeldet</td>', '<td>2,0</td><td>bestanden</td>')
-  await window.getByRole('button', { name: 'Aktualisieren' }).click()
+  await window.getByRole('button', { name: 'Aktualisieren', exact: true }).click()
   await expect(window.getByRole('table', { name: 'Leistungen' })).toContainText('2,0')
   const bell = window
     .getByRole('navigation', { name: 'Werkzeugleiste rechts' })
@@ -203,17 +216,19 @@ test('prüft im Hintergrund mit neuer Sitzung und meldet neue Noten', async () =
 test('erneuert eine abgelaufene eCampus-Sitzung selbst über die Hochschul-Anmeldung', async () => {
   fake.sessions.clear()
   fake.log.length = 0
-  await window.getByRole('button', { name: 'Aktualisieren' }).click()
+  await window.getByRole('button', { name: 'Aktualisieren', exact: true }).click()
   await expect.poll(() => fake.log.some((l) => l.includes('next=list.vm')), { timeout: 20_000 }).toBe(true)
   expect(fake.log.some((l) => l.includes('identityprovider'))).toBe(true)
-  await expect(window.getByRole('button', { name: 'Aktualisieren' })).toBeEnabled({ timeout: 10_000 })
+  await expect(window.getByRole('button', { name: 'Aktualisieren', exact: true })).toBeEnabled({
+    timeout: 10_000,
+  })
   await expect(window.getByRole('alert').filter({ hasText: 'Anmeldung ist abgelaufen' })).toHaveCount(0)
 })
 
 test('sagt Bescheid, wenn die Anmeldung abgelaufen ist', async () => {
   fake.sessions.clear()
   fake.idp.clear()
-  await window.getByRole('button', { name: 'Aktualisieren' }).click()
+  await window.getByRole('button', { name: 'Aktualisieren', exact: true }).click()
   await expect(window.getByRole('alert').filter({ hasText: 'Anmeldung ist abgelaufen' }).first()).toBeVisible(
     {
       timeout: 20_000,

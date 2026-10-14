@@ -34,9 +34,14 @@ view: Board                  # Name einer Ansicht der Datenbank
 limit: 10
 filter: [{ property: Status, op: neq, value: Erledigt }]
 
+### Alles zu einer Seite (Modulseite)
+type: related   # zeigt Seiten, die hierher verlinken, nach Datenbank (Kurse, Mitschriften, Prüfungen …)
+
 ## Filter und Sortierung
 filter: [{ property, op, value }] – op: ${FILTER_OPS.join(', ')}
 Datumswerte: YYYY-MM-DD oder "today", "today+7". nextDays/pastDays: value = Anzahl Tage.
+Semester: "@semester" (aktuelles, z. B. "WiSe 26/27"), "@nextSemester", "@lastSemester" – z. B.
+{ property: Belegt, op: contains, value: "@semester" } für die Module dieses Semesters.
 sort: [{ property, direction: asc|desc }]
 
 ## Datenbanken

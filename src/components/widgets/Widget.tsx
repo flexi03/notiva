@@ -4,6 +4,7 @@ import { useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import { parseWidget, widgetSource } from '@/lib/widgets'
 import { DatabaseView } from '@/components/database/DatabaseView'
+import { Related } from './Related'
 import { Tiles } from './Tiles'
 
 /** Renders a ```notiva block: tiles or an embedded database view. */
@@ -12,6 +13,7 @@ export function Widget({ source, from }: { source: string; from: string }) {
   const { widget, error } = useMemo(() => parseWidget(widgetSource(source)), [source])
   if (!widget) return <WidgetError message={error ?? ''} />
   if (widget.type === 'tiles') return <Tiles spec={widget} from={from} />
+  if (widget.type === 'related') return <Related from={from} />
   const db = ws.findDatabase(widget.source, from)
   if (!db) return <WidgetError message={t('db.notFound', { name: widget.source })} />
   return (

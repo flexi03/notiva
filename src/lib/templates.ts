@@ -5,12 +5,14 @@
  *   {{title}}  {{date}}  {{date:DD.MM.YYYY}}  {{time}}  {{weekday}}  {{<variable>}}
  *   {{title|yaml}} – value as a quoted YAML/JSON string (safe inside frontmatter)
  *   {{date+7}}    – date in 7 days (also date-3, date+14:DD.MM.)
+ *   {{semester}}  – the current semester ("WiSe 26/27"), {{semester+1}} the next one
  *
  * Unknown placeholders are kept unchanged. Values are plain text; templates cannot run code.
  */
 import { addDays, formatDate } from './dates'
 import { parseMarkdown, type FrontmatterData } from './frontmatter'
 import { assertSafePath, joinPath } from './path'
+import { addTerms, termLabel, termOf } from './study/terms'
 
 export type TemplateVars = Record<string, string | number>
 
@@ -48,6 +50,8 @@ export function renderTemplate(text: string, vars: TemplateVars = {}, now = new 
     if (key === 'date') value = formatDate(date, format?.trim() || 'YYYY-MM-DD')
     else if (key === 'time') value = formatDate(now, format?.trim() || 'HH:mm')
     else if (key === 'weekday') value = WEEKDAYS[date.getDay()]
+    else if (key === 'semester' && !Object.hasOwn(vars, key))
+      value = termLabel(addTerms(termOf(now), Number(offset ?? 0)))
     else if (Object.hasOwn(vars, key)) value = String(vars[key])
     if (value === undefined) return full
     return filter === 'yaml' ? JSON.stringify(value) : value
