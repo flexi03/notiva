@@ -55,6 +55,7 @@ import {
 import { deadlineReminders, moodleNews, type AppNotification } from '../src/lib/notifications'
 import type { MoodleSnapshot } from '../src/lib/moodle'
 import { courseInfoNews } from '../src/lib/moodleInfo'
+import { findPlanLinks, type PlanLink } from '../src/lib/examPlan'
 
 const DIST = path.join(__dirname, '..', 'dist')
 const userFile = (name: string) => path.join(process.env.NOTIVA_E2E_USERDATA ?? app.getPath('userData'), name)
@@ -567,6 +568,29 @@ function registerIpc(): void {
     return snapshot
   })
   handle('ecampus:fetch', async () => pollEcampus())
+  // Exam plan: the newest plan PDF linked on the faculty page (or the PDF itself).
+  handle('examplan:fetch', async (raw: unknown) => {
+    const url = checkUrl(raw)
+    const get = async (target: string) => {
+      const response = await net.fetch(target, { redirect: 'follow' })
+      if (!response.ok) throw new Error(`Prüfungsplan nicht erreichbar (${response.status})`)
+      return response
+    }
+    let pdfUrl = url.toString()
+    let links: PlanLink[] = []
+    if (!/\.pdf$/i.test(url.pathname)) {
+      const html = (await (await get(pdfUrl)).text()).slice(0, 2_000_000)
+      links = findPlanLinks(html, pdfUrl)
+      if (!links[0]) throw new Error('Auf der Seite ist kein Prüfungsplan (PDF) verlinkt.')
+      pdfUrl = checkUrl(links[0].url).toString()
+    }
+    const response = await get(pdfUrl)
+    const bytes = new Uint8Array(await response.arrayBuffer())
+    if (bytes.length > 30_000_000) throw new Error('Prüfungsplan zu groß')
+    if (new TextDecoder().decode(bytes.slice(0, 5)) !== '%PDF-') throw new Error('Der Link liefert kein PDF')
+    const name = safeFileName(decodeURIComponent(pdfUrl.split('/').pop() ?? 'Prüfungsplan.pdf'))
+    return { url: pdfUrl, name, bytes, links }
+  })
   handle('ecampus:snapshot', async () => ecampus.snapshot())
   handle('ecampus:disconnect', async () => ecampus.disconnect())
   handle('whisper:status', async () => whisper.status())

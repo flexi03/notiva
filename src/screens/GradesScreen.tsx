@@ -1,7 +1,8 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { ChevronRight, RefreshCw } from 'lucide-react'
 import { ecampusAvailable, useEcampus } from '@/app/ecampus'
-import { useApp } from '@/app/store'
+import { syncExamPlan } from '@/app/examPlan'
+import { useAction, useApp, useWorkspace } from '@/app/store'
 import { getLanguage, t } from '@/i18n'
 import { moduleResults, resultSummary, type ExamRecord, type ModuleResult } from '@/lib/ecampus'
 import { Button, cx, EmptyState } from '@/components/ui'
@@ -21,6 +22,8 @@ const STATUS_CLASS: Record<ExamRecord['status'] | ModuleResult['status'], string
 export function GradesScreen() {
   const { status, snapshot, busy, error, refresh, fetchNow, importOpen, setImportOpen } = useEcampus()
   const navigate = useApp((s) => s.navigate)
+  const ws = useWorkspace()
+  const run = useAction()
   useEffect(() => {
     if (ecampusAvailable()) void refresh()
   }, [refresh])
@@ -58,6 +61,9 @@ export function GradesScreen() {
                 onClick={() => void fetchNow()}
               >
                 {t('moodle.screen.refresh')}
+              </Button>
+              <Button disabled={busy} onClick={() => void run(() => syncExamPlan(ws))}>
+                {t('examPlan.check')}
               </Button>
               <Button variant="primary" onClick={() => setImportOpen(true)}>
                 {t('study.sync')}

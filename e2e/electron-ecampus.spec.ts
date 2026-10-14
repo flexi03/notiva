@@ -1,11 +1,12 @@
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test'
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createServer, type Server } from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
 import { studyPack } from '../src/lib/packs/study'
 import { expandPack } from '../src/lib/templates'
 import { QIS_RESULTS_HTML } from '../src/test/fixtures/qis'
+import { tablePdf } from './fixtures/tablePdf'
 
 /**
  * A small HISinOne/QIS: login, exam administration with an iframe, QIS menu → "Notenspiegel" →
@@ -18,6 +19,32 @@ const fake = {
   asi: '',
   results: QIS_RESULTS_HTML,
   log: [] as string[],
+  planFile: '20260608-SoSe2026-Pruefungsplanung.pdf',
+  plan: examPlan('20.08.2026'),
+}
+
+/** Exam plan PDF: header and two rows (one of another program). */
+function examPlan(date: string) {
+  const X = [40, 90, 120, 170, 250, 420, 500, 560, 610, 680]
+  const row = (y: number, cells: string[]) =>
+    cells.map((text, i) => ({ x: X[i]!, y, text })).filter((c) => c.text)
+  return tablePdf([
+    { x: 40, y: 30, text: 'Version 1.1, 08.06.2026' },
+    ...row(50, [
+      'Datum',
+      'Tag',
+      'Studieng.',
+      'Code',
+      'Fachname',
+      'PrüferIn',
+      'Raum',
+      'Dauer',
+      'Beginn',
+      'Titel',
+    ]),
+    ...row(65, [date, 'Do', 'BMI18', 'BMI 02', 'Datenbanksysteme 1', 'Prof. X', 'H1', '90', '10:00']),
+    ...row(80, [date, 'Do', 'BMT18', 'BMT 01', 'Datenbanksysteme 1', 'Prof. X', 'H1', '90', '12:00']),
+  ])
 }
 
 function page(body: string, loggedIn: boolean) {
@@ -50,6 +77,14 @@ function startFake(): Promise<{ server: Server; url: string }> {
       res.setHeader('set-cookie', [`sess=${id}; Path=/`, `idp=${idp}; Path=/`])
       res.setHeader('location', '/qisserver/pages/cs/sys/portal/hisinoneStartPage.faces')
       return res.end()
+    }
+    if (url.pathname === '/pruefungen') {
+      res.setHeader('content-type', 'text/html; charset=utf-8')
+      return res.end(`<a href="/docs/${fake.planFile}">Prüfungsplanung</a>`)
+    }
+    if (url.pathname.startsWith('/docs/')) {
+      res.setHeader('content-type', 'application/pdf')
+      return res.end(fake.plan)
     }
     if (url.pathname === '/qisserver/api/identityprovider/redirect/2/login') {
       if (!idpCookie || !fake.idp.has(idpCookie)) return send(loginForm)
@@ -199,6 +234,45 @@ test('zeigt Noten, Schnitt und ECTS und übernimmt sie in die Module', async () 
   await expect(window.getByRole('heading', { name: 'Dieses Semester' })).toBeVisible()
   await expect(window.getByRole('region', { name: 'Module laufend' })).toBeVisible()
   await window.getByRole('button', { name: 'Noten & Leistungen' }).click()
+})
+
+test('holt den Prüfungsplan und trägt die eigenen Termine ein', async () => {
+  const dash = path.join(folder, 'Studium.md')
+  writeFileSync(
+    dash,
+    readFileSync(dash, 'utf8').replace(
+      'beginn: WiSe 24/25',
+      `beginn: WiSe 24/25\n  pruefungsplan: ${ecampus.url}/pruefungen`,
+    ),
+  )
+  await expect.poll(() => readFileSync(dash, 'utf8')).toContain('pruefungsplan')
+  await window.waitForTimeout(800)
+  await window.getByRole('button', { name: 'Prüfungsplan prüfen' }).click()
+  await expect(
+    window.getByTestId('progress-task').filter({ hasText: 'Prüfungstermine eingetragen' }),
+  ).toBeVisible({
+    timeout: 20_000,
+  })
+  const exams = path.join(folder, 'Studium/Prüfungen')
+  const file = readdirSync(exams).find((f) => f.includes('Datenbanksysteme 1'))!
+  const text = readFileSync(path.join(exams, file), 'utf8')
+  expect(text).toContain('Datum: 2026-08-20')
+  expect(text).toContain('Beginn: 10:00')
+  expect(readdirSync(exams).filter((f) => f.includes('Datenbanksysteme 1'))).toHaveLength(1)
+  expect(readdirSync(path.join(folder, 'Studium/Unterlagen/Prüfungsplan'))).toEqual([fake.planFile])
+  // A new version moves the date: updated and reported.
+  fake.plan = examPlan('21.08.2026')
+  fake.planFile = '20260701-SoSe2026-Pruefungsplanung.pdf'
+  await window.getByRole('button', { name: 'Prüfungsplan prüfen' }).click()
+  await expect.poll(() => readFileSync(path.join(exams, file), 'utf8')).toContain('Datum: 2026-08-21')
+  const bell = window
+    .getByRole('navigation', { name: 'Werkzeugleiste rechts' })
+    .getByRole('button', { name: /Benachrichtigungen/ })
+  await bell.click()
+  await expect(window.getByRole('complementary', { name: 'Benachrichtigungen' })).toContainText(
+    'Prüfungstermin geändert',
+  )
+  await bell.click()
 })
 
 test('prüft im Hintergrund mit neuer Sitzung und meldet neue Noten', async () => {

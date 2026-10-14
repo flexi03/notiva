@@ -179,6 +179,17 @@ export interface NotivaBridge {
   openExternal(url: string): Promise<void>
   /** eCampus exam results (desktop). */
   ecampus?: EcampusBridge
+  examPlan?: {
+    fetch(
+      url: string,
+    ): Promise<{
+      url: string
+      name: string
+      bytes: Uint8Array
+      links: Array<{ url: string; text: string; date?: string }>
+    }>
+    onDue(callback: () => void): () => void
+  }
   /** Local speech to text with whisper.cpp (desktop). */
   whisper?: WhisperBridge
   /** Asks the OS for microphone access (macOS); true if granted. */

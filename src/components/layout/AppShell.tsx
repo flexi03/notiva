@@ -21,6 +21,7 @@ import type { Workspace } from '@/lib/workspace'
 import { electronBridge } from '@/lib/vault'
 import { moodleAvailable, useMoodle } from '@/app/moodle'
 import { autoSyncStudy } from '@/app/study'
+import { syncExamPlan } from '@/app/examPlan'
 import { syncMaterials } from '@/app/materials'
 import { useEcampus } from '@/app/ecampus'
 
@@ -38,6 +39,8 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
       }),
     [ws],
   )
+  // The exam plan is due (interval in the settings): check quietly when the study folder is set up.
+  useEffect(() => electronBridge()?.examPlan?.onDue(() => void syncExamPlan(ws).catch(() => undefined)), [ws])
   // Unsaved changes (autosave off): ask before the window closes.
   useEffect(() => {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
