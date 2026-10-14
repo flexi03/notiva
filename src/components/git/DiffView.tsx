@@ -2,7 +2,7 @@ import { Fragment, useEffect, useMemo, useState } from 'react'
 import { useGit } from '@/app/git'
 import { useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
-import { diffLines, diffStats, toHunks, type DiffLine } from '@/lib/diff'
+import { diffLines, diffStats, inlineDiff, pairChanges, toHunks, type DiffLine } from '@/lib/diff'
 import { electronBridge } from '@/lib/vault'
 import { Button, cx, Segmented, Sheet } from '@/components/ui'
 
@@ -12,6 +12,10 @@ const ROW: Record<DiffLine['type'], string> = {
   del: 'bg-[color-mix(in_srgb,var(--git-deleted)_14%,transparent)]',
 }
 const SIGN: Record<DiffLine['type'], string> = { same: ' ', add: '+', del: '−' }
+const WORD: Record<'add' | 'del', string> = {
+  add: 'rounded-[2px] bg-[color-mix(in_srgb,var(--git-added)_42%,transparent)]',
+  del: 'rounded-[2px] bg-[color-mix(in_srgb,var(--git-deleted)_38%,transparent)]',
+}
 
 export function DiffStatsLabel({ added, removed }: { added: number; removed: number }) {
   return (
@@ -30,6 +34,7 @@ export function DiffView({ oldText, newText }: { oldText: string; newText: strin
   )
   const lines = useMemo(() => diffLines(oldText, newText), [oldText, newText])
   const hunks = useMemo(() => toHunks(lines, 3), [lines])
+  const pairs = useMemo(() => pairChanges(lines), [lines])
   const stats = diffStats(lines)
 
   return (
@@ -69,15 +74,23 @@ export function DiffView({ oldText, newText }: { oldText: string; newText: strin
                         <tr key={j} className={ROW[line.type]} data-diff={line.type}>
                           <LineNo n={line.oldNo} />
                           <LineNo n={line.newNo} />
-                          <Code line={line} />
+                          <Code line={line} pair={pairs.get(line)} />
                         </tr>
                       ))
                     : pairRows(hunk.lines).map(([left, right], j) => (
                         <tr key={j}>
                           <LineNo n={left?.oldNo} />
-                          <Code line={left} className={left ? ROW[left.type] : 'bg-sunken'} />
+                          <Code
+                            line={left}
+                            pair={left && pairs.get(left)}
+                            className={left ? ROW[left.type] : 'bg-sunken'}
+                          />
                           <LineNo n={right?.newNo} />
-                          <Code line={right} className={right ? ROW[right.type] : 'bg-sunken'} />
+                          <Code
+                            line={right}
+                            pair={right && pairs.get(right)}
+                            className={right ? ROW[right.type] : 'bg-sunken'}
+                          />
                         </tr>
                       ))}
                 </Fragment>
@@ -117,7 +130,21 @@ function LineNo({ n }: { n: number | undefined }) {
   )
 }
 
-function Code({ line, className }: { line: DiffLine | undefined; className?: string }) {
+function Code({
+  line,
+  pair,
+  className,
+}: {
+  line: DiffLine | undefined
+  /** The line this one replaced (or was replaced by): only the changed words get highlighted. */
+  pair?: DiffLine | undefined
+  className?: string
+}) {
+  const words = useMemo(() => {
+    if (!line || !pair || line.type === 'same') return null
+    const inline = line.type === 'del' ? inlineDiff(line.text, pair.text) : inlineDiff(pair.text, line.text)
+    return inline && (line.type === 'del' ? inline.old : inline.new)
+  }, [line, pair])
   return (
     <td className={cx('px-2 align-top whitespace-pre-wrap break-all', className)}>
       {line && (
@@ -135,7 +162,21 @@ function Code({ line, className }: { line: DiffLine | undefined; className?: str
           <span className="sr-only">
             {line.type === 'add' ? t('git.added') : line.type === 'del' ? t('git.removed') : ''}
           </span>
-          {line.text || ' '}
+          {words
+            ? words.map((w, i) =>
+                w.changed ? (
+                  <mark
+                    key={i}
+                    data-word-change
+                    className={cx('text-inherit', WORD[line.type as 'add' | 'del'])}
+                  >
+                    {w.text}
+                  </mark>
+                ) : (
+                  <Fragment key={i}>{w.text}</Fragment>
+                ),
+              )
+            : line.text || ' '}
         </>
       )}
     </td>

@@ -239,3 +239,61 @@ export function blockChanges(
   const deletedAtEnd = markers.deletedBefore.has(splitLines(normalized).length)
   return { blocks: result, properties, deletedAtEnd }
 }
+
+export interface InlineSegment {
+  text: string
+  changed: boolean
+}
+
+/**
+ * Word-level diff of a changed line against the line that replaced it (VS Code's darker
+ * highlight inside a changed line). Returns null if the lines have too little in common –
+ * then the whole line counts as changed.
+ */
+export function inlineDiff(
+  oldLine: string,
+  newLine: string,
+): { old: InlineSegment[]; new: InlineSegment[] } | null {
+  const tokenize = (s: string) => s.match(/\s+|[\p{L}\p{N}_]+|[^\s\p{L}\p{N}_]/gu) ?? []
+  const a = tokenize(oldLine)
+  const b = tokenize(newLine)
+  if (a.length + b.length > 2000) return null
+  const ops = myers(a, b)
+  const sameChars = ops.filter((o) => o.type === 'same').reduce((n, o) => n + o.text.trim().length, 0)
+  if (sameChars < Math.min(oldLine.trim().length, newLine.trim().length) * 0.3) return null
+  const old: InlineSegment[] = []
+  const next: InlineSegment[] = []
+  const push = (list: InlineSegment[], text: string, changed: boolean) => {
+    const last = list[list.length - 1]
+    if (last && last.changed === changed) last.text += text
+    else list.push({ text, changed })
+  }
+  for (const op of ops) {
+    if (op.type !== 'add') push(old, op.text, op.type === 'del')
+    if (op.type !== 'del') push(next, op.text, op.type === 'add')
+  }
+  return { old, new: next }
+}
+
+/** Pairs each removed line with the added line that replaced it (same position in a change run). */
+export function pairChanges(lines: DiffLine[]): Map<DiffLine, DiffLine> {
+  const pairs = new Map<DiffLine, DiffLine>()
+  let i = 0
+  while (i < lines.length) {
+    if (lines[i]!.type === 'same') {
+      i++
+      continue
+    }
+    const dels: DiffLine[] = []
+    const adds: DiffLine[] = []
+    while (i < lines.length && lines[i]!.type !== 'same') {
+      ;(lines[i]!.type === 'del' ? dels : adds).push(lines[i]!)
+      i++
+    }
+    for (let k = 0; k < Math.min(dels.length, adds.length); k++) {
+      pairs.set(dels[k]!, adds[k]!)
+      pairs.set(adds[k]!, dels[k]!)
+    }
+  }
+  return pairs
+}

@@ -1,4 +1,4 @@
-import { blockChanges, diffLines, diffStats, lineMarkers, toHunks } from '../diff'
+import { blockChanges, diffLines, diffStats, inlineDiff, lineMarkers, pairChanges, toHunks } from '../diff'
 
 const lines = (...l: string[]) => `${l.join('\n')}\n`
 
@@ -93,5 +93,26 @@ describe('blockChanges', () => {
     expect(result.deletedAtEnd).toBe(true)
     const added = blockChanges(lineMarkers('', 'a\n\nb\n'), 'a\n\nb\n', 'a\n\nb\n', ['a', 'b'])
     expect(added.blocks).toEqual(['added', 'added'])
+  })
+})
+
+describe('inlineDiff', () => {
+  it('marks only the changed words', () => {
+    const d = inlineDiff('Fällig: 2026-10-19', 'Fällig: 2026-10-01')!
+    expect(d.old.filter((s) => s.changed).map((s) => s.text)).toEqual(['19'])
+    expect(d.new.filter((s) => s.changed).map((s) => s.text)).toEqual(['01'])
+    expect(d.new.map((s) => s.text).join('')).toBe('Fällig: 2026-10-01')
+  })
+
+  it('gives up on lines with nothing in common', () => {
+    expect(inlineDiff('Ganz anderer Text', '12345')).toBeNull()
+  })
+
+  it('pairs removed and added lines of a change run', () => {
+    const lines = diffLines('a\nb\nc\n', 'a\nB\nc\nd\n')
+    const pairs = pairChanges(lines)
+    const del = lines.find((l) => l.type === 'del')!
+    expect(pairs.get(del)?.text).toBe('B')
+    expect(pairs.has(lines.find((l) => l.text === 'd')!)).toBe(false)
   })
 })

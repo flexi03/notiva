@@ -126,7 +126,9 @@ function Editor({ def, value, onChange, onAddOption, close }: PropertyCellProps 
             type="date"
             autoFocus
             defaultValue={typeof value === 'string' ? value.slice(0, 10) : ''}
-            onChange={(e) => onChange(e.target.value || null)}
+            // While a date is being typed the field is briefly empty – only "Löschen" removes it,
+            // otherwise the key would move to the end of the frontmatter.
+            onChange={(e) => e.target.value && onChange(e.target.value)}
             aria-label={def.name}
           />
           {value ? (

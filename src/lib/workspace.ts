@@ -74,6 +74,8 @@ const stem = (path: string) => basename(path, extname(path))
 export class Workspace {
   readonly vault: VaultAdapter
   private pages = new Map<string, Page>()
+  /** Frontmatter as written in each file – saves only touch the keys that really changed. */
+  private yamlSource = new Map<string, string>()
   private files: VaultFile[] = []
   private listeners = new Set<() => void>()
   private queue: Promise<unknown> = Promise.resolve()
@@ -128,11 +130,14 @@ export class Workspace {
     )
     this.files = files
     this.pages = next
+    for (const path of this.yamlSource.keys()) if (!next.has(path)) this.yamlSource.delete(path)
     this.changed()
   }
 
   private buildPage(path: string, text: string, mtime: number): Page {
-    const { data, body, error } = parseMarkdown(text)
+    const { data, body, error, yaml } = parseMarkdown(text)
+    if (yaml !== undefined && !error) this.yamlSource.set(path, yaml)
+    else this.yamlSource.delete(path)
     const title = typeof data.title === 'string' && data.title.trim() ? data.title.trim() : stem(path)
     return {
       path,
@@ -391,7 +396,7 @@ export class Workspace {
   /* ---------- writes ---------- */
 
   private async writePage(path: string, data: FrontmatterData, body: string): Promise<void> {
-    const text = serializeMarkdown({ data, body })
+    const text = serializeMarkdown({ data, body }, this.yamlSource.get(path))
     await this.vault.write(path, text)
     this.pages.set(path, this.buildPage(path, text, Date.now()))
     if (!this.files.some((f) => f.path === path))
@@ -459,6 +464,26 @@ export class Workspace {
       const body = changes.body ?? page.body
       if (data === page.data && body === page.body) return
       await this.writePage(path, data, body)
+      this.changed()
+    })
+  }
+
+  /** The page as Markdown text, frontmatter formatted like in the file. */
+  source(path: string): string {
+    const page = this.pages.get(path)
+    if (!page) throw new Error(`Not found: ${path}`)
+    return serializeMarkdown({ data: page.data, body: page.body }, this.yamlSource.get(path))
+  }
+
+  /** Saves a page from Markdown text exactly as given (source mode). Throws on invalid YAML. */
+  saveSource(path: string, text: string): Promise<void> {
+    return this.run(async () => {
+      if (!this.pages.has(path)) throw new Error(`Not found: ${path}`)
+      const parsed = parseMarkdown(text)
+      if (parsed.error) throw new Error(parsed.error)
+      if (text === this.source(path)) return
+      await this.vault.write(path, text)
+      this.pages.set(path, this.buildPage(path, text, Date.now()))
       this.changed()
     })
   }
@@ -560,7 +585,7 @@ export class Workspace {
         await this.vault.rename(path, target)
         for (const f of moves) await this.vault.rename(f.path, movedPath(f.path))
       }
-      await this.vault.write(target, serializeMarkdown({ data, body: page.body }))
+      await this.vault.write(target, serializeMarkdown({ data, body: page.body }, this.yamlSource.get(path)))
       await this.reload()
       const newLink = this.linkText(target)
       const incomingAfterMove = new Map([...incoming].map(([from, targets]) => [movedPath(from), targets]))

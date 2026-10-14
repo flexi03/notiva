@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
-import { parseMarkdown, serializeMarkdown } from '@/lib/frontmatter'
+import { parseMarkdown } from '@/lib/frontmatter'
 import { continueList, indentLine, wrapSelection, type TextState } from '@/lib/editing'
 import type { Page } from '@/lib/workspace'
 import { AutoTextArea } from '@/components/ui'
@@ -11,7 +11,7 @@ export function SourceEditor({ page }: { page: Page }) {
   const ws = useWorkspace()
   const run = useAction()
   const spellcheck = useApp((s) => s.settings.spellcheck)
-  const [text, setText] = useState(() => serializeMarkdown({ data: page.data, body: page.body }))
+  const [text, setText] = useState(() => ws.source(page.path))
   const [error, setError] = useState<string | null>(null)
   const ref = useRef<HTMLTextAreaElement>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -21,7 +21,7 @@ export function SourceEditor({ page }: { page: Page }) {
     const parsed = parseMarkdown(value)
     setError(parsed.error ?? null)
     if (parsed.error) return
-    void run(() => ws.save(page.path, { data: parsed.data, body: parsed.body }))
+    void run(() => ws.saveSource(page.path, value))
   }
 
   // Flush on unmount with the latest save function.

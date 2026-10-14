@@ -199,3 +199,31 @@ describe('Workspace writes', () => {
     expect(ws.get('.notiva/settings.json')).toBeUndefined()
   })
 })
+
+describe('saves keep the file format (small Git diffs)', () => {
+  it('changes only the edited frontmatter line', async () => {
+    const original =
+      '---\nStatus: In Arbeit\nModul: ["[[Datenbanken]]"]\nFällig: 2026-10-19\nPriorität: Mittel\nArt: Abgabe\n---\n\nNotizen\n'
+    const vault = new MemoryVault('Test', { 'Aufgabe.md': original })
+    const ws = await Workspace.open(vault)
+    await ws.setProperty('Aufgabe.md', 'Fällig', '2026-10-01')
+    expect(await vault.read('Aufgabe.md')).toBe(original.replace('2026-10-19', '2026-10-01'))
+    await ws.save('Aufgabe.md', { body: '\nNotizen und mehr\n' })
+    expect(await vault.read('Aufgabe.md')).toBe(
+      original.replace('2026-10-19', '2026-10-01').replace('Notizen', 'Notizen und mehr'),
+    )
+  })
+
+  it('source mode writes the text as typed and skips unchanged saves', async () => {
+    const original = '---\ntags: [a, b]   # Liste\n---\nText\n'
+    const vault = new MemoryVault('Test', { 'A.md': original })
+    const ws = await Workspace.open(vault)
+    expect(ws.source('A.md')).toBe(original)
+    const write = vi.spyOn(vault, 'write')
+    await ws.saveSource('A.md', original)
+    expect(write).not.toHaveBeenCalled()
+    await ws.saveSource('A.md', original.replace('Text', 'Neu'))
+    expect(await vault.read('A.md')).toBe('---\ntags: [a, b]   # Liste\n---\nNeu\n')
+    await expect(ws.saveSource('A.md', '---\na: [\n---\n')).rejects.toThrow()
+  })
+})

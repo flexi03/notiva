@@ -7,6 +7,10 @@ Ein Vault ist ein Ordner mit Markdown-Dateien. Notiva liest und schreibt nur, wa
 `Name.md` – optionaler YAML-Kopfbereich (Frontmatter), dann Markdown.
 Unterseiten liegen im gleichnamigen Ordner: `Projekt.md` + `Projekt/Idee.md`.
 
+Beim Speichern bleibt das Frontmatter so, wie es geschrieben wurde: unveränderte Zeilen (Listen in
+`[...]`-Schreibweise, Anführungszeichen, Kommentare, Reihenfolge) bleiben Byte für Byte erhalten, nur geänderte
+Schlüssel werden neu geschrieben, neue hinten angehängt. Ein Git-Diff zeigt so nur echte Änderungen.
+
 | Schlüssel        | Bedeutung                                                                      |
 | ---------------- | ------------------------------------------------------------------------------ |
 | `title`          | Anzeigename, falls er nicht als Dateiname taugt (z. B. `Mathe: Teil 1/2`)      |

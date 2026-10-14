@@ -66,6 +66,8 @@ test('markiert geänderte Zeilen und zeigt den Diff', async () => {
     diff.locator('[data-diff="del"], td').filter({ hasText: 'Zweite Zeile' }).first(),
   ).toBeVisible()
   await expect(window.getByRole('dialog')).toContainText('1 Zeilen hinzugefügt, 1 entfernt')
+  // Only the new words are highlighted, not the whole line.
+  await expect(diff.locator('mark[data-word-change]').first()).toHaveText(' – ergänzt')
   await window.keyboard.press('Escape')
 })
 
