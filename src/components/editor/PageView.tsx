@@ -4,7 +4,7 @@ import { useAction, useApp, useWorkspace } from '@/app/store'
 import { usePageActions } from '@/app/hooks/usePageActions'
 import { t } from '@/i18n'
 import { wordCount } from '@/lib/editing'
-import { Button, cx, EmptyState, Popover } from '@/components/ui'
+import { cx, EmptyState, IconButton, Popover } from '@/components/ui'
 import { Topbar } from '@/components/layout/Topbar'
 import { PageIcon } from '@/components/layout/PageIcon'
 import { DatabaseView } from '@/components/database/DatabaseView'
@@ -62,17 +62,18 @@ export function SourceToggle({
   onChange: (source: boolean) => void
   className?: string
 }) {
+  // Icon only: the top bar has to leave room for the title, also with the side bar open.
   return (
-    <Button
-      size="sm"
-      variant="ghost"
-      icon={source ? <FileText size={14} /> : <Code2 size={14} />}
+    <IconButton
+      label={source ? t('page.blocks') : t('page.source')}
+      title={source ? t('page.blocks') : t('page.source')}
       onClick={() => onChange(!source)}
+      active={source}
       aria-pressed={source}
       {...(className ? { className } : {})}
     >
-      {source ? t('page.blocks') : t('page.source')}
-    </Button>
+      {source ? <FileText size={16} /> : <Code2 size={16} />}
+    </IconButton>
   )
 }
 

@@ -76,6 +76,7 @@ export const de = {
   'editor.editWidget': 'Widget bearbeiten',
   'editor.done': 'Fertig',
 
+  'slash.ai': 'KI fragen …',
   'slash.text': 'Text',
   'slash.h1': 'Überschrift 1',
   'slash.h2': 'Überschrift 2',
@@ -313,6 +314,45 @@ export const de = {
   'common.open': 'Öffnen',
   'common.more': 'Mehr',
 
+  'ai.cli.desktopOnly': 'KI-Programme laufen nur in der Desktop-App.',
+  'ai.cli.program': 'Programm',
+  'ai.cli.found': 'gefunden',
+  'ai.cli.missing': 'nicht installiert',
+  'ai.cli.limited': 'ohne Notiva-Werkzeuge (experimentell)',
+  'ai.cli.model': 'Modell',
+  'ai.cli.modelHint':
+    '„opus“ = neuestes Opus-Modell (derzeit Opus 5.5), „sonnet“, „haiku“ oder eine genaue ID. Leer = Standard des Programms.',
+  'ai.cli.none': 'Kein KI-Programm gefunden. Installiere z. B. Claude Code und starte Notiva neu.',
+  'ai.cli.claudeTools':
+    'Claude Code bekommt nur die Notiva-Werkzeuge – keine Shell, keine Dateien außerhalb des Ordners. Löschen ist hier nicht freigegeben.',
+  'ai.backend': 'Anbindung',
+  'ai.backend.cli': 'KI-Programm (CLI)',
+  'ai.backend.api': 'Direkt über API',
+  'ai.backend.cliHint':
+    'Nutzt ein installiertes Programm wie Claude Code mit deinem Login – ohne extra Schlüssel.',
+  'ai.setup.claudeFound':
+    'Claude Code ist installiert ({version}). Notiva kann es direkt nutzen – mit deinem Login, ohne extra Schlüssel.',
+  'ai.setup.useClaude': 'Claude Code verwenden',
+  'ai.setup.other': 'Andere Anbindung …',
+  'ai.prompt.show': 'Prompt anzeigen und bearbeiten',
+  'ai.prompt.title': 'Prompt',
+  'ai.prompt.sent': 'Gesendet',
+  'ai.prompt.current': 'So geht er gerade an die KI',
+  'ai.prompt.standard': 'Standard',
+  'ai.prompt.custom': 'Eigener',
+  'ai.prompt.kind': 'Welcher Prompt',
+  'ai.prompt.standardHint':
+    'Fest eingebaut. Er bleibt immer erhalten und lässt sich jederzeit wiederherstellen.',
+  'ai.prompt.template': 'Eigener Prompt',
+  'ai.prompt.templateHint':
+    'Platzhalter: {{heute}}, {{seite}}, {{rechte}}, {{sprache}} – werden beim Senden ersetzt.',
+  'ai.prompt.copyStandard': 'Standard als Vorlage übernehmen',
+  'ai.prompt.save': 'Prompt speichern',
+  'ai.prompt.saved': 'Prompt gespeichert',
+  'ai.prompt.command': 'Befehl',
+  'ai.prompt.model': 'Modell',
+  'ai.prompt.system': 'System-Prompt',
+  'ai.prompt.user': 'Deine Nachricht',
   'ai.title': 'Assistent',
   'ai.toggle': 'KI-Assistent (⌘J)',
   'ai.newChat': 'Neuer Chat',

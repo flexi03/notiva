@@ -36,15 +36,18 @@ src/lib/            path, frontmatter, links, blocks, markdown, plainText, editi
                     ai/ (Werkzeuge, Agent, Anbieter – gemeinsam für Assistent und MCP)
 src/i18n/           de.ts (Quelle), en.ts, t()
 src/app/            store.ts (zustand: Workspace, Route, Einstellungen, Dialoge, Vorschau), vaults.ts (Speicher öffnen),
-                    assistant.ts (KI-Chat, Einstellungen auf dem Gerät), hooks/ (useTheme, usePageActions)
+                    assistant.ts (KI-Chat: API oder CLI, Prompt, Einstellungen auf dem Gerät),
+                    git.ts (Git-Status, Diffs, Randmarkierungen), hooks/ (useTheme, usePageActions)
 src/components/     ui/ (Design-System), layout/ (Shell, Seitenleiste, Topbar), editor/ (Block-Editor,
                     Seitenansicht, Minimap), database/ (Ansichten, Zellen, Schema), widgets/ (Kacheln, Einbettungen),
-                    ai/ (Assistent)
+                    ai/ (Assistent, Prompt-Editor), git/ (Änderungen, Diff), layout/ (u. a. ActivityBar, SidePanel)
 src/screens/        Start, Tag, Suche, Neue Seite, Vorlagen, Papierkorb, Einstellungen, Willkommen
 electron/           main.ts (sicherer Hauptprozess), preload.ts (Brücke), vaultFs.ts (Dateizugriff, auch für MCP),
-                    aiRequest.ts (geprüfte KI-Anfragen)
+                    aiRequest.ts (geprüfte KI-Anfragen), aiCli.ts (Claude Code & Co.), git.ts (git-CLI),
+                    shellPath.ts (PATH der Login-Shell)
 mcp/                MCP-Server (server.ts + Tests, main.ts = CLI) → npm run mcp:build
-e2e/                Playwright: Abläufe, Layout, Barrierefreiheit, Sicherheit, Electron
+e2e/                Playwright: Abläufe, Layout, Barrierefreiheit, Sicherheit, Electron (inkl. Git und CLI mit
+                    simuliertem `claude` in e2e/fixtures/fake-cli)
 ```
 
 ## Tests

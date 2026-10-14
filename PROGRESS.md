@@ -53,6 +53,19 @@ Stand der Entwicklung, nach Meilensteinen. ✅ fertig · 🚧 in Arbeit · ⏳ g
 - ✅ Fehler gefunden und behoben: Aufzählungen ohne Punkte (Tailwind-Reset), Dateinamen aus Titeln wie `../x`
   begannen mit Leerzeichen
 
+## M9 – Git, KI-Programme, Prompt, Schreiben ✅
+
+- ✅ Minimap im Detail (Canvas): Textzeilen, Überschriften, Links, Markierungen, Kacheln, Checkboxen, Git
+- ✅ Schreiben: ganze Blockfläche klickbar und sichtbar, bearbeiteter Block eingerahmt, Einfügelinie zwischen Blöcken,
+  „Hier klicken, um weiterzuschreiben“
+- ✅ Rechte Werkzeugleiste wie VS Code (Assistent, Änderungen)
+- ✅ Git: Status, +/− pro Datei, Diff (untereinander/nebeneinander), Commit, Verwerfen, Verlauf, Pull/Push,
+  Randmarkierungen im Editor, Buchstaben im Seitenbaum
+- ✅ KI über installierte Programme: Claude Code (nur Notiva-Werkzeuge via MCP, Sitzungen fortsetzen),
+  Codex/Gemini erkannt (experimentell); Ein-Klick-Einrichtung
+- ✅ Prompt: fester Standard, eigener Prompt mit Platzhaltern, Live-Vorschau, „Gesendet“ je Nachricht; `/ki` im Editor
+- ✅ Fehler gefunden und behoben: E2E-Profil der Desktop-App teilte den Browser-Speicher mit dem echten Profil
+
 ## Ideen für später ⏳
 
 - Synchronisation zwischen Geräten ohne Fremddienst (z. B. eigener Sync-Server auf dem Mac mini)

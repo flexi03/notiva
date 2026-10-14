@@ -1,0 +1,90 @@
+#!/usr/bin/env node
+// Stand-in for Claude Code in E2E tests: logs its arguments, calls the Notiva MCP server from
+// --mcp-config for real and prints stream-json events like `claude -p --output-format stream-json`.
+const { spawn } = require('node:child_process')
+const { appendFileSync } = require('node:fs')
+
+const args = process.argv.slice(2)
+if (args.includes('--version')) {
+  console.log('9.9.9 (Fake Claude)')
+  process.exit(0)
+}
+const arg = (name) => args[args.indexOf(name) + 1]
+let prompt = ''
+process.stdin.on('data', (c) => (prompt += c))
+process.stdin.on('end', async () => {
+  if (process.env.FAKE_CLAUDE_LOG)
+    appendFileSync(process.env.FAKE_CLAUDE_LOG, JSON.stringify({ args, prompt }) + '\n')
+  const out = (event) => process.stdout.write(JSON.stringify(event) + '\n')
+  const session = 'fake-session-1234'
+  out({ type: 'system', subtype: 'init', session_id: session, model: 'claude-opus-5-5' })
+  if (prompt.startsWith('Antworte nur mit')) {
+    out({ type: 'result', is_error: false, result: 'OK', session_id: session })
+    return
+  }
+  const config = JSON.parse(arg('--mcp-config')).mcpServers.notiva
+  const server = spawn(config.command, config.args, { env: { ...process.env, ...config.env } })
+  let buffer = ''
+  const pending = new Map()
+  server.stdout.on('data', (c) => {
+    buffer += c
+    let i
+    while ((i = buffer.indexOf('\n')) >= 0) {
+      const msg = JSON.parse(buffer.slice(0, i))
+      buffer = buffer.slice(i + 1)
+      pending.get(msg.id)?.(msg)
+    }
+  })
+  let id = 0
+  const call = (method, params) =>
+    new Promise((resolve) => {
+      const n = ++id
+      pending.set(n, resolve)
+      server.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: n, method, params }) + '\n')
+    })
+  await call('initialize', {
+    protocolVersion: '2025-06-18',
+    capabilities: {},
+    clientInfo: { name: 'fake', version: '1' },
+  })
+  server.stdin.write(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }) + '\n')
+  const input = { title: 'Von Claude', body: `Auftrag: ${prompt}` }
+  out({
+    type: 'assistant',
+    session_id: session,
+    message: {
+      model: 'claude-opus-5-5',
+      content: [
+        { type: 'text', text: 'Ich lege die Seite an.' },
+        { type: 'tool_use', id: 'toolu_1', name: 'mcp__notiva__create_page', input },
+      ],
+    },
+  })
+  const result = await call('tools/call', { name: 'create_page', arguments: input })
+  out({
+    type: 'user',
+    session_id: session,
+    message: {
+      role: 'user',
+      content: [
+        {
+          type: 'tool_result',
+          tool_use_id: 'toolu_1',
+          content: result.result.content,
+          is_error: result.result.isError === true,
+        },
+      ],
+    },
+  })
+  const resumed = args.includes('--resume') ? ' (fortgesetzt)' : ''
+  out({
+    type: 'assistant',
+    session_id: session,
+    message: {
+      model: 'claude-opus-5-5',
+      content: [{ type: 'text', text: `Angelegt: [[Von Claude]]${resumed}` }],
+    },
+  })
+  out({ type: 'result', is_error: false, result: 'Angelegt', session_id: session, total_cost_usd: 0 })
+  server.kill()
+})

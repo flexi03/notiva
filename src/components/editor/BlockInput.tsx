@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react'
 import { FileText, Table2 } from 'lucide-react'
 import { useApp, useWorkspace } from '@/app/store'
+import { useAssistant } from '@/app/assistant'
 import { t } from '@/i18n'
 import {
   activeTrigger,
@@ -156,6 +157,17 @@ export function BlockInput({
     if (command.action === 'view') {
       setSuggest({ kind: 'database', query: '', from: suggest.from })
       setActive(0)
+      return
+    }
+    if (command.action === 'ai') {
+      // Opens the assistant; the paragraph (if any) becomes the reference of the question.
+      const rest = replaceRange(s, suggest.from, '')
+      setSuggest(null)
+      apply(rest)
+      const context = rest.text.trim()
+      useAssistant.getState().setDraft(context ? `Zu „${context.slice(0, 400)}“: ` : '')
+      useApp.getState().setRightPanel('assistant')
+      callbacks.onDone()
       return
     }
     if (command.action === 'image') {

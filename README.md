@@ -12,6 +12,7 @@ in einem Ordner, der dir gehört.
 - 🔒 **Privat & sicher**: kein Konto, keine Cloud, keine Telemetrie; alles offline
 - 🤖 **KI, wenn du willst**: Assistent in der App (kostenlos und lokal mit Ollama/LM Studio, oder mit eigenem Schlüssel)
   und ein **MCP-Server** für Claude Desktop, Claude Code & Co. – beide mit denselben, abgesicherten Werkzeugen
+- 🌿 **Git eingebaut** (Desktop-App): neue und geänderte Seiten, Markierungen pro Zeile, Diff, Commit, Verlauf, Push/Pull
 - 👀 **Vorschau & Minimap**: Karten und Einträge öffnen als Seitenfenster; am Rand Minimap mit Lese- und Aufgabenfortschritt
 - 🎨 **Anpassbar**: Farben, Schrift, Breite, Sprache (DE/EN), eigenes CSS, eigene Vorlagen – und der Quelltext (MIT)
 
@@ -44,18 +45,23 @@ Vorlesungsnotizen und Lernzettel: _Neue Seite_ → Vorlage _Vorlesungsnotiz_ ode
 
 ## KI nutzen
 
-**In der App:** _Einstellungen → KI_ → Anbieter wählen → _Verbindung testen_ → _Speichern_. Dann `⌘/Strg J` oder ✨ oben rechts.
+Rechts in der Werkzeugleiste ✨ oder `⌘/Strg J` – beim ersten Öffnen schlägt Notiva vor, was gefunden wurde.
 
-| Anbieter                | Kosten                   | Hinweis                                                                  |
-| ----------------------- | ------------------------ | ------------------------------------------------------------------------ |
-| **Ollama**, LM Studio   | kostenlos, lokal         | z. B. `ollama pull qwen2.5`; Modell muss Werkzeuge (Tool Calling) können |
-| OpenRouter              | teils kostenlose Modelle | API-Schlüssel nötig                                                      |
-| Anthropic, OpenAI u. a. | nach Verbrauch           | eigener API-Schlüssel                                                    |
+**Mit einem installierten KI-Programm (Desktop-App, empfohlen):** Ist **Claude Code** installiert, reicht ein Klick
+auf _Claude Code verwenden_. Notiva startet es mit deinem Login (z. B. Opus 5.5 über `opus`) und gibt ihm
+**nur die Notiva-Werkzeuge** – keine Shell, keine Dateien außerhalb des Ordners; Löschen ist dort nicht freigegeben.
+Gespräche werden fortgesetzt (`--resume`). Codex CLI und Gemini CLI werden ebenfalls erkannt (experimentell,
+ohne Notiva-Werkzeuge).
 
-Der Assistent sucht und liest Seiten, fragt Datenbanken ab (z. B. „Was ist diese Woche fällig?“), legt Seiten und
-Einträge an und ändert Text gezielt. Löschen und Überschreiben fragt immer nach; mit „Darf Seiten ändern: aus“
-liest er nur. Einstellungen und Schlüssel bleiben auf dem Gerät (nicht im Ordner).
-Im Browser muss Ollama Anfragen der Seite erlauben: `OLLAMA_ORIGINS=http://localhost:5173 ollama serve`.
+**Direkt über eine API:** Ollama/LM Studio (kostenlos, lokal), OpenRouter, Anthropic, OpenAI-kompatibel –
+_Einstellungen → KI → Direkt über API_. Im Browser muss Ollama Anfragen der Seite erlauben:
+`OLLAMA_ORIGINS=http://localhost:5173 ollama serve`.
+
+**Prompt:** _Prompt anzeigen_ (im Assistenten) oder _Einstellungen → Prompt_: der fest eingebaute Standard, ein
+eigener Prompt mit Platzhaltern (`{{heute}}`, `{{seite}}`, `{{rechte}}`, `{{sprache}}`) und live, was genau
+gesendet wird. Unter jeder Nachricht zeigt _Gesendet_ System-Prompt, Befehl und das antwortende Modell.
+
+Im Editor öffnet `/ki` den Assistenten mit dem aktuellen Absatz als Bezug.
 
 **Per MCP (Claude Desktop, Claude Code, …):** _Einstellungen → MCP-Server_ zeigt die fertige Konfiguration zum
 Kopieren. In der Desktop-App startet die App selbst den Server (kein Node nötig). Ohne Desktop-App:
@@ -65,6 +71,14 @@ npm run mcp:build
 claude mcp add notiva -- node /pfad/zu/notiva/dist-mcp/notiva-mcp.mjs /pfad/zu/deinem/ordner
 # nur lesen: … notiva-mcp.mjs /pfad/zu/deinem/ordner --read-only
 ```
+
+## Git
+
+Liegt dein Ordner in einem Git-Repository (oder _Git einrichten_), zeigt die Desktop-App rechts unter
+_Änderungen_ (`⌘/Strg ⇧ G`) alle neuen, geänderten und gelöschten Seiten mit +/− Zeilen, einen Diff
+(untereinander oder nebeneinander), Commit ausgewählter Dateien, Verwerfen, Verlauf und Push/Pull. Im Editor
+markiert ein farbiger Rand geänderte (blau), neue (grün) und gelöschte (rot) Stellen – wie in VS Code; der
+Seitenbaum zeigt `M`/`U`.
 
 ## Wie die Dateien aussehen
 

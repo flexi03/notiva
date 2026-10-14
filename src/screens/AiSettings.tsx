@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Copy } from 'lucide-react'
-import { describeError, httpClient, useAssistant } from '@/app/assistant'
+import { describeError, httpClient, testCli, useAssistant } from '@/app/assistant'
 import { useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import { AI_PRESETS, createProvider, type AiSettings } from '@/lib/ai'
 import { electronBridge, type McpLaunch } from '@/lib/vault'
-import { Button, Field, IconButton, Select, Switch, TextInput } from '@/components/ui'
+import { Button, cx, Field, IconButton, Segmented, Select, Switch, TextInput } from '@/components/ui'
 import { Row } from './settingsLayout'
 
 function presetOf(settings: AiSettings): string {
@@ -17,7 +17,11 @@ function presetOf(settings: AiSettings): string {
 
 /** Settings → KI: provider, model, key (device-local) and a connection test. */
 export function AiSettingsSection() {
-  const { settings, saveSettings } = useAssistant()
+  const { settings, saveSettings, clis, loadClis } = useAssistant()
+  const desktop = Boolean(electronBridge()?.aiCli)
+  useEffect(() => {
+    if (desktop) void loadClis()
+  }, [desktop, loadClis])
   const showToast = useApp((s) => s.showToast)
   const [form, setForm] = useState<AiSettings>(settings)
   const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null)
@@ -32,6 +36,11 @@ export function AiSettingsSection() {
     setTesting(true)
     setStatus(null)
     try {
+      if (form.backend === 'cli') {
+        const reply = await testCli(form)
+        setStatus({ ok: true, text: t('settings.ai.testOk', { reply: reply.slice(0, 80) }) })
+        return
+      }
       const parts = await createProvider(form, httpClient).chat({
         system: 'Antworte nur mit: OK',
         messages: [{ role: 'user', parts: [{ type: 'text', text: 'Test' }] }],
@@ -53,46 +62,122 @@ export function AiSettingsSection() {
   return (
     <>
       <p className="text-[13px] text-ink-3">{t('settings.ai.intro')}</p>
-      <Row label={t('settings.ai.preset')} {...(preset ? { hint: preset.hint } : {})}>
-        <Select
-          aria-label={t('settings.ai.preset')}
-          value={presetOf(form)}
-          onChange={(e) => {
-            const next = AI_PRESETS.find((p) => p.id === e.target.value)
-            if (next)
-              setForm((f) => ({ ...f, provider: next.provider, baseUrl: next.baseUrl, model: next.model }))
-            setStatus(null)
-          }}
-          className="w-56"
-        >
-          {AI_PRESETS.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.label}
-            </option>
-          ))}
-        </Select>
-      </Row>
-      <Field label={t('settings.ai.baseUrl')}>
-        <TextInput value={form.baseUrl} onChange={(e) => set('baseUrl', e.target.value)} spellCheck={false} />
-      </Field>
-      <Field label={t('settings.ai.model')}>
-        <TextInput
-          value={form.model}
-          onChange={(e) => set('model', e.target.value)}
-          spellCheck={false}
-          placeholder={form.provider === 'anthropic' ? 'claude-sonnet-5-5' : 'qwen2.5'}
+      <Row label={t('ai.backend')} hint={form.backend === 'cli' ? t('ai.backend.cliHint') : ''}>
+        <Segmented
+          label={t('ai.backend')}
+          value={form.backend}
+          onChange={(v) => set('backend', v)}
+          options={[
+            { value: 'cli', label: t('ai.backend.cli') },
+            { value: 'api', label: t('ai.backend.api') },
+          ]}
         />
-      </Field>
-      {(preset?.needsKey ?? true) || form.apiKey ? (
-        <Field label={t('settings.ai.apiKey')}>
-          <TextInput
-            type="password"
-            autoComplete="off"
-            value={form.apiKey}
-            onChange={(e) => set('apiKey', e.target.value)}
-          />
-        </Field>
-      ) : null}
+      </Row>
+      {form.backend === 'cli' ? (
+        !desktop ? (
+          <p className="text-sm text-ink-3">{t('ai.cli.desktopOnly')}</p>
+        ) : (
+          <>
+            <fieldset className="space-y-1.5">
+              <legend className="mb-1 font-semibold">{t('ai.cli.program')}</legend>
+              {(['claude', 'codex', 'gemini'] as const).map((id) => {
+                const info = clis?.find((c) => c.id === id)
+                return (
+                  <label
+                    key={id}
+                    className={cx(
+                      'flex items-start gap-2.5 rounded-control border border-line px-3 py-2',
+                      info ? 'cursor-pointer hover:bg-hover' : 'opacity-60',
+                      form.cli === id && 'border-accent',
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="ai-cli"
+                      checked={form.cli === id}
+                      disabled={!info}
+                      onChange={() => set('cli', id)}
+                      className="mt-1 accent-[var(--accent)]"
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-semibold">
+                        {id === 'claude' ? 'Claude Code' : id === 'codex' ? 'Codex CLI' : 'Gemini CLI'}
+                      </span>
+                      <span className="block text-[12.5px] text-ink-3">
+                        {info ? `${t('ai.cli.found')} · ${info.version || info.path}` : t('ai.cli.missing')}
+                        {id !== 'claude' && info && ` · ${t('ai.cli.limited')}`}
+                      </span>
+                    </span>
+                  </label>
+                )
+              })}
+              {clis && clis.length === 0 && <p className="text-sm text-ink-3">{t('ai.cli.none')}</p>}
+            </fieldset>
+            <Field label={t('ai.cli.model')} hint={t('ai.cli.modelHint')}>
+              <TextInput
+                value={form.cliModel}
+                onChange={(e) => set('cliModel', e.target.value)}
+                spellCheck={false}
+                placeholder="opus"
+                className="max-w-xs"
+              />
+            </Field>
+            {form.cli === 'claude' && <p className="text-[13px] text-ink-3">{t('ai.cli.claudeTools')}</p>}
+          </>
+        )
+      ) : (
+        <>
+          <Row label={t('settings.ai.preset')} {...(preset ? { hint: preset.hint } : {})}>
+            <Select
+              aria-label={t('settings.ai.preset')}
+              value={presetOf(form)}
+              onChange={(e) => {
+                const next = AI_PRESETS.find((p) => p.id === e.target.value)
+                if (next)
+                  setForm((f) => ({
+                    ...f,
+                    provider: next.provider,
+                    baseUrl: next.baseUrl,
+                    model: next.model,
+                  }))
+                setStatus(null)
+              }}
+              className="w-56"
+            >
+              {AI_PRESETS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.label}
+                </option>
+              ))}
+            </Select>
+          </Row>
+          <Field label={t('settings.ai.baseUrl')}>
+            <TextInput
+              value={form.baseUrl}
+              onChange={(e) => set('baseUrl', e.target.value)}
+              spellCheck={false}
+            />
+          </Field>
+          <Field label={t('settings.ai.model')}>
+            <TextInput
+              value={form.model}
+              onChange={(e) => set('model', e.target.value)}
+              spellCheck={false}
+              placeholder={form.provider === 'anthropic' ? 'claude-sonnet-5-5' : 'qwen2.5'}
+            />
+          </Field>
+          {(preset?.needsKey ?? true) || form.apiKey ? (
+            <Field label={t('settings.ai.apiKey')}>
+              <TextInput
+                type="password"
+                autoComplete="off"
+                value={form.apiKey}
+                onChange={(e) => set('apiKey', e.target.value)}
+              />
+            </Field>
+          ) : null}
+        </>
+      )}
       <Row label={t('settings.ai.allowWrites')} hint={t('settings.ai.allowWritesHint')}>
         <Switch
           label={t('settings.ai.allowWrites')}
@@ -104,13 +189,14 @@ export function AiSettingsSection() {
         <Button
           variant="primary"
           onClick={() => {
-            saveSettings(form)
+            // The prompt is edited in its own section – keep the saved one.
+            saveSettings({ ...form, prompt: useAssistant.getState().settings.prompt })
             showToast(t('settings.ai.saved'))
           }}
         >
           {t('settings.ai.save')}
         </Button>
-        <Button onClick={() => void test()} disabled={testing || !form.model}>
+        <Button onClick={() => void test()} disabled={testing || (form.backend === 'api' && !form.model)}>
           {t('settings.ai.test')}
         </Button>
       </div>

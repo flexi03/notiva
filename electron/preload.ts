@@ -12,6 +12,16 @@ contextBridge.exposeInMainWorld('notiva', {
   lastFolder: () => invoke<string | null>('app:lastFolder'),
   openExternal: (url: string) => invoke<void>('app:openExternal', url),
   mcpInfo: () => invoke<{ command: string; args: string[]; env: Record<string, string> }>('app:mcpInfo'),
+  aiCli: {
+    detect: () => invoke('ai:cli:detect'),
+    start: (request: object) => invoke<{ runId: number; command: string[] }>('ai:cli:start', request),
+    cancel: (runId: number) => invoke<void>('ai:cli:cancel', runId),
+    onEvent: (callback: (runId: number, payload: unknown) => void) => {
+      const listener = (_e: unknown, runId: number, payload: unknown) => callback(runId, payload)
+      ipcRenderer.on('ai:cli:event', listener)
+      return () => ipcRenderer.removeListener('ai:cli:event', listener)
+    },
+  },
   aiRequest: (request: { url: string; method: string; headers: Record<string, string>; body?: string }) =>
     invoke<{ status: number; body: string }>('ai:request', request),
   onVaultChange: (callback: () => void) => {

@@ -34,6 +34,29 @@ export interface GitBridge {
   pull(): Promise<string>
 }
 
+export type CliId = 'claude' | 'codex' | 'gemini'
+export interface CliInfo {
+  id: CliId
+  path: string
+  version: string
+}
+export interface CliBridge {
+  detect(): Promise<CliInfo[]>
+  start(request: {
+    cli: CliId
+    prompt: string
+    system: string
+    model: string
+    sessionId: string | null
+    allowWrites: boolean
+  }): Promise<{ runId: number; command: string[] }>
+  cancel(runId: number): Promise<void>
+  /** stdout lines (`line`) and the end of a run (`exit`, `stderr`). */
+  onEvent(
+    callback: (runId: number, payload: { line?: string; exit?: number | null; stderr?: string }) => void,
+  ): () => void
+}
+
 export interface McpLaunch {
   command: string
   args: string[]
@@ -55,6 +78,8 @@ export interface NotivaBridge {
     rename(from: string, to: string): Promise<void>
   }
   openExternal(url: string): Promise<void>
+  /** AI command line tools (Claude Code, Codex, Gemini) – desktop app only. */
+  aiCli?: CliBridge
   /** Git for the open folder (desktop app only). */
   git?: GitBridge
   /** Command line for AI apps to start the MCP server on the open folder. */

@@ -25,11 +25,17 @@ import { FsVault } from './vaultFs'
 import { parseAiRequest } from './aiRequest'
 import { GitRepo, type GitState } from './git'
 import { loadShellPath } from './shellPath'
+import { cliArgs, detectClis, parseCliRequest, startCli, type CliInfo, type McpLaunch } from './aiCli'
+import type { ChildProcess } from 'node:child_process'
 
 const DIST = path.join(__dirname, '..', 'dist')
 const CONFIG = () => path.join(process.env.NOTIVA_E2E_USERDATA ?? app.getPath('userData'), 'config.json')
 const CSP =
   "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'"
+
+// E2E tests (unpackaged only): a fresh profile per run, so browser storage never leaks between runs.
+if (!app.isPackaged && process.env.NOTIVA_E2E_USERDATA)
+  app.setPath('userData', process.env.NOTIVA_E2E_USERDATA)
 
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true } },
@@ -67,6 +73,21 @@ function handle<A extends unknown[], R>(channel: string, fn: (...args: A) => Pro
 function requireVault(): FsVault {
   if (!vault) throw new Error('No vault open')
   return vault
+}
+
+let clis: Promise<CliInfo[]> | null = null
+let cliRunCounter = 0
+const cliRuns = new Map<number, ChildProcess>()
+
+function mcpLaunch(): McpLaunch {
+  const script = app.isPackaged
+    ? path.join(process.resourcesPath, 'mcp', 'notiva-mcp.mjs')
+    : path.join(__dirname, '..', 'dist-mcp', 'notiva-mcp.mjs')
+  return {
+    command: process.execPath,
+    args: [script, requireVault().root],
+    env: { ELECTRON_RUN_AS_NODE: '1' },
+  }
 }
 
 const NO_REPO: GitState = {
@@ -136,15 +157,32 @@ function registerIpc(): void {
     return { status: response.status, body: body.slice(0, 8_000_000) }
   })
   // How AI apps start the MCP server for the open folder (Electron runs the script as Node).
-  handle('app:mcpInfo', async () => {
-    const script = app.isPackaged
-      ? path.join(process.resourcesPath, 'mcp', 'notiva-mcp.mjs')
-      : path.join(__dirname, '..', 'dist-mcp', 'notiva-mcp.mjs')
-    return {
-      command: process.execPath,
-      args: [script, requireVault().root],
-      env: { ELECTRON_RUN_AS_NODE: '1' },
-    }
+  handle('app:mcpInfo', async () => mcpLaunch())
+  handle('ai:cli:detect', async () => (clis ??= detectClis()))
+  handle('ai:cli:start', async (raw: unknown) => {
+    const request = parseCliRequest(raw)
+    const info = (await (clis ??= detectClis())).find((c) => c.id === request.cli)
+    if (!info) throw new Error(`${request.cli} ist nicht installiert`)
+    const root = requireVault().root
+    const mcp = request.cli === 'claude' ? mcpLaunch() : null
+    const runId = ++cliRunCounter
+    const send = (payload: object) => window?.webContents.send('ai:cli:event', runId, payload)
+    const child = startCli(
+      info.path,
+      request,
+      root,
+      mcp,
+      (line) => send({ line }),
+      (code, stderr) => {
+        cliRuns.delete(runId)
+        send({ exit: code, stderr })
+      },
+    )
+    cliRuns.set(runId, child)
+    return { runId, command: [info.path, ...cliArgs(request, mcp)] }
+  })
+  handle('ai:cli:cancel', async (runId: unknown) => {
+    cliRuns.get(Number(runId))?.kill()
   })
   handle('git:state', async () => {
     const repo = await GitRepo.open(requireVault())
@@ -230,6 +268,7 @@ app.whenReady().then(async () => {
 })
 
 app.on('window-all-closed', () => {
+  for (const child of cliRuns.values()) child.kill()
   watcher?.close()
   if (process.platform !== 'darwin') app.quit()
 })

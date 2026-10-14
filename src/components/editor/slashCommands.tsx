@@ -17,6 +17,7 @@ import {
   Table,
   Table2,
   Text,
+  Sparkles,
   TriangleAlert,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -32,7 +33,7 @@ export interface SlashCommand {
   /** Text inserted in place of "/query"; "|" marks the cursor. */
   insert?: string
   /** Special commands handled by the editor (open pickers). */
-  action?: 'link' | 'view' | 'image'
+  action?: 'link' | 'view' | 'image' | 'ai'
   /** Insert as a new standalone block (widgets, code …) instead of inline. */
   block?: boolean
 }
@@ -44,6 +45,13 @@ tiles:
 
 export function slashCommands(): SlashCommand[] {
   return [
+    {
+      id: 'ai',
+      label: 'slash.ai',
+      keywords: 'ki ai assistent claude fragen hilfe',
+      icon: <Sparkles size={16} />,
+      action: 'ai',
+    },
     {
       id: 'text',
       label: 'slash.text',

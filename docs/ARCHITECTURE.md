@@ -46,15 +46,30 @@
   `destructive`-Markierung. Der MCP-Server und der Assistent nutzen dieselben Definitionen.
 - **Anbieterneutral:** `Message`/`Part` (Text, Werkzeugaufruf, Ergebnis) werden pro Anbieter übersetzt; HTTP wird
   hineingereicht und ist dadurch in Tests ersetzbar.
+- **KI-Programme:** `electron/aiCli.ts` startet Claude Code mit dem mitgelieferten MCP-Server (nur Notiva-Werkzeuge);
+  `src/lib/ai/claudeStream.ts` übersetzt dessen `stream-json`-Ausgabe in dieselben Chat-Nachrichten wie der API-Weg.
+  Der System-Prompt ist eine Vorlage (`DEFAULT_PROMPT`, eigene Vorlage mit Platzhaltern, `renderPrompt`).
 - **MCP-Server:** `mcp/main.ts` → `dist-mcp/notiva-mcp.mjs` (esbuild). Lädt den Workspace über `FsVault` und liest vor
   jedem Aufruf geänderte Dateien neu ein. Die Desktop-App liefert ihn mit und startet ihn als Node-Prozess
   (`ELECTRON_RUN_AS_NODE`).
+
+## Git
+
+```
+GitPanel / Randmarkierungen / Seitenbaum ── useGit (src/app/git.ts) ── Brücke git:* ── electron/git.ts (git-CLI)
+                     └── src/lib/diff.ts (Myers-Diff, lineMarkers, blockChanges, toHunks)
+```
+
+Der Hauptprozess liefert nur Status, Dateistände (`git show`) und Aktionen; Diffs und Markierungen rechnet die App
+selbst aus Datei und HEAD-Stand – dadurch aktualisieren sie sich nach jedem Speichern.
 
 ## Vorschau und Seitenrand
 
 - `openEntry` (Store) öffnet Inhalte (Karten, Zeilen, Kacheln, Relationen) im `Sheet`; `PageContent` ist die
   gemeinsame Seitenansicht für Seite und Vorschau. Der scrollende Container kommt über `ScrollRootContext`.
-- `PageRail` misst Blöcke mit `data-rail`-Attribut; die Geometrie (Skalierung, sichtbarer Bereich, Fortschritt)
+- `PageRail` zeichnet die Seite auf ein Canvas: `minimapShapes.ts` tastet Textzeilen (Range-Rechtecke), Überschriften,
+  Links, Markierungen, Kacheln, Checkboxen und Git-Markierungen ab; Messen nur bei Änderungen, Scrollen ist billig.
+- Überschriften kommen über das `data-rail`-Attribut; die Geometrie (Skalierung, sichtbarer Bereich, Fortschritt)
   steckt in `src/lib/minimap.ts`.
 
 ## Entscheidungen

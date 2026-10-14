@@ -6,6 +6,7 @@ import { Topbar } from '@/components/layout/Topbar'
 import { exportVault } from './exportVault'
 import { Row, Section } from './settingsLayout'
 import { AiSettingsSection, McpSection } from './AiSettings'
+import { PromptEditor } from '@/components/ai/PromptEditor'
 
 function Swatches<T extends string>({
   value,
@@ -170,6 +171,10 @@ export function SettingsScreen() {
 
         <Section title={t('settings.ai')}>
           <AiSettingsSection />
+        </Section>
+
+        <Section title={t('ai.prompt.title')}>
+          <PromptEditor />
         </Section>
 
         <Section title={t('settings.mcp')}>

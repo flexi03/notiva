@@ -21,7 +21,17 @@ export type HttpClient = (request: HttpRequest) => Promise<HttpResponse>
 export type ProviderKind = 'openai' | 'anthropic'
 
 /** Device-local AI settings – never stored in the vault, because they may contain an API key. */
+export type AiBackend = 'cli' | 'api'
+export type CliId = 'claude' | 'codex' | 'gemini'
+
 export interface AiSettings {
+  /** 'cli': an installed AI program (Claude Code …, desktop app); 'api': an HTTP model API. */
+  backend: AiBackend
+  cli: CliId
+  /** Model for the CLI ('' = the program's own default; 'opus' = latest Opus for Claude Code). */
+  cliModel: string
+  /** Own prompt template ('' = the built-in one). */
+  prompt: string
   provider: ProviderKind
   baseUrl: string
   model: string
@@ -89,6 +99,10 @@ export const AI_PRESETS: AiPreset[] = [
 ]
 
 export const DEFAULT_AI_SETTINGS: AiSettings = {
+  backend: 'api',
+  cli: 'claude',
+  cliModel: 'opus',
+  prompt: '',
   provider: 'openai',
   baseUrl: AI_PRESETS[0]!.baseUrl,
   model: AI_PRESETS[0]!.model,
@@ -111,6 +125,13 @@ export function parseAiSettings(raw: unknown): AiSettings {
   const text = (v: unknown, max = 500) => (typeof v === 'string' ? v.trim().slice(0, max) : undefined)
   const baseUrl = text(r.baseUrl)
   return {
+    backend: r.backend === 'cli' ? 'cli' : 'api',
+    cli: r.cli === 'codex' || r.cli === 'gemini' ? r.cli : 'claude',
+    cliModel:
+      typeof r.cliModel === 'string' && /^[\w.:@/-]{0,100}$/.test(r.cliModel.trim())
+        ? r.cliModel.trim()
+        : d.cliModel,
+    prompt: typeof r.prompt === 'string' ? r.prompt.slice(0, 20_000) : '',
     provider: r.provider === 'anthropic' ? 'anthropic' : 'openai',
     baseUrl: baseUrl && isHttpUrl(baseUrl) ? baseUrl.replace(/\/+$/, '') : d.baseUrl,
     model: text(r.model, 200) ?? d.model,

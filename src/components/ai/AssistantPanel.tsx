@@ -9,6 +9,7 @@ import {
   Link2,
   ListTree,
   Pencil,
+  ScrollText,
   Search,
   Settings2,
   Sparkles,
@@ -17,10 +18,11 @@ import {
   Tags,
   Trash2,
 } from 'lucide-react'
-import { useAssistant } from '@/app/assistant'
+import { useAssistant, type SentPrompt } from '@/app/assistant'
+import { PromptDialog } from './PromptEditor'
 import { useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
-import type { Message, Part } from '@/lib/ai'
+import type { AiSettings, Message, Part } from '@/lib/ai'
 import { AutoTextArea, Button, cx, IconButton } from '@/components/ui'
 import { MarkdownView } from '@/components/editor/MarkdownView'
 import { PageIcon } from '@/components/layout/PageIcon'
@@ -55,12 +57,13 @@ function stepTarget(input: unknown): string {
 
 /** The AI chat docked at the right edge (overlay on small screens). */
 export function AssistantPanel() {
-  const { configured, settings, messages, busy, error, send, stop, reset } = useAssistant()
+  const { configured, settings, messages, sent, busy, error, send, stop, reset, draft, setDraft } =
+    useAssistant()
+  const [promptOpen, setPromptOpen] = useState(false)
   const setRightPanel = useApp((s) => s.setRightPanel)
   const route = useApp((s) => s.route)
   const navigate = useApp((s) => s.navigate)
   const ws = useWorkspace()
-  const [draft, setDraft] = useState('')
   const scroller = useRef<HTMLDivElement>(null)
   const input = useRef<HTMLTextAreaElement>(null)
   const page = route.name === 'page' ? ws.get(route.path) : undefined
@@ -85,7 +88,6 @@ export function AssistantPanel() {
 
   const submit = (text = draft) => {
     if (!text.trim() || busy) return
-    setDraft('')
     void send(text)
   }
   const suggestions = [
@@ -101,11 +103,15 @@ export function AssistantPanel() {
       actions={
         <>
           {configured && (
-            <span className="truncate text-[12.5px] text-ink-3">
-              {settings.model}
+            <span className="truncate text-[12.5px] text-ink-3" data-testid="ai-model">
+              {modelLabel(settings)}
               {!settings.allowWrites && ` · ${t('ai.readOnly')}`}
             </span>
           )}
+          <IconButton label={t('ai.prompt.show')} onClick={() => setPromptOpen(true)}>
+            <ScrollText size={16} />
+          </IconButton>
+          <PromptDialog open={promptOpen} onClose={() => setPromptOpen(false)} />
           <IconButton label={t('nav.settings')} onClick={() => navigate({ name: 'settings' })}>
             <Settings2 size={16} />
           </IconButton>
@@ -117,13 +123,7 @@ export function AssistantPanel() {
     >
       <div ref={scroller} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4" aria-live="polite">
         {!configured ? (
-          <div className="space-y-3 rounded-panel border border-line bg-paper p-4">
-            <h3 className="font-bold">{t('ai.setup.title')}</h3>
-            <p className="text-sm text-ink-2">{t('ai.setup.text')}</p>
-            <Button variant="primary" onClick={() => navigate({ name: 'settings' })}>
-              {t('ai.setup.open')}
-            </Button>
-          </div>
+          <SetupCard />
         ) : messages.length === 0 ? (
           <div className="space-y-3">
             <p className="text-sm text-ink-2">{t('ai.intro')}</p>
@@ -142,7 +142,9 @@ export function AssistantPanel() {
             </ul>
           </div>
         ) : (
-          messages.map((m, i) => <ChatMessage key={i} message={m} results={results} from={page?.path} />)
+          messages.map((m, i) => (
+            <ChatMessage key={i} message={m} results={results} from={page?.path} sent={sent[i]} />
+          ))
         )}
         {busy && (
           <p className="flex items-center gap-2 text-[13px] text-ink-3" role="status">
@@ -204,10 +206,12 @@ function ChatMessage({
   message,
   results,
   from,
+  sent,
 }: {
   message: Message
   results: Map<string, Extract<Part, { type: 'tool_result' }>>
   from: string | undefined
+  sent: SentPrompt | undefined
 }) {
   if (message.role === 'user') {
     const text = message.parts
@@ -215,7 +219,12 @@ function ChatMessage({
       .map((p) => p.text)
       .join('\n')
     if (!text) return null // tool results are shown with their call
-    return <p className="ml-8 rounded-panel bg-sunken px-3 py-2 text-[14.5px] whitespace-pre-wrap">{text}</p>
+    return (
+      <div className="ml-8 space-y-1">
+        <p className="rounded-panel bg-sunken px-3 py-2 text-[14.5px] whitespace-pre-wrap">{text}</p>
+        {sent && <SentDetails sent={sent} />}
+      </div>
+    )
   }
   return (
     <div className="space-y-2">
@@ -283,6 +292,84 @@ function ToolStep({
           </button>
         )
       })}
+    </div>
+  )
+}
+
+function modelLabel(settings: AiSettings): string {
+  if (settings.backend === 'cli') {
+    const name = settings.cli === 'claude' ? 'Claude Code' : settings.cli === 'codex' ? 'Codex' : 'Gemini CLI'
+    return settings.cliModel ? `${name} · ${settings.cliModel}` : name
+  }
+  return settings.model
+}
+
+/** "Gesendet": the exact system prompt, message, command line and answering model. */
+function SentDetails({ sent }: { sent: SentPrompt }) {
+  return (
+    <details className="text-right text-[12px] text-ink-3">
+      <summary className="cursor-pointer select-none hover:text-ink-2">
+        {t('ai.prompt.sent')}
+        {sent.model && ` · ${sent.model}`}
+      </summary>
+      <div className="mt-1 space-y-2 text-left">
+        {sent.command && (
+          <Labeled label={t('ai.prompt.command')}>
+            {sent.command.map((a) => (/^[\w./:@=-]+$/.test(a) ? a : JSON.stringify(a))).join(' ')}
+          </Labeled>
+        )}
+        <Labeled label={t('ai.prompt.system')}>{sent.system}</Labeled>
+        <Labeled label={t('ai.prompt.user')}>{sent.user}</Labeled>
+      </div>
+    </details>
+  )
+}
+
+function Labeled({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div>
+      <p className="font-semibold text-ink-2">{label}</p>
+      <pre className="max-h-48 overflow-auto rounded-control border border-line bg-sunken p-2 font-code text-[11.5px] leading-relaxed whitespace-pre-wrap text-ink-2">
+        {children}
+      </pre>
+    </div>
+  )
+}
+
+/** First use: offers an installed Claude Code with one click, otherwise points to the settings. */
+function SetupCard() {
+  const { clis, loadClis, saveSettings, settings } = useAssistant()
+  const navigate = useApp((s) => s.navigate)
+  useEffect(() => {
+    void loadClis()
+  }, [loadClis])
+  const claude = clis?.find((c) => c.id === 'claude')
+  return (
+    <div className="space-y-3 rounded-panel border border-line bg-paper p-4">
+      <h3 className="font-bold">{t('ai.setup.title')}</h3>
+      {claude ? (
+        <>
+          <p className="text-sm text-ink-2">{t('ai.setup.claudeFound', { version: claude.version })}</p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="primary"
+              onClick={() => saveSettings({ ...settings, backend: 'cli', cli: 'claude', cliModel: 'opus' })}
+            >
+              {t('ai.setup.useClaude')}
+            </Button>
+            <Button variant="ghost" onClick={() => navigate({ name: 'settings' })}>
+              {t('ai.setup.other')}
+            </Button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="text-sm text-ink-2">{t('ai.setup.text')}</p>
+          <Button variant="primary" onClick={() => navigate({ name: 'settings' })}>
+            {t('ai.setup.open')}
+          </Button>
+        </>
+      )}
     </div>
   )
 }

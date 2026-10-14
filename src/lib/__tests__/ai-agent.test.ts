@@ -1,7 +1,16 @@
 import { installPack, studyPack } from '../packs'
 import { MemoryVault } from '../vault'
 import { Workspace } from '../workspace'
-import { runAgent, systemPrompt, toolSpecs, type Message, type ModelProvider, type Part } from '../ai/agent'
+import {
+  DEFAULT_PROMPT,
+  renderPrompt,
+  runAgent,
+  systemPrompt,
+  toolSpecs,
+  type Message,
+  type ModelProvider,
+  type Part,
+} from '../ai/agent'
 import {
   anthropicProvider,
   openAiProvider,
@@ -275,5 +284,28 @@ describe('parseAiSettings', () => {
       'https://openrouter.ai/api/v1',
     )
     expect(parseAiSettings(null)).toMatchObject({ provider: 'openai', allowWrites: true })
+  })
+})
+
+describe('prompt templates', () => {
+  const ctx = { language: 'de' as const, now, currentPage: null }
+  it('uses the built-in prompt unless the user wrote one', () => {
+    expect(systemPrompt(ctx)).toBe(renderPrompt(DEFAULT_PROMPT, ctx))
+    expect(systemPrompt({ ...ctx, template: '   ' })).toBe(renderPrompt(DEFAULT_PROMPT, ctx))
+    expect(systemPrompt({ ...ctx, template: 'Sei kurz. Heute: {{heute}}' })).toMatch(
+      /^Sei kurz\. Heute: 2026-10-1[34]$/,
+    )
+  })
+
+  it('fills variables, keeps unknown ones and drops empty lines', () => {
+    const out = renderPrompt('A {{ seite }}\n{{rechte}}\n{{unbekannt}}\n{{sprache}}', {
+      ...ctx,
+      currentPage: { path: 'X.md', title: 'X' },
+      readOnly: true,
+    })
+    expect(out).toBe(
+      'A Der Nutzer sieht gerade die Seite „X“ (X.md). „Diese Seite“ meint sie.\nDu darfst nur lesen, nichts ändern.\n{{unbekannt}}\nAntworte auf Deutsch.',
+    )
+    expect(renderPrompt('{{rechte}}', { ...ctx, rightsNote: 'Nicht löschen.' })).toBe('Nicht löschen.')
   })
 })
