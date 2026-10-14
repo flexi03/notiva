@@ -203,3 +203,41 @@ describe('finding the way to the results', () => {
     expect(withSessionAsi('https://e/a?asi=1', 'https://e/b')).toBeNull()
   })
 })
+
+describe('older snapshots', () => {
+  it('reads module and sum rows of records without levels', () => {
+    const records = snapshotRecords({
+      site: 'x',
+      fetchedAt: '',
+      records: [
+        { id: '10#0', number: '10', title: 'Gesamtkonto', semester: '0', status: 'other', statusText: '75' },
+        {
+          id: '3350#70',
+          number: '3350',
+          title: 'RA',
+          semester: '70',
+          gradeText: 'bestanden',
+          status: 'other',
+          statusText: '5',
+        },
+        {
+          id: '3351#2',
+          number: '3351',
+          title: 'RA',
+          semester: 'WiSe 25/26',
+          grade: 2.7,
+          gradeText: '2,7',
+          status: 'passed',
+          statusText: 'bestanden',
+          credits: 0,
+          attempt: 2,
+          date: '2026-02-05',
+        },
+      ],
+    })
+    expect(records.map((r) => r.level)).toEqual(['account', 'module', 'exam'])
+    expect(records[1]).toMatchObject({ status: 'passed', credits: 5 })
+    expect(records[1]!.semester).toBeUndefined()
+    expect(moduleResults(records)).toHaveLength(1)
+  })
+})

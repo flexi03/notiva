@@ -209,9 +209,10 @@ function moduleChanges(current: FrontmatterData, wanted: FrontmatterData): Front
   }
   // Practical/lab prerequisite: Notiva only suggests; once passed it is done.
   const prereq = typeof wanted.Voraussetzung === 'string' && wanted.Voraussetzung
-  if (!current.Praktikum)
-    changes.Praktikum = prereq ? (wanted.Status === 'Bestanden' ? 'Bestanden' : 'Offen') : 'Nicht nötig'
-  else if (current.Praktikum === 'Offen' && wanted.Status === 'Bestanden') changes.Praktikum = 'Bestanden'
+  // Admitted to an exam = prerequisite done.
+  const done = wanted.Status === 'Bestanden' || Number(wanted.Versuche ?? 0) > 0
+  if (!current.Praktikum) changes.Praktikum = prereq ? (done ? 'Bestanden' : 'Offen') : 'Nicht nötig'
+  else if (current.Praktikum === 'Offen' && done) changes.Praktikum = 'Bestanden'
   return changes
 }
 
@@ -299,7 +300,11 @@ export function planStudySync(
       })
       const values: FrontmatterData = { ...wanted, statusAuto: wanted.Status! }
       const prereq = wanted.Voraussetzung
-      values.Praktikum = prereq ? (m.status === 'Bestanden' ? 'Bestanden' : 'Offen') : 'Nicht nötig'
+      values.Praktikum = prereq
+        ? m.status === 'Bestanden' || (m.result?.tries ?? 0) > 0
+          ? 'Bestanden'
+          : 'Offen'
+        : 'Nicht nötig'
       steps.push(async () => {
         const path = await ws.createRow(modulesDb, m.module.name, values)
         pathOf.set(m.module.nr, path)

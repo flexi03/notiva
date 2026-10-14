@@ -89,6 +89,17 @@ Stand der Entwicklung, nach Meilensteinen. ✅ fertig · 🚧 in Arbeit · ⏳ g
   linken Leiste; Fensterknöpfe (macOS) auf der Trennlinie; scrollIntoView-Promise als Effekt-Rückgabe riss die
   Oberfläche ab; Anmerkungsebene vor Screenreadern versteckt; Whisper-Server überlebte die App
 
+## M11 – Studium nach Prüfungsordnung ✅
+
+- eCampus: Modul- und Summenzeilen, alle Versuche je Modul, Semester des Bestehens; Anmeldung bleibt
+  14 Tage und wird still über die Hochschul-Anmeldung erneuert; eine Notiva pro Profil
+- `src/lib/study/`: Semester (`terms`), Katalog BMI PO 2018 (`catalog`), Zuordnung (`match`), Stand je Modul
+  (`state`), Abgleich des Studienordners (`sync`); Filter `@semester`, Vorlage `{{semester}}`, Widget `related`
+- Moodle-Kursinfos (`moodleInfo`): Beschreibung, Abschnitte, Seiten, Ankündigungen → Kursseiten, Meldungen
+- Prüfungsplan (`examPlan`): neuestes PDF finden, Tabelle aus Textpositionen, Termine der offenen Module
+- Prüfintervalle je Quelle, PDF-Zoom (Pinch, ⌘+Mausrad), Einstellungen in Reitern, Papierkorb/Einstellungen oben rechts
+- Offen: Moodle-Studydashboard (LTI) nicht angebunden; weitere Studiengänge/POs als Katalog ergänzen
+
 ## Ideen für später ⏳
 
 - Sprechertrennung lokal (z. B. pyannote/sherpa-onnx), Audio-Wiedergabe synchron zum Transkript

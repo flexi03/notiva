@@ -32,7 +32,8 @@ Alle Daten sind Markdown-Dateien in einem Ordner („Vault“). Kein Server, kei
 
 ```
 src/lib/            path, frontmatter, links, blocks, markdown, plainText, editing, formula, database, dates,
-                    templates, widgets, settings, route, minimap, workspace, moodle (Import-Plan), pdfText, vault/ (Adapter), packs/ (Vorlagen),
+                    templates, widgets, settings, route, minimap, workspace, moodle (Import-Plan), moodleInfo, ecampus, examPlan,
+                    study/ (Semester, PO-Katalog, Zuordnung, Abgleich des Studienordners), pdfText, vault/ (Adapter), packs/ (Vorlagen),
                     ai/ (Werkzeuge, Agent, Anbieter – gemeinsam für Assistent und MCP)
 src/i18n/           de.ts (Quelle), en.ts, t()
 src/app/            store.ts (zustand: Workspace, Route, Einstellungen, Dialoge, Vorschau), vaults.ts (Speicher öffnen),

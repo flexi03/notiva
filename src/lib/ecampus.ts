@@ -100,7 +100,28 @@ export function snapshotRecords(snapshot: ExamSnapshot): ExamRecord[] {
     const records = parseResults(snapshot.tables)
     if (records.length) return records
   }
-  return snapshot.records
+  return snapshot.records.some((r) => r.level) ? snapshot.records : classifyLegacy(snapshot.records)
+}
+
+/** Records of an older Notiva (no levels yet): tell module and sum rows apart like parseResults. */
+function classifyLegacy(records: ExamRecord[]): ExamRecord[] {
+  const out = records.map((r): ExamRecord => {
+    if (r.attempt !== undefined || r.date) return { ...r, level: 'exam' }
+    const shifted = /^\d+(?:[.,]\d+)?$/.test(r.statusText) && (!r.gradeText || STATUS_WORD.test(r.gradeText))
+    const statusText = shifted ? (r.gradeText ?? '') : r.statusText
+    const { semester, grade: _grade, gradeText: _gradeText, ...rest } = r
+    return {
+      ...rest,
+      ...(isTermText(semester) ? { semester } : {}),
+      ...(shifted ? { credits: Number(r.statusText.replace(',', '.')) } : {}),
+      statusText,
+      status: normalizeStatus(statusText),
+      level: 'module',
+    }
+  })
+  for (const r of out)
+    if (r.level === 'module' && !out.some((e) => e.level === 'exam' && belongsTo(e, r))) r.level = 'account'
+  return out
 }
 
 const COLUMNS: Array<[keyof ExamRecord | 'grade', RegExp]> = [
