@@ -179,8 +179,8 @@ export class GitRepo {
   }
 
   async commit(message: unknown, paths: unknown): Promise<string> {
-    if (typeof message !== 'string' || !message.trim() || message.length > 5000)
-      throw new GitError('Commit-Nachricht fehlt')
+    if (typeof message !== 'string' || !message.trim()) throw new GitError('Commit-Nachricht fehlt')
+    if (message.length > 50_000) throw new GitError('Commit-Nachricht ist zu lang (max. 50.000 Zeichen)')
     const files = await this.checked(paths)
     await run(this.vault.root, ['add', '-A', '--', ...files.map(spec)])
     await run(this.vault.root, ['commit', '-m', message.trim(), '--', ...files.map(spec)])

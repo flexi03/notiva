@@ -16,6 +16,22 @@ function plural(count: number, one: string, many: string): string {
   return `${count} ${count === 1 ? one : many}`
 }
 
+/** More files than this per group: list folders with counts instead (e.g. hundreds of PDFs). */
+const MAX_LINES = 30
+
+function folders(list: CommitChange[]): string[] {
+  const counts = new Map<string, number>()
+  for (const c of list) {
+    const dir = c.path.includes('/') ? c.path.slice(0, c.path.lastIndexOf('/') + 1) : './'
+    counts.set(dir, (counts.get(dir) ?? 0) + 1)
+  }
+  const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+  const lines = sorted.slice(0, MAX_LINES).map(([dir, n]) => `- ${dir} (${plural(n, 'Datei', 'Dateien')})`)
+  const rest = sorted.slice(MAX_LINES).reduce((sum, [, n]) => sum + n, 0)
+  if (rest) lines.push(`- … ${plural(rest, 'weitere Datei', 'weitere Dateien')}`)
+  return lines
+}
+
 export function commitMessage(changes: CommitChange[]): string {
   if (changes.length === 0) return ''
   const groups = {
@@ -61,7 +77,10 @@ export function commitMessage(changes: CommitChange[]): string {
     ] as const
   )
     .filter(([, list]) => list.length)
-    .map(([title, list]) => `${title}:\n${list.map(line).join('\n')}`)
+    .map(
+      ([title, list]) =>
+        `${title}:\n${(list.length > MAX_LINES ? folders(list) : list.map(line)).join('\n')}`,
+    )
     .join('\n\n')
   return `${subject}\n\n${body}`
 }

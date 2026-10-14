@@ -22,3 +22,16 @@ describe('commitMessage', () => {
     expect(commitMessage([])).toBe('')
   })
 })
+
+describe('many files', () => {
+  it('lists folders with counts instead of hundreds of lines', () => {
+    const files = Array.from({ length: 700 }, (_, i) => ({
+      path: `Studium/Unterlagen/Kurs ${i % 40}/skript${i}.pdf`,
+      status: 'untracked' as const,
+    }))
+    const message = commitMessage(files)
+    expect(message.length).toBeLessThan(3000)
+    expect(message).toContain('Studium/Unterlagen/Kurs 0/ (18 Dateien)')
+    expect(message).toContain('weitere Dateien')
+  })
+})
