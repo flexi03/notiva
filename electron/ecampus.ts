@@ -12,14 +12,18 @@ import {
   pageState,
   parseResults,
   pickResultsLink,
+  snapshotRecords,
   withSessionAsi,
   type ExamSnapshot,
   type PageState,
+  type RawTable,
 } from '../src/lib/ecampus'
 
 export interface EcampusConfig {
   startUrl: string
   examsUrl: string
+  /** Single sign-on start (HISinOne: "Anmelden mit HSD Account") – found on the login page. */
+  ssoUrl?: string
   /** URL of the results list found last time (session part replaced on each visit). */
   resultsUrl?: string
 }
@@ -28,6 +32,7 @@ export const ECAMPUS_DEFAULTS: EcampusConfig = {
   startUrl: 'https://ecampus.hs-duesseldorf.de/qisserver/pages/cs/sys/portal/hisinoneStartPage.faces',
   examsUrl:
     'https://ecampus.hs-duesseldorf.de/qisserver/pages/cs/sys/portal/hisinoneIframePage.faces?id=Pruefungsverwaltung&navigationPosition=hisinoneMeinStudium%2CHSD_Pruefungsverwaltung&recordRequest=true',
+  ssoUrl: 'https://ecampus.hs-duesseldorf.de/qisserver/api/identityprovider/redirect/2/login',
 }
 
 export class NeedsLogin extends Error {
@@ -38,6 +43,10 @@ export class NeedsLogin extends Error {
 }
 
 const PARTITION = 'persist:ecampus'
+/** How long the sign-in is kept across restarts (the university may end it earlier). */
+const KEEP_DAYS = 14
+/** HISinOne: "Anmelden mit … Account" leads to the university's identity provider. */
+const SSO_SCAN = `(() => { const a = Array.from(document.querySelectorAll('a[href]')).find((x) => /identityprovider|shibboleth|saml|\\/sso/i.test(x.getAttribute('href') || '') && /anmelden|login/i.test(x.textContent || '')); return a ? a.href : null })()`
 const SCAN = `(() => { const extract = ${extractTables.toString()}; return (${pageState.toString()})(document, extract) })()`
 
 type Progress = (text: string) => void
@@ -60,6 +69,14 @@ export function parseEcampusConfig(raw: unknown): EcampusConfig {
   }
   const results = typeof r.resultsUrl === 'string' ? url(r.resultsUrl, '') : ''
   if (results) config.resultsUrl = results
+  const sso =
+    typeof r.ssoUrl === 'string'
+      ? url(r.ssoUrl, '')
+      : config.startUrl === ECAMPUS_DEFAULTS.startUrl
+        ? ECAMPUS_DEFAULTS.ssoUrl!
+        : ''
+  // Only on the eCampus itself (the link leads from there to the identity provider).
+  if (sso && new URL(sso).origin === new URL(config.startUrl).origin) config.ssoUrl = sso
   return config
 }
 
@@ -92,7 +109,8 @@ export class Ecampus {
 
   async snapshot(): Promise<ExamSnapshot | null> {
     try {
-      return JSON.parse(await fs.readFile(this.snapshotFile, 'utf8')) as ExamSnapshot
+      const snapshot = JSON.parse(await fs.readFile(this.snapshotFile, 'utf8')) as ExamSnapshot
+      return { ...snapshot, records: snapshotRecords(snapshot) }
     } catch {
       return null
     }
@@ -103,6 +121,25 @@ export class Ecampus {
     const ses = session.fromPartition(PARTITION)
     ses.setPermissionRequestHandler((_wc, _p, callback) => callback(false))
     ses.setUserAgent(ses.getUserAgent().replace(/\s(Electron|notiva)\/\S+/gi, ''))
+    // Session cookies (eCampus, identity provider) would end with the app: keep them like
+    // "stay signed in" so the background check still works after a restart. Only this profile.
+    ses.cookies.on('changed', (_event, cookie, cause, removed) => {
+      if (removed || cause !== 'explicit' || cookie.session === false || !cookie.domain) return
+      const host = cookie.domain.replace(/^\./, '')
+      void ses.cookies
+        .set({
+          url: `${cookie.secure ? 'https' : 'http'}://${host}${cookie.path ?? '/'}`,
+          name: cookie.name,
+          value: cookie.value,
+          ...(cookie.hostOnly ? {} : { domain: cookie.domain }),
+          path: cookie.path ?? '/',
+          secure: cookie.secure ?? false,
+          httpOnly: cookie.httpOnly ?? false,
+          ...(cookie.sameSite ? { sameSite: cookie.sameSite } : {}),
+          expirationDate: Date.now() / 1000 + KEEP_DAYS * 86_400,
+        })
+        .catch(() => undefined)
+    })
     this.ses = ses
     return ses
   }
@@ -161,10 +198,12 @@ export class Ecampus {
     })
   }
 
-  private results(states: PageState[]): { records: ReturnType<typeof parseResults>; url: string } | null {
+  private results(
+    states: PageState[],
+  ): { records: ReturnType<typeof parseResults>; url: string; tables: RawTable[] } | null {
     for (const s of states) {
       const records = parseResults(s.tables)
-      if (records.length) return { records, url: s.url }
+      if (records.length) return { records, url: s.url, tables: s.tables }
     }
     return null
   }
@@ -198,11 +237,12 @@ export class Ecampus {
     config: EcampusConfig,
     found: NonNullable<ReturnType<Ecampus['results']>>,
   ): Promise<ExamSnapshot> {
-    await this.saveConfig({ ...config, resultsUrl: found.url })
+    await this.saveConfig({ ...(await this.config()), ...config, resultsUrl: found.url })
     const snapshot: ExamSnapshot = {
       site: new URL(config.startUrl).origin,
       fetchedAt: new Date().toISOString(),
       records: found.records,
+      tables: found.tables,
     }
     await fs.writeFile(this.snapshotFile, JSON.stringify(snapshot), { mode: 0o600 })
     return snapshot
@@ -231,6 +271,7 @@ export class Ecampus {
           if (!win.isDestroyed()) win.close()
           return resolve(snapshot)
         }
+        if (!states.some((s) => s.loggedIn)) await this.rememberSso(wc, config)
         if (!openedExams && states.some((s) => s.loggedIn)) {
           openedExams = true
           walking = true
@@ -253,6 +294,13 @@ export class Ecampus {
       }
       wc.on('did-stop-loading', soon)
       wc.on('did-frame-finish-load', soon)
+      // The sign-on link sits in an overlay: remember where the user's click leads.
+      wc.on('will-navigate', (event) => {
+        if (/identityprovider|shibboleth|saml|\/sso/i.test(event.url) && !config.ssoUrl) {
+          const remembered = parseEcampusConfig({ ...config, ssoUrl: event.url }).ssoUrl
+          if (remembered) config.ssoUrl = remembered
+        }
+      })
       win.on('closed', () => {
         if (!finished) reject(new Error('eCampus-Anmeldung abgebrochen'))
       })
@@ -272,7 +320,15 @@ export class Ecampus {
       await wc.loadURL(config.examsUrl).catch(() => undefined)
       await this.settle(wc)
       let states = await this.scan(wc)
-      if (states.some((s) => s.loginPage) && !states.some((s) => s.loggedIn)) throw new NeedsLogin()
+      if (!states.some((s) => s.loggedIn)) {
+        // Signed out on the eCampus – the identity provider may still know us (no input needed).
+        onProgress('Anmeldung wird erneuert')
+        if (!(await this.silentLogin(wc, config))) throw new NeedsLogin()
+        await wc.loadURL(config.examsUrl).catch(() => undefined)
+        await this.settle(wc)
+        states = await this.scan(wc)
+        if (!states.some((s) => s.loggedIn)) throw new NeedsLogin()
+      }
       let found = this.results(states)
       // Remembered results page with the session of today.
       if (!found && config.resultsUrl) {
@@ -296,6 +352,30 @@ export class Ecampus {
     } finally {
       if (!win.isDestroyed()) win.destroy()
     }
+  }
+
+  /**
+   * Single sign-on without a window: follows "Anmelden mit … Account". Works when the identity
+   * provider still has a session (Microsoft "angemeldet bleiben"); a login form means no.
+   */
+  private async silentLogin(wc: WebContents, config: EcampusConfig): Promise<boolean> {
+    const sso =
+      config.ssoUrl ??
+      ((await wc.mainFrame.executeJavaScript(SSO_SCAN).catch(() => null)) as string | null) ??
+      null
+    if (!sso || !/^https?:/i.test(sso)) return false
+    await wc.loadURL(sso).catch(() => undefined)
+    // Identity providers redirect a few times (and post forms) – wait until it has settled.
+    await this.settle(wc, 2500, 30_000)
+    const states = await this.scan(wc)
+    return states.some((s) => s.loggedIn) && !states.some((s) => s.loginPage && !s.loggedIn)
+  }
+
+  /** Remembers the single sign-on link of the login page (used for {@link silentLogin}). */
+  private async rememberSso(wc: WebContents, config: EcampusConfig): Promise<void> {
+    if (config.ssoUrl) return
+    const sso = (await wc.mainFrame.executeJavaScript(SSO_SCAN).catch(() => null)) as string | null
+    if (sso && /^https?:/i.test(sso)) config.ssoUrl = parseEcampusConfig({ ...config, ssoUrl: sso }).ssoUrl
   }
 
   async disconnect(): Promise<void> {

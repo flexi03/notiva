@@ -13,7 +13,10 @@ import type { Workspace } from './workspace'
 export interface RawTable {
   url: string
   headers: string[]
+  /** Cell texts; a cell spanning several columns is followed by empty strings (aligned to the headers). */
   rows: string[][]
+  /** Per row: the first filled cell spans at least three columns (a heading row such as "Konto"). */
+  wide?: boolean[]
 }
 
 /**
@@ -27,13 +30,30 @@ export function extractTables(doc: Document): RawTable[] {
     const rows = Array.from(table.querySelectorAll('tr'))
     const headerRow = rows.find((r) => r.querySelector('th'))
     if (!headerRow) continue
-    const headers = Array.from(headerRow.querySelectorAll('th,td')).map((c) => clean(c.textContent))
+    const headers: string[] = []
+    for (const c of Array.from(headerRow.querySelectorAll('th,td'))) {
+      headers.push(clean(c.textContent))
+      for (let i = 1; i < Math.min(20, Number(c.getAttribute('colspan')) || 1); i++) headers.push('')
+    }
     if (!headers.some((h) => /^note\b|^grade/i.test(h))) continue
-    const body = rows
-      .filter((r) => r !== headerRow && !r.querySelector('th'))
-      .map((r) => Array.from(r.querySelectorAll('td')).map((c) => clean(c.textContent)))
-      .filter((cells) => cells.some(Boolean))
-    out.push({ url: doc.location?.href ?? '', headers, rows: body })
+    const body: string[][] = []
+    const wide: boolean[] = []
+    for (const r of rows) {
+      if (r === headerRow || r.querySelector('th')) continue
+      const cells: string[] = []
+      let isWide = false
+      for (const c of Array.from(r.querySelectorAll('td'))) {
+        const span = Math.min(20, Number(c.getAttribute('colspan')) || 1)
+        const value = clean(c.textContent)
+        if (value && !cells.some(Boolean) && span >= 3) isWide = true
+        cells.push(value)
+        for (let i = 1; i < span; i++) cells.push('')
+      }
+      if (!cells.some(Boolean)) continue
+      body.push(cells)
+      wide.push(isWide)
+    }
+    out.push({ url: doc.location?.href ?? '', headers, rows: body, wide })
   }
   return out
 }
@@ -59,12 +79,28 @@ export interface ExamRecord {
   remark?: string
   /** Heading row above (e.g. module group / "Konto"). */
   group?: string
+  /**
+   * exam: one attempt; module: the module's own row above its exams (status, credits of the module);
+   * account: a sum row such as "Gesamtkonto" (credits so far).
+   */
+  level?: 'exam' | 'module' | 'account'
 }
 
 export interface ExamSnapshot {
   site: string
   fetchedAt: string
   records: ExamRecord[]
+  /** The tables as read – kept so a better parser can read them again without a new login. */
+  tables?: RawTable[]
+}
+
+/** Records of a stored snapshot, read again from its tables (newer parser) when they are there. */
+export function snapshotRecords(snapshot: ExamSnapshot): ExamRecord[] {
+  if (snapshot.tables?.length) {
+    const records = parseResults(snapshot.tables)
+    if (records.length) return records
+  }
+  return snapshot.records
 }
 
 const COLUMNS: Array<[keyof ExamRecord | 'grade', RegExp]> = [
@@ -100,7 +136,14 @@ function isoDate(s: string | undefined): string | undefined {
   return m ? `${m[3]}-${m[2]!.padStart(2, '0')}-${m[1]!.padStart(2, '0')}` : undefined
 }
 
-/** The rows of all result tables as records; heading rows (one cell / no status) set the group. */
+const STATUS_WORD = /bestanden|angemeldet|prüfung vorhanden|zugelassen|anerkannt/i
+const isTermText = (s: string | undefined) => !!s && /(wi|so|w|s)\D{0,12}\d{2}/i.test(s)
+
+/**
+ * The rows of all result tables as records; heading rows (one wide cell) set the group. Rows without
+ * attempt and date are the module's or an account's own row (HISinOne lists them above the exams,
+ * often with fewer columns – then status and credits sit one column further left).
+ */
 export function parseResults(tables: RawTable[]): ExamRecord[] {
   const records: ExamRecord[] = []
   const seen = new Set<string>()
@@ -112,27 +155,39 @@ export function parseResults(tables: RawTable[]): ExamRecord[] {
     })
     if (index.title === undefined || index.grade === undefined) continue
     let group: string | undefined
-    for (const cells of table.rows) {
+    table.rows.forEach((cells, rowIndex) => {
       const get = (key: string) => (index[key] !== undefined ? (cells[index[key]!] ?? '').trim() : '')
-      // Group/"Konto" rows span the table: fewer cells than headers.
-      if (cells.length < Math.min(table.headers.length, 3)) {
-        group = cells.find(Boolean)
-        continue
+      const filled = cells.filter(Boolean)
+      // Group/"Konto" headings span the table.
+      if (table.wide?.[rowIndex] ? filled.length === 1 : cells.length < Math.min(table.headers.length, 3)) {
+        group = filled[0]
+        return
       }
       const title = get('title')
-      if (!title) continue
-      const gradeText = get('grade')
+      if (!title) return
+      let gradeText = get('grade')
+      let statusText = get('status')
+      let creditsText = get('credits')
+      const attempt = number(get('attempt'))
+      const date = isoDate(get('date'))
+      let semester = get('semester') || undefined
+      const aggregate = attempt === undefined && !date
+      if (aggregate) {
+        // Shifted row: the status word sits under "Note", the credits under "Status".
+        if ((!gradeText || STATUS_WORD.test(gradeText)) && /^\d+(?:[.,]\d+)?$/.test(statusText)) {
+          creditsText = statusText
+          statusText = gradeText
+          gradeText = ''
+        }
+        if (!isTermText(semester)) semester = undefined
+      }
       const grade = number(gradeText)
-      const statusText = get('status')
       const status = normalizeStatus(statusText || (/^(be|nb|an)$/i.test(gradeText) ? gradeText : ''), grade)
       const num = get('number') || undefined
-      const attempt = number(get('attempt'))
-      const semester = get('semester') || undefined
-      let id = `${num ?? title}#${attempt ?? semester ?? ''}`
+      let id = `${num ?? title}#${attempt ?? semester ?? 0}`
       while (seen.has(id)) id += '+'
       seen.add(id)
-      const credits = number(get('credits'))
-      const date = isoDate(get('date'))
+      const credits = number(creditsText)
       const remark = get('remark')
       records.push({
         id,
@@ -148,10 +203,124 @@ export function parseResults(tables: RawTable[]): ExamRecord[] {
         ...(date ? { date } : {}),
         ...(remark ? { remark } : {}),
         ...(group ? { group } : {}),
+        level: aggregate ? 'module' : 'exam',
       })
-    }
+    })
+  }
+  // A module row without exams below it is a sum ("Gesamtkonto", "Module").
+  for (const r of records) {
+    if (r.level !== 'module') continue
+    if (!records.some((e) => e.level === 'exam' && belongsTo(e, r))) r.level = 'account'
   }
   return records
+}
+
+/** Exam 3351 belongs to module 3350 (same number, or the module's number plus 1–9). */
+function belongsTo(exam: ExamRecord, module: ExamRecord): boolean {
+  if (exam.number && module.number) {
+    const e = Number(exam.number)
+    const m = Number(module.number)
+    if (Number.isFinite(e) && Number.isFinite(m)) return e === m || (m % 10 === 0 && e > m && e < m + 10)
+    return exam.number === module.number
+  }
+  return norm(exam.title) === norm(module.title)
+}
+
+/* ---------- per module: all attempts ---------- */
+
+export interface ModuleResult {
+  /** Exam number of the module (e.g. "3350"), or the normalized title. */
+  key: string
+  number?: string
+  title: string
+  status: 'passed' | 'failed' | 'failedFinal' | 'registered' | 'open'
+  grade?: number
+  gradeText?: string
+  credits?: number
+  /** Term of the passed attempt (or of the last one). */
+  semester?: string
+  date?: string
+  /** All attempts, oldest first (registrations included). */
+  attempts: ExamRecord[]
+  /** Attempts that counted (passed or failed – not registrations). */
+  tries: number
+  failedTries: number
+}
+
+/**
+ * Groups the records by module: the module's own row (if any) and the attempts of its exams. The
+ * module row knows the credits and whether the module as a whole is passed.
+ */
+export function moduleResults(records: ExamRecord[]): ModuleResult[] {
+  const modules = records.filter((r) => r.level === 'module')
+  const groups = new Map<string, { head?: ExamRecord; exams: ExamRecord[] }>()
+  for (const m of modules) groups.set(m.number ?? norm(m.title), { head: m, exams: [] })
+  for (const r of records) {
+    if (r.level && r.level !== 'exam') continue
+    const head = modules.find((m) => belongsTo(r, m))
+    const key = head ? (head.number ?? norm(head.title)) : (r.number ?? norm(r.title))
+    const group = groups.get(key) ?? { exams: [] }
+    group.exams.push(r)
+    groups.set(key, group)
+  }
+  const order = (r: ExamRecord) => `${r.date ?? '9999'}#${String(r.attempt ?? 0).padStart(3, '0')}`
+  const out: ModuleResult[] = []
+  for (const [key, { head, exams }] of groups) {
+    const attempts = [...exams].sort((a, b) => order(a).localeCompare(order(b)))
+    const counted = attempts.filter(
+      (a) => a.status === 'passed' || a.status === 'failed' || a.status === 'failedFinal',
+    )
+    const passed = [...counted].reverse().find((a) => a.status === 'passed')
+    const last = attempts[attempts.length - 1]
+    const status: ModuleResult['status'] =
+      head?.status === 'passed' || passed
+        ? 'passed'
+        : attempts.some((a) => a.status === 'failedFinal') || head?.status === 'failedFinal'
+          ? 'failedFinal'
+          : last?.status === 'registered'
+            ? 'registered'
+            : counted.length
+              ? 'failed'
+              : 'open'
+    const graded = passed ?? (status === 'passed' ? undefined : counted[counted.length - 1])
+    const credits =
+      (head?.credits && head.credits > 0 ? head.credits : undefined) ??
+      (passed?.credits && passed.credits > 0 ? passed.credits : undefined)
+    const semester = (passed ?? last)?.semester
+    const date = (passed ?? last)?.date
+    out.push({
+      key,
+      ...((head ?? attempts[0])?.number ? { number: (head ?? attempts[0])!.number! } : {}),
+      title: (head ?? passed ?? last)?.title ?? key,
+      status,
+      ...(graded?.grade !== undefined ? { grade: graded.grade } : {}),
+      ...(graded?.gradeText && graded.grade !== undefined ? { gradeText: graded.gradeText } : {}),
+      ...(credits !== undefined ? { credits } : {}),
+      ...(semester ? { semester } : {}),
+      ...(date ? { date } : {}),
+      attempts,
+      tries: counted.length,
+      failedTries: counted.filter((a) => a.status !== 'passed').length,
+    })
+  }
+  return out.sort((a, b) => (a.number ?? a.title).localeCompare(b.number ?? b.title, 'de', { numeric: true }))
+}
+
+/** Credits and grade average over passed modules (weighted by credits). */
+export function resultSummary(results: ModuleResult[]): {
+  credits: number
+  average: number | null
+  passed: number
+} {
+  const passed = results.filter((r) => r.status === 'passed')
+  const credits = passed.reduce((s, r) => s + (r.credits ?? 0), 0)
+  const graded = passed.filter((r) => r.grade !== undefined && r.credits)
+  const weight = graded.reduce((s, r) => s + r.credits!, 0)
+  return {
+    credits,
+    average: weight ? graded.reduce((s, r) => s + r.grade! * r.credits!, 0) / weight : null,
+    passed: passed.length,
+  }
 }
 
 /* ---------- import into the module database ---------- */
@@ -187,7 +356,7 @@ export function finalResults(records: ExamRecord[]): ExamRecord[] {
   const rank = (r: ExamRecord) =>
     r.status === 'passed' ? 3 : r.status === 'failedFinal' ? 2 : r.status === 'failed' ? 1 : 0
   for (const r of records) {
-    if (r.status === 'other' || r.status === 'registered') continue
+    if (r.status === 'other' || r.status === 'registered' || (r.level && r.level !== 'exam')) continue
     const key = r.number ?? norm(r.title)
     const prev = byExam.get(key)
     if (!prev || rank(r) > rank(prev) || (rank(r) === rank(prev) && (r.attempt ?? 0) > (prev.attempt ?? 0)))
@@ -208,7 +377,8 @@ export function planExamImport(ws: Workspace, records: ExamRecord[], modulesDb: 
   const statusProp = propertyDef(db, 'Status')
   const option = (v: string) => (statusProp?.options?.some((o) => o.value === v) ? v : undefined)
   const plan: PlanItem[] = []
-  for (const r of finalResults(records)) {
+  for (const r of moduleResults(records)) {
+    if (r.status !== 'passed' && r.status !== 'failed' && r.status !== 'failedFinal') continue
     const values: FrontmatterData = {}
     const status = r.status === 'passed' ? option('Bestanden') : option('Nicht bestanden')
     if (status) values.Status = status
@@ -262,6 +432,7 @@ export function examNews(
   const old = new Map(previous.records.map((r) => [r.id, r]))
   const news: AppNotification[] = []
   for (const r of next.records) {
+    if (r.level === 'account') continue
     const before = old.get(r.id)
     if (before && before.status === r.status && before.gradeText === r.gradeText) continue
     news.push({

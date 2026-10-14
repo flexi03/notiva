@@ -61,6 +61,25 @@ const CSP =
 // E2E tests (unpackaged only): a fresh profile per run, so browser storage never leaks between runs.
 if (!app.isPackaged && process.env.NOTIVA_E2E_USERDATA)
   app.setPath('userData', process.env.NOTIVA_E2E_USERDATA)
+// One app per profile: a second start would fight over the logins (cookies, Moodle, eCampus).
+// The development build (npm run electron) next to the installed app gets its own profile.
+let secondInstance = false
+if (!process.env.NOTIVA_E2E_USERDATA && !app.requestSingleInstanceLock()) {
+  secondInstance = app.isPackaged
+  if (secondInstance) app.quit()
+  else {
+    app.setPath('userData', `${app.getPath('userData')}-dev`)
+    console.warn(
+      'Notiva läuft schon – die Entwicklungsversion nutzt ein eigenes Profil:',
+      app.getPath('userData'),
+    )
+  }
+}
+app.on('second-instance', () => {
+  if (!window) return
+  if (window.isMinimized()) window.restore()
+  window.focus()
+})
 // E2E tests: a WAV file instead of the real microphone (never records the room, no OS prompt).
 if (!app.isPackaged && process.env.NOTIVA_E2E_FAKE_AUDIO) {
   app.commandLine.appendSwitch('use-fake-device-for-media-stream')
@@ -617,6 +636,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(async () => {
+  if (secondInstance) return
   await loadShellPath()
   // Only Notiva's own window may use the microphone (lecture mode) – audio only, nothing else.
   const ownAudio = (

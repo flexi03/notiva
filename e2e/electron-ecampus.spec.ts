@@ -13,6 +13,8 @@ import { QIS_RESULTS_HTML } from '../src/test/fixtures/qis'
  */
 const fake = {
   sessions: new Set<string>(),
+  /** Sessions of the identity provider (single sign-on without input while valid). */
+  idp: new Set<string>(),
   asi: '',
   results: QIS_RESULTS_HTML,
   log: [] as string[],
@@ -28,17 +30,29 @@ function startFake(): Promise<{ server: Server; url: string }> {
   const server = createServer((req, res) => {
     const url = new URL(req.url ?? '/', 'http://x')
     const cookie = /sess=([a-z0-9]+)/.exec(req.headers.cookie ?? '')?.[1]
+    const idpCookie = /idp=([a-z0-9]+)/.exec(req.headers.cookie ?? '')?.[1]
     const loggedIn = !!cookie && fake.sessions.has(cookie)
     const send = (html: string) => {
       res.setHeader('content-type', 'text/html; charset=utf-8')
       res.end(html)
     }
     const loginForm = page(
-      '<form method="post" action="/login"><label>Benutzer <input name="asdf"></label><label>Passwort <input type="password" name="fdsa"></label><button>Anmelden</button></form>',
+      '<a href="/qisserver/api/identityprovider/redirect/2/login">Anmelden mit Hochschul-Account</a><form method="post" action="/login"><label>Benutzer <input name="asdf"></label><label>Passwort <input type="password" name="fdsa"></label><button>Anmelden</button></form>',
       false,
     )
     fake.log.push(url.pathname + url.search)
     if (url.pathname === '/login' && req.method === 'POST') {
+      const id = Math.random().toString(36).slice(2)
+      const idp = Math.random().toString(36).slice(2)
+      fake.sessions.add(id)
+      fake.idp.add(idp)
+      res.statusCode = 302
+      res.setHeader('set-cookie', [`sess=${id}; Path=/`, `idp=${idp}; Path=/`])
+      res.setHeader('location', '/qisserver/pages/cs/sys/portal/hisinoneStartPage.faces')
+      return res.end()
+    }
+    if (url.pathname === '/qisserver/api/identityprovider/redirect/2/login') {
+      if (!idpCookie || !fake.idp.has(idpCookie)) return send(loginForm)
       const id = Math.random().toString(36).slice(2)
       fake.sessions.add(id)
       res.statusCode = 302
@@ -154,6 +168,11 @@ test('zeigt Noten, Schnitt und ECTS und übernimmt sie in die Module', async () 
   await expect(table).toContainText('Lineare Algebra')
   await expect(table).toContainText('1,3')
   await expect(window.getByText('ECTS bestanden')).toBeVisible()
+  // One row per module; the attempts open below it.
+  await expect(table.getByRole('button', { name: /Programmierung 1/ })).toHaveCount(1)
+  await table.getByRole('button', { name: /Programmierung 1/ }).click()
+  await expect(table).toContainText('2. Versuch')
+  await expect(table).toContainText('nicht bestanden')
   await window.getByRole('button', { name: 'In Module übernehmen …' }).click()
   const dialog = window.getByRole('dialog', { name: 'Leistungen in die Module übernehmen' })
   await expect(dialog).toContainText('Mathematik 1')
@@ -181,10 +200,23 @@ test('prüft im Hintergrund mit neuer Sitzung und meldet neue Noten', async () =
   await bell.click()
 })
 
+test('erneuert eine abgelaufene eCampus-Sitzung selbst über die Hochschul-Anmeldung', async () => {
+  fake.sessions.clear()
+  fake.log.length = 0
+  await window.getByRole('button', { name: 'Aktualisieren' }).click()
+  await expect.poll(() => fake.log.some((l) => l.includes('next=list.vm')), { timeout: 20_000 }).toBe(true)
+  expect(fake.log.some((l) => l.includes('identityprovider'))).toBe(true)
+  await expect(window.getByRole('button', { name: 'Aktualisieren' })).toBeEnabled({ timeout: 10_000 })
+  await expect(window.getByRole('alert').filter({ hasText: 'Anmeldung ist abgelaufen' })).toHaveCount(0)
+})
+
 test('sagt Bescheid, wenn die Anmeldung abgelaufen ist', async () => {
   fake.sessions.clear()
+  fake.idp.clear()
   await window.getByRole('button', { name: 'Aktualisieren' }).click()
-  await expect(window.getByRole('alert').filter({ hasText: 'Anmeldung ist abgelaufen' }).first()).toBeVisible({
-    timeout: 20_000,
-  })
+  await expect(window.getByRole('alert').filter({ hasText: 'Anmeldung ist abgelaufen' }).first()).toBeVisible(
+    {
+      timeout: 20_000,
+    },
+  )
 })

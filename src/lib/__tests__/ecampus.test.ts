@@ -7,11 +7,14 @@ import {
   extractTables,
   finalResults,
   matchModule,
+  moduleResults,
   normalizeStatus,
   parseResults,
   planExamImport,
+  resultSummary,
+  snapshotRecords,
 } from '../ecampus'
-import { QIS_RESULTS_HTML } from '@/test/fixtures/qis'
+import { QIS_MODULES_HTML, QIS_RESULTS_HTML } from '@/test/fixtures/qis'
 
 const now = new Date(2026, 9, 14, 10)
 
@@ -19,6 +22,57 @@ function tables() {
   const doc = new DOMParser().parseFromString(QIS_RESULTS_HTML, 'text/html')
   return extractTables(doc)
 }
+
+describe('eCampus modules and attempts', () => {
+  const read = () =>
+    parseResults(extractTables(new DOMParser().parseFromString(QIS_MODULES_HTML, 'text/html')))
+
+  it('tells sum rows, module rows and attempts apart', () => {
+    const records = read()
+    expect(records.find((r) => r.number === '10')).toMatchObject({ level: 'account', credits: 20 })
+    expect(records.find((r) => r.number === '3350')).toMatchObject({
+      level: 'module',
+      status: 'passed',
+      credits: 5,
+    })
+    expect(records.find((r) => r.number === '3350')!.semester).toBeUndefined()
+    expect(records.find((r) => r.number === '3230')).toMatchObject({ level: 'module', status: 'other' })
+    expect(records.filter((r) => r.level === 'exam')).toHaveLength(8)
+  })
+
+  it('collects the attempts per module', () => {
+    const results = moduleResults(read())
+    expect(results.map((r) => r.number)).toEqual(['3010', '3070', '3120', '3230', '3350'])
+    const ra = results.find((r) => r.number === '3350')!
+    expect(ra).toMatchObject({ status: 'passed', grade: 2.7, credits: 5, semester: 'WiSe 25/26', tries: 2 })
+    expect(ra.attempts.map((a) => a.attempt)).toEqual([1, 2])
+    expect(results.find((r) => r.number === '3070')).toMatchObject({
+      status: 'failed',
+      tries: 2,
+      failedTries: 2,
+      semester: 'WiSe 25/26',
+    })
+    expect(results.find((r) => r.number === '3230')).toMatchObject({ status: 'failed', tries: 1 })
+    expect(results.find((r) => r.number === '3010')).toMatchObject({ grade: 3.3, semester: 'SoSe 25' })
+    expect(resultSummary(results)).toMatchObject({ credits: 15, passed: 3 })
+    expect(resultSummary(results).average).toBeCloseTo((3.3 + 1.3 + 2.7) / 3)
+  })
+
+  it('reads stored tables again with the current parser', () => {
+    const tables = extractTables(new DOMParser().parseFromString(QIS_MODULES_HTML, 'text/html'))
+    const records = snapshotRecords({ site: 'x', fetchedAt: '', records: [], tables })
+    expect(records.length).toBe(11)
+  })
+
+  it('aligns cells that span several columns', () => {
+    const html = `<table><tr><th>Nr</th><th>Prüfungstext</th><th>Semester</th><th>Note</th><th>Status</th></tr>
+      <tr><td colspan="5">Pflichtbereich</td></tr>
+      <tr><td>1</td><td colspan="2">Statistik</td><td>2,0</td><td>bestanden</td></tr></table>`
+    const [table] = extractTables(new DOMParser().parseFromString(html, 'text/html'))
+    expect(table!.rows[1]).toEqual(['1', 'Statistik', '', '2,0', 'bestanden'])
+    expect(parseResults([table!])[0]).toMatchObject({ title: 'Statistik', grade: 2, group: 'Pflichtbereich' })
+  })
+})
 
 describe('eCampus results', () => {
   it('finds only the results table', () => {

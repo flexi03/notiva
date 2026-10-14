@@ -1,19 +1,26 @@
-import { useEffect, useMemo, useState } from 'react'
-import { RefreshCw } from 'lucide-react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
+import { ChevronRight, RefreshCw } from 'lucide-react'
 import { ecampusAvailable, useEcampus } from '@/app/ecampus'
 import { withProgress } from '@/app/progress'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { getLanguage, t } from '@/i18n'
-import { finalResults, planExamImport, type ExamRecord } from '@/lib/ecampus'
+import {
+  moduleResults,
+  planExamImport,
+  resultSummary,
+  type ExamRecord,
+  type ModuleResult,
+} from '@/lib/ecampus'
 import { applyMoodleImport, importTargets } from '@/lib/moodle'
 import { Button, Checkbox, cx, Dialog, EmptyState } from '@/components/ui'
 import { Topbar } from '@/components/layout/Topbar'
 
-const STATUS_CLASS: Record<ExamRecord['status'], string> = {
+const STATUS_CLASS: Record<ExamRecord['status'] | ModuleResult['status'], string> = {
   passed: 'bg-[var(--opt-green)] text-[var(--opt-green-ink)]',
-  failed: 'bg-[var(--opt-red)] text-[var(--opt-red-ink)]',
+  failed: 'bg-[var(--opt-orange)] text-[var(--opt-orange-ink)]',
   failedFinal: 'bg-[var(--opt-red)] text-[var(--opt-red-ink)]',
   registered: 'bg-[var(--opt-blue)] text-[var(--opt-blue-ink)]',
+  open: 'bg-[var(--opt-gray)] text-[var(--opt-gray-ink)]',
   other: 'bg-[var(--opt-gray)] text-[var(--opt-gray-ink)]',
 }
 
@@ -26,12 +33,16 @@ export function GradesScreen() {
   }, [refresh])
 
   const records = snapshot?.records ?? []
-  const final = finalResults(records)
-  const credits = final.filter((r) => r.status === 'passed').reduce((s, r) => s + (r.credits ?? 0), 0)
-  const graded = final.filter((r) => r.status === 'passed' && r.grade !== undefined && r.credits)
-  const average = graded.length
-    ? graded.reduce((s, r) => s + r.grade! * r.credits!, 0) / graded.reduce((s, r) => s + r.credits!, 0)
-    : null
+  const results = useMemo(() => moduleResults(records), [records])
+  const { credits, average, passed } = resultSummary(results)
+  const [open, setOpen] = useState<Set<string>>(new Set())
+  const toggle = (key: string) =>
+    setOpen((s) => {
+      const next = new Set(s)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
   const locale = getLanguage() === 'de' ? 'de-DE' : 'en-US'
 
   return (
@@ -89,7 +100,7 @@ export function GradesScreen() {
                     : '–',
                 ],
                 [t('grades.credits'), credits.toLocaleString(locale)],
-                [t('grades.passed'), String(final.filter((r) => r.status === 'passed').length)],
+                [t('grades.passed'), String(passed)],
               ].map(([label, value]) => (
                 <div key={label} className="rounded-panel border border-line bg-surface p-3">
                   <dt className="text-[12.5px] text-ink-3">{label}</dt>
@@ -101,39 +112,100 @@ export function GradesScreen() {
               <table className="w-full text-sm" aria-label={t('grades.table')}>
                 <thead className="bg-sunken text-left text-[12.5px] text-ink-2">
                   <tr>
-                    <th className="px-3 py-2">{t('grades.exam')}</th>
-                    <th className="px-3 py-2">{t('grades.semester')}</th>
+                    <th className="px-3 py-2">{t('grades.module')}</th>
                     <th className="px-3 py-2 text-right">{t('grades.grade')}</th>
                     <th className="px-3 py-2">{t('grades.status')}</th>
                     <th className="px-3 py-2 text-right">ECTS</th>
-                    <th className="px-3 py-2">{t('grades.date')}</th>
+                    <th className="px-3 py-2 text-right">{t('grades.tries')}</th>
+                    <th className="px-3 py-2">{t('grades.passedIn')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
-                  {records.map((r) => (
-                    <tr key={r.id}>
-                      <td className="px-3 py-2">
-                        <span className="font-medium">{r.title}</span>
-                        {r.attempt && r.attempt > 1 && (
-                          <span className="ml-1 text-[12px] text-ink-3">
-                            {t('grades.attempt', { n: r.attempt })}
-                          </span>
-                        )}
-                        {r.group && <span className="block text-[12px] text-ink-3">{r.group}</span>}
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap text-ink-2">{r.semester}</td>
-                      <td className="px-3 py-2 text-right font-semibold tabular-nums">{r.gradeText ?? ''}</td>
-                      <td className="px-3 py-2">
-                        <span className={cx('rounded-full px-2 py-0.5 text-[12px] whitespace-nowrap', STATUS_CLASS[r.status])}>
-                          {r.statusText}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-right tabular-nums">{r.credits ?? ''}</td>
-                      <td className="px-3 py-2 text-ink-2 tabular-nums">
-                        {r.date ? new Date(`${r.date}T12:00:00`).toLocaleDateString(locale) : ''}
-                      </td>
-                    </tr>
-                  ))}
+                  {results.map((m) => {
+                    const expanded = open.has(m.key)
+                    return (
+                      <Fragment key={m.key}>
+                        <tr>
+                          <td className="px-3 py-2">
+                            <button
+                              type="button"
+                              className="flex items-start gap-1 text-left"
+                              aria-expanded={expanded}
+                              onClick={() => toggle(m.key)}
+                            >
+                              <ChevronRight
+                                size={14}
+                                className={cx(
+                                  'mt-0.5 shrink-0 text-ink-3 transition-transform',
+                                  expanded && 'rotate-90',
+                                )}
+                              />
+                              <span>
+                                <span className="font-medium">{m.title}</span>
+                                {m.number && (
+                                  <span className="ml-1.5 text-[12px] text-ink-3">{m.number}</span>
+                                )}
+                              </span>
+                            </button>
+                          </td>
+                          <td className="px-3 py-2 text-right font-semibold tabular-nums">
+                            {m.status === 'passed' ? (m.gradeText ?? '') : ''}
+                          </td>
+                          <td className="px-3 py-2">
+                            <span
+                              className={cx(
+                                'rounded-full px-2 py-0.5 text-[12px] whitespace-nowrap',
+                                STATUS_CLASS[m.status],
+                              )}
+                            >
+                              {t(`grades.state.${m.status}`)}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 text-right tabular-nums">
+                            {m.status === 'passed' ? (m.credits ?? '') : ''}
+                          </td>
+                          <td
+                            className={cx(
+                              'px-3 py-2 text-right tabular-nums',
+                              m.status !== 'passed' && m.failedTries >= 2 && 'font-semibold text-danger',
+                            )}
+                          >
+                            {m.tries || ''}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-ink-2">
+                            {m.status === 'passed' ? m.semester : ''}
+                          </td>
+                        </tr>
+                        {expanded &&
+                          m.attempts.map((a) => (
+                            <tr key={a.id} className="bg-sunken/50 text-[13px]">
+                              <td className="py-1.5 pr-3 pl-9 text-ink-2">
+                                {a.attempt ? t('grades.attempt', { n: a.attempt }) : a.title}
+                                {a.remark && <span className="ml-1.5 text-ink-3">({a.remark})</span>}
+                              </td>
+                              <td className="px-3 py-1.5 text-right tabular-nums">{a.gradeText ?? ''}</td>
+                              <td className="px-3 py-1.5">
+                                <span
+                                  className={cx(
+                                    'rounded-full px-2 py-0.5 text-[12px] whitespace-nowrap',
+                                    STATUS_CLASS[a.status],
+                                  )}
+                                >
+                                  {a.statusText}
+                                </span>
+                              </td>
+                              <td className="px-3 py-1.5 text-right tabular-nums text-ink-3">
+                                {a.credits || ''}
+                              </td>
+                              <td className="px-3 py-1.5 text-right text-ink-3 tabular-nums">
+                                {a.date ? new Date(`${a.date}T12:00:00`).toLocaleDateString(locale) : ''}
+                              </td>
+                              <td className="px-3 py-1.5 whitespace-nowrap text-ink-2">{a.semester}</td>
+                            </tr>
+                          ))}
+                      </Fragment>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
