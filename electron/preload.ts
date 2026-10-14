@@ -100,6 +100,11 @@ contextBridge.exposeInMainWorld('notiva', {
     },
   },
   notifications: {
+    onAdded: (callback: (counts: Record<string, number>) => void) => {
+      const listener = (_e: unknown, counts: Record<string, number>) => callback(counts)
+      ipcRenderer.on('notifications:added', listener)
+      return () => ipcRenderer.removeListener('notifications:added', listener)
+    },
     list: () => invoke('notifications:list'),
     add: (items: object[]) => invoke<void>('notifications:add', items),
     markRead: (ids: string[] | 'all') => invoke<void>('notifications:markRead', ids),

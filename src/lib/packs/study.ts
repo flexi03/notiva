@@ -23,7 +23,7 @@ database:
     - { name: Alle, type: table, sort: [{ property: Beginn, direction: asc }], properties: [Zeitraum, Status, Beginn, Ende, ECTS, ECTS Plan, ECTS erreicht, Schnitt] }
     - { name: Kacheln, type: gallery, properties: [Zeitraum, Status, ECTS erreicht] }
 ---
-Jedes Semester hat eine eigene Übersichtsseite mit seinen Modulen, Prüfungen und Aufgaben. Öffne das aktuelle Semester, um nur das zu sehen.
+Jedes Semester hat eine eigene Übersichtsseite mit seinen Modulen, Prüfungen und Aufgaben. Öffne das aktuelle Semester, um nur das zu sehen. Eigenes Semester (z. B. Auslands- oder Urlaubssemester): **＋ Neu** und *Zeitraum* eintragen (z. B. „SoSe 27“) – Notiva füllt die Übersicht.
 `
 
 const MODULE = `---

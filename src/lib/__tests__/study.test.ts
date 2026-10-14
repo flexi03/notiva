@@ -226,6 +226,17 @@ describe('study folder sync', () => {
     expect(planStudySync(ws, 'Studium', state()).changes).toEqual([])
   })
 
+  it('fills own semester pages and adds semesters for longer studies', async () => {
+    const ws = await setup()
+    await planStudySync(ws, 'Studium', state()).apply()
+    const own = await ws.createRow('Studium/Semester.md', 'Auslandssemester', { Zeitraum: 'SoSe 28' })
+    await planStudySync(ws, 'Studium', state()).apply()
+    expect(ws.get(own)!.body).toContain('value: "SoSe 28"')
+    const later = studyState(HSD_BMI_2018, start, { results: [], courses: [], now: new Date(2028, 10, 1) })
+    await planStudySync(ws, 'Studium', later).apply()
+    expect(ws.rows('Studium/Semester.md').some((r) => r.data.fachsemester === 10)).toBe(true)
+  })
+
   it('writes the Moodle texts into the course page', async () => {
     const ws = await setup()
     const info = { 'course:3': courseInfoOf('course:3', { course: { summary: '<p>Klausur am 03.02.</p>' } }) }

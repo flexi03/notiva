@@ -17,7 +17,9 @@ import { getLanguage, t } from '@/i18n'
 import type { AppNotification, NotificationKind } from '@/lib/notifications'
 import type { Workspace } from '@/lib/workspace'
 import { electronBridge } from '@/lib/vault'
-import { cx, EmptyState, IconButton } from '@/components/ui'
+import { Button, cx, EmptyState, IconButton } from '@/components/ui'
+import { loadMaterialMap } from '@/app/materials'
+import { parseRoute } from '@/lib/route'
 import { SidePanel } from '@/components/layout/SidePanel'
 
 const ICONS: Record<NotificationKind, typeof Bell> = {
@@ -30,8 +32,8 @@ const ICONS: Record<NotificationKind, typeof Bell> = {
   grade: GraduationCap,
 }
 
-/** Opens what a notification is about: the Notiva page, the material or the Moodle page. */
-export function openNotification(n: AppNotification, ws: Workspace): void {
+/** Opens what a notification is about: the Notiva page, the saved file, the course or the Moodle page. */
+export async function openNotification(n: AppNotification, ws: Workspace): Promise<void> {
   void useNotifications.getState().markRead([n.id])
   const app = useApp.getState()
   // Imported Moodle deadlines open their Notiva task page.
@@ -41,17 +43,44 @@ export function openNotification(n: AppNotification, ws: Workspace): void {
   const target = n.target
   if (!target) return
   if (target.type === 'page') return ws.get(target.path) ? app.openEntry(target.path) : undefined
-  if (target.type === 'material') return app.navigate({ name: 'moodle' })
-  // Moodle pages open with the university login in an app window; anything else in the browser.
+  if (target.type === 'route') return app.navigate(parseRoute(target.hash))
+  if (target.type === 'material') {
+    const saved = (await loadMaterialMap(ws))[target.id]
+    return app.navigate(saved ? { name: 'file', path: saved } : { name: 'moodle', course: target.courseId })
+  }
+  if (target.type === 'course') {
+    const coursePage = ws.all().find((p) => p.data.moodle === target.courseId)
+    return coursePage
+      ? app.openEntry(coursePage.path)
+      : app.navigate({ name: 'moodle', course: target.courseId })
+  }
+  openUrl(target.url)
+}
+
+/** Moodle pages open with the university login in an app window; anything else in the browser. */
+function openUrl(url: string): void {
   const bridge = electronBridge()
   if (!bridge) {
-    window.open(target.url, '_blank', 'noopener')
+    window.open(url, '_blank', 'noopener')
     return
   }
   void useMoodle
     .getState()
-    .open(target.url, false)
-    .catch(() => bridge.openExternal(target.url))
+    .open(url, false)
+    .catch(() => bridge.openExternal(url))
+}
+
+/** Label of the main action ("Zur Aufgabe", "Noten ansehen" …). */
+function actionLabel(n: AppNotification): string {
+  const target = n.target
+  if (/^(?:deadline|moved|reminder):/.test(n.id)) return t('notify.open.task')
+  if (!target) return t('notify.open.default')
+  if (target.type === 'route')
+    return target.hash.startsWith('#/grades') ? t('notify.open.grades') : t('notify.open.default')
+  if (target.type === 'material') return t('notify.open.file')
+  if (target.type === 'course') return t('notify.open.course')
+  if (target.type === 'url') return t('notify.open.moodle')
+  return t('notify.open.default')
 }
 
 function when(iso: string): string {
@@ -69,6 +98,7 @@ export function NotificationPanel() {
   const { list, markRead, clear } = useNotifications()
   const navigate = useApp((s) => s.navigate)
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
+  const [open, setOpen] = useState<string | null>(null)
   const unread = unreadCount(list)
   const shown = filter === 'unread' ? list.filter((n) => !n.read) : list
   const desktop = Boolean(electronBridge()?.notifications)
@@ -128,7 +158,11 @@ export function NotificationPanel() {
                 <li key={n.id}>
                   <button
                     type="button"
-                    onClick={() => openNotification(n, ws)}
+                    aria-expanded={open === n.id}
+                    onClick={() => {
+                      setOpen(open === n.id ? null : n.id)
+                      if (!n.read) void markRead([n.id])
+                    }}
                     className="flex w-full items-start gap-2.5 px-3 py-2.5 text-left hover:bg-hover"
                   >
                     <span className={cx('mt-0.5 shrink-0', n.read ? 'text-ink-3' : 'text-accent')}>
@@ -136,7 +170,13 @@ export function NotificationPanel() {
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-baseline gap-2">
-                        <span className={cx('min-w-0 flex-1 truncate text-sm', !n.read && 'font-semibold')}>
+                        <span
+                          className={cx(
+                            'min-w-0 flex-1 text-sm',
+                            open !== n.id && 'truncate',
+                            !n.read && 'font-semibold',
+                          )}
+                        >
                           <span className="sr-only">{t(`notify.kind.${n.kind}`)}: </span>
                           {n.title}
                         </span>
@@ -147,7 +187,14 @@ export function NotificationPanel() {
                         {n.course && ` · ${n.course}`}
                       </span>
                       {n.body && (
-                        <span className="line-clamp-2 block text-[12.5px] text-ink-2">{n.body}</span>
+                        <span
+                          className={cx(
+                            'block text-[12.5px] whitespace-pre-line text-ink-2',
+                            open !== n.id && 'line-clamp-2',
+                          )}
+                        >
+                          {n.body}
+                        </span>
                       )}
                     </span>
                     {!n.read && (
@@ -157,6 +204,28 @@ export function NotificationPanel() {
                       />
                     )}
                   </button>
+                  {open === n.id && (n.target || /^(?:deadline|moved|reminder):/.test(n.id)) && (
+                    <div className="flex flex-wrap gap-2 px-3 pb-2.5 pl-[2.6rem]">
+                      <Button size="sm" variant="primary" onClick={() => void openNotification(n, ws)}>
+                        {actionLabel(n)}
+                      </Button>
+                      {n.target?.type === 'course' && (
+                        <Button
+                          size="sm"
+                          onClick={() =>
+                            useApp
+                              .getState()
+                              .navigate({
+                                name: 'moodle',
+                                course: (n.target as { courseId: string }).courseId,
+                              })
+                          }
+                        >
+                          {t('notify.open.moodle')}
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </li>
               )
             })}

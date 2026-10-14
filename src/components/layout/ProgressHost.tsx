@@ -1,7 +1,7 @@
-import { CheckCircle2, CircleAlert, X } from 'lucide-react'
+import { CheckCircle2, CircleAlert, Info, X } from 'lucide-react'
 import { useProgress } from '@/app/progress'
 import { t } from '@/i18n'
-import { cx, IconButton } from '@/components/ui'
+import { Button, cx, IconButton } from '@/components/ui'
 
 /** Running actions with progress bars, then a confirmation – bottom left, above everything. */
 export function ProgressHost() {
@@ -27,6 +27,8 @@ export function ProgressHost() {
                 <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-accent" aria-hidden />
               ) : task.state === 'error' ? (
                 <CircleAlert size={16} className="mt-0.5 shrink-0 text-danger" aria-hidden />
+              ) : task.state === 'info' ? (
+                <Info size={16} className="mt-0.5 shrink-0 text-accent" aria-hidden />
               ) : null}
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold">
@@ -36,6 +38,22 @@ export function ProgressHost() {
                   <p className="truncate text-[12.5px] text-ink-3">{task.detail}</p>
                 )}
                 {task.state === 'error' && <p className="text-[12.5px] text-ink-3">{task.label}</p>}
+                {task.state !== 'running' && task.note && (
+                  <p className="text-[12.5px] whitespace-pre-line text-ink-2">{task.note}</p>
+                )}
+                {task.state !== 'running' && task.action && (
+                  <Button
+                    size="sm"
+                    variant={task.state === 'info' ? 'primary' : 'secondary'}
+                    className="mt-2"
+                    onClick={() => {
+                      task.action!.run()
+                      dismiss(task.id)
+                    }}
+                  >
+                    {task.action.label}
+                  </Button>
+                )}
               </div>
               {task.state === 'running' && percent !== null && (
                 <span className="text-[12px] text-ink-2 tabular-nums">{percent} %</span>

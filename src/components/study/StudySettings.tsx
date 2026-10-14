@@ -31,8 +31,8 @@ export function StudySettingsSection() {
             : t('study.notSet')}
       </p>
       <div className="flex flex-wrap gap-2">
-        <Button variant="primary" disabled={!dash} onClick={() => setOpen(true)}>
-          {t('study.sync')}
+        <Button variant="primary" onClick={() => setOpen(true)}>
+          {dash ? t('study.sync') : t('study.create')}
         </Button>
         {electronBridge()?.examPlan && (
           <Button disabled={!program} onClick={() => void run(() => syncExamPlan(ws))}>

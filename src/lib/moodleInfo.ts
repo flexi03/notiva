@@ -260,6 +260,7 @@ export function courseInfoNews(
         body: excerpt(b.text),
         course: courseName(id),
         time: b.modified ?? now.toISOString(),
+        target: { type: 'course', courseId: id },
       })
     }
   }

@@ -181,7 +181,13 @@ async function saveMoodle(config: MoodleConfig | null): Promise<boolean> {
 
 const notifications = new NotificationStore(
   userFile('notifications.json'),
-  (added) => void showBanners(added),
+  (added) => {
+    void showBanners(added)
+    // "What is new" bottom left in the app: counts per kind.
+    const counts: Record<string, number> = {}
+    for (const n of added) counts[n.kind] = (counts[n.kind] ?? 0) + 1
+    window?.webContents.send('notifications:added', counts)
+  },
   () => window?.webContents.send('notifications:changed'),
 )
 
@@ -280,8 +286,9 @@ async function pollEcampus(): Promise<ExamSnapshot> {
           id: `ecampus-login:${new Date().toISOString().slice(0, 10)}`,
           kind: 'notice',
           title: 'eCampus: bitte neu anmelden',
-          body: 'Die Anmeldung ist abgelaufen – Einstellungen → eCampus → Anmelden.',
+          body: 'Die Anmeldung ist abgelaufen – Einstellungen → Studium → eCampus → Anmelden.',
           time: new Date().toISOString(),
+          target: { type: 'route', hash: '#/settings/study' },
         },
       ])
     throw error

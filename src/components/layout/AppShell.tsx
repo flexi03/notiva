@@ -20,7 +20,10 @@ import { taskReminders, useNotifications } from '@/app/notifications'
 import type { Workspace } from '@/lib/workspace'
 import { electronBridge } from '@/lib/vault'
 import { moodleAvailable, useMoodle } from '@/app/moodle'
-import { autoSyncStudy } from '@/app/study'
+import { autoSyncStudy, setupHint } from '@/app/study'
+import { announce } from '@/app/progress'
+import { t } from '@/i18n'
+import type { NotificationKind } from '@/lib/notifications'
 import { syncExamPlan } from '@/app/examPlan'
 import { syncMaterials } from '@/app/materials'
 import { useEcampus } from '@/app/ecampus'
@@ -31,6 +34,11 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
   const { sidebarOpen, setSidebar, setSearch, setNewPage, route, rightPanel, leftView } = useApp()
   useGitSync()
   useNotificationSync(ws)
+  // What is still missing (study folder, Moodle, eCampus) – once per opened folder.
+  useEffect(() => {
+    const timer = setTimeout(() => void setupHint(ws).catch(() => undefined), 1500)
+    return () => clearTimeout(timer)
+  }, [ws])
   useEffect(
     () =>
       electronBridge()?.ecampus?.onPolled(() => {
@@ -167,7 +175,19 @@ function useNotificationSync(ws: Workspace): void {
     const offOpen = bridge?.onOpen((id) => {
       useApp.getState().openView('notifications')
       const n = id ? useNotifications.getState().list.find((x) => x.id === id) : undefined
-      if (n) openNotification(n, ws)
+      if (n) void openNotification(n, ws)
+    })
+    // What a check found, bottom left: "3 neue Termine · 2 neue Dateien" with a button to see them.
+    const offAdded = bridge?.onAdded?.((counts) => {
+      const parts = Object.entries(counts)
+        .filter(([, n]) => n > 0)
+        .map(([kind, count]) => t(`news.kind.${kind as NotificationKind}`, { count }))
+      if (!parts.length) return
+      announce(t('news.title'), {
+        note: parts.join(' · '),
+        action: { label: t('news.show'), run: () => useApp.getState().openView('notifications') },
+        key: 'news',
+      })
     })
     const remind = () => void useNotifications.getState().add(taskReminders(ws))
     remind()
@@ -175,6 +195,7 @@ function useNotificationSync(ws: Workspace): void {
     return () => {
       offChange?.()
       offOpen?.()
+      offAdded?.()
       clearInterval(timer)
     }
   }, [ws])

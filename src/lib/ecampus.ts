@@ -463,6 +463,7 @@ export function examNews(
       body: before ? `${describe(before)} → ${describe(r)}` : describe(r),
       course: r.status === 'registered' ? 'Prüfungsanmeldung' : 'Prüfungsergebnis',
       time: now.toISOString(),
+      target: { type: 'route', hash: '#/grades' },
     })
   }
   return news

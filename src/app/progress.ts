@@ -8,9 +8,17 @@ export interface ProgressTask {
   done: number
   /** Unknown total → running bar without percent. */
   total?: number
-  state: 'running' | 'done' | 'error'
+  state: 'running' | 'done' | 'error' | 'info'
   /** Confirmation or error text at the end. */
   message?: string
+  /** Second line under the message (e.g. what is new). */
+  note?: string
+  /** Button: go to the content or set something up. */
+  action?: { label: string; run: () => void }
+  /** Stays until closed (hints); others vanish after a few seconds. */
+  sticky?: boolean
+  /** Same key replaces the older entry (e.g. one setup hint). */
+  key?: string
 }
 
 interface ProgressState {
@@ -40,7 +48,13 @@ const patch = (id: number, change: Partial<ProgressTask>) =>
 export async function withProgress<T>(
   label: string,
   work: (task: TaskHandle) => Promise<T>,
-  options: { success?: (result: T) => string; total?: number } = {},
+  options: {
+    success?: (result: T) => string
+    /** What is new / what happened, below the confirmation. */
+    note?: (result: T) => string | undefined
+    action?: (result: T) => ProgressTask['action'] | undefined
+    total?: number
+  } = {},
 ): Promise<T> {
   const id = ++counter
   useProgress.setState((s) => ({
@@ -60,8 +74,14 @@ export async function withProgress<T>(
   }
   try {
     const result = await work(handle)
-    patch(id, { state: 'done', message: options.success?.(result) ?? label, detail: '' })
-    setTimeout(() => useProgress.getState().dismiss(id), 5000)
+    patch(id, {
+      state: 'done',
+      message: options.success?.(result) ?? label,
+      detail: '',
+      ...(options.note ? { note: options.note(result) } : {}),
+      ...(options.action?.(result) ? { action: options.action(result)! } : {}),
+    })
+    setTimeout(() => useProgress.getState().dismiss(id), options.action?.(result) ? 12_000 : 5000)
     return result
   } catch (e) {
     patch(id, {
@@ -73,4 +93,24 @@ export async function withProgress<T>(
     })
     throw e
   }
+}
+
+/**
+ * A message bottom left without a running task: news from a background check ("3 neue Termine")
+ * or a hint ("Moodle verbinden"). Same `key` replaces the older one.
+ */
+export function announce(
+  message: string,
+  options: Pick<ProgressTask, 'note' | 'action' | 'sticky' | 'key'> & { state?: 'done' | 'info' } = {},
+): number {
+  const id = ++counter
+  const { state = 'done', ...rest } = options
+  useProgress.setState((s) => ({
+    tasks: [
+      ...s.tasks.filter((t) => !options.key || t.key !== options.key),
+      { id, label: message, message, done: 1, state, ...rest },
+    ],
+  }))
+  if (!options.sticky) setTimeout(() => useProgress.getState().dismiss(id), options.action ? 12_000 : 6000)
+  return id
 }

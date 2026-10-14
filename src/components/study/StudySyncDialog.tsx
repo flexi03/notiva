@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { previewStudy, studySources, type StudySources } from '@/app/study'
+import { createStudyFolder, previewStudy, setupHint, studySources, type StudySources } from '@/app/study'
 import { withProgress } from '@/app/progress'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
@@ -38,11 +38,11 @@ export function StudySyncDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <Dialog open onClose={onClose} title={t('study.dialogTitle')} size="lg" closeLabel={t('common.close')}>
-      {!preview ? null : !preview.ok && preview.reason === 'noFolder' ? (
-        <p className="text-sm">{t('study.noFolder')}</p>
-      ) : (
+      {!preview ? null : (
         <div className="space-y-4">
-          <p className="text-[13px] text-ink-3">{t('study.setupHint')}</p>
+          <p className="text-[13px] text-ink-3">
+            {!preview.ok && preview.reason === 'noFolder' ? t('study.createHint') : t('study.setupHint')}
+          </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label={t('study.program')}>
               <Select
@@ -117,6 +117,25 @@ export function StudySyncDialog({ onClose }: { onClose: () => void }) {
         <Button variant="ghost" onClick={onClose}>
           {changes.length ? t('common.cancel') : t('common.close')}
         </Button>
+        {preview && !preview.ok && preview.reason === 'noFolder' && (
+          <Button
+            variant="primary"
+            disabled={!chosen}
+            onClick={() => {
+              onClose()
+              void run(() =>
+                withProgress(t('study.creating'), () => createStudyFolder(ws, chosen!), {
+                  success: () => t('study.created'),
+                }).then((path) => {
+                  navigate({ name: 'page', path })
+                  void setupHint(ws)
+                }),
+              )
+            }}
+          >
+            {t('study.create')}
+          </Button>
+        )}
         {preview?.ok && (changes.length > 0 || setup) && (
           <Button
             variant="primary"

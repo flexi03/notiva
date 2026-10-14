@@ -317,7 +317,9 @@ export function planStudySync(
   const sdb = ws.get(semesterDb)?.database
   if (sdb) {
     const srows = ws.rows(semesterDb)
-    for (let n = 1; n <= state.program.semesters; n++) {
+    // Longer studies get more semesters: always up to the next one.
+    const last = Math.max(state.program.semesters, state.semester + 1)
+    for (let n = 1; n <= last; n++) {
       const term = addTerms(state.start, n - 1)
       const label = termLabel(term)
       const range = termRange(term)
@@ -368,6 +370,19 @@ export function planStudySync(
           }),
         )
       }
+    }
+    // Own semester pages (e.g. a semester abroad): with "Zeitraum" they get the overview, too.
+    for (const r of srows) {
+      const term = r.data.fachsemester === undefined ? termOfLabel(r.data.Zeitraum) : null
+      if (!term || r.body.trim()) continue
+      changes.push({
+        kind: 'update',
+        what: 'semester',
+        path: r.path,
+        title: r.title,
+        detail: termLabel(term),
+      })
+      steps.push(() => ws.save(r.path, { body: semesterBody(folder, term) }))
     }
     const props = ['Zeitraum', 'ECTS Plan', 'ECTS erreicht'].filter((p) => !propertyDef(sdb, p))
     if (props.length)

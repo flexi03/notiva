@@ -11,6 +11,10 @@ export type NotificationTarget =
   | { type: 'url'; url: string }
   | { type: 'page'; path: string }
   | { type: 'material'; id: string; courseId: string }
+  /** A place in Notiva ("#/grades", "#/settings/study"). */
+  | { type: 'route'; hash: string }
+  /** A Moodle course: its Notiva course page (Studium/Kurse) or the course in the app. */
+  | { type: 'course'; courseId: string }
 
 export interface AppNotification {
   /** Stable – the same news never shows twice. */
@@ -210,7 +214,11 @@ export function parseNotifications(raw: unknown): AppNotification[] {
           ? { type: 'page', path: t.path }
           : t?.type === 'material' && typeof t.id === 'string' && typeof t.courseId === 'string'
             ? { type: 'material', id: t.id, courseId: t.courseId }
-            : undefined
+            : t?.type === 'route' && typeof t.hash === 'string' && /^#\/[\w%./:-]*$/.test(t.hash)
+              ? { type: 'route', hash: t.hash }
+              : t?.type === 'course' && typeof t.courseId === 'string' && /^course:\d+$/.test(t.courseId)
+                ? { type: 'course', courseId: t.courseId }
+                : undefined
     const body = str(r.body)
     const course = str(r.course, 200)
     out.push({

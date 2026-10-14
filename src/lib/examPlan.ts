@@ -289,8 +289,10 @@ export function examPlanNews(
   previousVersion: string | undefined,
   changes: ExamPlanChange[],
   now = new Date(),
+  examsPage?: string,
 ): AppNotification[] {
   const time = now.toISOString()
+  const target = examsPage ? { target: { type: 'page' as const, path: examsPage } } : {}
   const news: AppNotification[] = changes.map((c) => ({
     id: `examplan:${c.title}:${c.detail}`,
     kind: 'notice',
@@ -298,6 +300,7 @@ export function examPlanNews(
     body: c.detail,
     course: 'Prüfungsplan',
     time,
+    ...target,
   }))
   if (version && version !== previousVersion && previousVersion !== undefined)
     news.unshift({

@@ -49,7 +49,13 @@ export function syncExamPlan(ws: Workspace): Promise<number> {
         })
         if (before)
           await electronBridge()?.notifications?.add(
-            examPlanNews(version ?? file.name, before.version, plan.changes),
+            examPlanNews(
+              version ?? file.name,
+              before.version,
+              plan.changes,
+              new Date(),
+              `${preview.folder}/Prüfungen.md`,
+            ),
           )
         return plan.changes.length
       },

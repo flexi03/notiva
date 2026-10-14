@@ -108,6 +108,8 @@ export interface NotifySettings {
 }
 
 export interface NotificationBridge {
+  /** New notifications were added (counts per kind) – for the "what is new" message. */
+  onAdded?(callback: (counts: Record<string, number>) => void): () => void
   list(): Promise<AppNotification[]>
   add(items: AppNotification[]): Promise<void>
   markRead(ids: string[] | 'all'): Promise<void>
