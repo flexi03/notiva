@@ -46,6 +46,14 @@ const PARTITION = 'persist:ecampus'
 /** How long the sign-in is kept across restarts (the university may end it earlier). */
 const KEEP_DAYS = 14
 /** HISinOne: "Anmelden mit … Account" leads to the university's identity provider. */
+/** Microsoft sign-in page: continue with the only remembered account / confirm "stay signed in". */
+const MS_CONTINUE = `(() => {
+  const yes = document.querySelector('#idSIButton9, input[type=submit][value="Ja"], input[type=submit][value="Yes"]')
+  if (yes && /angemeldet bleiben|stay signed in/i.test(document.body.innerText)) { yes.click(); return true }
+  const tiles = Array.from(document.querySelectorAll('#tilesHolder [role="button"], .tile-container [role="button"]')).filter((t) => !/anderes konto|another account|use another/i.test(t.innerText))
+  if (tiles.length === 1 && !document.querySelector('input[type=password]')) { tiles[0].click(); return true }
+  return false
+})()`
 const SSO_SCAN = `(() => { const a = Array.from(document.querySelectorAll('a[href]')).find((x) => /identityprovider|shibboleth|saml|\\/sso/i.test(x.getAttribute('href') || '') && /anmelden|login/i.test(x.textContent || '')); return a ? a.href : null })()`
 const SCAN = `(() => { const extract = ${extractTables.toString()}; return (${pageState.toString()})(document, extract) })()`
 
@@ -124,7 +132,14 @@ export class Ecampus {
     // Session cookies (eCampus, identity provider) would end with the app: keep them like
     // "stay signed in" so the background check still works after a restart. Only this profile.
     ses.cookies.on('changed', (_event, cookie, cause, removed) => {
-      if (removed || cause !== 'explicit' || cookie.session === false || !cookie.domain) return
+      // Server cookies arrive as "inserted" (Electron ≥ 40) or "explicit"; ours are no session cookies.
+      if (
+        removed ||
+        !/^(explicit|inserted|overwrite)/.test(cause) ||
+        cookie.session === false ||
+        !cookie.domain
+      )
+        return
       const host = cookie.domain.replace(/^\./, '')
       void ses.cookies
         .set({
@@ -320,14 +335,18 @@ export class Ecampus {
       await wc.loadURL(config.examsUrl).catch(() => undefined)
       await this.settle(wc)
       let states = await this.scan(wc)
-      if (!states.some((s) => s.loggedIn)) {
+      const signedOut = (list: PageState[]) => list.some((x) => x.loginPage) && !list.some((x) => x.loggedIn)
+      if (signedOut(states)) {
         // Signed out on the eCampus – the identity provider may still know us (no input needed).
         onProgress('Anmeldung wird erneuert')
         if (!(await this.silentLogin(wc, config))) throw new NeedsLogin()
         await wc.loadURL(config.examsUrl).catch(() => undefined)
         await this.settle(wc)
         states = await this.scan(wc)
-        if (!states.some((s) => s.loggedIn)) throw new NeedsLogin()
+        if (signedOut(states)) {
+          await this.log('needsLogin', states)
+          throw new NeedsLogin()
+        }
       }
       let found = this.results(states)
       // Remembered results page with the session of today.
@@ -343,6 +362,7 @@ export class Ecampus {
         }
       }
       found ??= await this.walk(wc, onProgress)
+      if (!found) await this.log('notFound', await this.scan(wc))
       if (!found)
         throw new Error(
           'Die Leistungsübersicht wurde nicht gefunden – bitte einmal neu anmelden und „Leistungen anzeigen“ öffnen.',
@@ -366,9 +386,47 @@ export class Ecampus {
     if (!sso || !/^https?:/i.test(sso)) return false
     await wc.loadURL(sso).catch(() => undefined)
     // Identity providers redirect a few times (and post forms) – wait until it has settled.
-    await this.settle(wc, 2500, 30_000)
+    for (let step = 0; step < 3; step++) {
+      await this.settle(wc, 2500, 30_000)
+      // Microsoft: one remembered account → pick it; "Angemeldet bleiben?" → yes. Never types anything.
+      if (!/login\.microsoftonline\.com|login\.live\.com/i.test(wc.getURL())) break
+      const clicked = (await wc.mainFrame.executeJavaScript(MS_CONTINUE).catch(() => false)) as boolean
+      if (!clicked) break
+    }
     const states = await this.scan(wc)
-    return states.some((s) => s.loggedIn) && !states.some((s) => s.loginPage && !s.loggedIn)
+    await this.log('silent', states)
+    return !(states.some((s) => s.loginPage) && !states.some((s) => s.loggedIn))
+  }
+
+  /** What the last check saw (addresses and login state only) – helps to find out why it failed. */
+  private async log(step: string, states: PageState[]): Promise<void> {
+    const entry = {
+      time: new Date().toISOString(),
+      step,
+      frames: states.map((s) => ({
+        url: s.url.replace(/([?&](asi|code|state|session|token)[^&#]*)/gi, ''),
+        loggedIn: s.loggedIn,
+        loginPage: s.loginPage,
+        tables: s.tables.length,
+      })),
+    }
+    const file = path.join(this.dir, 'ecampus-debug.json')
+    const old = await fs.readFile(file, 'utf8').then(
+      (t) => JSON.parse(t) as unknown[],
+      () => [],
+    )
+    await fs
+      .writeFile(file, JSON.stringify([...old.slice(-19), entry], null, 1), { mode: 0o600 })
+      .catch(() => undefined)
+  }
+
+  /** Keeps the eCampus session alive between checks (a plain request with the session's cookies). */
+  async keepAlive(): Promise<void> {
+    const config = await this.config()
+    if (!config) return
+    await this.session()
+      .fetch(config.startUrl, { redirect: 'manual' })
+      .catch(() => undefined)
   }
 
   /** Remembers the single sign-on link of the login page (used for {@link silentLogin}). */

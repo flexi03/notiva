@@ -494,10 +494,20 @@ export interface PageState {
 export function pageState(doc: Document, extract: (doc: Document) => RawTable[]): PageState {
   const text = (el: Element | null) => (el?.textContent ?? '').replace(/\s+/g, ' ').trim()
   const anchors = Array.from(doc.querySelectorAll('a[href]')) as HTMLAnchorElement[]
-  const loggedIn = anchors.some((a) => /abmelden|logout/i.test(`${text(a)} ${a.title} ${a.id}`))
+  // HISinOne: "Abmelden" may be a link or a button (JSF); signed out shows "Zur Anmeldung".
+  const controls = Array.from(doc.querySelectorAll('a, button, input[type="submit"], input[type="button"]'))
+  const label = (el: Element) =>
+    `${text(el)} ${el.getAttribute('title') ?? ''} ${el.id} ${el.getAttribute('value') ?? ''} ${el.getAttribute('aria-label') ?? ''}`
+  const loggedIn = controls.some((el) => /abmelden|logout|log out|sign out/i.test(label(el)))
+  const body = text(doc.body).slice(0, 5000)
   const loginPage =
     /login\.microsoftonline\.com|\/idp\/|\/saml/i.test(doc.location?.href ?? '') ||
-    (!!doc.querySelector('input[type="password"]') && !loggedIn)
+    (!loggedIn &&
+      (!!doc.querySelector('input[type="password"]') ||
+        controls.some(
+          (el) => /zur anmeldung|^\s*anmelden\s*$|login/i.test(label(el)) && !/abmelden/i.test(label(el)),
+        ) ||
+        /sitzung ist abgelaufen|session (has )?expired|bitte melden sie sich an/i.test(body)))
   return {
     url: doc.location?.href ?? '',
     loggedIn,

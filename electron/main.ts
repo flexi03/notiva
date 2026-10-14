@@ -269,7 +269,7 @@ let pollTimer: ReturnType<typeof setTimeout> | null = null
 const ecampus = new Ecampus(userFile(''), path.join(__dirname, 'moodlePreload.cjs'))
 const ecampusProgress = (text: string) => window?.webContents.send('ecampus:progress', text)
 /** When each background check last ran (this app run). */
-const lastRun: Partial<Record<CheckKind, number>> = {}
+const lastRun: Partial<Record<CheckKind | 'keepAlive', number>> = {}
 
 /** Fetches the results and turns changes into notifications. */
 async function pollEcampus(): Promise<ExamSnapshot> {
@@ -317,6 +317,15 @@ async function schedulePolling(delay = 60_000): Promise<void> {
     if (due.includes('grades') && (await ecampus.config())) {
       lastRun.grades = Date.now()
       await pollEcampus().catch(() => undefined)
+    }
+    // Keep the eCampus session alive between grade checks (it ends after a while without requests).
+    if (
+      !due.includes('grades') &&
+      Date.now() - (lastRun.keepAlive ?? 0) > 10 * 60_000 &&
+      (await ecampus.config())
+    ) {
+      lastRun.keepAlive = Date.now()
+      await ecampus.keepAlive()
     }
     if (due.includes('examPlan')) {
       lastRun.examPlan = Date.now()

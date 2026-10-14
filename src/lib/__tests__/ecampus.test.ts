@@ -9,6 +9,7 @@ import {
   matchModule,
   moduleResults,
   normalizeStatus,
+  pageState,
   parseResults,
   planExamImport,
   resultSummary,
@@ -239,5 +240,16 @@ describe('older snapshots', () => {
     expect(records[1]).toMatchObject({ status: 'passed', credits: 5 })
     expect(records[1]!.semester).toBeUndefined()
     expect(moduleResults(records)).toHaveLength(1)
+  })
+})
+
+describe('login state of eCampus pages', () => {
+  const state = (html: string) =>
+    pageState(new DOMParser().parseFromString(html, 'text/html'), () => [])
+  it('sees "Abmelden" also as a button and "Zur Anmeldung" as signed out', () => {
+    expect(state('<button id="logout">Abmelden</button><a href="/x">Prüfungen</a>')).toMatchObject({ loggedIn: true, loginPage: false })
+    expect(state('<button>Zur Anmeldung</button>')).toMatchObject({ loggedIn: false, loginPage: true })
+    expect(state('<p>Ihre Sitzung ist abgelaufen.</p>')).toMatchObject({ loginPage: true })
+    expect(state('<p>Startseite</p>')).toMatchObject({ loggedIn: false, loginPage: false })
   })
 })
