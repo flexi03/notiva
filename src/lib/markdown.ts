@@ -155,6 +155,25 @@ function inlineMathRule(state: StateInline, silent: boolean): boolean {
   return true
 }
 
+/** ==highlight== → <mark> (the "Textmarker"). */
+function markRule(state: StateInline, silent: boolean): boolean {
+  const { src, pos } = state
+  if (src.charCodeAt(pos) !== 0x3d || src.charCodeAt(pos + 1) !== 0x3d) return false
+  const end = src.indexOf('==', pos + 2)
+  if (end === -1 || end === pos + 2 || /\n/.test(src.slice(pos + 2, end))) return false
+  if (!silent) {
+    state.push('mark_open', 'mark', 1)
+    const old = state.posMax
+    state.pos = pos + 2
+    state.posMax = end
+    state.md.inline.tokenize(state)
+    state.posMax = old
+    state.push('mark_close', 'mark', -1)
+  }
+  state.pos = end + 2
+  return true
+}
+
 /* ---------- block rules ---------- */
 
 function mathBlockRule(state: StateBlock, startLine: number, endLine: number, silent: boolean): boolean {
@@ -244,6 +263,7 @@ function createParser(): Parser {
   })
   md.inline.ruler.before('link', 'wikilink', wikiLinkRule)
   md.inline.ruler.push('tag', tagRule)
+  md.inline.ruler.before('emphasis', 'mark', markRule)
   md.inline.ruler.after('escape', 'math_inline', inlineMathRule)
   md.block.ruler.before('fence', 'math_block', mathBlockRule, {
     alt: ['paragraph', 'reference', 'blockquote', 'list'],

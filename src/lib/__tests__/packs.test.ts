@@ -1,7 +1,7 @@
 import { installPack, studyPack, TEMPLATE_PACKS } from '../packs'
 import { MemoryVault } from '../vault'
 import { Workspace } from '../workspace'
-import { computeTile, parseWidget, widgetSource, type TileSpec } from '../widgets'
+import { computeTile, parseWidget, widgetSource, type TileResult, type TileSpec } from '../widgets'
 import { blockType, splitBlocks } from '../blocks'
 
 const now = new Date(2026, 9, 14, 10)
@@ -65,7 +65,7 @@ describe('study dashboard works end to end', () => {
 
   it('computes every dashboard tile', async () => {
     const { ws, entry } = await installed()
-    const results = Object.fromEntries(
+    const results: Record<string, TileResult> = Object.fromEntries(
       dashboardTiles(ws, entry).map((t) => [t.title ?? t.page, computeTile(ws, t, entry, now)]),
     )
     expect(results['Vorlesungszeit']).toMatchObject({ kind: 'week', week: 4, total: 15 })

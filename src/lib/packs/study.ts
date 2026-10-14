@@ -115,6 +115,7 @@ Dein Stundenplan für das aktuelle Semester.
 const DASHBOARD = `---
 icon: 🎓
 cover: blue
+width: wide
 ---
 Willkommen in deinem Studien-Dashboard für **{{studiengang}}**. Alles hier ist Markdown – Kacheln, Ansichten und Datenbanken kannst du frei anpassen (Block anklicken).
 
@@ -135,23 +136,17 @@ tiles:
   - { type: link, page: "{{name}}/Semester", description: Überblick je Semester }
 \`\`\`
 
-## Aufgaben
-
 \`\`\`notiva
 type: view
 source: "{{name}}/Aufgaben"
 view: Board
 \`\`\`
 
-## Module
-
 \`\`\`notiva
 type: view
 source: "{{name}}/Module"
 view: Board
 \`\`\`
-
-## Anstehende Prüfungen
 
 \`\`\`notiva
 type: view

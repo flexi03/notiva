@@ -1,0 +1,99 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/atkinson-hyperlegible-next';
+@import '@fontsource-variable/source-serif-4';
+@import '@fontsource-variable/jetbrains-mono';
+@import 'katex/dist/katex.min.css';
+@import './tokens.css';
+@import './content.css';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* Semantic tokens for Tailwind utilities (bg-paper, text-ink-2, border-line, …). */
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
+  --color-hover: var(--hover);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-marker: var(--marker);
+  --color-danger: var(--danger);
+  --font-ui: 'Atkinson Hyperlegible Next Variable', system-ui, sans-serif;
+  --font-content: var(--font-content);
+  --font-code: 'JetBrains Mono Variable', ui-monospace, monospace;
+  --radius-control: 6px;
+  --radius-panel: 10px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior: none;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--marker) 60%, transparent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+button {
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+}
+
+/* Tile grid: columns from the widget; two columns on tablets and phones, wide tiles span both. */
+.tiles {
+  grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr));
+}
+@media (max-width: 900px) {
+  .tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: row dense;
+  }
+  .tiles > .tile {
+    grid-column: span 1 / span 1 !important;
+  }
+  .tiles > .tile:not([data-span='1']) {
+    grid-column: 1 / -1 !important;
+  }
+}

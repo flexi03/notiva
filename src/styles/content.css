@@ -1,0 +1,243 @@
+/* Rendered Markdown. Scoped to .md so it never leaks into app chrome. */
+.md {
+  font-family: var(--font-content);
+  font-size: var(--content-size);
+  line-height: 1.65;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.md > :first-child {
+  margin-top: 0;
+}
+.md > :last-child {
+  margin-bottom: 0;
+}
+.md p,
+.md ul,
+.md ol,
+.md blockquote,
+.md pre,
+.md .table-wrap,
+.md details {
+  margin: 0;
+}
+.md h1,
+.md h2,
+.md h3,
+.md h4 {
+  font-family: var(--font-content);
+  line-height: 1.25;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.md h1 {
+  font-size: 1.75em;
+  font-weight: 700;
+}
+.md h2 {
+  font-size: 1.35em;
+  font-weight: 700;
+}
+.md h3 {
+  font-size: 1.12em;
+  font-weight: 700;
+}
+.md h4 {
+  font-size: 1em;
+  font-weight: 700;
+}
+.md a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  text-underline-offset: 2px;
+}
+.md a:hover {
+  text-decoration-color: var(--accent);
+}
+/* The highlighter: wiki links get a marker stroke on hover; ==mark== and <mark> always. */
+.md a.wikilink {
+  text-decoration: none;
+  font-weight: 600;
+  background-image: linear-gradient(transparent 62%, color-mix(in srgb, var(--marker) 55%, transparent) 62%);
+  background-size: 100% 100%;
+  color: var(--ink);
+}
+.md a.wikilink-missing {
+  color: var(--ink-3);
+  background-image: none;
+  text-decoration: underline dashed;
+}
+.md mark {
+  background: linear-gradient(
+    104deg,
+    transparent 0.4em,
+    var(--marker) 0.5em,
+    var(--marker) calc(100% - 0.4em),
+    transparent calc(100% - 0.3em)
+  );
+  color: inherit;
+  padding: 0 0.15em;
+}
+.md a.tag {
+  text-decoration: none;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 999px;
+  padding: 0.05em 0.5em;
+  font-size: 0.88em;
+  font-family: var(--font-ui);
+}
+.md ul,
+.md ol {
+  padding-left: 1.5em;
+}
+.md li + li {
+  margin-top: 0.15em;
+}
+.md li.task-item {
+  list-style: none;
+  margin-left: -1.4em;
+}
+.md li.task-item > input,
+.md li.task-item > p > input {
+  margin: 0 0.45em 0 0;
+  vertical-align: -0.1em;
+  width: 1em;
+  height: 1em;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.md li.task-item:has(> input:checked),
+.md li.task-item:has(> p > input:checked) {
+  color: var(--ink-3);
+  text-decoration: line-through;
+  text-decoration-color: var(--ink-3);
+}
+.md blockquote {
+  border-left: 3px solid var(--line-strong);
+  padding: 0.1em 0 0.1em 1em;
+  color: var(--ink-2);
+}
+.md blockquote.callout {
+  --c: var(--opt-blue-ink);
+  --cb: var(--opt-blue);
+  border: 0;
+  border-radius: var(--radius-panel, 10px);
+  background: color-mix(in srgb, var(--cb) 70%, transparent);
+  color: var(--ink);
+  padding: 0.75em 1em;
+}
+.md blockquote.callout > * + * {
+  margin-top: 0.4em;
+}
+.md .callout-title {
+  font-weight: 700;
+  color: var(--c);
+  font-family: var(--font-ui);
+}
+.md .callout-tip,
+.md .callout-success {
+  --c: var(--opt-green-ink);
+  --cb: var(--opt-green);
+}
+.md .callout-warning,
+.md .callout-question {
+  --c: var(--opt-orange-ink);
+  --cb: var(--opt-orange);
+}
+.md .callout-danger {
+  --c: var(--opt-red-ink);
+  --cb: var(--opt-red);
+}
+.md .callout-example {
+  --c: var(--opt-purple-ink);
+  --cb: var(--opt-purple);
+}
+.md .callout-quote {
+  --c: var(--opt-gray-ink);
+  --cb: var(--opt-gray);
+}
+.md code {
+  font-family: var(--font-code);
+  font-size: 0.86em;
+  background: var(--sunken);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
+.md pre {
+  background: var(--sunken);
+  border-radius: var(--radius-panel, 10px);
+  padding: 0.9em 1.1em;
+  overflow-x: auto;
+  line-height: 1.5;
+}
+.md pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.84em;
+}
+.md hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 0.6em 0;
+}
+.md .table-wrap {
+  overflow-x: auto;
+}
+.md table {
+  border-collapse: collapse;
+  font-size: 0.94em;
+  min-width: 50%;
+}
+.md th,
+.md td {
+  border: 1px solid var(--line);
+  padding: 0.4em 0.7em;
+  text-align: left;
+  vertical-align: top;
+}
+.md th {
+  background: var(--sunken);
+  font-weight: 700;
+}
+.md img {
+  max-width: 100%;
+  border-radius: var(--radius-panel, 10px);
+}
+.md details {
+  border-left: 2px solid var(--line-strong);
+  padding-left: 0.9em;
+}
+.md summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.md .math-block {
+  overflow-x: auto;
+  padding: 0.25em 0;
+}
+
+/* highlight.js – restrained, theme aware */
+.md .hljs-keyword,
+.md .hljs-selector-tag,
+.md .hljs-built_in {
+  color: var(--opt-purple-ink);
+}
+.md .hljs-string,
+.md .hljs-attr,
+.md .hljs-template-variable {
+  color: var(--opt-green-ink);
+}
+.md .hljs-number,
+.md .hljs-literal {
+  color: var(--opt-orange-ink);
+}
+.md .hljs-comment {
+  color: var(--ink-3);
+  font-style: italic;
+}
+.md .hljs-title,
+.md .hljs-function {
+  color: var(--opt-blue-ink);
+}

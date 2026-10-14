@@ -1,0 +1,80 @@
+/*
+ * Design tokens. Accent, marker, content font, size and width are set at runtime from settings
+ * (see lib/settings.ts → themeVariables). Everything else lives here.
+ */
+:root {
+  --paper: #f5f6f8;
+  --surface: #ffffff;
+  --sunken: #eceef2;
+  --hover: #e9ecf1;
+  --ink: #1c2230;
+  --ink-2: #5b6475;
+  --ink-3: #8a92a3;
+  --line: #dfe3ea;
+  --line-strong: #c4cad6;
+  --accent: #2f5d50;
+  --accent-soft: color-mix(in srgb, var(--accent) 12%, transparent);
+  --on-accent: #ffffff;
+  --marker: #f2d74e;
+  --danger: #b4232f;
+  --font-content: 'Atkinson Hyperlegible Next Variable', system-ui, sans-serif;
+  --content-size: 16px;
+  --content-width: 46rem;
+  --shadow-pop: 0 1px 2px rgb(28 34 48 / 0.08), 0 8px 24px rgb(28 34 48 / 0.12);
+
+  /* Option colors (select chips, board columns): background / text */
+  --opt-gray: #e8eaee;
+  --opt-gray-ink: #4a5263;
+  --opt-brown: #efe3d9;
+  --opt-brown-ink: #6b4a33;
+  --opt-orange: #fbe2cc;
+  --opt-orange-ink: #8a4511;
+  --opt-yellow: #f8edb8;
+  --opt-yellow-ink: #6e5806;
+  --opt-green: #d6eedd;
+  --opt-green-ink: #1f6136;
+  --opt-blue: #d8e6fa;
+  --opt-blue-ink: #1f4f8f;
+  --opt-purple: #e6defa;
+  --opt-purple-ink: #533b8f;
+  --opt-pink: #f8dcea;
+  --opt-pink-ink: #8a2f5b;
+  --opt-red: #f8d9d9;
+  --opt-red-ink: #9a2323;
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --paper: #14171c;
+  --surface: #1b1f26;
+  --sunken: #101317;
+  --hover: #252a33;
+  --ink: #e6e8ec;
+  --ink-2: #a3abb9;
+  --ink-3: #737b8a;
+  --line: #2b313b;
+  --line-strong: #3b4350;
+  --on-accent: #10201b;
+  --danger: #ff7b84;
+  --shadow-pop: 0 1px 2px rgb(0 0 0 / 0.4), 0 10px 30px rgb(0 0 0 / 0.45);
+
+  --opt-gray: #2c313a;
+  --opt-gray-ink: #c3c9d4;
+  --opt-brown: #3a2e25;
+  --opt-brown-ink: #e2c3a8;
+  --opt-orange: #43301f;
+  --opt-orange-ink: #f3bd8c;
+  --opt-yellow: #3d3719;
+  --opt-yellow-ink: #ecd877;
+  --opt-green: #1f3a2a;
+  --opt-green-ink: #9ad8ae;
+  --opt-blue: #1e3150;
+  --opt-blue-ink: #a6c6f2;
+  --opt-purple: #2f2650;
+  --opt-purple-ink: #c7b6f5;
+  --opt-pink: #45233a;
+  --opt-pink-ink: #f0a9cc;
+  --opt-red: #4a2124;
+  --opt-red-ink: #f5a3a3;
+  color-scheme: dark;
+}

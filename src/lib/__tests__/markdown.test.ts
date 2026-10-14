@@ -11,6 +11,10 @@ describe('renderMarkdown – features', () => {
     expect(out).toContain('>fehlende Seite</a>')
   })
 
+  it('renders ==highlights== as mark', () => {
+    expect(html('ein ==wichtiger **Satz**== hier')).toContain('<mark>wichtiger <strong>Satz</strong></mark>')
+  })
+
   it('renders tags', () => {
     expect(html('Lernen #Klausur')).toContain('data-tag="klausur"')
   })

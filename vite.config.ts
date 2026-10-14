@@ -9,7 +9,7 @@ export default defineConfig({
   base: './',
   plugins: [react(), tailwindcss()],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
-  build: { outDir: 'dist', sourcemap: true },
+  build: { outDir: 'dist', sourcemap: true, chunkSizeWarningLimit: 1600 },
   test: {
     globals: true,
     environment: 'jsdom',
