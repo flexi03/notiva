@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { Bell, Files, GitBranch, Settings, Sparkles, Trash2 } from 'lucide-react'
 import { unreadCount, useNotifications } from '@/app/notifications'
 import { useGit } from '@/app/git'
-import { useApp, VIEWS, type Side, type ViewId } from '@/app/store'
+import { isPlace, useApp, VIEWS, type Side, type ViewId } from '@/app/store'
 import { t } from '@/i18n'
 import { cx } from '@/components/ui'
 
@@ -12,6 +12,8 @@ const DRAG_TYPE = 'application/x-notiva-view'
 export function viewInfo(view: ViewId): { label: string; icon: (size: number) => ReactNode } {
   if (view === 'assistant') return { label: t('ai.toggle'), icon: (size) => <Sparkles size={size} /> }
   if (view === 'notifications') return { label: t('notify.toggle'), icon: (size) => <Bell size={size} /> }
+  if (view === 'trash') return { label: t('nav.trash'), icon: (size) => <Trash2 size={size} /> }
+  if (view === 'settings') return { label: t('nav.settings'), icon: (size) => <Settings size={size} /> }
   return { label: t('git.toggle'), icon: (size) => <GitBranch size={size} /> }
 }
 
@@ -26,7 +28,8 @@ export function ActivityBar({ side }: { side: Side }) {
   const [over, setOver] = useState(false)
   const views = VIEWS.filter((v) => sides[v] === side)
   const target = dragging !== null && sides[dragging] !== side
-  // The right bar always holds trash and settings (desktop), next to the notifications.
+  // The right bar only exists when it holds something – or while a view is dragged to it.
+  if (side === 'right' && views.length === 0 && !target) return null
 
   return (
     <nav
@@ -56,40 +59,12 @@ export function ActivityBar({ side }: { side: Side }) {
       {views.map((view) => (
         <ViewItem key={view} view={view} side={side} />
       ))}
-      {side === 'right' && <AppItems />}
       {target && (
         <span className="mt-1 px-1 text-center text-[10px] leading-tight text-ink-3" aria-hidden>
           {t('views.dropHere')}
         </span>
       )}
     </nav>
-  )
-}
-
-/** Trash and settings: app places, not views – at the top right next to the notifications. */
-function AppItems() {
-  const route = useApp((s) => s.route)
-  const navigate = useApp((s) => s.navigate)
-  return (
-    <>
-      <span aria-hidden className="my-1 h-px w-6 bg-line" />
-      <BarButton
-        label={t('nav.trash')}
-        active={route.name === 'trash'}
-        side="right"
-        onClick={() => navigate({ name: 'trash' })}
-      >
-        <Trash2 size={18} />
-      </BarButton>
-      <BarButton
-        label={t('nav.settings')}
-        active={route.name === 'settings'}
-        side="right"
-        onClick={() => navigate({ name: 'settings' })}
-      >
-        <Settings size={18} />
-      </BarButton>
-    </>
   )
 }
 
@@ -113,7 +88,11 @@ function PagesItem() {
 
 function ViewItem({ view, side }: { view: ViewId; side: Side }) {
   const active = useApp((s) =>
-    side === 'left' ? s.sidebarOpen && s.leftView === view : s.rightPanel === view,
+    isPlace(view)
+      ? s.route.name === view
+      : side === 'left'
+        ? s.sidebarOpen && s.leftView === view
+        : s.rightPanel === view,
   )
   const toggle = useApp((s) => s.toggleView)
   const setDragging = useApp((s) => s.setDraggingView)

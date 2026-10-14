@@ -22,11 +22,14 @@ import { electronBridge } from '@/lib/vault'
 import { moodleAvailable, useMoodle } from '@/app/moodle'
 import { autoSyncStudy, setupHint } from '@/app/study'
 import { announce } from '@/app/progress'
+import { runCommand } from '@/app/commands'
 import { t } from '@/i18n'
 import type { NotificationKind } from '@/lib/notifications'
 import { syncExamPlan } from '@/app/examPlan'
 import { syncMaterials } from '@/app/materials'
 import { useEcampus } from '@/app/ecampus'
+
+const saveNow = () => void saveAllNow()
 
 /** Sidebar (drawer on small screens) + main area + global overlays and shortcuts. */
 export function AppShell({ children, overlays }: { children: ReactNode; overlays?: ReactNode }) {
@@ -96,11 +99,22 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
       } else if (mod && e.shiftKey && e.key.toLowerCase() === 'd') {
         e.preventDefault()
         void actions.openToday()
+      } else if (mod && e.key === ',') {
+        e.preventDefault()
+        runCommand('settings', ws, actions, saveNow)
+      } else if (mod && (e.key === '[' || (e.altKey && e.key === 'ArrowLeft'))) {
+        e.preventDefault()
+        history.back()
+      } else if (mod && (e.key === ']' || (e.altKey && e.key === 'ArrowRight'))) {
+        e.preventDefault()
+        history.forward()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [setSearch, setNewPage, setSidebar, actions])
+  }, [setSearch, setNewPage, setSidebar, actions, ws])
+  // Menu bar (desktop): the same commands.
+  useEffect(() => electronBridge()?.onMenu?.((id) => runCommand(id, ws, actions, saveNow)), [ws, actions])
 
   return (
     <div className="flex h-full" data-sidebar={sidebarOpen ? 'open' : 'closed'}>

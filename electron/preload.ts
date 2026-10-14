@@ -99,6 +99,11 @@ contextBridge.exposeInMainWorld('notiva', {
       return () => ipcRenderer.removeListener('moodle:polled', listener)
     },
   },
+  onMenu: (callback: (id: string) => void) => {
+    const listener = (_e: unknown, id: string) => callback(id)
+    ipcRenderer.on('menu:command', listener)
+    return () => ipcRenderer.removeListener('menu:command', listener)
+  },
   notifications: {
     onAdded: (callback: (counts: Record<string, number>) => void) => {
       const listener = (_e: unknown, counts: Record<string, number>) => callback(counts)

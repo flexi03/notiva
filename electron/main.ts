@@ -43,6 +43,7 @@ import {
 } from './moodle'
 import { clearMoodleSession, openMoodlePage, ssoLogin } from './moodleWindow'
 import { WhisperEngine } from './whisper'
+import { buildMenu } from './menu'
 import { Ecampus, NeedsLogin } from './ecampus'
 import { examNews, type ExamSnapshot } from '../src/lib/ecampus'
 import {
@@ -697,6 +698,7 @@ function createWindow(): void {
 
 app.whenReady().then(async () => {
   if (secondInstance) return
+  buildMenu(() => window)
   await loadShellPath()
   // Only Notiva's own window may use the microphone (lecture mode) – audio only, nothing else.
   const ownAudio = (

@@ -48,6 +48,7 @@ test('Renderer ist abgeschottet (kein Node, nur die Notiva-Brücke)', async () =
       'microphone',
       'moodle',
       'notifications',
+      'onMenu',
       'onVaultChange',
       'openExternal',
       'openWithSystem',

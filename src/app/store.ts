@@ -68,12 +68,20 @@ interface AppState {
   dismissToast(): void
 }
 
-export type ViewId = 'assistant' | 'git' | 'notifications'
+/** Side panels – and two places (trash, settings) that open as a screen. */
+export type ViewId = 'assistant' | 'git' | 'notifications' | 'trash' | 'settings'
 export type Side = 'left' | 'right'
-export const VIEWS: ViewId[] = ['assistant', 'git', 'notifications']
+export const VIEWS: ViewId[] = ['assistant', 'git', 'notifications', 'trash', 'settings']
+export const isPlace = (view: ViewId): view is 'trash' | 'settings' => view === 'trash' || view === 'settings'
 
 const LAYOUT_KEY = 'notiva.layout'
-const DEFAULT_SIDES: Record<ViewId, Side> = { assistant: 'left', git: 'left', notifications: 'right' }
+const DEFAULT_SIDES: Record<ViewId, Side> = {
+  assistant: 'left',
+  git: 'left',
+  notifications: 'right',
+  trash: 'right',
+  settings: 'right',
+}
 
 /** Device-local layout (like VS Code's workbench state); falls back to the defaults. */
 export function loadViewSides(): Record<ViewId, Side> {
@@ -151,12 +159,14 @@ export const useApp = create<AppState>((set, get) => ({
   },
   closePeek: () => set({ peek: null }),
   toggleView(view) {
+    if (isPlace(view)) return get().navigate({ name: view })
     const { viewSides, leftView, rightPanel, sidebarOpen } = get()
     if (viewSides[view] === 'right') set({ rightPanel: rightPanel === view ? null : view })
     else if (leftView === view && sidebarOpen) set({ leftView: null })
     else set({ leftView: view, sidebarOpen: true })
   },
   openView(view) {
+    if (isPlace(view)) return get().navigate({ name: view })
     if (get().viewSides[view] === 'right') set({ rightPanel: view })
     else set({ leftView: view, sidebarOpen: true })
   },

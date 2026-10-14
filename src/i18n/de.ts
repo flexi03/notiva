@@ -18,6 +18,8 @@ export const de = {
   'nav.search': 'Suchen',
   'nav.newPage': 'Neue Seite',
   'nav.templates': 'Vorlagen',
+  'nav.back': 'Zurück',
+  'nav.forward': 'Vorwärts',
   'nav.trash': 'Papierkorb',
   'nav.settings': 'Einstellungen',
   'nav.today': 'Heute',

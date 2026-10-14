@@ -213,12 +213,10 @@ export function NotificationPanel() {
                         <Button
                           size="sm"
                           onClick={() =>
-                            useApp
-                              .getState()
-                              .navigate({
-                                name: 'moodle',
-                                course: (n.target as { courseId: string }).courseId,
-                              })
+                            useApp.getState().navigate({
+                              name: 'moodle',
+                              course: (n.target as { courseId: string }).courseId,
+                            })
                           }
                         >
                           {t('notify.open.moodle')}

@@ -1,5 +1,15 @@
 import { useRef, useState, type ReactNode } from 'react'
-import { Bell, ChevronRight, GitBranch, MoreHorizontal, PanelLeft, Sparkles, Star } from 'lucide-react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  Bell,
+  ChevronRight,
+  GitBranch,
+  MoreHorizontal,
+  PanelLeft,
+  Sparkles,
+  Star,
+} from 'lucide-react'
 import { gitAvailable, useGit } from '@/app/git'
 import { unreadCount, useNotifications } from '@/app/notifications'
 import { saveAllNow, useApp, useWorkspace } from '@/app/store'
@@ -29,6 +39,22 @@ export function Topbar({ title, actions }: { title?: string; actions?: ReactNode
         active={sidebarOpen}
       >
         <PanelLeft size={17} />
+      </IconButton>
+      <IconButton
+        label={t('nav.back')}
+        title={`${t('nav.back')} (⌘[)`}
+        onClick={() => history.back()}
+        className="max-sm:hidden"
+      >
+        <ArrowLeft size={16} />
+      </IconButton>
+      <IconButton
+        label={t('nav.forward')}
+        title={`${t('nav.forward')} (⌘])`}
+        onClick={() => history.forward()}
+        className="max-sm:hidden"
+      >
+        <ArrowRight size={16} />
       </IconButton>
       <ol className="flex min-w-0 flex-1 items-center gap-0.5 text-[14px] text-ink-2" aria-label="Breadcrumb">
         {crumbs.map((c, i) => (

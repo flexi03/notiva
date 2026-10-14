@@ -181,6 +181,8 @@ export interface NotivaBridge {
   openExternal(url: string): Promise<void>
   /** eCampus exam results (desktop). */
   ecampus?: EcampusBridge
+  /** Menu bar commands (see src/app/commands.ts). */
+  onMenu?(callback: (id: string) => void): () => void
   examPlan?: {
     fetch(url: string): Promise<{
       url: string

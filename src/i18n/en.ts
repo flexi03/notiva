@@ -18,6 +18,8 @@ export const en: Record<MessageKey, string> = {
   'nav.search': 'Search',
   'nav.newPage': 'New page',
   'nav.templates': 'Templates',
+  'nav.back': 'Back',
+  'nav.forward': 'Forward',
   'nav.trash': 'Trash',
   'nav.settings': 'Settings',
   'nav.today': 'Today',
