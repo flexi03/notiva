@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readFileSync, existsSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, existsSync, utimesSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { GitRepo } from './git'
@@ -74,6 +74,18 @@ describe('GitRepo', () => {
     expect(log.map((c) => c.subject)).toEqual(['Neue Seite', 'Start'])
     expect(await repo.commitFiles(log[0]!.hash)).toEqual([{ path: 'Neu.md', status: 'added' }])
     await expect(repo.commit('', ['Alt.md'])).rejects.toThrow(/Nachricht/)
+  })
+
+  it('waits for a locked index and removes a lock left over from a crash', async () => {
+    const { root, repo, top } = await setup()
+    writeFileSync(path.join(root, 'Neu.md'), 'neu\n')
+    const lock = path.join(top, '.git', 'index.lock')
+    writeFileSync(lock, '')
+    const old = new Date(Date.now() - 20 * 60_000)
+    utimesSync(lock, old, old)
+    await repo.commit('Trotz Sperre', ['Neu.md'])
+    expect(git(top, 'log', '--format=%s', '-n1').trim()).toBe('Trotz Sperre')
+    expect(existsSync(lock)).toBe(false)
   })
 
   it('treats paths literally (no globs) and refuses paths outside the vault', async () => {

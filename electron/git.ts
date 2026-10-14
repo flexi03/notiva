@@ -4,6 +4,8 @@
  * show changes, diffs and history and commit like in a code editor.
  */
 import { execFile } from 'node:child_process'
+import { promises as fs } from 'node:fs'
+import path from 'node:path'
 import type { FsVault } from './vaultFs'
 
 export type GitStatus = 'modified' | 'added' | 'deleted' | 'renamed' | 'untracked'
@@ -42,6 +44,11 @@ export class GitError extends Error {
     this.name = 'GitError'
   }
 }
+
+/** add/commit of many large files may take minutes. */
+const WRITE_TIMEOUT = 15 * 60_000
+/** Running write operation per repository (Notiva opens a new GitRepo per request). */
+const queues = new Map<string, Promise<unknown>>()
 
 function run(cwd: string, args: string[], options: { allowFail?: boolean; timeout?: number } = {}) {
   return new Promise<{ code: number; stdout: string; stderr: string }>((resolve, reject) => {
@@ -182,9 +189,41 @@ export class GitRepo {
     if (typeof message !== 'string' || !message.trim()) throw new GitError('Commit-Nachricht fehlt')
     if (message.length > 50_000) throw new GitError('Commit-Nachricht ist zu lang (max. 50.000 Zeichen)')
     const files = await this.checked(paths)
-    await run(this.vault.root, ['add', '-A', '--', ...files.map(spec)])
-    await run(this.vault.root, ['commit', '-m', message.trim(), '--', ...files.map(spec)])
-    return (await run(this.vault.root, ['rev-parse', 'HEAD'])).stdout.trim()
+    return this.writing(async () => {
+      // Many large files (e.g. lecture PDFs) take a while – never kill git halfway (stale lock).
+      await run(this.vault.root, ['add', '-A', '--', ...files.map(spec)], { timeout: WRITE_TIMEOUT })
+      await run(this.vault.root, ['commit', '-m', message.trim(), '--', ...files.map(spec)], {
+        timeout: WRITE_TIMEOUT,
+      })
+      return (await run(this.vault.root, ['rev-parse', 'HEAD'])).stdout.trim()
+    })
+  }
+
+  /**
+   * Write operations one after another; if the index is locked, wait a little – and remove a lock
+   * that is clearly left over (older than 10 minutes, e.g. after a crash).
+   */
+  private writing<T>(work: () => Promise<T>): Promise<T> {
+    const root = this.vault.root
+    const next = (queues.get(root) ?? Promise.resolve()).then(async () => {
+      for (let attempt = 0; ; attempt++) {
+        try {
+          return await work()
+        } catch (error) {
+          if (!(error instanceof GitError) || !/index\.lock/.test(error.message) || attempt >= 4) throw error
+          const gitDir = (await run(root, ['rev-parse', '--absolute-git-dir'])).stdout.trim()
+          const lock = path.join(gitDir, 'index.lock')
+          const stat = await fs.stat(lock).catch(() => null)
+          if (stat && Date.now() - stat.mtimeMs > 10 * 60_000) await fs.rm(lock, { force: true })
+          await new Promise((r) => setTimeout(r, 1500))
+        }
+      }
+    })
+    queues.set(
+      root,
+      next.catch(() => undefined),
+    )
+    return next
   }
 
   /** Throws away local changes: tracked files go back to HEAD, new files are deleted. */

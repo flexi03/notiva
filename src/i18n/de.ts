@@ -805,6 +805,8 @@ export const de = {
   'git.autoMessage': 'Vorschlag',
   'git.autoMessageHint': 'Automatische Nachricht mit allen Änderungen wiederherstellen',
   'git.commit': 'Commit ({count})',
+  'git.committing': 'Commit mit {count} Dateien wird erstellt …',
+  'git.commitFailed': 'Commit nicht erstellt – Fehler steht im Git-Bereich',
   'git.committed': 'Gesichert als {hash}',
   'git.changes': 'Änderungen',
   'git.noChanges': 'Keine Änderungen seit dem letzten Commit.',

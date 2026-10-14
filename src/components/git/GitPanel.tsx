@@ -1,3 +1,4 @@
+import { withProgress } from '@/app/progress'
 import { useEffect, useMemo, useState } from 'react'
 import {
   ArrowDownToLine,
@@ -92,16 +93,19 @@ export function GitPanel() {
   const message = custom ?? auto
 
   const commit = async () => {
-    const hash = await act((git) =>
-      git.commit(
-        message,
-        selected.map((c) => c.path),
-      ),
+    // Hundreds of files (lecture PDFs) take a while: visible progress bottom left.
+    const hash = await withProgress(
+      t('git.committing', { count: selected.length }),
+      () =>
+        act((git) =>
+          git.commit(
+            message,
+            selected.map((c) => c.path),
+          ),
+        ),
+      { success: (h) => (h ? t('git.committed', { hash: h.slice(0, 7) }) : t('git.commitFailed')) },
     )
-    if (hash) {
-      setCustom(null)
-      showToast(t('git.committed', { hash: hash.slice(0, 7) }))
-    }
+    if (hash) setCustom(null)
   }
 
   const header = state?.isRepo && (

@@ -799,6 +799,8 @@ export const en: Record<MessageKey, string> = {
   'git.autoMessage': 'Suggestion',
   'git.autoMessageHint': 'Restore the automatic message listing all changes',
   'git.commit': 'Commit ({count})',
+  'git.committing': 'Committing {count} files …',
+  'git.commitFailed': 'Commit not created – see the Git panel',
   'git.committed': 'Saved as {hash}',
   'git.changes': 'Changes',
   'git.noChanges': 'No changes since the last commit.',
