@@ -51,6 +51,11 @@ hljs.registerAliases(['tex'], { languageName: 'latex' })
 export interface RenderEnv {
   /** Maps a wiki link target to a vault path, or null if the page does not exist. */
   resolveLink?: (target: string) => string | null
+  /**
+   * Content from outside the vault (AI answers): nothing may load from the network by itself –
+   * a remote image URL could carry data out ("markdown image exfiltration").
+   */
+  untrusted?: boolean
 }
 
 export const CALLOUT_TYPES = [
@@ -328,10 +333,19 @@ const md = createParser()
 /* ---------- sanitizing ---------- */
 
 let hooksInstalled = false
+/** Set while sanitizing untrusted HTML (sanitize is synchronous, so a flag is safe). */
+let blockRemote = false
+const REMOTE = /^\s*(https?:|\/\/)/i
 function installHooks(): void {
   if (hooksInstalled) return
   hooksInstalled = true
   DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+    if (blockRemote && ['IMG', 'VIDEO', 'AUDIO', 'SOURCE', 'TRACK'].includes(node.tagName)) {
+      if (REMOTE.test(node.getAttribute('src') ?? '') || REMOTE.test(node.getAttribute('poster') ?? '')) {
+        node.remove()
+        return
+      }
+    }
     if (node.tagName === 'A') {
       const href = node.getAttribute('href') ?? ''
       if (/^https?:|^mailto:/i.test(href)) {
@@ -364,14 +378,21 @@ const SANITIZE_CONFIG = {
   ALLOW_UNKNOWN_PROTOCOLS: false,
 }
 
-export function sanitizeHtml(html: string): string {
+const UNTRUSTED_CONFIG = { ...SANITIZE_CONFIG, FORBID_ATTR: [...SANITIZE_CONFIG.FORBID_ATTR, 'style'] }
+
+export function sanitizeHtml(html: string, untrusted = false): string {
   installHooks()
-  return DOMPurify.sanitize(html, SANITIZE_CONFIG) as unknown as string
+  blockRemote = untrusted
+  try {
+    return DOMPurify.sanitize(html, untrusted ? UNTRUSTED_CONFIG : SANITIZE_CONFIG) as unknown as string
+  } finally {
+    blockRemote = false
+  }
 }
 
 /** Renders Markdown to sanitized HTML. Safe to inject with dangerouslySetInnerHTML. */
 export function renderMarkdown(markdown: string, env: RenderEnv = {}): string {
-  return sanitizeHtml(md.render(markdown, { ...env }))
+  return sanitizeHtml(md.render(markdown, { ...env }), env.untrusted === true)
 }
 
 export function renderInlineMarkdown(markdown: string, env: RenderEnv = {}): string {

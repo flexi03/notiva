@@ -8,6 +8,8 @@ import { ToastHost } from './Toast'
 import { PromptHost } from './PromptHost'
 import { PeekHost } from './PeekHost'
 import { ScrollRootContext } from './scrollRoot'
+import { useAssistant } from '@/app/assistant'
+import { AssistantPanel } from '@/components/ai/AssistantPanel'
 
 /** Sidebar (drawer on small screens) + main area + global overlays and shortcuts. */
 export function AppShell({ children, overlays }: { children: ReactNode; overlays?: ReactNode }) {
@@ -28,6 +30,10 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
       } else if (mod && e.key === '\\') {
         e.preventDefault()
         setSidebar(!useApp.getState().sidebarOpen)
+      } else if (mod && e.key.toLowerCase() === 'j') {
+        e.preventDefault()
+        const assistant = useAssistant.getState()
+        assistant.setOpen(!assistant.open)
       } else if (mod && e.shiftKey && e.key.toLowerCase() === 'd') {
         e.preventDefault()
         void actions.openToday()
@@ -60,6 +66,7 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
       <main ref={mainRef} className="min-w-0 flex-1 overflow-y-auto" id="main" data-route={routeHash(route)}>
         <ScrollRootContext value={mainRef}>{children}</ScrollRootContext>
       </main>
+      <AssistantPanel />
       {overlays}
       <PeekHost />
       <PromptHost />

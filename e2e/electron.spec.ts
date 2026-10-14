@@ -1,5 +1,7 @@
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test'
-import { mkdtempSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { spawn } from 'node:child_process'
+import { createServer, type Server } from 'node:http'
+import { mkdtempSync, existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -35,7 +37,16 @@ test('Renderer ist abgeschottet (kein Node, nur die Notiva-Brücke)', async () =
   expect(env).toEqual({
     require: 'undefined',
     process: 'undefined',
-    bridge: ['lastFolder', 'onVaultChange', 'openExternal', 'pickFolder', 'platform', 'vault'],
+    bridge: [
+      'aiRequest',
+      'lastFolder',
+      'mcpInfo',
+      'onVaultChange',
+      'openExternal',
+      'pickFolder',
+      'platform',
+      'vault',
+    ],
     origin: 'app://notiva',
   })
 })
@@ -88,4 +99,88 @@ test('Navigation weg von der App und neue Fenster sind gesperrt', async () => {
   expect(window.url()).toMatch(/^app:\/\/notiva\//)
   expect(app.windows()).toHaveLength(1)
   expect(readFileSync(path.join(folder, 'Vorhanden.md'), 'utf8')).toContain('Schon da')
+})
+
+test('KI-Anfragen laufen nur über den Hauptprozess (Renderer hat kein Netz)', async () => {
+  const server: Server = createServer((req, res) => {
+    let body = ''
+    req.on('data', (c: Buffer) => (body += c.toString()))
+    req.on('end', () => {
+      res.setHeader('content-type', 'application/json')
+      res.end(JSON.stringify({ echo: JSON.parse(body || '{}'), auth: req.headers.authorization ?? null }))
+    })
+  })
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+  const url = `http://127.0.0.1:${(server.address() as { port: number }).port}/v1/chat/completions`
+  try {
+    const result = await window.evaluate(async (target) => {
+      const bridge = (
+        window as unknown as {
+          notiva: {
+            aiRequest(r: object): Promise<{ status: number; body: string }>
+          }
+        }
+      ).notiva
+      const direct = await fetch(target, { method: 'POST' }).then(
+        () => 'erreicht',
+        () => 'blockiert',
+      )
+      const viaMain = await bridge.aiRequest({
+        url: target,
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: 'Bearer k' },
+        body: '{"hallo":1}',
+      })
+      const fileUrl = await bridge.aiRequest({ url: 'file:///etc/passwd', method: 'GET', headers: {} }).then(
+        () => 'ok',
+        (e: Error) => e.message,
+      )
+      return { direct, viaMain, fileUrl }
+    }, url)
+    expect(result.direct).toBe('blockiert')
+    expect(result.viaMain.status).toBe(200)
+    expect(JSON.parse(result.viaMain.body)).toEqual({ echo: { hallo: 1 }, auth: 'Bearer k' })
+    expect(result.fileUrl).toMatch(/Only http/)
+  } finally {
+    server.close()
+  }
+})
+
+test('startet den MCP-Server für den offenen Ordner mit der App selbst', async () => {
+  const info = await window.evaluate(() =>
+    (
+      window as unknown as {
+        notiva: { mcpInfo(): Promise<{ command: string; args: string[]; env: Record<string, string> }> }
+      }
+    ).notiva.mcpInfo(),
+  )
+  expect(info.args[1]).toBe(realpathSync(folder))
+  expect(info.env).toEqual({ ELECTRON_RUN_AS_NODE: '1' })
+  // Speak MCP with the exact command line AI apps would use.
+  const child = spawn(info.command, info.args, { env: { ...process.env, ...info.env } })
+  const lines: string[] = []
+  child.stdout.on('data', (chunk: Buffer) => lines.push(...chunk.toString().split('\n').filter(Boolean)))
+  const send = (msg: object) => child.stdin.write(`${JSON.stringify(msg)}\n`)
+  send({
+    jsonrpc: '2.0',
+    id: 1,
+    method: 'initialize',
+    params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'e2e', version: '1' } },
+  })
+  send({ jsonrpc: '2.0', method: 'notifications/initialized' })
+  send({
+    jsonrpc: '2.0',
+    id: 2,
+    method: 'tools/call',
+    params: { name: 'search_pages', arguments: { query: 'Schon da' } },
+  })
+  try {
+    await expect.poll(() => lines.some((l) => l.includes('"id":2')), { timeout: 15_000 }).toBe(true)
+    const reply = JSON.parse(lines.find((l) => l.includes('"id":2'))!) as {
+      result: { content: Array<{ text: string }> }
+    }
+    expect(reply.result.content[0]!.text).toContain('Vorhanden.md')
+  } finally {
+    child.kill()
+  }
 })

@@ -1,5 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react'
-import { ChevronRight, MoreHorizontal, PanelLeft, Star } from 'lucide-react'
+import { ChevronRight, MoreHorizontal, PanelLeft, Sparkles, Star } from 'lucide-react'
+import { useAssistant } from '@/app/assistant'
 import { useApp, useWorkspace } from '@/app/store'
 import { usePageActions } from '@/app/hooks/usePageActions'
 import { t } from '@/i18n'
@@ -48,6 +49,7 @@ export function Topbar({ title, actions }: { title?: string; actions?: ReactNode
         <li className="min-w-0 truncate px-1.5 font-semibold text-ink">{page?.title ?? title}</li>
       </ol>
       {actions}
+      <AssistantToggle />
       {page && (
         <>
           <IconButton
@@ -74,5 +76,14 @@ export function Topbar({ title, actions }: { title?: string; actions?: ReactNode
         </>
       )}
     </header>
+  )
+}
+
+function AssistantToggle() {
+  const { open, setOpen } = useAssistant()
+  return (
+    <IconButton label={t('ai.toggle')} onClick={() => setOpen(!open)} active={open}>
+      <Sparkles size={16} />
+    </IconButton>
   )
 }

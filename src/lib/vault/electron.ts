@@ -1,5 +1,11 @@
 import type { VaultAdapter, VaultFile } from './types'
 
+export interface McpLaunch {
+  command: string
+  args: string[]
+  env: Record<string, string>
+}
+
 /** API exposed by electron/preload.ts via contextBridge. Paths are validated again in the main process. */
 export interface NotivaBridge {
   platform: string
@@ -15,6 +21,15 @@ export interface NotivaBridge {
     rename(from: string, to: string): Promise<void>
   }
   openExternal(url: string): Promise<void>
+  /** Command line for AI apps to start the MCP server on the open folder. */
+  mcpInfo?(): Promise<McpLaunch>
+  /** HTTP for the AI assistant (the renderer itself has no network access). */
+  aiRequest?(request: {
+    url: string
+    method: string
+    headers: Record<string, string>
+    body?: string
+  }): Promise<{ status: number; body: string }>
   /** Subscribes to file changes in the vault (other apps, sync). Returns an unsubscribe function. */
   onVaultChange(callback: () => void): () => void
 }

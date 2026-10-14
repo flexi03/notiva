@@ -16,6 +16,7 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run build
+      - run: npm run mcp:build
 
   e2e:
     runs-on: macos-latest

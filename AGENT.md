@@ -21,6 +21,8 @@ Alle Daten sind Markdown-Dateien in einem Ordner („Vault“). Kein Server, kei
   Neue Rechen-, Format- oder Datenlogik gehört hierhin.
 - `src/components/ui/` – **das Design-System**. Seiten bauen nur daraus; keine Einzel-Stile für Buttons,
   Felder, Menüs, Dialoge. Regeln: [docs/DESIGN.md](docs/DESIGN.md).
+- KI-Werkzeuge nur in `src/lib/ai/tools.ts` definieren – Assistent und MCP-Server bekommen sie automatisch.
+  Neue Werkzeuge: Schema, `readOnly`/`destructive` setzen, Tests in `ai-tools.test.ts`.
 - Gleiche Aufgabe → gleiche Komponente: `PropertyCell` (alle Eigenschaften überall), `pageMenuItems`
   (Seitenmenü in Leiste und Kopf), `useDatabase` (alle Ansichten), `usePageActions` (Seitenaktionen),
   `useApp().ask` (Eingabe-/Bestätigungsdialog – nie `window.prompt/confirm`).
@@ -29,15 +31,19 @@ Alle Daten sind Markdown-Dateien in einem Ordner („Vault“). Kein Server, kei
 ## Aufbau
 
 ```
-src/lib/            path, frontmatter, links, blocks, markdown, editing, formula, database, dates,
-                    templates, widgets, settings, route, workspace, vault/ (Adapter), packs/ (Vorlagen)
+src/lib/            path, frontmatter, links, blocks, markdown, plainText, editing, formula, database, dates,
+                    templates, widgets, settings, route, minimap, workspace, vault/ (Adapter), packs/ (Vorlagen),
+                    ai/ (Werkzeuge, Agent, Anbieter – gemeinsam für Assistent und MCP)
 src/i18n/           de.ts (Quelle), en.ts, t()
-src/app/            store.ts (zustand: Workspace, Route, Einstellungen, Dialoge), vaults.ts (Speicher öffnen),
-                    hooks/ (useTheme, usePageActions)
+src/app/            store.ts (zustand: Workspace, Route, Einstellungen, Dialoge, Vorschau), vaults.ts (Speicher öffnen),
+                    assistant.ts (KI-Chat, Einstellungen auf dem Gerät), hooks/ (useTheme, usePageActions)
 src/components/     ui/ (Design-System), layout/ (Shell, Seitenleiste, Topbar), editor/ (Block-Editor,
-                    Seitenansicht), database/ (Ansichten, Zellen, Schema), widgets/ (Kacheln, Einbettungen)
+                    Seitenansicht, Minimap), database/ (Ansichten, Zellen, Schema), widgets/ (Kacheln, Einbettungen),
+                    ai/ (Assistent)
 src/screens/        Start, Tag, Suche, Neue Seite, Vorlagen, Papierkorb, Einstellungen, Willkommen
-electron/           main.ts (sicherer Hauptprozess), preload.ts (Brücke), vaultFs.ts (Dateizugriff + Tests)
+electron/           main.ts (sicherer Hauptprozess), preload.ts (Brücke), vaultFs.ts (Dateizugriff, auch für MCP),
+                    aiRequest.ts (geprüfte KI-Anfragen)
+mcp/                MCP-Server (server.ts + Tests, main.ts = CLI) → npm run mcp:build
 e2e/                Playwright: Abläufe, Layout, Barrierefreiheit, Sicherheit, Electron
 ```
 
@@ -49,6 +55,8 @@ e2e/                Playwright: Abläufe, Layout, Barrierefreiheit, Sicherheit, 
 | `npm run test:e2e`                       | Playwright: Desktop/Tablet (Chromium), iPhone (WebKit), Electron                                |
 | `npx playwright test --update-snapshots` | Screenshot-Referenzen nach gewollten Design-Änderungen erneuern                                 |
 
+Lokal nutzt Playwright einen schon laufenden Preview-Server weiter: nach Änderungen vorher
+`npm run build && npm run electron:build && npm run mcp:build` ausführen.
 E2E-Tests frieren die Uhr auf den 14.10.2026 ein (`e2e/helpers.ts`), damit Kacheln und Screenshots stabil sind.
 In der Demo liegt alles im Speicher: in Tests mit `go(page, '#/…')` navigieren, nicht mit `page.goto`.
 

@@ -1,0 +1,294 @@
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import {
+  ArrowUp,
+  Check,
+  Database,
+  FilePlus2,
+  FileText,
+  FolderInput,
+  Link2,
+  ListTree,
+  Pencil,
+  Search,
+  Settings2,
+  Sparkles,
+  Square,
+  SquarePen,
+  Tags,
+  Trash2,
+  X,
+} from 'lucide-react'
+import { useAssistant } from '@/app/assistant'
+import { useApp, useWorkspace } from '@/app/store'
+import { t } from '@/i18n'
+import type { Message, Part } from '@/lib/ai'
+import { AutoTextArea, Button, cx, IconButton } from '@/components/ui'
+import { MarkdownView } from '@/components/editor/MarkdownView'
+import { PageIcon } from '@/components/layout/PageIcon'
+
+const TOOL_ICONS: Record<string, ReactNode> = {
+  search_pages: <Search size={13} />,
+  list_pages: <ListTree size={13} />,
+  read_page: <FileText size={13} />,
+  list_databases: <Database size={13} />,
+  query_database: <Database size={13} />,
+  get_backlinks: <Link2 size={13} />,
+  list_tags: <Tags size={13} />,
+  create_page: <FilePlus2 size={13} />,
+  create_row: <FilePlus2 size={13} />,
+  set_properties: <Pencil size={13} />,
+  append_to_page: <Pencil size={13} />,
+  edit_page_text: <Pencil size={13} />,
+  replace_page_body: <Pencil size={13} />,
+  rename_page: <Pencil size={13} />,
+  move_page: <FolderInput size={13} />,
+  trash_page: <Trash2 size={13} />,
+}
+
+/** "Liest Studium/Module.md" – what the call is about, from its most telling argument. */
+function stepTarget(input: unknown): string {
+  if (typeof input !== 'object' || input === null) return ''
+  const r = input as Record<string, unknown>
+  const value = r.page ?? r.database ?? r.query ?? r.title ?? r.folder
+  return typeof value === 'string' ? value : ''
+}
+
+/** The AI chat docked at the right edge (overlay on small screens). */
+export function AssistantPanel() {
+  const { open, setOpen, configured, settings, messages, busy, error, send, stop, reset } = useAssistant()
+  const route = useApp((s) => s.route)
+  const navigate = useApp((s) => s.navigate)
+  const ws = useWorkspace()
+  const [draft, setDraft] = useState('')
+  const scroller = useRef<HTMLDivElement>(null)
+  const input = useRef<HTMLTextAreaElement>(null)
+  const page = route.name === 'page' ? ws.get(route.path) : undefined
+
+  useEffect(() => {
+    if (open) input.current?.focus()
+  }, [open])
+  useEffect(() => {
+    scroller.current?.scrollTo({ top: scroller.current.scrollHeight })
+  }, [messages, busy])
+  // On phones the panel covers the page: following a link should show the page.
+  useEffect(() => {
+    if (window.innerWidth < 900) setOpen(false)
+  }, [route, setOpen])
+
+  const results = useMemo(() => {
+    const map = new Map<string, Extract<Part, { type: 'tool_result' }>>()
+    for (const m of messages) for (const p of m.parts) if (p.type === 'tool_result') map.set(p.id, p)
+    return map
+  }, [messages])
+
+  if (!open) return null
+
+  const submit = (text = draft) => {
+    if (!text.trim() || busy) return
+    setDraft('')
+    void send(text)
+  }
+  const suggestions = [
+    ...(page ? [t('ai.suggest.summarize'), t('ai.suggest.tasks'), t('ai.suggest.quiz')] : []),
+    t('ai.suggest.week'),
+    t('ai.suggest.find'),
+  ]
+
+  return (
+    <aside
+      aria-label={t('ai.title')}
+      className="no-print flex h-full w-full flex-col border-l border-line bg-surface max-[899px]:fixed max-[899px]:inset-0 max-[899px]:z-30 min-[900px]:w-[24rem] min-[900px]:shrink-0"
+    >
+      <header data-titlebar className="flex h-12 shrink-0 items-center gap-1 border-b border-line px-2">
+        <Sparkles size={16} className="ml-1.5 text-accent" aria-hidden />
+        <h2 className="min-w-0 flex-1 truncate px-1 text-[14px] font-semibold">
+          {t('ai.title')}
+          {configured && (
+            <span className="ml-2 text-[12.5px] font-normal text-ink-3">
+              {settings.model}
+              {!settings.allowWrites && ` · ${t('ai.readOnly')}`}
+            </span>
+          )}
+        </h2>
+        <IconButton label={t('nav.settings')} onClick={() => navigate({ name: 'settings' })}>
+          <Settings2 size={16} />
+        </IconButton>
+        <IconButton label={t('ai.newChat')} onClick={reset} disabled={messages.length === 0 && !error}>
+          <SquarePen size={16} />
+        </IconButton>
+        <IconButton label={t('common.close')} onClick={() => setOpen(false)}>
+          <X size={17} />
+        </IconButton>
+      </header>
+
+      <div ref={scroller} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4" aria-live="polite">
+        {!configured ? (
+          <div className="space-y-3 rounded-panel border border-line bg-paper p-4">
+            <h3 className="font-bold">{t('ai.setup.title')}</h3>
+            <p className="text-sm text-ink-2">{t('ai.setup.text')}</p>
+            <Button variant="primary" onClick={() => navigate({ name: 'settings' })}>
+              {t('ai.setup.open')}
+            </Button>
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="space-y-3">
+            <p className="text-sm text-ink-2">{t('ai.intro')}</p>
+            <ul className="space-y-1.5">
+              {suggestions.map((s) => (
+                <li key={s}>
+                  <button
+                    type="button"
+                    onClick={() => submit(s)}
+                    className="w-full rounded-control border border-line px-3 py-2 text-left text-[14px] hover:border-line-strong hover:bg-hover"
+                  >
+                    {s}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          messages.map((m, i) => <ChatMessage key={i} message={m} results={results} from={page?.path} />)
+        )}
+        {busy && (
+          <p className="flex items-center gap-2 text-[13px] text-ink-3" role="status">
+            <span className="size-2 animate-pulse rounded-full bg-accent" aria-hidden />
+            {t('ai.thinking')}
+          </p>
+        )}
+        {error && (
+          <p
+            role="alert"
+            className="rounded-control bg-[var(--opt-red)] px-3 py-2 text-[13.5px] text-[var(--opt-red-ink)]"
+          >
+            {error}
+          </p>
+        )}
+      </div>
+
+      {configured && (
+        <form
+          className="shrink-0 border-t border-line p-2"
+          onSubmit={(e) => {
+            e.preventDefault()
+            submit()
+          }}
+        >
+          <div className="flex items-end gap-1.5 rounded-panel border border-line bg-paper px-2.5 py-1.5 focus-within:border-accent">
+            <AutoTextArea
+              ref={input}
+              plain
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                  e.preventDefault()
+                  submit()
+                }
+              }}
+              placeholder={t('ai.placeholder')}
+              aria-label={t('ai.placeholder')}
+              className="max-h-40 min-h-7 overflow-y-auto py-1 text-[14.5px] focus-visible:outline-none"
+            />
+            {busy ? (
+              <IconButton label={t('ai.stop')} onClick={stop}>
+                <Square size={14} className="fill-current" />
+              </IconButton>
+            ) : (
+              <IconButton label={t('ai.send')} type="submit" disabled={!draft.trim()}>
+                <ArrowUp size={16} />
+              </IconButton>
+            )}
+          </div>
+        </form>
+      )}
+    </aside>
+  )
+}
+
+function ChatMessage({
+  message,
+  results,
+  from,
+}: {
+  message: Message
+  results: Map<string, Extract<Part, { type: 'tool_result' }>>
+  from: string | undefined
+}) {
+  if (message.role === 'user') {
+    const text = message.parts
+      .filter((p): p is Extract<Part, { type: 'text' }> => p.type === 'text')
+      .map((p) => p.text)
+      .join('\n')
+    if (!text) return null // tool results are shown with their call
+    return <p className="ml-8 rounded-panel bg-sunken px-3 py-2 text-[14.5px] whitespace-pre-wrap">{text}</p>
+  }
+  return (
+    <div className="space-y-2">
+      {message.parts.map((part, i) =>
+        part.type === 'text' ? (
+          <MarkdownView
+            key={i}
+            markdown={part.text}
+            untrusted
+            className="flow text-[14.5px]"
+            {...(from ? { from } : {})}
+          />
+        ) : part.type === 'tool_call' ? (
+          <ToolStep key={i} call={part} result={results.get(part.id)} />
+        ) : null,
+      )}
+    </div>
+  )
+}
+
+function ToolStep({
+  call,
+  result,
+}: {
+  call: Extract<Part, { type: 'tool_call' }>
+  result: Extract<Part, { type: 'tool_result' }> | undefined
+}) {
+  const ws = useWorkspace()
+  const openEntry = useApp((s) => s.openEntry)
+  const label = t(`ai.tool.${call.name}` as 'ai.tool.read_page')
+  const target = stepTarget(call.input)
+  return (
+    <div className="text-[13px] text-ink-2">
+      <p className="flex items-center gap-1.5">
+        <span className="text-ink-3" aria-hidden>
+          {TOOL_ICONS[call.name] ?? <Sparkles size={13} />}
+        </span>
+        <span className="min-w-0 truncate">
+          {label}
+          {target && <span className="text-ink"> {target}</span>}
+        </span>
+        {result &&
+          (result.isError ? (
+            <span className="shrink-0 text-danger" title={result.output}>
+              · {t('ai.toolFailed')}
+            </span>
+          ) : (
+            <Check size={13} className="shrink-0 text-accent" aria-label="✓" />
+          ))}
+      </p>
+      {result?.touched?.map((path) => {
+        const page = ws.get(path)
+        return (
+          <button
+            key={path}
+            type="button"
+            onClick={(e) => openEntry(path, e)}
+            className={cx(
+              'mt-1 ml-5 flex max-w-full items-center gap-1.5 rounded-control border border-line px-2 py-1 text-ink hover:bg-hover',
+              !page && 'opacity-60',
+            )}
+          >
+            {page && <PageIcon page={page} size={13} />}
+            <span className="truncate">{page?.title ?? path}</span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}

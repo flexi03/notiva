@@ -163,7 +163,7 @@ function TileBody({ result }: { result: TileResult }) {
         </ul>
       )
     case 'text':
-      return <MarkdownView markdown={result.text} className="text-[14px]" />
+      return <MarkdownView markdown={result.text} className="flow text-[14px]" />
     default:
       return null
   }

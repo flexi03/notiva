@@ -10,6 +10,8 @@ interface MarkdownViewProps {
   from?: string
   className?: string
   onToggleTask?: (index: number) => void
+  /** Content not from the vault (AI answers): remote media is not loaded. */
+  untrusted?: boolean
 }
 
 const objectUrls = new Map<string, string>()
@@ -20,15 +22,20 @@ export const MarkdownView = memo(function MarkdownView({
   from,
   className,
   onToggleTask,
+  untrusted,
 }: MarkdownViewProps) {
   const ws = useWorkspace()
   const { openPage, navigate } = useApp()
   const ref = useRef<HTMLDivElement>(null)
   const html = useMemo(
-    () => renderMarkdown(markdown, { resolveLink: (target) => ws.resolveLink(target, from) }),
+    () =>
+      renderMarkdown(markdown, {
+        resolveLink: (target) => ws.resolveLink(target, from),
+        ...(untrusted ? { untrusted } : {}),
+      }),
     // ws.version: re-render when pages appear/disappear (missing links)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [markdown, from, ws, ws.version],
+    [markdown, from, ws, ws.version, untrusted],
   )
 
   // Vault images (relative paths) are loaded through the vault and shown as blob URLs.

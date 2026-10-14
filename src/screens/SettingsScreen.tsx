@@ -1,31 +1,11 @@
-import type { ReactNode } from 'react'
 import { useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import { ACCENTS, MARKERS, type AccentId, type MarkerId, type Settings } from '@/lib/settings'
 import { Button, cx, Field, Segmented, Switch, TextInput } from '@/components/ui'
 import { Topbar } from '@/components/layout/Topbar'
 import { exportVault } from './exportVault'
-
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="border-t border-line py-6">
-      <h2 className="mb-4 text-lg font-bold">{title}</h2>
-      <div className="space-y-5">{children}</div>
-    </section>
-  )
-}
-
-function Row({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <p className="font-semibold">{label}</p>
-        {hint && <p className="text-[13px] text-ink-3">{hint}</p>}
-      </div>
-      {children}
-    </div>
-  )
-}
+import { Row, Section } from './settingsLayout'
+import { AiSettingsSection, McpSection } from './AiSettings'
 
 function Swatches<T extends string>({
   value,
@@ -186,6 +166,14 @@ export function SettingsScreen() {
               className="max-w-xs"
             />
           </Field>
+        </Section>
+
+        <Section title={t('settings.ai')}>
+          <AiSettingsSection />
+        </Section>
+
+        <Section title={t('settings.mcp')}>
+          <McpSection />
         </Section>
 
         <Section title={t('settings.advanced')}>

@@ -30,12 +30,41 @@
 - **Plattformen:** gleiche Web-App überall; Electron lädt sie über `app://notiva/`. Hash-Routing funktioniert in
   allen Umgebungen gleich.
 
+## KI
+
+```
+  Assistent (src/components/ai, src/app/assistant.ts)        MCP-Client (Claude Desktop/Code …)
+           │ runAgent (src/lib/ai/agent.ts)                            │ stdio
+           │   ModelProvider: Anthropic | OpenAI-kompatibel            ▼
+           │   HttpClient: fetch (Browser) | ai:request (Electron)   mcp/server.ts
+           └──────────────┐                              ┌───────────┘
+                          ▼                              ▼
+               TOOLS + runTool (src/lib/ai/tools.ts) – Validierung, nur über Workspace
+```
+
+- **Ein Werkzeugkasten für beide Wege:** `TOOLS` beschreibt Werkzeuge mit JSON-Schema, `readOnly`- und
+  `destructive`-Markierung. Der MCP-Server und der Assistent nutzen dieselben Definitionen.
+- **Anbieterneutral:** `Message`/`Part` (Text, Werkzeugaufruf, Ergebnis) werden pro Anbieter übersetzt; HTTP wird
+  hineingereicht und ist dadurch in Tests ersetzbar.
+- **MCP-Server:** `mcp/main.ts` → `dist-mcp/notiva-mcp.mjs` (esbuild). Lädt den Workspace über `FsVault` und liest vor
+  jedem Aufruf geänderte Dateien neu ein. Die Desktop-App liefert ihn mit und startet ihn als Node-Prozess
+  (`ELECTRON_RUN_AS_NODE`).
+
+## Vorschau und Seitenrand
+
+- `openEntry` (Store) öffnet Inhalte (Karten, Zeilen, Kacheln, Relationen) im `Sheet`; `PageContent` ist die
+  gemeinsame Seitenansicht für Seite und Vorschau. Der scrollende Container kommt über `ScrollRootContext`.
+- `PageRail` misst Blöcke mit `data-rail`-Attribut; die Geometrie (Skalierung, sichtbarer Bereich, Fortschritt)
+  steckt in `src/lib/minimap.ts`.
+
 ## Entscheidungen
 
-| Entscheidung                                                | Grund                                                           |
-| ----------------------------------------------------------- | --------------------------------------------------------------- |
-| Markdown-Ordner statt Datenbank                             | Daten bleiben lesbar, portabel, mit beliebigem Sync nutzbar     |
-| Block-Editor über Markdown-Quelltext (statt WYSIWYG-Modell) | verlustfreie Rundreise, eigene Syntax (Kacheln) bleibt erhalten |
-| Datenbank = Seite + Ordner                                  | Einträge sind normale Seiten mit Inhalt, Links und Backlinks    |
-| Widgets als `notiva`-Codeblöcke                             | in anderen Editoren lesbar, kein proprietäres Format            |
-| Electron statt Tauri                                        | kein Rust nötig; Sicherheit über Sandbox + schmale Brücke       |
+| Entscheidung                                                | Grund                                                              |
+| ----------------------------------------------------------- | ------------------------------------------------------------------ |
+| Markdown-Ordner statt Datenbank                             | Daten bleiben lesbar, portabel, mit beliebigem Sync nutzbar        |
+| Block-Editor über Markdown-Quelltext (statt WYSIWYG-Modell) | verlustfreie Rundreise, eigene Syntax (Kacheln) bleibt erhalten    |
+| Datenbank = Seite + Ordner                                  | Einträge sind normale Seiten mit Inhalt, Links und Backlinks       |
+| Widgets als `notiva`-Codeblöcke                             | in anderen Editoren lesbar, kein proprietäres Format               |
+| Electron statt Tauri                                        | kein Rust nötig; Sicherheit über Sandbox + schmale Brücke          |
+| KI optional, anbieterneutral, lokal möglich                 | kostenlos mit Ollama/LM Studio; kein Zwang zu einem Dienst         |
+| Offizielles MCP-SDK (gebündelt)                             | Protokoll-Details/Versionen gepflegt; eine Datei ohne Installation |

@@ -4,12 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <!--
-      Security: everything is local. No remote scripts, styles, fonts or connections.
-      blob:/data: images are vault attachments and KaTeX/font assets.
+      Security: everything is local. No remote scripts, styles or fonts.
+      Connections only to local AI servers (Ollama, LM Studio) and the known AI APIs – used by the
+      assistant with the user's own settings. blob:/data: images are vault attachments and KaTeX/font assets.
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https:; font-src 'self' data:; connect-src 'self' http://localhost:* http://127.0.0.1:* https://api.anthropic.com https://openrouter.ai https://api.openai.com; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'"
     />
     <meta name="theme-color" content="#f5f6f8" />
     <meta name="description" content="Notiva – freie, lokale Notion-Alternative auf Markdown-Basis" />

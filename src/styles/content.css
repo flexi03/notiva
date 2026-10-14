@@ -92,6 +92,23 @@
 .md ol {
   padding-left: 1.5em;
 }
+/* Tailwind's reset removes list markers; Markdown lists need them back. */
+.md ul {
+  list-style: disc;
+}
+.md ul ul {
+  list-style: circle;
+}
+.md ol {
+  list-style: decimal;
+}
+.md li::marker {
+  color: var(--ink-3);
+}
+/* Several blocks in one view (chat answers, text tiles): space them like paragraphs. */
+.md.flow > * + * {
+  margin-top: 0.6em;
+}
 .md li + li {
   margin-top: 0.15em;
 }

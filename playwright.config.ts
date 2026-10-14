@@ -33,7 +33,8 @@ export default defineConfig({
     { name: 'electron', testMatch: /electron\.spec\.ts/, fullyParallel: false },
   ],
   webServer: {
-    command: 'npm run build && npm run electron:build && npx vite preview --port 4173 --strictPort',
+    command:
+      'npm run build && npm run electron:build && npm run mcp:build && npx vite preview --port 4173 --strictPort',
     url: 'http://localhost:4173',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

@@ -158,7 +158,15 @@ export function anthropicProvider(settings: AiSettings, http: HttpClient): Model
         model: settings.model,
         max_tokens: 4096,
         system,
-        tools: tools.map((t) => ({ name: t.name, description: t.description, input_schema: t.inputSchema })),
+        ...(tools.length
+          ? {
+              tools: tools.map((t) => ({
+                name: t.name,
+                description: t.description,
+                input_schema: t.inputSchema,
+              })),
+            }
+          : {}),
         messages: messages.map((m) => ({
           role: m.role,
           content: m.parts.map((p) => {
@@ -241,10 +249,15 @@ export function openAiProvider(settings: AiSettings, http: HttpClient): ModelPro
       const body = {
         model: settings.model,
         messages: toOpenAiMessages(system, messages),
-        tools: tools.map((t: ToolSpec) => ({
-          type: 'function',
-          function: { name: t.name, description: t.description, parameters: t.inputSchema },
-        })),
+        // Some servers reject an empty tool list.
+        ...(tools.length
+          ? {
+              tools: tools.map((t: ToolSpec) => ({
+                type: 'function',
+                function: { name: t.name, description: t.description, parameters: t.inputSchema },
+              })),
+            }
+          : {}),
         stream: false,
       }
       const data = parseJson(

@@ -5,6 +5,7 @@
  * - file access is limited to the folder the user picked (FsVault)
  * - no navigation away from the app, new windows only as http(s) links in the system browser
  * - all permission requests (camera, notifications, …) are denied
+ * - the renderer has no network access (CSP); AI requests go through `ai:request` (validated, http(s) only)
  */
 import {
   app,
@@ -21,6 +22,7 @@ import { watch, type FSWatcher, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { FsVault } from './vaultFs'
+import { parseAiRequest } from './aiRequest'
 
 const DIST = path.join(__dirname, '..', 'dist')
 const CONFIG = () => path.join(process.env.NOTIVA_E2E_USERDATA ?? app.getPath('userData'), 'config.json')
@@ -104,6 +106,28 @@ function registerIpc(): void {
   handle('vault:rename', async (from: unknown, to: unknown) =>
     requireVault().rename(from as string, to as string),
   )
+  handle('ai:request', async (raw: unknown) => {
+    const request = parseAiRequest(raw)
+    const response = await net.fetch(request.url, {
+      method: request.method,
+      headers: request.headers,
+      ...(request.body !== undefined ? { body: request.body } : {}),
+      signal: AbortSignal.timeout(180_000),
+    })
+    const body = await response.text()
+    return { status: response.status, body: body.slice(0, 8_000_000) }
+  })
+  // How AI apps start the MCP server for the open folder (Electron runs the script as Node).
+  handle('app:mcpInfo', async () => {
+    const script = app.isPackaged
+      ? path.join(process.resourcesPath, 'mcp', 'notiva-mcp.mjs')
+      : path.join(__dirname, '..', 'dist-mcp', 'notiva-mcp.mjs')
+    return {
+      command: process.execPath,
+      args: [script, requireVault().root],
+      env: { ELECTRON_RUN_AS_NODE: '1' },
+    }
+  })
   handle('app:openExternal', async (url: unknown) => {
     if (typeof url === 'string' && /^(https?:|mailto:)/i.test(url)) await shell.openExternal(url)
   })

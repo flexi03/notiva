@@ -41,12 +41,17 @@ Stand der Entwicklung, nach Meilensteinen. ✅ fertig · 🚧 in Arbeit · ⏳ g
 
 - ✅ Doku: README, AGENT.md, docs/ (Architektur, Dateiformat, Sicherheit, Design), GitHub-CI
 
-## M8 – Vorschau, Minimap, KI 🚧
+## M8 – Vorschau, Minimap, KI ✅
 
 - ✅ Vorschau (Peek): Karten, Tabellenzeilen, Kacheln und Relationen öffnen als Seitenfenster; ⌘/Strg-Klick oder
   Einstellung „Als ganze Seite“ öffnet ganz; Umbenennen/Löschen in der Vorschau wird nachgeführt
 - ✅ Seitenrand: Minimap mit Textmarker-Ansicht, Sprung zu Überschriften, Lese- und Aufgabenfortschritt
-- ⏳ KI-Werkzeuge (gemeinsam für MCP und App), MCP-Server, Assistent in der App
+- ✅ KI-Werkzeuge (`src/lib/ai`): 16 Werkzeuge mit Schema-Validierung, gemeinsam für MCP und App
+- ✅ MCP-Server (stdio, offizielles SDK), Nur-Lesen-Modus, in der Desktop-App mitgeliefert (startet ohne Node)
+- ✅ Assistent in der App: Ollama/LM Studio (kostenlos, lokal), OpenRouter, Anthropic, OpenAI-kompatibel;
+  Rückfrage vor Löschen, Nur-Lesen-Schalter, Antworten ohne Bilder aus dem Netz
+- ✅ Fehler gefunden und behoben: Aufzählungen ohne Punkte (Tailwind-Reset), Dateinamen aus Titeln wie `../x`
+  begannen mit Leerzeichen
 
 ## Ideen für später ⏳
 
@@ -54,4 +59,5 @@ Stand der Entwicklung, nach Meilensteinen. ✅ fertig · 🚧 in Arbeit · ⏳ g
 - Import aus Notion-Export (Markdown + CSV), Export als HTML/PDF-Paket
 - Graph-Ansicht der Links, Timeline-Ansicht, wiederkehrende Aufgaben
 - Mobile Native-Hüllen (Capacitor) für App-Store-Builds
+- KI: Antworten streamen, Chatverläufe speichern, Kontext „markierter Text“, Vorschläge direkt im Editor
 - Code-Splitting (KaTeX/highlight.js nachladen) für schnelleren ersten Start
