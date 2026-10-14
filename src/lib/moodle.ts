@@ -376,7 +376,24 @@ export function materialsOf(courseId: string, raw: unknown): MoodleMaterial[] {
         continue
       }
       if (modname !== 'resource' && modname !== 'folder') continue
+      // Web pages uploaded as files (trainers, animations: index.html + scripts) only work in
+      // Moodle – they are listed as a page to open, not saved.
+      const html = (f: Record<string, unknown>) =>
+        /^text\/html/i.test(text(f.mimetype)) || /\.html?$/i.test(plain(f.filename))
+      if (modname === 'resource' && contents.some(html) && activityUrl) {
+        out.push({
+          id: `page:${cmid}`,
+          courseId,
+          section: sectionName,
+          title,
+          kind: 'page',
+          url: activityUrl,
+          activityUrl,
+        })
+        continue
+      }
       for (const file of contents) {
+        if (html(file)) continue
         const filename = plain(file.filename)
         const fileurl = text(file.fileurl)
         if (text(file.type) !== 'file' || !filename || !/^https?:/i.test(fileurl)) continue

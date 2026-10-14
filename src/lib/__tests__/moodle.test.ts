@@ -296,3 +296,35 @@ describe('material categories', () => {
     expect(c('Klausurinfos', 'Allgemeines')).toBe('Sonstiges')
   })
 })
+
+describe('HTML resources', () => {
+  it('lists uploaded web pages as pages to open, not as files to save', () => {
+    const list = materialsOf('course:1', [
+      {
+        name: 'Praktikum',
+        modules: [
+          {
+            id: 9,
+            name: 'ER-Trainer',
+            modname: 'resource',
+            url: 'https://moodle.example.org/mod/resource/view.php?id=9',
+            contents: [
+              {
+                type: 'file',
+                filename: 'index.html',
+                mimetype: 'text/html',
+                fileurl: 'https://moodle.example.org/pluginfile.php/1/index.html',
+              },
+              {
+                type: 'file',
+                filename: 'app.js',
+                fileurl: 'https://moodle.example.org/pluginfile.php/1/app.js',
+              },
+            ],
+          },
+        ],
+      },
+    ])
+    expect(list).toEqual([expect.objectContaining({ id: 'page:9', kind: 'page', title: 'ER-Trainer' })])
+  })
+})
