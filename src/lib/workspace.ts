@@ -653,6 +653,16 @@ export class Workspace {
     return this.run(() => this.vault.write(`${META_DIR}/${name}`, `${JSON.stringify(value, null, 2)}\n`))
   }
 
+  /** Writes several new files at once (one reload). Fails without writing if any path exists. */
+  createFiles(files: Array<{ path: string; content: string }>): Promise<void> {
+    return this.run(async () => {
+      const taken = files.filter((f) => this.has(f.path)).map((f) => f.path)
+      if (taken.length) throw new Error(`Exists: ${taken.join(', ')}`)
+      for (const file of files) await this.vault.write(file.path, file.content)
+      await this.reload()
+    })
+  }
+
   writeFile(path: string, content: string | Uint8Array): Promise<void> {
     return this.run(async () => {
       await this.vault.write(path, content)

@@ -6,7 +6,7 @@ Stand der Entwicklung, nach Meilensteinen. ✅ fertig · 🚧 in Arbeit · ⏳ g
 
 - Vite + React 19 + TypeScript (strict), Tailwind 4, ESLint (kein `eval`), Prettier, Vitest
 
-## M2 – Kern-Logik (`src/lib`) 🚧
+## M2 – Kern-Logik (`src/lib`) ✅
 
 - ✅ `path` – sichere Vault-Pfade, Dateinamen für alle Plattformen
 - ✅ `frontmatter` – YAML sicher lesen/schreiben (core-Schema, Alias-Limit, kein Prototype Pollution)
@@ -18,7 +18,9 @@ Stand der Entwicklung, nach Meilensteinen. ✅ fertig · 🚧 in Arbeit · ⏳ g
 - ✅ `formula` – sichere Formeln ohne `eval` (Tests fanden und schlossen Lücke über geerbte Schlüssel wie `constructor`)
 - ✅ `database` – Schema, Relationen/Rollups, Filter, Sortierung, Gruppierung, Aggregation (u. a. gewichteter Schnitt)
 - ✅ `dates` – Datumshilfen
-- ⏳ `templates` – Vorlagen & Pakete
+- ✅ `templates` – Platzhalter (`{{date+7}}`, `{{title|yaml}}`), Seitenvorlagen, Pakete
+- ✅ `widgets` – `notiva`-Codeblöcke: Kacheln (Wert, Fortschritt, Countdown, Liste, Link, Text, Semesterwoche) und Ansichten
+- ✅ `packs` – Studien-Dashboard (5 verknüpfte Datenbanken, Beispieldaten, Vorlagen), Projekte, Tagebuch, Leseliste
 
 ## M3 – App-Oberfläche & Block-Editor ⏳
 
