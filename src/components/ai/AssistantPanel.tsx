@@ -315,7 +315,8 @@ function ToolStep({
 
 function modelLabel(settings: AiSettings): string {
   if (settings.backend === 'cli') {
-    const name = settings.cli === 'claude' ? 'Claude Code' : settings.cli === 'codex' ? 'Codex' : 'Gemini CLI'
+    const name =
+      settings.cli === 'claude' ? 'Claude Code' : settings.cli === 'codex' ? 'Codex' : 'Antigravity'
     return settings.cliModel ? `${name} · ${settings.cliModel}` : name
   }
   return settings.model

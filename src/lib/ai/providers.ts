@@ -22,7 +22,7 @@ export type ProviderKind = 'openai' | 'anthropic'
 
 /** Device-local AI settings – never stored in the vault, because they may contain an API key. */
 export type AiBackend = 'cli' | 'api'
-export type CliId = 'claude' | 'codex' | 'gemini'
+export type CliId = 'claude' | 'codex' | 'antigravity'
 
 export interface AiSettings {
   /** 'cli': an installed AI program (Claude Code …, desktop app); 'api': an HTTP model API. */
@@ -126,7 +126,7 @@ export function parseAiSettings(raw: unknown): AiSettings {
   const baseUrl = text(r.baseUrl)
   return {
     backend: r.backend === 'cli' ? 'cli' : 'api',
-    cli: r.cli === 'codex' || r.cli === 'gemini' ? r.cli : 'claude',
+    cli: r.cli === 'codex' || r.cli === 'antigravity' ? r.cli : r.cli === 'gemini' ? 'antigravity' : 'claude',
     cliModel:
       typeof r.cliModel === 'string' && /^[\w.:@/-]{0,100}$/.test(r.cliModel.trim())
         ? r.cliModel.trim()

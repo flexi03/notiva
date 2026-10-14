@@ -80,7 +80,7 @@ export function AiSettingsSection() {
           <>
             <fieldset className="space-y-1.5">
               <legend className="mb-1 font-semibold">{t('ai.cli.program')}</legend>
-              {(['claude', 'codex', 'gemini'] as const).map((id) => {
+              {(['claude', 'codex', 'antigravity'] as const).map((id) => {
                 const info = clis?.find((c) => c.id === id)
                 return (
                   <label
@@ -101,7 +101,7 @@ export function AiSettingsSection() {
                     />
                     <span className="min-w-0 flex-1">
                       <span className="block font-semibold">
-                        {id === 'claude' ? 'Claude Code' : id === 'codex' ? 'Codex CLI' : 'Gemini CLI'}
+                        {id === 'claude' ? 'Claude Code' : id === 'codex' ? 'Codex CLI' : 'Antigravity (agy)'}
                       </span>
                       <span className="block text-[12.5px] text-ink-3">
                         {info ? `${t('ai.cli.found')} · ${info.version || info.path}` : t('ai.cli.missing')}

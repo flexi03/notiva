@@ -37,7 +37,7 @@ export interface GitBridge {
   pull(): Promise<string>
 }
 
-export type CliId = 'claude' | 'codex' | 'gemini'
+export type CliId = 'claude' | 'codex' | 'antigravity'
 export interface CliInfo {
   id: CliId
   path: string
@@ -205,7 +205,7 @@ export interface NotivaBridge {
   }): Promise<{ status: number; body: string }>
   /** Opens a vault file with the system's default app (desktop). */
   openWithSystem?(path: string): Promise<void>
-  /** AI command line tools (Claude Code, Codex, Gemini) – desktop app only. */
+  /** AI command line tools (Claude Code, Codex, Antigravity) – desktop app only. */
   aiCli?: CliBridge
   /** Git for the open folder (desktop app only). */
   git?: GitBridge

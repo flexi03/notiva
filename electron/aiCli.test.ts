@@ -64,7 +64,8 @@ describe('other CLIs', () => {
       '-',
     ])
     expect(cliInput({ ...base, cli: 'codex' })).toContain('Du bist der Notiva-Assistent.')
-    expect(cliArgs({ ...base, cli: 'gemini', model: '' }, null)[1]).toContain('Was ist fällig?')
+    expect(cliArgs({ ...base, cli: 'antigravity', model: '' }, null).at(-1)).toContain('Was ist fällig?')
+    expect(cliArgs({ ...base, cli: 'antigravity', model: '', allowWrites: false }, null)).toContain('plan')
   })
 })
 

@@ -11,7 +11,7 @@ import { execFile } from 'node:child_process'
 import { TOOLS } from '../src/lib/ai/tools'
 import { which } from './shellPath'
 
-export type CliId = 'claude' | 'codex' | 'gemini'
+export type CliId = 'claude' | 'codex' | 'antigravity'
 
 export interface CliInfo {
   id: CliId
@@ -34,12 +34,14 @@ export interface McpLaunch {
   env: Record<string, string>
 }
 
-const CLIS: CliId[] = ['claude', 'codex', 'gemini']
+const CLIS: CliId[] = ['claude', 'codex', 'antigravity']
+/** Program name per CLI (Google Antigravity replaced the Gemini CLI: `agy`). */
+const COMMAND: Record<CliId, string> = { claude: 'claude', codex: 'codex', antigravity: 'agy' }
 
 export async function detectClis(): Promise<CliInfo[]> {
   const found: CliInfo[] = []
   for (const id of CLIS) {
-    const path = await which(id)
+    const path = await which(COMMAND[id])
     if (!path) continue
     const version = await new Promise<string>((resolve) =>
       execFile(path, ['--version'], { timeout: 8000 }, (_e, stdout) =>
@@ -108,10 +110,14 @@ export function cliArgs(request: CliRequest, mcp: McpLaunch | null): string[] {
         ...(request.model ? ['--model', request.model] : []),
         '-',
       ]
-    case 'gemini':
+    case 'antigravity':
+      // Print mode; plan mode (no edits) unless writing is allowed, terminal in a sandbox.
       return [
+        '--sandbox',
+        '--mode',
+        request.allowWrites ? 'accept-edits' : 'plan',
         ...(request.model ? ['--model', request.model] : []),
-        '-p',
+        '--print',
         `${request.system}\n\n---\n\n${request.prompt}`,
       ]
   }

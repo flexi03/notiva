@@ -50,7 +50,7 @@ Rechts in der Werkzeugleiste ✨ oder `⌘/Strg J` – beim ersten Öffnen schl�
 **Mit einem installierten KI-Programm (Desktop-App, empfohlen):** Ist **Claude Code** installiert, reicht ein Klick
 auf _Claude Code verwenden_. Notiva startet es mit deinem Login (z. B. Opus 5.5 über `opus`) und gibt ihm
 **nur die Notiva-Werkzeuge** – keine Shell, keine Dateien außerhalb des Ordners; Löschen ist dort nicht freigegeben.
-Gespräche werden fortgesetzt (`--resume`). Codex CLI und Gemini CLI werden ebenfalls erkannt (experimentell,
+Gespräche werden fortgesetzt (`--resume`). Codex CLI und Google Antigravity (`agy`) werden ebenfalls erkannt (experimentell,
 ohne Notiva-Werkzeuge).
 
 **Direkt über eine API:** Ollama/LM Studio (kostenlos, lokal), OpenRouter, Anthropic, OpenAI-kompatibel –
