@@ -378,16 +378,4 @@ export function renderInlineMarkdown(markdown: string, env: RenderEnv = {}): str
   return sanitizeHtml(md.renderInline(markdown, { ...env }))
 }
 
-/** Plain text for search snippets and previews. */
-export function toPlainText(markdown: string): string {
-  return markdown
-    .replace(/^```[\s\S]*?^```/gm, ' ')
-    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/g, (_m, t: string, l?: string) => l ?? t)
-    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/^\s*(#{1,6}|>|[-*+]\s\[[ xX]\]|[-*+]|\d+\.)\s*/gm, '')
-    .replace(/[*_~`$]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
+export { toPlainText } from './plainText'

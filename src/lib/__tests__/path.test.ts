@@ -66,6 +66,11 @@ describe('toFileName', () => {
     expect(toFileName('')).toBe('Unbenannt')
     expect(toFileName('CON')).toBe('CON_')
   })
+
+  it('never starts with a space or dot, even for path-like titles', () => {
+    expect(toFileName('../../evil')).toBe('evil')
+    expect(toFileName('. / .hidden')).toBe('hidden')
+  })
 })
 
 describe('uniquePath', () => {

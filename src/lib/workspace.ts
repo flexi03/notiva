@@ -22,7 +22,7 @@ import {
   type ResolvedRow,
   type Row,
 } from './database'
-import { toPlainText } from './markdown'
+import { toPlainText } from './plainText'
 import { guardVault, type VaultAdapter, type VaultFile } from './vault'
 
 export const META_DIR = '.notiva'

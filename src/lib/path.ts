@@ -71,8 +71,8 @@ export function toFileName(title: string): string {
     // eslint-disable-next-line no-control-regex
     .replace(/[\u0000-\u001f<>:"/\\|?*#^[\]]/g, ' ')
     .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/^\.+/, '')
+    // Leading dots would hide the file, trailing dots/spaces break Windows; trim them together.
+    .replace(/^[. ]+/, '')
     .replace(/[. ]+$/, '')
     .slice(0, 120)
   if (cleaned === '' || RESERVED_NAMES.test(cleaned)) return cleaned === '' ? 'Unbenannt' : `${cleaned}_`

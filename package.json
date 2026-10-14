@@ -7,6 +7,9 @@
   "license": "MIT",
   "type": "module",
   "main": "dist-electron/main.cjs",
+  "bin": {
+    "notiva-mcp": "dist-mcp/notiva-mcp.mjs"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -19,6 +22,7 @@
     "test:e2e": "playwright test",
     "check": "npm run typecheck && npm run lint && npm test",
     "electron:build": "node scripts/build-electron.mjs",
+    "mcp:build": "node scripts/build-mcp.mjs",
     "electron": "npm run build && npm run electron:build && electron .",
     "dist:mac": "npm run build && npm run electron:build && electron-builder --mac",
     "dist:win": "npm run build && npm run electron:build && electron-builder --win",
@@ -43,6 +47,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^10.0.1",
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "@playwright/test": "^1.64.0",
     "@tailwindcss/vite": "^4.3.3",
     "@testing-library/jest-dom": "^7.0.1",
