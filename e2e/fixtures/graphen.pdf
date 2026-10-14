@@ -1,0 +1,73 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+3 0 obj
+<< /Length 286 >>
+stream
+BT /F2 28 Tf 60 720 Td (Vorlesung 3: Graphen) Tj ET
+BT /F1 18 Tf 80 640 Td (Definition: Ein Graph G = (V, E)) Tj ET
+BT /F1 18 Tf 80 600 Td (besteht aus Knoten V und Kanten E.) Tj ET
+BT /F1 18 Tf 80 560 Td (Beispiel: Wegesuche mit Dijkstra) Tj ET
+0.2 0.4 0.8 RG 4 w 60 700 m 550 700 l S
+
+endstream
+endobj
+4 0 obj
+<< /Length 266 >>
+stream
+BT /F2 28 Tf 60 720 Td (Breitensuche (BFS)) Tj ET
+BT /F1 18 Tf 80 640 Td (Idee: Ebene fuer Ebene) Tj ET
+BT /F1 18 Tf 80 600 Td (Laufzeit O(|V| + |E|)) Tj ET
+BT /F1 18 Tf 80 560 Td (Anwendung: kuerzeste Wege ungewichtet) Tj ET
+0.2 0.4 0.8 RG 4 w 60 700 m 550 700 l S
+
+endstream
+endobj
+5 0 obj
+<< /Length 247 >>
+stream
+BT /F2 28 Tf 60 720 Td (Tiefensuche (DFS)) Tj ET
+BT /F1 18 Tf 80 640 Td (Rekursiv oder mit Stack) Tj ET
+BT /F1 18 Tf 80 600 Td (Topologische Sortierung) Tj ET
+BT /F1 18 Tf 80 560 Td (Klausurrelevant!) Tj ET
+0.2 0.4 0.8 RG 4 w 60 700 m 550 700 l S
+
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 9 0 R /MediaBox [0 0 612 792] /Contents 3 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+7 0 obj
+<< /Type /Page /Parent 9 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+8 0 obj
+<< /Type /Page /Parent 9 0 R /MediaBox [0 0 612 792] /Contents 5 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> >>
+endobj
+9 0 obj
+<< /Type /Pages /Kids [6 0 R 7 0 R 8 0 R] /Count 3 >>
+endobj
+10 0 obj
+<< /Type /Catalog /Pages 9 0 R >>
+endobj
+xref
+0 11
+0000000000 65535 f 
+0000000009 00000 n 
+0000000079 00000 n 
+0000000154 00000 n 
+0000000491 00000 n 
+0000000808 00000 n 
+0000001106 00000 n 
+0000001242 00000 n 
+0000001378 00000 n 
+0000001514 00000 n 
+0000001583 00000 n 
+trailer
+<< /Size 11 /Root 10 0 R >>
+startxref
+1633
+%%EOF

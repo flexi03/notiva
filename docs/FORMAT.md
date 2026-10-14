@@ -99,3 +99,26 @@ eigene Variablen in Paketen; `{{title|yaml}}` setzt den Wert sicher in YAML ein.
 ## Einstellungen
 
 `.notiva/settings.json` (wird mit dem Vault synchronisiert), Papierkorb in `.notiva/trash/`.
+
+## PDF-Notizen
+
+Markierungen, Haftnotizen und Zeichnungen in einem PDF verändern das PDF nicht. Sie stehen in einer Seite daneben:
+`Skript.pdf` → `Skript (Notizen).md`.
+
+```yaml
+pdf: Skript.pdf
+annotations:
+  - {
+      id: a1,
+      type: highlight,
+      page: 2,
+      color: green,
+      rects: [[72, 140, 220, 14]],
+      text: 'Laufzeit O(n)',
+      comment: 'Klausur!',
+    }
+  - { id: a2, type: note, page: 1, color: yellow, x: 300, y: 40, text: 'Nachfragen' }
+  - { id: a3, type: ink, page: 3, color: red, width: 2, points: '10,20 12,24 15,30' }
+```
+
+Koordinaten in PDF-Punkten (Ursprung oben links). Notizen pro Seite stehen im Text als Abschnitte `## Seite N`.

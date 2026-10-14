@@ -180,6 +180,7 @@ function PdfPage({
     <div
       ref={box}
       data-page={number}
+      data-scale={scale}
       className="relative shrink-0 bg-white shadow-[var(--shadow-pop)]"
       style={{
         width,
