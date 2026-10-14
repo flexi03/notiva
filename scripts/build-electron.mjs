@@ -6,7 +6,8 @@ const common = {
   platform: 'node',
   target: 'node22',
   format: 'cjs',
-  external: ['electron'],
+  // node-pty is native (prebuilt per platform) – loaded at runtime, unpacked from the asar.
+  external: ['electron', '@lydell/node-pty'],
   sourcemap: true,
   logLevel: 'info',
 }

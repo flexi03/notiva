@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { Code2, FolderOpen, GitBranch, SquareTerminal } from 'lucide-react'
+import { TerminalPanel } from '@/components/terminal/TerminalPanel'
 import { useGit } from '@/app/git'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
@@ -19,6 +21,7 @@ export function CodeFolder({ page }: { page: Page }) {
   const run = useAction()
   const toggleView = useApp((s) => s.toggleView)
   const folder = codeFolder(page)
+  const [terminal, setTerminal] = useState(false)
   const bridge = electronBridge()?.code
   const files = ws
     .assets()
@@ -42,15 +45,32 @@ export function CodeFolder({ page }: { page: Page }) {
           <Button icon={<FolderOpen size={15} />} onClick={() => open('finder')}>
             {t('code.openFinder')}
           </Button>
-          <Button icon={<SquareTerminal size={15} />} onClick={() => open('terminal')}>
-            {t('code.openTerminal')}
+          <Button icon={<SquareTerminal size={15} />} onClick={() => setTerminal((v) => !v)}>
+            {terminal ? t('code.hideTerminal') : t('code.inAppTerminal')}
           </Button>
+          <Button onClick={() => open('terminal')}>{t('code.openTerminal')}</Button>
           <Button icon={<GitBranch size={15} />} onClick={() => toggleView('git')}>
             {changes ? t('code.changes', { count: changes }) : t('code.noChanges')}
           </Button>
         </div>
       ) : (
         <p className="text-sm">{t('code.desktopOnly')}</p>
+      )}
+      {terminal && bridge && (
+        <div className="h-80 overflow-hidden rounded-control border border-line">
+          <TerminalPanel
+            folder={folder}
+            onClose={() => setTerminal(false)}
+            onSave={(text) =>
+              void run(async () => {
+                const current = ws.get(page.path)!
+                await ws.save(page.path, {
+                  body: `${current.body.trimEnd()}\n\n\`\`\`text\n${text}\n\`\`\`\n`,
+                })
+              })
+            }
+          />
+        </div>
       )}
       {files.length > 0 && (
         <details>

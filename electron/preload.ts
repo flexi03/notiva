@@ -108,6 +108,22 @@ contextBridge.exposeInMainWorld('notiva', {
     init: (folder: string) => invoke<void>('code:init', folder),
     open: (folder: string, how: 'editor' | 'finder' | 'terminal') => invoke<void>('code:open', folder, how),
   },
+  terminal: {
+    start: (folder: string, cols: number, rows: number) => invoke<number>('term:start', folder, cols, rows),
+    write: (id: number, data: string) => invoke<void>('term:write', id, data),
+    resize: (id: number, cols: number, rows: number) => invoke<void>('term:resize', id, cols, rows),
+    stop: (id: number) => invoke<void>('term:stop', id),
+    onData: (callback: (id: number, data: string) => void) => {
+      const listener = (_e: unknown, id: number, data: string) => callback(id, data)
+      ipcRenderer.on('term:data', listener)
+      return () => ipcRenderer.removeListener('term:data', listener)
+    },
+    onExit: (callback: (id: number, code: number) => void) => {
+      const listener = (_e: unknown, id: number, code: number) => callback(id, code)
+      ipcRenderer.on('term:exit', listener)
+      return () => ipcRenderer.removeListener('term:exit', listener)
+    },
+  },
   notifications: {
     onAdded: (callback: (counts: Record<string, number>) => void) => {
       const listener = (_e: unknown, counts: Record<string, number>) => callback(counts)

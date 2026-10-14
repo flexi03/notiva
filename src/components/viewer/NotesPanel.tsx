@@ -1,3 +1,5 @@
+import { MarkdownView } from '@/components/editor/MarkdownView'
+import { ResizeHandle, useStoredWidth } from '@/components/layout/ResizeHandle'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Highlighter, PenLine, StickyNote, Trash2, Type } from 'lucide-react'
 import { useApp } from '@/app/store'
@@ -38,6 +40,7 @@ export function NotesPanel({
   const openPage = useApp((s) => s.openPage)
   const sorted = [...annotations].sort((a, b) => a.page - b.page)
   const activeRef = useRef<HTMLLIElement>(null)
+  const [width, setWidth] = useStoredWidth('pdf-notes', 320, 240, 720)
   useEffect(() => {
     activeRef.current?.scrollIntoView({ block: 'nearest' })
   }, [activeId])
@@ -45,10 +48,15 @@ export function NotesPanel({
   return (
     <aside
       aria-label={t('viewer.notes')}
-      className="flex w-80 shrink-0 flex-col border-l border-line bg-surface max-[899px]:hidden"
+      style={{ width }}
+      className="relative flex h-full min-h-0 shrink-0 flex-col border-l border-line bg-surface max-[899px]:hidden"
     >
+      <ResizeHandle side="left" width={width} onResize={setWidth} label={t('viewer.notes')} />
       {children}
-      <section aria-label={t('viewer.pageNote', { page })} className="border-b border-line p-3">
+      <section
+        aria-label={t('viewer.pageNote', { page })}
+        className="max-h-[45%] shrink-0 overflow-y-auto border-b border-line p-3"
+      >
         <h2 className="mb-1.5 text-[13px] font-semibold text-ink-2">{t('viewer.pageNote', { page })}</h2>
         <PageNoteEditor key={page} value={pageNote} onSave={onPageNote} />
       </section>
@@ -114,11 +122,15 @@ export function NotesPanel({
                       if (a.type === 'note' ? value !== a.text : value !== (a.comment ?? ''))
                         onUpdate(a.id, a.type === 'note' ? { text: value } : { comment: value })
                     }}
-                    className="mt-2 w-full rounded-control border border-line bg-surface px-2 py-1.5 text-[13px] focus:border-accent focus:outline-none"
+                    className="mt-2 max-h-[40vh] w-full rounded-control border border-line bg-surface px-2 py-1.5 text-[13px] focus:border-accent focus:outline-none"
                   />
                 )}
                 {a.id !== activeId && a.type === 'highlight' && a.comment && (
-                  <p className="mt-1 pl-6 text-[12.5px] text-ink-2">{a.comment}</p>
+                  <MarkdownView
+                    markdown={a.comment}
+                    untrusted
+                    className="md mt-1 pl-6 text-[12.5px] text-ink-2"
+                  />
                 )}
               </li>
             ))}
@@ -154,8 +166,25 @@ function PageNoteEditor({ value, onSave }: { value: string; onSave: (text: strin
     },
     [],
   )
+  const [editing, setEditing] = useState(!value)
+  if (!editing && text.trim())
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={t('viewer.pageNoteLabel')}
+        title={t('viewer.clickToEdit')}
+        onClick={(e) => (e.target as HTMLElement).closest('a') || setEditing(true)}
+        onKeyDown={(e) => e.key === 'Enter' && setEditing(true)}
+        className="cursor-text rounded-control px-1 hover:bg-hover"
+      >
+        <MarkdownView markdown={text} untrusted className="md text-[13px]" />
+      </div>
+    )
   return (
     <AutoTextArea
+      autoFocus={!!value}
+      onBlur={() => setEditing(false)}
       aria-label={t('viewer.pageNoteLabel')}
       placeholder={t('viewer.pageNotePlaceholder')}
       value={text}
@@ -165,7 +194,7 @@ function PageNoteEditor({ value, onSave }: { value: string; onSave: (text: strin
         clearTimeout(timer.current)
         timer.current = setTimeout(() => onSave(next), 700)
       }}
-      className="min-h-20 w-full rounded-control border border-line bg-surface px-2 py-1.5 text-[13px] focus:border-accent focus:outline-none"
+      className="max-h-[40vh] min-h-20 w-full rounded-control border border-line bg-surface px-2 py-1.5 text-[13px] focus:border-accent focus:outline-none"
     />
   )
 }

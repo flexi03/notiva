@@ -137,3 +137,16 @@ test('schreibt Text direkt auf die Seite, verschiebt und ändert ihn', async () 
     'Klausur: BFS und DFS!',
   )
 })
+
+test('öffnet unter dem PDF ein Terminal und führt Befehle aus', async () => {
+  await window.getByRole('button', { name: 'Terminal', exact: true }).click()
+  const term = window.getByTestId('terminal')
+  await expect(term).toBeVisible()
+  await window.waitForTimeout(1500)
+  await term.click()
+  await window.keyboard.type('echo notiva-$((40+2)) && pwd\n')
+  await expect(term).toContainText('notiva-42', { timeout: 10_000 })
+  await expect(term).toContainText('Skripte')
+  await window.getByRole('region', { name: 'Terminal' }).getByRole('button', { name: 'Schließen' }).click()
+  await expect(term).toHaveCount(0)
+})

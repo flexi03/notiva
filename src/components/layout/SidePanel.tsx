@@ -1,5 +1,7 @@
+import type { CSSProperties } from 'react'
 import type { ReactNode } from 'react'
 import { ArrowLeftToLine, ArrowRightToLine, X } from 'lucide-react'
+import { ResizeHandle, useStoredWidth } from './ResizeHandle'
 import { useApp, type ViewId } from '@/app/store'
 import { t } from '@/i18n'
 import { cx, IconButton } from '@/components/ui'
@@ -28,16 +30,23 @@ export function SidePanel({
   const moveView = useApp((s) => s.moveView)
   const label = typeof title === 'string' ? title : undefined
   const other = side === 'left' ? 'right' : 'left'
+  const [width, setWidth] = useStoredWidth('right-panel', 416, 300, 900)
   return (
     <aside
       aria-label={label}
       data-side={side}
+      style={side === 'right' ? ({ '--panel-w': `${width}px` } as CSSProperties) : undefined}
       className={cx(
-        'no-print flex h-full w-full flex-col bg-surface',
+        'no-print relative flex h-full w-full flex-col bg-surface',
         side === 'right' &&
-          'border-l border-line max-[899px]:fixed max-[899px]:inset-0 max-[899px]:z-30 min-[900px]:w-[26rem] min-[900px]:shrink-0',
+          'border-l border-line max-[899px]:fixed max-[899px]:inset-0 max-[899px]:z-30 min-[900px]:w-[var(--panel-w)] min-[900px]:shrink-0',
       )}
     >
+      {side === 'right' && (
+        <div className="max-[899px]:hidden">
+          <ResizeHandle side="left" width={width} onResize={setWidth} label={label ?? ''} reset={416} />
+        </div>
+      )}
       <header data-titlebar className="flex h-12 shrink-0 items-center gap-1 border-b border-line px-2">
         <span className="ml-1.5 text-accent" aria-hidden>
           {icon}

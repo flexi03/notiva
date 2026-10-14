@@ -117,7 +117,7 @@ test('schreibt die Vorlesung mit und folgt den Folien', async () => {
   expect(requests[0]!.prompt).toContain('Vorlesung 3: Graphen')
 
   const transcript = readFileSync(
-    path.join(folder, `Skripte/Graphen – Mitschrift ${new Date().toISOString().slice(0, 10)}.md`),
+    path.join(folder, `Skripte/Graphen – Mitschrift ${new Date().toLocaleDateString('sv-SE')}.md`),
     'utf8',
   )
   expect(transcript).toContain('type: lecture')

@@ -33,14 +33,18 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
 export const AutoTextArea = forwardRef<
   HTMLTextAreaElement,
   TextareaHTMLAttributes<HTMLTextAreaElement> & { plain?: boolean }
->(function AutoTextArea({ className, plain, value, ...rest }, forwarded) {
+>(function AutoTextArea({ className, plain, value, onInput, ...rest }, forwarded) {
   const inner = useRef<HTMLTextAreaElement | null>(null)
-  useLayoutEffect(() => {
+  // Grows with the text (also when uncontrolled); beyond its max-height it scrolls.
+  const fit = () => {
     const el = inner.current
     if (!el) return
     el.style.height = '0px'
     el.style.height = `${el.scrollHeight}px`
-  }, [value])
+    const max = parseFloat(getComputedStyle(el).maxHeight)
+    el.style.overflowY = Number.isFinite(max) && el.scrollHeight > max ? 'auto' : 'hidden'
+  }
+  useLayoutEffect(fit, [value])
   return (
     <textarea
       ref={(el) => {
@@ -50,6 +54,10 @@ export const AutoTextArea = forwardRef<
       }}
       rows={1}
       value={value}
+      onInput={(e) => {
+        fit()
+        onInput?.(e)
+      }}
       className={cx(
         plain
           ? 'w-full resize-none overflow-hidden bg-transparent outline-none'

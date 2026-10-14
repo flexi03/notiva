@@ -44,6 +44,7 @@ import {
 import { clearMoodleSession, openMoodlePage, ssoLogin } from './moodleWindow'
 import { WhisperEngine } from './whisper'
 import { buildMenu } from './menu'
+import { Terminals } from './terminal'
 import { Ecampus, NeedsLogin } from './ecampus'
 import { examNews, type ExamSnapshot } from '../src/lib/ecampus'
 import {
@@ -279,6 +280,8 @@ async function pollMoodle(contents = true): Promise<MoodleSnapshot> {
 }
 
 let pollTimer: ReturnType<typeof setTimeout> | null = null
+const terminals = new Terminals((channel, ...args) => window?.webContents.send(channel, ...args))
+app.on('before-quit', () => terminals.stopAll())
 
 /** eCampus exam results (HISinOne) – own login session, results snapshot in the profile. */
 const ecampus = new Ecampus(userFile(''), path.join(__dirname, 'moodlePreload.cjs'))
@@ -591,6 +594,21 @@ function registerIpc(): void {
     }
     const error = await shell.openPath(absolute)
     if (error) throw new Error(error)
+  })
+  // Built-in terminal (PDF view, code folders): a shell in a folder of the vault.
+  handle('term:start', async (folder: unknown, cols: unknown, rows: unknown) => {
+    const cwd = await requireVault().resolve(typeof folder === 'string' ? folder : '')
+    await fs.mkdir(cwd, { recursive: true })
+    return terminals.start(cwd, Number(cols) || 80, Number(rows) || 24)
+  })
+  handle('term:write', async (id: unknown, data: unknown) => {
+    if (typeof id === 'number' && typeof data === 'string' && data.length < 100_000) terminals.write(id, data)
+  })
+  handle('term:resize', async (id: unknown, cols: unknown, rows: unknown) => {
+    if (typeof id === 'number') terminals.resize(id, Number(cols), Number(rows))
+  })
+  handle('term:stop', async (id: unknown) => {
+    if (typeof id === 'number') terminals.stop(id)
   })
   // Speech to text for the lecture mode: the renderer has no network, the main process sends it.
   handle('transcribe', async (raw: unknown) => {

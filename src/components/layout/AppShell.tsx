@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { useEffect, useRef, type ReactNode } from 'react'
 import { saveAllNow, useApp, useWorkspace } from '@/app/store'
 import { usePageActions } from '@/app/hooks/usePageActions'
@@ -23,6 +24,7 @@ import { moodleAvailable, useMoodle } from '@/app/moodle'
 import { autoSyncStudy, setupHint } from '@/app/study'
 import { announce } from '@/app/progress'
 import { runCommand } from '@/app/commands'
+import { ResizeHandle, useStoredWidth } from './ResizeHandle'
 import { useRecent } from '@/app/recent'
 import { t } from '@/i18n'
 import type { NotificationKind } from '@/lib/notifications'
@@ -79,6 +81,11 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
     })
   }, [ws])
   const actions = usePageActions(ws)
+  // Widths like in VS Code: drag the edge; pages list and side views have their own width.
+  const [pagesWidth, setPagesWidth] = useStoredWidth('sidebar', 272, 200, 560)
+  const [viewWidth, setViewWidth] = useStoredWidth('sidebar-view', 384, 280, 800)
+  const sidebarWidth = leftView ? viewWidth : pagesWidth
+  const setSidebarWidth = leftView ? setViewWidth : setPagesWidth
   const mainRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
@@ -137,7 +144,8 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
         className={cx(
           'no-print z-30 h-full shrink-0 overflow-hidden transition-[width,transform] duration-200',
           sidebarOpen ? 'border-r border-line' : 'min-[900px]:w-0',
-          sidebarOpen && (leftView ? 'w-[24rem]' : 'w-[17rem]'),
+          'relative',
+          sidebarOpen && 'min-[900px]:w-[var(--sidebar-w)]',
           leftView ? 'max-[899px]:w-[min(26rem,100vw)]' : 'max-[899px]:w-[17rem]',
           'max-[899px]:fixed max-[899px]:inset-y-0 max-[899px]:left-0 max-[899px]:border-r max-[899px]:border-line max-[899px]:shadow-[var(--shadow-pop)]',
           sidebarOpen ? 'max-[899px]:translate-x-0' : 'max-[899px]:-translate-x-full',
@@ -145,8 +153,25 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
         aria-hidden={!sidebarOpen}
         inert={!sidebarOpen}
         data-left-view={leftView ?? 'pages'}
+        style={{ '--sidebar-w': `${sidebarWidth}px` } as CSSProperties}
       >
-        <div className={cx('h-full', leftView ? 'w-[24rem] max-[899px]:w-[min(26rem,100vw)]' : 'w-[17rem]')}>
+        {sidebarOpen && (
+          <div className="max-[899px]:hidden">
+            <ResizeHandle
+              side="right"
+              width={sidebarWidth}
+              onResize={setSidebarWidth}
+              label={t('nav.sidebar')}
+              reset={leftView ? 384 : 272}
+            />
+          </div>
+        )}
+        <div
+          className={cx(
+            'h-full min-[900px]:w-[var(--sidebar-w)]',
+            leftView ? 'max-[899px]:w-[min(26rem,100vw)]' : 'max-[899px]:w-[17rem]',
+          )}
+        >
           <ErrorBoundary resetKey={leftView ?? 'pages'}>
             {leftView === 'assistant' ? (
               <AssistantPanel />

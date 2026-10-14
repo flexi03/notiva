@@ -186,6 +186,15 @@ export interface NotivaBridge {
     init(folder: string): Promise<void>
     open(folder: string, how: 'editor' | 'finder' | 'terminal'): Promise<void>
   }
+  /** Built-in terminal: a shell in a vault folder. */
+  terminal?: {
+    start(folder: string, cols: number, rows: number): Promise<number>
+    write(id: number, data: string): Promise<void>
+    resize(id: number, cols: number, rows: number): Promise<void>
+    stop(id: number): Promise<void>
+    onData(callback: (id: number, data: string) => void): () => void
+    onExit(callback: (id: number, code: number) => void): () => void
+  }
   /** Menu bar commands (see src/app/commands.ts). */
   onMenu?(callback: (id: string) => void): () => void
   examPlan?: {

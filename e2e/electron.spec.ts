@@ -55,6 +55,7 @@ test('Renderer ist abgeschottet (kein Node, nur die Notiva-Brücke)', async () =
       'openWithSystem',
       'pickFolder',
       'platform',
+      'terminal',
       'transcribe',
       'vault',
       'whisper',

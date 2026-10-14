@@ -6,6 +6,7 @@ import {
   MousePointer2,
   NotebookPen,
   PanelRight,
+  SquareTerminal,
   PenLine,
   Plus,
   ScanLine,
@@ -13,9 +14,13 @@ import {
   StickyNote,
   Type,
 } from 'lucide-react'
+import { TerminalPanel } from '@/components/terminal/TerminalPanel'
+import { ResizeHandle, useStoredWidth } from '@/components/layout/ResizeHandle'
+import { workFolderFor } from '@/lib/codeFolders'
+import { electronBridge } from '@/lib/vault'
 import { useAnnotations } from '@/app/annotations'
 import { useAssistant } from '@/app/assistant'
-import { useApp } from '@/app/store'
+import { useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import {
   ANNOTATION_COLORS,
@@ -75,6 +80,12 @@ export function PdfDocumentView({
   const [activeId, setActiveId] = useState<string | null>(null)
   const [selection, setSelection] = useState<Selection | null>(null)
   const [panel, setPanel] = useState(() => typeof window === 'undefined' || window.innerWidth >= 1100)
+  // Terminal below the PDF – in the module's code folder (lab PDFs), else next to the file.
+  const [terminal, setTerminal] = useState(false)
+  const [terminalHeight, setTerminalHeight] = useStoredWidth('pdf-terminal', 260, 120, 900)
+  const ws = useWorkspace()
+  const work = workFolderFor(ws, path)
+  const showToast = useApp((s) => s.showToast)
 
   useEffect(() => {
     if (!initialPage) return
@@ -283,6 +294,16 @@ export function PdfDocumentView({
           >
             <PanelRight size={15} />
           </IconButton>
+          {electronBridge()?.terminal && (
+            <IconButton
+              label={t('terminal.toggle')}
+              title={`${t('terminal.toggle')} – ${work.folder || t('terminal.vaultRoot')}`}
+              onClick={() => setTerminal((v) => !v)}
+              active={terminal}
+            >
+              <SquareTerminal size={15} />
+            </IconButton>
+          )}
         </div>
         <div ref={area} className="relative min-h-0 flex-1" onMouseUp={onMouseUp}>
           <PdfViewer
@@ -346,6 +367,27 @@ export function PdfDocumentView({
             </div>
           )}
         </div>
+        {terminal && (
+          <div className="relative shrink-0 border-t border-line" style={{ height: terminalHeight }}>
+            <ResizeHandle
+              side="top"
+              width={terminalHeight}
+              onResize={setTerminalHeight}
+              label={t('terminal.title')}
+              reset={260}
+            />
+            <TerminalPanel
+              folder={work.folder}
+              onClose={() => setTerminal(false)}
+              onSave={(text) => {
+                const before = notes.note(current)
+                void notes
+                  .setNote(current, `${before ? `${before}\n\n` : ''}\`\`\`text\n${text}\n\`\`\``)
+                  .then(() => showToast(t('terminal.saved', { page: current })))
+              }}
+            />
+          </div>
+        )}
       </div>
       {panel && (
         <NotesPanel
