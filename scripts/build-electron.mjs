@@ -12,3 +12,4 @@ const common = {
 }
 await build({ ...common, entryPoints: ['electron/main.ts'], outfile: 'dist-electron/main.cjs' })
 await build({ ...common, entryPoints: ['electron/preload.ts'], outfile: 'dist-electron/preload.cjs' })
+await build({ ...common, entryPoints: ['electron/moodlePreload.ts'], outfile: 'dist-electron/moodlePreload.cjs' })

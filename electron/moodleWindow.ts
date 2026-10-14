@@ -4,6 +4,7 @@
  * login stays valid – fully separated from Notiva's own window, without preload or Node, sandboxed.
  */
 import { BrowserWindow, session, shell, type Session } from 'electron'
+import path from 'node:path'
 import { launchUrl, newPassport, parseSsoAnswer, SSO_SCHEME } from './moodleSso'
 
 const PARTITION = 'persist:moodle'
@@ -41,6 +42,8 @@ function moodleWindow(parent: BrowserWindow | null, title: string, width = 980, 
     autoHideMenuBar: true,
     webPreferences: {
       session: moodleSession(),
+      // Hides passkeys (Touch ID / Face ID can't work in Electron – the prompt would hang).
+      preload: path.join(__dirname, 'moodlePreload.cjs'),
       sandbox: true,
       contextIsolation: true,
       nodeIntegration: false,

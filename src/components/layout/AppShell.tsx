@@ -64,23 +64,23 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
         />
       )}
       <ActivityBar side="left" />
+      {/* Desktop: collapsing shrinks the width (a negative margin would slide it over the bar). */}
       <div
         className={cx(
-          'no-print z-30 h-full shrink-0 border-r border-line transition-[margin,transform] duration-200',
-          leftView ? 'w-[24rem] max-[899px]:w-[min(26rem,100vw)]' : 'w-[17rem]',
-          'max-[899px]:fixed max-[899px]:inset-y-0 max-[899px]:left-0 max-[899px]:shadow-[var(--shadow-pop)]',
-          sidebarOpen
-            ? 'max-[899px]:translate-x-0'
-            : cx(
-                'max-[899px]:-translate-x-full',
-                leftView ? 'min-[900px]:-ml-[24rem]' : 'min-[900px]:-ml-[17rem]',
-              ),
+          'no-print z-30 h-full shrink-0 overflow-hidden transition-[width,transform] duration-200',
+          sidebarOpen ? 'border-r border-line' : 'min-[900px]:w-0',
+          sidebarOpen && (leftView ? 'w-[24rem]' : 'w-[17rem]'),
+          leftView ? 'max-[899px]:w-[min(26rem,100vw)]' : 'max-[899px]:w-[17rem]',
+          'max-[899px]:fixed max-[899px]:inset-y-0 max-[899px]:left-0 max-[899px]:border-r max-[899px]:border-line max-[899px]:shadow-[var(--shadow-pop)]',
+          sidebarOpen ? 'max-[899px]:translate-x-0' : 'max-[899px]:-translate-x-full',
         )}
         aria-hidden={!sidebarOpen}
         inert={!sidebarOpen}
         data-left-view={leftView ?? 'pages'}
       >
-        {leftView === 'assistant' ? <AssistantPanel /> : leftView === 'git' ? <GitPanel /> : <Sidebar />}
+        <div className={cx('h-full', leftView ? 'w-[24rem] max-[899px]:w-[min(26rem,100vw)]' : 'w-[17rem]')}>
+          {leftView === 'assistant' ? <AssistantPanel /> : leftView === 'git' ? <GitPanel /> : <Sidebar />}
+        </div>
       </div>
       <main ref={mainRef} className="min-w-0 flex-1 overflow-y-auto" id="main" data-route={routeHash(route)}>
         <ScrollRootContext value={mainRef}>{children}</ScrollRootContext>

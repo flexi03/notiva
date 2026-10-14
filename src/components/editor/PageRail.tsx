@@ -178,6 +178,38 @@ export function PageRail({
       style={{ width: MINIMAP_WIDTH }}
     >
       <div className="sticky space-y-2" style={{ top }}>
+        <div className="space-y-1.5 pl-1">
+          <p
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={percent}
+            aria-label={t('rail.progress', { percent })}
+            className="flex items-center gap-1.5 text-[11px] leading-none text-ink-3 tabular-nums"
+          >
+            <span aria-hidden className="block h-1 flex-1 overflow-hidden rounded-full bg-sunken">
+              <span className="block h-full rounded-full bg-accent" style={{ width: `${percent}%` }} />
+            </span>
+            {percent} %
+          </p>
+          {tasks.total > 0 && (
+            <p
+              className="flex items-center gap-1.5 text-[11px] leading-none text-ink-3 tabular-nums"
+              title={t('rail.tasks', tasks)}
+            >
+              <span className="sr-only">{t('rail.tasks', tasks)}</span>
+              <span aria-hidden className="block h-1 flex-1 overflow-hidden rounded-full bg-sunken">
+                <span
+                  className="block h-full rounded-full bg-marker"
+                  style={{ width: `${Math.round((tasks.done / tasks.total) * 100)}%` }}
+                />
+              </span>
+              <span aria-hidden>
+                ✓ {tasks.done}/{tasks.total}
+              </span>
+            </p>
+          )}
+        </div>
         <div
           className="relative cursor-pointer touch-none select-none"
           style={{ height: Math.max(mapHeight, view.top + view.height) }}
@@ -217,38 +249,6 @@ export function PageRail({
               style={{ top: h.top * scale + 4 }}
             />
           ))}
-        </div>
-        <div className="space-y-1.5 pl-1">
-          <p
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={percent}
-            aria-label={t('rail.progress', { percent })}
-            className="flex items-center gap-1.5 text-[11px] leading-none text-ink-3 tabular-nums"
-          >
-            <span aria-hidden className="block h-1 flex-1 overflow-hidden rounded-full bg-sunken">
-              <span className="block h-full rounded-full bg-accent" style={{ width: `${percent}%` }} />
-            </span>
-            {percent} %
-          </p>
-          {tasks.total > 0 && (
-            <p
-              className="flex items-center gap-1.5 text-[11px] leading-none text-ink-3 tabular-nums"
-              title={t('rail.tasks', tasks)}
-            >
-              <span className="sr-only">{t('rail.tasks', tasks)}</span>
-              <span aria-hidden className="block h-1 flex-1 overflow-hidden rounded-full bg-sunken">
-                <span
-                  className="block h-full rounded-full bg-marker"
-                  style={{ width: `${Math.round((tasks.done / tasks.total) * 100)}%` }}
-                />
-              </span>
-              <span aria-hidden>
-                ✓ {tasks.done}/{tasks.total}
-              </span>
-            </p>
-          )}
         </div>
       </div>
     </nav>

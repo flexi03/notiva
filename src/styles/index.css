@@ -132,16 +132,24 @@ button {
 [data-shell='electron-darwin'] nav [data-titlebar] {
   padding-top: 2.4rem;
 }
+/* The left bar's top is a title bar strip for the traffic lights: as high as the panel headers and
+   without the dividing line, which would otherwise run through the window buttons. */
 [data-shell='electron-darwin'] [data-activity='left'] {
-  padding-top: 2.6rem;
+  padding-top: 3.25rem;
   -webkit-app-region: drag;
+  border-right-color: transparent;
+  background-image: linear-gradient(var(--line), var(--line));
+  background-repeat: no-repeat;
+  background-size: 1px calc(100% - 3rem);
+  background-position: right bottom;
 }
 [data-shell='electron-darwin'] [data-activity='left'] button {
   -webkit-app-region: no-drag;
 }
 /* A view in the left side bar: its header sits right of the traffic lights. */
 [data-shell='electron-darwin'] [data-side='left'] header[data-titlebar] {
-  padding-left: 2rem;
+  padding-left: 2.75rem;
+  background: var(--sunken);
 }
 [data-shell='electron-darwin'] [data-sidebar='closed'] header[data-titlebar] {
   padding-left: 5rem;

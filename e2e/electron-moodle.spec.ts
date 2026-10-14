@@ -202,6 +202,18 @@ test('meldet sich über den Uni-Login (SSO mit 2FA) im eigenen Fenster an', asyn
   await expect(login).toHaveTitle('Uni-Login')
   // The login window has no Notiva bridge.
   expect(await login.evaluate(() => typeof (window as { notiva?: unknown }).notiva)).toBe('undefined')
+  // Passkeys (Touch ID / Face ID) would hang in Electron: the page must not see WebAuthn.
+  expect(
+    await login.evaluate(() => typeof (window as { PublicKeyCredential?: unknown }).PublicKeyCredential),
+  ).toBe('undefined')
+  expect(
+    await login.evaluate(() =>
+      navigator.credentials.get({ publicKey: { challenge: new Uint8Array(8) } }).then(
+        () => 'ok',
+        (e: Error) => e.name,
+      ),
+    ),
+  ).toBe('NotAllowedError')
   await login.getByLabel('Code').fill('123456')
   await login.getByRole('button', { name: 'Anmelden' }).click()
   await expect(section().getByRole('status')).toHaveText(`Verbunden mit ${moodle.url} als Alex Beispiel.`)
