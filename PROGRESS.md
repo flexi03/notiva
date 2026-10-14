@@ -66,7 +66,28 @@ Stand der Entwicklung, nach Meilensteinen. ✅ fertig · 🚧 in Arbeit · ⏳ g
 - ✅ Prompt: fester Standard, eigener Prompt mit Platzhaltern, Live-Vorschau, „Gesendet“ je Nachricht; `/ki` im Editor
 - ✅ Fehler gefunden und behoben: E2E-Profil der Desktop-App teilte den Browser-Speicher mit dem echten Profil
 
+## M10 – Studium mit Moodle, PDFs und Vorlesungen ✅
+
+- ✅ Git-Diffs nur echte Änderungen: Frontmatter formattreu gespeichert, Wort-Hervorhebung im Diff
+- ✅ KI und Änderungen links oder rechts (Drag & Drop, Knopf), Werkzeugleiste links wie VS Code
+- ✅ KI passt Dashboards an: Format-Hilfe, Kacheln lesen/ändern (geprüft), Datenbanken erweitern, Dateien lesen (PDF-Text)
+- ✅ Moodle: Uni-Login wie die Moodle-App (Microsoft/SSO, 2FA, Passkeys im Fenster aus), Benutzername, Token oder
+  Kalender-Link; Zugang verschlüsselt im Profil; Kurse/Abgaben ins Dashboard (Vorschau, keine Doppelten)
+- ✅ Kursübersicht und Unterlagen je Kurs: öffnen in Notiva oder im Browser, Dateien in den Ordner speichern
+- ✅ Benachrichtigungscenter: Moodle wird regelmäßig abgefragt (neue Abgaben, Termine, Unterlagen, Mitteilungen,
+  Bewertungen), Erinnerungen an Fristen, Systemmitteilungen
+- ✅ PDF-Viewer: markieren, kommentieren, „KI erklären“, Stift, Haftnotizen, Text auf der Seite, Notiz pro Seite –
+  alles in einer Notizseite neben dem PDF
+- ✅ Vorlesungsmodus: Aufnahme, Transkript lokal mit whisper.cpp (von Notiva eingerichtet) oder per API (OpenAI mit
+  Sprechern, Groq), Folien folgen automatisch, Mitschrift-Seite, Zusammenfassung durch den Assistenten
+- ✅ Automatisch speichern an/aus (Standard an), ⌘S
+- ✅ Fehler gefunden und behoben: leere Zeile nach Frontmatter ging verloren; eingeklappte Seitenleiste lag über der
+  linken Leiste; Fensterknöpfe (macOS) auf der Trennlinie; scrollIntoView-Promise als Effekt-Rückgabe riss die
+  Oberfläche ab; Anmerkungsebene vor Screenreadern versteckt; Whisper-Server überlebte die App
+
 ## Ideen für später ⏳
+
+- Sprechertrennung lokal (z. B. pyannote/sherpa-onnx), Audio-Wiedergabe synchron zum Transkript
 
 - Synchronisation zwischen Geräten ohne Fremddienst (z. B. eigener Sync-Server auf dem Mac mini)
 - Import aus Notion-Export (Markdown + CSV), Export als HTML/PDF-Paket
