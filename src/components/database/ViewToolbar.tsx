@@ -101,28 +101,30 @@ export function ViewToolbar({
 
   return (
     <div className="flex flex-wrap items-center gap-1 border-b border-line pb-1.5">
-      <div
-        role="tablist"
-        aria-label={t('db.view')}
-        className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto"
-      >
-        {views.map((v, i) => (
-          <button
-            key={`${v.name}-${i}`}
-            type="button"
-            role="tab"
-            aria-selected={i === viewIndex}
-            onClick={() => setViewIndex(i)}
-            className={cx(
-              'relative flex h-8 shrink-0 items-center gap-1.5 rounded-control px-2.5 text-[13.5px] text-ink-2 hover:bg-hover',
-              i === viewIndex &&
-                'font-semibold text-ink after:absolute after:inset-x-2 after:-bottom-1.5 after:h-[3px] after:rounded-full after:bg-marker',
-            )}
-          >
-            {VIEW_ICONS[v.type]}
-            {v.name}
-          </button>
-        ))}
+      <div className="flex min-w-0 flex-1 items-center gap-0.5">
+        <div
+          role="tablist"
+          aria-label={t('db.view')}
+          className="flex min-w-0 items-center gap-0.5 overflow-x-auto"
+        >
+          {views.map((v, i) => (
+            <button
+              key={`${v.name}-${i}`}
+              type="button"
+              role="tab"
+              aria-selected={i === viewIndex}
+              onClick={() => setViewIndex(i)}
+              className={cx(
+                'relative flex h-8 shrink-0 items-center gap-1.5 rounded-control px-2.5 text-[13.5px] text-ink-2 hover:bg-hover',
+                i === viewIndex &&
+                  'font-semibold text-ink after:absolute after:inset-x-2 after:-bottom-1.5 after:h-[3px] after:rounded-full after:bg-marker',
+              )}
+            >
+              {VIEW_ICONS[v.type]}
+              {v.name}
+            </button>
+          ))}
+        </div>
         {!embedded && (
           <ToolbarButton icon={<Plus size={14} />} label={t('db.addView')} align="start">
             {(close) => (

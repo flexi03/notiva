@@ -57,7 +57,7 @@ export function CalendarView({ db }: { db: DatabaseApi }) {
           <ChevronRight size={15} />
         </IconButton>
       </div>
-      <div className="overflow-x-auto">
+      <div className="relative overflow-x-auto">
         <div className="grid min-w-[36rem] grid-cols-7 overflow-hidden rounded-panel border border-line bg-line [gap:1px]">
           {weekdays.map((w) => (
             <div key={w} className="bg-sunken px-2 py-1 text-xs font-semibold text-ink-3">

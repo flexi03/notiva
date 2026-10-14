@@ -25,10 +25,11 @@ export function RowCard({
   }
   return (
     <article
+      aria-label={row.row.title}
       draggable={draggable}
       onDragStart={draggable ? onDragStart : undefined}
       className={cx(
-        'group flex flex-col rounded-panel border border-line bg-surface text-left transition-shadow hover:border-line-strong',
+        'group relative flex flex-col rounded-panel border border-line bg-surface text-left transition-shadow hover:border-line-strong',
         draggable && 'cursor-grab active:cursor-grabbing',
       )}
     >

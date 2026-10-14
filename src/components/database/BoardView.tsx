@@ -22,7 +22,7 @@ export function BoardView({ db }: { db: DatabaseApi }) {
     key === NO_VALUE ? null : prop?.type === 'checkbox' ? key === 'true' : key
 
   return (
-    <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2">
+    <div className="relative -mx-1 flex gap-3 overflow-x-auto px-1 pb-2">
       {groups.map((g) => (
         <section
           key={g.key}

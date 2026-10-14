@@ -107,7 +107,7 @@ function TreeItem({
         </IconButton>
         <button
           type="button"
-          className="flex min-w-0 flex-1 items-center gap-2 text-left"
+          className="flex min-w-0 flex-1 items-center gap-2 self-stretch text-left"
           onClick={() => (node.page ? openPage(node.page.path) : toggle(node.id))}
         >
           <PageIcon page={node.page} />

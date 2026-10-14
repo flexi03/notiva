@@ -8,8 +8,9 @@
   --sunken: #eceef2;
   --hover: #e9ecf1;
   --ink: #1c2230;
-  --ink-2: #5b6475;
-  --ink-3: #8a92a3;
+  --ink-2: #4a5263;
+  /* ≥ 4.5:1 on paper, surface and sunken (WCAG AA for small text) */
+  --ink-3: #626a7c;
   --line: #dfe3ea;
   --line-strong: #c4cad6;
   --accent: #2f5d50;
@@ -50,8 +51,8 @@
   --sunken: #101317;
   --hover: #252a33;
   --ink: #e6e8ec;
-  --ink-2: #a3abb9;
-  --ink-3: #737b8a;
+  --ink-2: #b0b7c3;
+  --ink-3: #7f8796;
   --line: #2b313b;
   --line-strong: #3b4350;
   --on-accent: #10201b;

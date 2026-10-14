@@ -5,7 +5,14 @@
  */
 import MiniSearch from 'minisearch'
 import { parseMarkdown, serializeMarkdown, type FrontmatterData, type FrontmatterValue } from './frontmatter'
-import { extractTags, extractWikiLinks, renameWikiLinks, type WikiLink } from './links'
+import {
+  extractTags,
+  extractWikiLinks,
+  renameWikiLinks,
+  rewriteBodyPaths,
+  rewritePathReferences,
+  type WikiLink,
+} from './links'
 import { basename, dirname, extname, isInside, joinPath, toFileName, uniquePath } from './path'
 import {
   parseDatabaseDef,
@@ -556,12 +563,17 @@ export class Workspace {
       await this.vault.write(target, serializeMarkdown({ data, body: page.body }))
       await this.reload()
       const newLink = this.linkText(target)
-      for (const [from, targets] of incoming) {
-        const other = this.pages.get(movedPath(from))
-        if (!other) continue
-        const rename = (t: string) => targets.has(t) && t !== newLink
-        const body = renameWikiLinks(other.body, rename, newLink)
-        const otherData = renameInData(other.data, rename, newLink)
+      const incomingAfterMove = new Map([...incoming].map(([from, targets]) => [movedPath(from), targets]))
+      for (const other of this.all()) {
+        const targets = incomingAfterMove.get(other.path)
+        const rename = (t: string) => !!targets?.has(t) && t !== newLink
+        let body = renameWikiLinks(other.body, rename, newLink)
+        let otherData = renameInData(other.data, rename, newLink)
+        // Path references (widgets "source: Folder/Db", relation schemas, [[Folder/Page]]) follow the move.
+        if (target !== path) {
+          body = rewriteBodyPaths(body, oldFolder, newFolder)
+          otherData = mapStrings(otherData, (value) => rewritePathReferences(value, oldFolder, newFolder))
+        }
         if (body !== other.body || otherData !== other.data) await this.writePage(other.path, otherData, body)
       }
       this.changed()
@@ -702,6 +714,28 @@ function renameInData(
   }
   const out: FrontmatterData = {}
   for (const [k, v] of Object.entries(data)) out[k] = fix(v)
+  return changed ? out : data
+}
+
+/** Applies `fn` to every string in frontmatter. Returns the same object if nothing changed. */
+function mapStrings(data: FrontmatterData, fn: (value: string) => string): FrontmatterData {
+  let changed = false
+  const visit = (value: FrontmatterValue): FrontmatterValue => {
+    if (typeof value === 'string') {
+      const next = fn(value)
+      if (next !== value) changed = true
+      return next
+    }
+    if (Array.isArray(value)) return value.map(visit)
+    if (value && typeof value === 'object') {
+      const out: FrontmatterData = {}
+      for (const [k, v] of Object.entries(value)) out[k] = visit(v)
+      return out
+    }
+    return value
+  }
+  const out: FrontmatterData = {}
+  for (const [k, v] of Object.entries(data)) out[k] = visit(v)
   return changed ? out : data
 }
 

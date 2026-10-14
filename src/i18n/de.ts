@@ -38,6 +38,7 @@ export const de = {
   'page.untitled': 'Unbenannt',
   'page.titlePlaceholder': 'Titel',
   'page.addIcon': 'Symbol hinzufügen',
+  'page.changeIcon': 'Symbol ändern',
   'page.removeIcon': 'Symbol entfernen',
   'page.rename': 'Umbenennen',
   'page.duplicate': 'Duplizieren',

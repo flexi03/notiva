@@ -123,6 +123,18 @@ describe('study dashboard works end to end', () => {
     ).toEqual(['2. Semester', 'DB Vorlesung', 'ER-Modell entwerfen', 'Klausur Datenbanken'])
   })
 
+  it('keeps working after the study folder is renamed', async () => {
+    const { ws, entry } = await installed()
+    const renamed = await ws.rename(entry, 'Uni')
+    const tiles = dashboardTiles(ws, renamed)
+    expect(tiles.every((t) => computeTile(ws, t, renamed, now).kind !== 'error')).toBe(true)
+    expect(ws.get('Uni/Module.md')!.database!.properties.find((p) => p.name === 'Semester')!.database).toBe(
+      'Uni/Semester.md',
+    )
+    const semesters = ws.resolvedRows('Uni/Semester.md', now)
+    expect(semesters.find((r) => r.row.title === '2. Semester')!.values.ECTS).toBe(21)
+  })
+
   it('ships page templates', async () => {
     const { ws } = await installed()
     expect(

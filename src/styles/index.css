@@ -97,3 +97,12 @@ button {
     grid-column: 1 / -1 !important;
   }
 }
+
+/* Touch: every button is at least 24×24 px (WCAG 2.2, 2.5.8 target size). */
+@media (pointer: coarse) {
+  button,
+  [role='button'] {
+    min-height: 24px;
+    min-width: 24px;
+  }
+}

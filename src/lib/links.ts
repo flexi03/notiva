@@ -64,4 +64,30 @@ export function renameWikiLinks(
   })
 }
 
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/**
+ * Rewrites path references after a page/folder move: `from` → `to` when it appears as a whole
+ * path or path prefix ("Studium", "Studium/Module", "Studium.md"), e.g. in widget YAML or
+ * frontmatter values. Names that merely contain `from` are left alone.
+ */
+export function rewritePathReferences(text: string, from: string, to: string): string {
+  if (!from || from === to) return text
+  // Allowed before the path: start of a YAML value (line start / "- ", ":", ",", "{", "[", "(", "|") or a quote.
+  const pattern = new RegExp(
+    `(^[\\t -]*|[:,{\\[(|][\\t ]*|["'])${escapeRegExp(from)}(?=$|[/"'\\],}#|)\\s]|\\.md\\b)`,
+    'gm',
+  )
+  return text.replace(pattern, (_m, before: string) => `${before}${to}`)
+}
+
+/** Applies {@link rewritePathReferences} to path-style wiki links and ```notiva blocks of a body. */
+export function rewriteBodyPaths(markdown: string, from: string, to: string): string {
+  return markdown
+    .replace(/^```notiva[^\n]*\n[\s\S]*?^```/gm, (block) => rewritePathReferences(block, from, to))
+    .replace(WIKI_LINK, (full, target: string) =>
+      target.includes('/') ? rewritePathReferences(full, from, to) : full,
+    )
+}
+
 export { WIKI_LINK as WIKI_LINK_PATTERN }

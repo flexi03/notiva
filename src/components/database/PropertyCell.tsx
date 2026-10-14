@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react'
-import { Check, Plus } from 'lucide-react'
+import { Check, Pencil, Plus } from 'lucide-react'
 import { useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import { COLORS, optionColor, relationTargets, type DatabaseDef, type PropertyDef } from '@/lib/database'
@@ -18,6 +18,7 @@ interface PropertyCellProps {
 }
 
 const READ_ONLY = new Set(['formula', 'rollup'])
+const INTERACTIVE_VALUES = new Set(['relation', 'url', 'email'])
 
 /** Display + inline editor for a property. One component for table, properties panel and cards. */
 export function PropertyCell({
@@ -29,7 +30,7 @@ export function PropertyCell({
   placeholder,
 }: PropertyCellProps) {
   const [open, setOpen] = useState(false)
-  const anchor = useRef<HTMLDivElement>(null)
+  const anchor = useRef<HTMLElement | null>(null)
 
   if (def.type === 'checkbox') {
     return (
@@ -46,38 +47,56 @@ export function PropertyCell({
     )
   }
   const readOnly = READ_ONLY.has(def.type)
+  const isEmpty =
+    value === null || value === undefined || value === '' || (Array.isArray(value) && value.length === 0)
   return (
     <>
-      {/* div instead of button: values may contain links/buttons (relations, URLs). */}
-      <div
-        ref={anchor}
-        role="button"
-        tabIndex={readOnly ? -1 : 0}
-        aria-disabled={readOnly || undefined}
-        onClick={() => !readOnly && setOpen(true)}
-        onKeyDown={(e) => {
-          if (!readOnly && (e.key === 'Enter' || e.key === ' ')) {
-            e.preventDefault()
-            setOpen(true)
-          }
-        }}
-        aria-label={`${def.name} ${t('common.edit')}`}
-        className={cx(
-          'flex min-h-8 w-full min-w-0 items-center px-2 py-1 text-left text-[14px]',
-          readOnly ? 'cursor-default' : 'cursor-pointer hover:bg-hover',
-          className,
-        )}
-        data-interactive
-      >
-        {value === null ||
-        value === undefined ||
-        value === '' ||
-        (Array.isArray(value) && value.length === 0) ? (
-          <span className="text-ink-3">{placeholder ?? ''}</span>
-        ) : (
-          <PropertyValue def={def} value={value} compact />
-        )}
-      </div>
+      {INTERACTIVE_VALUES.has(def.type) ? (
+        // Values contain links/buttons themselves (relations, URLs) → no nested interactive roles.
+        <div
+          ref={anchor as React.RefObject<HTMLDivElement | null>}
+          className={cx(
+            'group/cell flex min-h-8 w-full min-w-0 items-center gap-1 px-2 py-1 text-[14px] hover:bg-hover',
+            className,
+          )}
+        >
+          <div className="min-w-0 flex-1">
+            {isEmpty ? (
+              <span className="text-ink-3">{placeholder ?? ''}</span>
+            ) : (
+              <PropertyValue def={def} value={value} compact />
+            )}
+          </div>
+          <button
+            type="button"
+            aria-label={`${def.name} ${t('common.edit')}`}
+            onClick={() => setOpen(true)}
+            className="flex size-6 shrink-0 items-center justify-center rounded-control text-ink-3 opacity-0 group-hover/cell:opacity-100 hover:bg-line focus:opacity-100 max-md:opacity-100"
+            data-interactive
+          >
+            <Pencil size={12} />
+          </button>
+        </div>
+      ) : (
+        <button
+          ref={anchor as React.RefObject<HTMLButtonElement | null>}
+          type="button"
+          disabled={readOnly}
+          onClick={() => setOpen(true)}
+          aria-label={`${def.name} ${t('common.edit')}`}
+          className={cx(
+            'flex min-h-8 w-full min-w-0 items-center px-2 py-1 text-left text-[14px] enabled:hover:bg-hover disabled:cursor-default disabled:text-ink',
+            className,
+          )}
+          data-interactive
+        >
+          {isEmpty ? (
+            <span className="text-ink-3">{placeholder ?? ''}</span>
+          ) : (
+            <PropertyValue def={def} value={value} compact />
+          )}
+        </button>
+      )}
       <Popover anchor={anchor} open={open} onClose={() => setOpen(false)} label={def.name} className="w-72">
         <Editor
           def={def}

@@ -25,7 +25,7 @@ const TYPE_GLYPH: Record<string, string> = {
 export function TableView({ db }: { db: DatabaseApi }) {
   const groups = db.view.groupBy ? groupRows(db.rows, db.view.groupBy, db.def!) : null
   return (
-    <div className="overflow-x-auto">
+    <div className="relative overflow-x-auto">
       <table className="w-full min-w-max border-collapse text-[14px]">
         <thead>
           <tr className="border-b border-line text-left text-[13px] text-ink-2">

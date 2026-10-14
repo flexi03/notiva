@@ -38,6 +38,7 @@ export const en: Record<MessageKey, string> = {
   'page.untitled': 'Untitled',
   'page.titlePlaceholder': 'Title',
   'page.addIcon': 'Add icon',
+  'page.changeIcon': 'Change icon',
   'page.removeIcon': 'Remove icon',
   'page.rename': 'Rename',
   'page.duplicate': 'Duplicate',

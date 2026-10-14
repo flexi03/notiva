@@ -102,7 +102,7 @@ export function PageView({ path }: { path: string }) {
               ref={iconRef}
               type="button"
               onClick={() => setIconOpen(true)}
-              aria-label={page.icon ? t('page.addIcon') : t('page.addIcon')}
+              aria-label={page.icon ? t('page.changeIcon') : t('page.addIcon')}
               className={cx(
                 'rounded-panel transition-colors hover:bg-hover',
                 page.icon

@@ -240,7 +240,11 @@ function taskListRule(state: StateCore): void {
     if (!first || !match) continue
     first.content = first.content.slice(match[0].length)
     const box = new state.Token('task_checkbox', 'input', 0)
-    box.meta = { checked: match[1] !== ' ', index: index++ }
+    const label = (inline.children ?? [])
+      .map((c) => (c.type === 'text' || c.type === 'code_inline' ? c.content : ''))
+      .join('')
+      .trim()
+    box.meta = { checked: match[1] !== ' ', index: index++, label }
     inline.children!.unshift(box)
     tokens[i - 2]!.attrJoin('class', 'task-item')
   }
@@ -287,8 +291,8 @@ function createParser(): Parser {
   md.renderer.rules.math_block = (tokens, idx) =>
     `<div class="math-block">${renderMath(tokens[idx]!.content, true)}</div>\n`
   md.renderer.rules.task_checkbox = (tokens, idx) => {
-    const { checked, index } = tokens[idx]!.meta as { checked: boolean; index: number }
-    return `<input type="checkbox" class="task-checkbox" data-task-index="${index}"${checked ? ' checked' : ''}> `
+    const { checked, index, label } = tokens[idx]!.meta as { checked: boolean; index: number; label: string }
+    return `<input type="checkbox" class="task-checkbox" data-task-index="${index}" aria-label="${escapeHtml(label || 'Aufgabe')}"${checked ? ' checked' : ''}> `
   }
 
   const defaultBlockquote = md.renderer.rules.blockquote_open ?? ((t, i, o, _e, s) => s.renderToken(t, i, o))
