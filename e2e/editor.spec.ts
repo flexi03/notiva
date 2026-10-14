@@ -1,14 +1,15 @@
-import { expect, test, type Page } from '@playwright/test'
-import { openDemo, pageErrors, pageTitle, quickOpen } from './helpers'
+import { expect, test, type Locator, type Page } from '@playwright/test'
+import { openDemo, pageErrors, pageTitle, peek, quickOpen } from './helpers'
 
 async function newPage(page: Page, title: string) {
   await quickOpen(page, title)
   await expect(await pageTitle(page)).toHaveValue(title)
 }
 
-async function source(page: Page) {
-  await page.getByRole('button', { name: 'Markdown-Quelltext' }).click()
-  return page.getByRole('textbox', { name: 'Markdown-Quelltext' })
+/** Switches to the source editor of the main page or of the side panel. */
+async function source(page: Page, scope: Locator = page.locator('#main')) {
+  await scope.getByRole('button', { name: 'Markdown-Quelltext' }).click()
+  return scope.getByRole('textbox', { name: 'Markdown-Quelltext' })
 }
 
 test.describe('Editor', () => {
@@ -52,9 +53,10 @@ test.describe('Editor', () => {
       .getByRole('button', { name: /Übungsblatt 3 LA/ })
       .first()
       .click()
-    await page.locator('input.task-checkbox').first().click()
-    await expect(page.locator('input.task-checkbox').first()).toBeChecked()
-    const text = await source(page)
+    const panel = peek(page)
+    await panel.locator('input.task-checkbox').first().click()
+    await expect(panel.locator('input.task-checkbox').first()).toBeChecked()
+    const text = await source(page, panel)
     await expect(text).toHaveValue(/- \[x\] Aufgabe 1/)
   })
 
@@ -80,6 +82,7 @@ test.describe('Editor', () => {
     await title.press('Enter')
     await expect(page).toHaveURL(/Uni\.md/)
     await page.getByRole('button', { name: /Module.*Alle Module/ }).click()
+    await peek(page).getByRole('button', { name: 'Als ganze Seite öffnen' }).click()
     await expect(page).toHaveURL(/Uni%2FModule\.md/)
   })
 

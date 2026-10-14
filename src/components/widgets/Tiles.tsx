@@ -20,7 +20,7 @@ export function Tiles({ spec, from }: { spec: Extract<WidgetSpec, { type: 'tiles
 }
 
 function Tile({ tile, result, columns }: { tile: TileSpec; result: TileResult; columns: number }) {
-  const openPage = useApp((s) => s.openPage)
+  const openEntry = useApp((s) => s.openEntry)
   const span = Math.max(1, Math.min(columns, tile.span ?? 1))
   const style = { gridColumn: `span ${span} / span ${span}` }
 
@@ -31,7 +31,7 @@ function Tile({ tile, result, columns }: { tile: TileSpec; result: TileResult; c
         style={style}
         data-span={span}
         disabled={!result.path}
-        onClick={() => result.path && openPage(result.path)}
+        onClick={(e) => result.path && openEntry(result.path, e)}
         className="tile group flex min-h-24 flex-col justify-between rounded-panel bg-sunken p-3 text-left transition-colors hover:bg-hover disabled:opacity-60"
       >
         <span className="flex w-full items-start justify-between text-2xl" aria-hidden>
@@ -77,7 +77,7 @@ function Big({ children, small }: { children: ReactNode; small?: ReactNode }) {
 }
 
 function TileBody({ result }: { result: TileResult }) {
-  const openPage = useApp((s) => s.openPage)
+  const openEntry = useApp((s) => s.openEntry)
   switch (result.kind) {
     case 'error':
       return <p className="text-[13px] text-danger">{result.message}</p>
@@ -129,7 +129,7 @@ function TileBody({ result }: { result: TileResult }) {
           )}
           <button
             type="button"
-            onClick={() => result.path && openPage(result.path)}
+            onClick={(e) => result.path && openEntry(result.path, e)}
             className="mt-1 block max-w-full truncate text-left text-[13.5px] font-semibold text-ink hover:underline hover:decoration-marker hover:decoration-2 hover:underline-offset-4"
           >
             {result.label}
@@ -145,7 +145,7 @@ function TileBody({ result }: { result: TileResult }) {
             <li key={item.path}>
               <button
                 type="button"
-                onClick={() => openPage(item.path)}
+                onClick={(e) => openEntry(item.path, e)}
                 className="flex w-full items-baseline gap-2 rounded-[5px] px-1 py-0.5 text-left text-[14px] hover:bg-hover"
               >
                 <span className="min-w-0 flex-1 truncate">{item.title}</span>

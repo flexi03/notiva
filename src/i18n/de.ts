@@ -247,6 +247,15 @@ export const de = {
   'settings.language': 'Sprache',
   'settings.editor': 'Editor',
   'settings.spellcheck': 'Rechtschreibprüfung',
+  'settings.openEntries': 'Einträge und Karten öffnen',
+  'settings.openEntriesHint': 'Mit ⌘/Strg-Klick öffnet sich immer die ganze Seite.',
+  'settings.openEntries.peek': 'Als Vorschau',
+  'settings.openEntries.page': 'Als ganze Seite',
+  'settings.pageRail': 'Rand der Seite',
+  'settings.pageRailHint': 'Minimap mit Lesefortschritt oder nur ein Fortschrittsbalken.',
+  'settings.pageRail.minimap': 'Minimap',
+  'settings.pageRail.progress': 'Fortschritt',
+  'settings.pageRail.off': 'Aus',
   'settings.dailyFolder': 'Ordner für Tagesnotizen',
   'settings.advanced': 'Erweitert',
   'settings.customCss': 'Eigenes CSS',
@@ -278,6 +287,13 @@ export const de = {
   'common.edit': 'Bearbeiten',
   'common.open': 'Öffnen',
   'common.more': 'Mehr',
+
+  'peek.openFull': 'Als ganze Seite öffnen',
+
+  'rail.label': 'Minimap',
+  'rail.progress': '{percent} % gelesen',
+  'rail.tasks': '{done} von {total} Aufgaben erledigt',
+  'rail.jump': 'Springe zu „{title}“',
 } as const
 
 export type MessageKey = keyof typeof de

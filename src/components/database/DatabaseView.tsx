@@ -36,7 +36,7 @@ export function DatabaseView({
       {embedded && (
         <button
           type="button"
-          onClick={() => db.openRow(dbPath)}
+          onClick={() => db.openPage(dbPath)}
           className="flex items-center gap-2 text-[15px] font-bold hover:underline hover:decoration-marker hover:decoration-2 hover:underline-offset-4"
         >
           {db.page.icon && <span aria-hidden>{db.page.icon}</span>}

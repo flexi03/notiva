@@ -41,6 +41,13 @@ Stand der Entwicklung, nach Meilensteinen. ✅ fertig · 🚧 in Arbeit · ⏳ g
 
 - ✅ Doku: README, AGENT.md, docs/ (Architektur, Dateiformat, Sicherheit, Design), GitHub-CI
 
+## M8 – Vorschau, Minimap, KI 🚧
+
+- ✅ Vorschau (Peek): Karten, Tabellenzeilen, Kacheln und Relationen öffnen als Seitenfenster; ⌘/Strg-Klick oder
+  Einstellung „Als ganze Seite“ öffnet ganz; Umbenennen/Löschen in der Vorschau wird nachgeführt
+- ✅ Seitenrand: Minimap mit Textmarker-Ansicht, Sprung zu Überschriften, Lese- und Aufgabenfortschritt
+- ⏳ KI-Werkzeuge (gemeinsam für MCP und App), MCP-Server, Assistent in der App
+
 ## Ideen für später ⏳
 
 - Synchronisation zwischen Geräten ohne Fremddienst (z. B. eigener Sync-Server auf dem Mac mini)

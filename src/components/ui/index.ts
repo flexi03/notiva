@@ -4,4 +4,5 @@ export { AutoTextArea, Checkbox, Field, Segmented, Select, Switch, TextInput } f
 export { Chip } from './Chip'
 export { MenuList, Popover, useDisclosure, type MenuItem } from './Popover'
 export { Dialog } from './Dialog'
+export { Sheet } from './Sheet'
 export { EmptyState, Kbd, MarkerBar, SectionLabel, Spinner } from './Misc'

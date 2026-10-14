@@ -157,6 +157,28 @@ export function SettingsScreen() {
               onChange={set('spellcheck')}
             />
           </Row>
+          <Row label={t('settings.openEntries')} hint={t('settings.openEntriesHint')}>
+            <Segmented
+              label={t('settings.openEntries')}
+              value={settings.openEntries}
+              onChange={set('openEntries')}
+              options={(['peek', 'page'] as const).map((v) => ({
+                value: v,
+                label: t(`settings.openEntries.${v}`),
+              }))}
+            />
+          </Row>
+          <Row label={t('settings.pageRail')} hint={t('settings.pageRailHint')}>
+            <Segmented
+              label={t('settings.pageRail')}
+              value={settings.pageRail}
+              onChange={set('pageRail')}
+              options={(['minimap', 'progress', 'off'] as const).map((v) => ({
+                value: v,
+                label: t(`settings.pageRail.${v}`),
+              }))}
+            />
+          </Row>
           <Field label={t('settings.dailyFolder')}>
             <TextInput
               defaultValue={settings.dailyFolder}

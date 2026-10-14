@@ -114,7 +114,7 @@ export function CalendarView({ db }: { db: DatabaseApi }) {
                     type="button"
                     draggable
                     onDragStart={(e) => e.dataTransfer.setData('application/x-notiva-row', row.row.path)}
-                    onClick={() => db.openRow(row.row.path)}
+                    onClick={(e) => db.openRow(row.row.path, e)}
                     className="truncate rounded-[5px] bg-accent-soft px-1.5 py-0.5 text-left text-xs font-semibold text-accent hover:brightness-95"
                   >
                     {db.ws.get(row.row.path)?.icon} {row.row.title}

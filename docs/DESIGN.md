@@ -28,5 +28,9 @@ Source Serif 4 („Buch“) oder JetBrains Mono („Schreibmaschine“). Alle Sc
 - Überschriften in Satzschreibung, keine Großbuchstaben-Labels.
 - Kacheln unterscheiden sich nach Typ (Wert, Fortschritt, Countdown, Liste, Link) statt identischer Karten.
 - Bewegung nur als Antwort auf Aktionen; `prefers-reduced-motion` wird respektiert.
+- Öffnen: Inhalte (Karten, Zeilen, Kacheln, Relationen) öffnen sich als **Vorschau** (`Sheet`, Store `openEntry`),
+  Navigation (Seitenleiste, Brotkrumen, Suche, Links, Backlinks) wechselt die Seite. ⌘/Strg-Klick öffnet immer ganz.
+- Seitenrand: Minimap (`PageRail`) – Blöcke als Linien/Kästen, der sichtbare Teil wird wie mit einem Textmarker
+  hervorgehoben; Lese- und Aufgabenfortschritt darunter. Ohne Platz nur eine dünne Fortschrittslinie unter der Kopfleiste.
 - Mobil: Seitenleiste als Schublade, Kacheln zweispaltig, Touch-Ziele ≥ 24 px, kein horizontales Scrollen der Seite
   (breite Inhalte scrollen in ihrem eigenen Container – absolut positionierte Kinder brauchen dort `relative`).

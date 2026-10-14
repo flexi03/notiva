@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { openDemo, pageErrors, pageTitle, go } from './helpers'
+import { openDemo, pageErrors, pageTitle, go, peek, peekTitle } from './helpers'
 
 test.describe('Datenbanken', () => {
   test.beforeEach(async ({ page }) => openDemo(page))
@@ -20,16 +20,17 @@ test.describe('Datenbanken', () => {
 
   test('legt Einträge an und ändert Eigenschaften', async ({ page }) => {
     await go(page, '/#/p/Studium%2FAufgaben.md')
+    // The dashboard embeds the same database: wait until the page switched before clicking tabs.
+    await expect(await pageTitle(page)).toHaveValue('Aufgaben')
     await page.getByRole('tab', { name: 'Tabelle' }).click()
     await page.getByRole('button', { name: 'Neu', exact: true }).click()
-    await expect(await pageTitle(page)).toHaveValue('Unbenannt')
-    const title = await pageTitle(page)
+    const title = peekTitle(page)
+    await expect(title).toHaveValue('Unbenannt')
     await title.fill('Altklausur rechnen')
     await title.press('Enter')
-    await page.getByRole('button', { name: 'Priorität Bearbeiten' }).click()
+    await peek(page).getByRole('button', { name: 'Priorität Bearbeiten' }).click()
     await page.getByRole('option', { name: 'Hoch' }).click()
-    await page.goBack()
-    await page.goBack()
+    await peek(page).getByRole('button', { name: 'Schließen' }).click()
     await expect(page.getByRole('row', { name: /Altklausur rechnen/ })).toContainText('Hoch')
   })
 

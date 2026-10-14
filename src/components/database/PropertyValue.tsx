@@ -15,7 +15,7 @@ export function PropertyValue({
   compact?: boolean
 }) {
   const ws = useWorkspace()
-  const openPage = useApp((s) => s.openPage)
+  const openEntry = useApp((s) => s.openEntry)
   if (value === null || value === undefined || value === '' || (Array.isArray(value) && value.length === 0)) {
     return def.type === 'checkbox' ? <CheckMark checked={false} /> : null
   }
@@ -47,7 +47,7 @@ export function PropertyValue({
                 data-interactive
                 onClick={(e) => {
                   e.stopPropagation()
-                  if (path) openPage(path)
+                  if (path) openEntry(path, e)
                 }}
                 className={cx(
                   'inline-flex max-w-full items-center gap-1 truncate rounded-[5px] px-1.5 text-[13px] hover:bg-hover',

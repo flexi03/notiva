@@ -37,7 +37,7 @@ export function RowTitle({ db, row }: { db: DatabaseApi; row: ResolvedRow }) {
       {page?.icon && <span aria-hidden>{page.icon}</span>}
       <button
         type="button"
-        onClick={() => db.openRow(row.row.path)}
+        onClick={(e) => db.openRow(row.row.path, e)}
         onDoubleClick={() => setEditing(true)}
         className="min-w-0 flex-1 truncate py-1 text-left font-semibold hover:underline hover:decoration-marker hover:decoration-2 hover:underline-offset-4"
       >
@@ -54,7 +54,7 @@ export function RowTitle({ db, row }: { db: DatabaseApi; row: ResolvedRow }) {
       <IconButton
         size="sm"
         label={t('db.openRow')}
-        onClick={() => db.openRow(row.row.path)}
+        onClick={(e) => db.openRow(row.row.path, e)}
         className="opacity-0 group-hover:opacity-100 focus:opacity-100"
       >
         <ArrowUpRight size={13} />

@@ -103,3 +103,18 @@ export function moveBlock<T>(blocks: T[], from: number, to: number): T[] {
   next.splice(Math.max(0, Math.min(to, next.length)), 0, item as T)
   return next
 }
+
+/** Done/total task checkboxes of a body (code blocks and widgets are not counted). */
+export function taskProgress(body: string): { done: number; total: number } {
+  let done = 0
+  let total = 0
+  for (const block of splitBlocks(body)) {
+    const type = blockType(block.text)
+    if (type === 'code' || type === 'widget' || type === 'math') continue
+    for (const match of block.text.matchAll(/^\s*(?:>\s*)*[-*+]\s\[([ xX])\]\s/gm)) {
+      total += 1
+      if (match[1] !== ' ') done += 1
+    }
+  }
+  return { done, total }
+}

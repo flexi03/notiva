@@ -28,8 +28,12 @@ export function RowCard({
       aria-label={row.row.title}
       draggable={draggable}
       onDragStart={draggable ? onDragStart : undefined}
+      // The whole card opens the entry; the title button is the keyboard path to the same action.
+      onClick={(e) => {
+        if (!(e.target as HTMLElement).closest('button, a, input')) db.openRow(row.row.path, e)
+      }}
       className={cx(
-        'group relative flex flex-col rounded-panel border border-line bg-surface text-left transition-shadow hover:border-line-strong',
+        'group relative flex cursor-pointer flex-col rounded-panel border border-line bg-surface text-left transition-shadow hover:border-line-strong',
         draggable && 'cursor-grab active:cursor-grabbing',
       )}
     >
@@ -44,7 +48,7 @@ export function RowCard({
       <div className="flex flex-col gap-1.5 p-2.5">
         <button
           type="button"
-          onClick={() => db.openRow(row.row.path)}
+          onClick={(e) => db.openRow(row.row.path, e)}
           className="flex items-start gap-1.5 text-left font-semibold leading-snug hover:underline hover:decoration-marker hover:decoration-2 hover:underline-offset-4"
         >
           {variant === 'board' && page?.icon && <span aria-hidden>{page.icon}</span>}

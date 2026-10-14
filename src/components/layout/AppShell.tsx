@@ -1,16 +1,20 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { useApp, useWorkspace } from '@/app/store'
 import { usePageActions } from '@/app/hooks/usePageActions'
+import { routeHash } from '@/lib/route'
 import { cx } from '@/components/ui'
 import { Sidebar } from './Sidebar'
 import { ToastHost } from './Toast'
 import { PromptHost } from './PromptHost'
+import { PeekHost } from './PeekHost'
+import { ScrollRootContext } from './scrollRoot'
 
 /** Sidebar (drawer on small screens) + main area + global overlays and shortcuts. */
 export function AppShell({ children, overlays }: { children: ReactNode; overlays?: ReactNode }) {
   const ws = useWorkspace()
-  const { sidebarOpen, setSidebar, setSearch, setNewPage } = useApp()
+  const { sidebarOpen, setSidebar, setSearch, setNewPage, route } = useApp()
   const actions = usePageActions(ws)
+  const mainRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -53,10 +57,11 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
       >
         <Sidebar />
       </aside>
-      <main className="min-w-0 flex-1 overflow-y-auto" id="main">
-        {children}
+      <main ref={mainRef} className="min-w-0 flex-1 overflow-y-auto" id="main" data-route={routeHash(route)}>
+        <ScrollRootContext value={mainRef}>{children}</ScrollRootContext>
       </main>
       {overlays}
+      <PeekHost />
       <PromptHost />
       <ToastHost />
     </div>

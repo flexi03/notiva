@@ -29,6 +29,8 @@ interface AppState {
   sidebarOpen: boolean
   searchOpen: boolean
   newPageOpen: { folder: string } | null
+  /** Page shown in the side panel over the current screen. */
+  peek: string | null
   toast: Toast | null
   prompt: PromptRequest | null
   /** Asks for a text value with the app's dialog. Resolves null on cancel. */
@@ -36,6 +38,12 @@ interface AppState {
   setWorkspace(ws: Workspace | null): Promise<void>
   navigate(route: Route): void
   openPage(path: string): void
+  /**
+   * Opens a database entry or card: in the side panel (setting `openEntries`), or as a full page
+   * when the setting says so or ⌘/Ctrl/Shift is held.
+   */
+  openEntry(path: string, event?: { metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }): void
+  closePeek(): void
   syncRoute(): void
   updateSettings(patch: Partial<Settings>): void
   setSidebar(open: boolean): void
@@ -54,6 +62,7 @@ export const useApp = create<AppState>((set, get) => ({
   sidebarOpen: typeof window !== 'undefined' ? window.innerWidth >= 900 : true,
   searchOpen: false,
   newPageOpen: null,
+  peek: null,
   toast: null,
   prompt: null,
 
@@ -79,14 +88,20 @@ export const useApp = create<AppState>((set, get) => ({
   navigate(route) {
     const hash = routeHash(route)
     if (location.hash !== hash) location.hash = hash
-    set({ route, searchOpen: false })
+    set({ route, searchOpen: false, peek: null })
     if (window.innerWidth < 900) set({ sidebarOpen: false })
   },
   openPage(path) {
     get().navigate({ name: 'page', path })
   },
+  openEntry(path, event) {
+    const full = event && (event.metaKey || event.ctrlKey || event.shiftKey)
+    if (full || get().settings.openEntries === 'page') get().openPage(path)
+    else set({ peek: path })
+  },
+  closePeek: () => set({ peek: null }),
   syncRoute() {
-    set({ route: parseRoute(location.hash) })
+    set({ route: parseRoute(location.hash), peek: null })
   },
   updateSettings(patch) {
     const settings = parseSettings({ ...get().settings, ...patch })

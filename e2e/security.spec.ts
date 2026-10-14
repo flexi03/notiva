@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { openDemo, pageErrors, quickOpen, go } from './helpers'
+import { openDemo, pageErrors, pageTitle, quickOpen, go } from './helpers'
 
 const PAYLOAD = [
   '<img src=x onerror="window.__pwned=1">',
@@ -90,7 +90,9 @@ test.describe('Sicherheit', () => {
 
   test('manipulierte Adressen führen nicht aus dem Speicher heraus', async ({ page }) => {
     await openDemo(page)
-    await go(page, '/#/p/..%2F..%2Fetc%2Fpasswd.md')
-    await expect(page.getByRole('heading', { level: 1 }).getByRole('textbox')).toHaveValue('Studium')
+    // Invalid routes fall back to the start page, so don't wait for the requested route.
+    await go(page, '/#/p/..%2F..%2Fetc%2Fpasswd.md', { wait: false })
+    await expect(page.locator('#main')).toHaveAttribute('data-route', '#/p/Studium.md')
+    await expect(await pageTitle(page)).toHaveValue('Studium')
   })
 })

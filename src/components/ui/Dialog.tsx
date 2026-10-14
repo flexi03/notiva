@@ -1,8 +1,9 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { IconButton } from './Button'
 import { cx } from './cx'
+import { useModal } from './useModal'
 
 interface DialogProps {
   open: boolean
@@ -33,49 +34,13 @@ export function Dialog({
 }: DialogProps) {
   const panel = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (!open) return
-    const previous = document.activeElement as HTMLElement | null
-    const focusables = () =>
-      [
-        ...(panel.current?.querySelectorAll<HTMLElement>(
-          'input, textarea, select, button, [href], [tabindex]:not([tabindex="-1"])',
-        ) ?? []),
-      ].filter((el) => !el.hasAttribute('disabled'))
-    const first =
-      panel.current?.querySelector<HTMLElement>('[data-autofocus], input, textarea') ?? focusables()[0]
-    first?.focus()
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        onClose()
-      }
-      if (e.key === 'Tab') {
-        const list = focusables()
-        if (list.length === 0) return
-        const firstEl = list[0]!
-        const lastEl = list[list.length - 1]!
-        if (e.shiftKey && document.activeElement === firstEl) {
-          e.preventDefault()
-          lastEl.focus()
-        } else if (!e.shiftKey && document.activeElement === lastEl) {
-          e.preventDefault()
-          firstEl.focus()
-        }
-      }
-    }
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('keydown', onKey)
-      previous?.focus?.()
-    }
-  }, [open, onClose])
+  useModal(panel, open, onClose)
 
   if (!open) return null
   return createPortal(
     <div
       className={cx(
-        'fixed inset-0 z-40 flex justify-center bg-[rgb(10_14_20/0.38)] p-4',
+        'fixed inset-0 z-[45] flex justify-center bg-[rgb(10_14_20/0.38)] p-4',
         position === 'top' ? 'items-start pt-[12vh]' : 'items-center',
       )}
       onPointerDown={(e) => e.target === e.currentTarget && onClose()}

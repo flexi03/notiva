@@ -40,7 +40,7 @@ function Rows({ db, rows }: { db: DatabaseApi; rows: ResolvedRow[] }) {
           <li key={row.row.path} className="flex min-h-10 flex-wrap items-center gap-x-3 gap-y-1 px-1 py-1.5">
             <button
               type="button"
-              onClick={() => db.openRow(row.row.path)}
+              onClick={(e) => db.openRow(row.row.path, e)}
               className="flex min-w-0 flex-1 items-center gap-2 text-left font-semibold hover:underline hover:decoration-marker hover:decoration-2 hover:underline-offset-4"
             >
               {page?.icon && <span aria-hidden>{page.icon}</span>}

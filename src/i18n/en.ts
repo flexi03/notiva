@@ -247,6 +247,15 @@ export const en: Record<MessageKey, string> = {
   'settings.language': 'Language',
   'settings.editor': 'Editor',
   'settings.spellcheck': 'Spell check',
+  'settings.openEntries': 'Open entries and cards',
+  'settings.openEntriesHint': '⌘/Ctrl-click always opens the full page.',
+  'settings.openEntries.peek': 'As preview',
+  'settings.openEntries.page': 'As full page',
+  'settings.pageRail': 'Page edge',
+  'settings.pageRailHint': 'Minimap with reading progress, or just a progress bar.',
+  'settings.pageRail.minimap': 'Minimap',
+  'settings.pageRail.progress': 'Progress',
+  'settings.pageRail.off': 'Off',
   'settings.dailyFolder': 'Folder for daily notes',
   'settings.advanced': 'Advanced',
   'settings.customCss': 'Custom CSS',
@@ -278,4 +287,11 @@ export const en: Record<MessageKey, string> = {
   'common.edit': 'Edit',
   'common.open': 'Open',
   'common.more': 'More',
+
+  'peek.openFull': 'Open as full page',
+
+  'rail.label': 'Minimap',
+  'rail.progress': '{percent} % read',
+  'rail.tasks': '{done} of {total} tasks done',
+  'rail.jump': 'Jump to “{title}”',
 }

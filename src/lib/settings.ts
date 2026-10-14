@@ -26,6 +26,10 @@ export interface Settings {
   width: 'normal' | 'wide' | 'full'
   language: 'de' | 'en'
   spellcheck: boolean
+  /** Database entries and cards open in a side panel ("peek") or as a full page. */
+  openEntries: 'peek' | 'page'
+  /** Right edge of a page: minimap with reading progress, progress only, or nothing. */
+  pageRail: 'minimap' | 'progress' | 'off'
   /** Folder for daily notes. */
   dailyFolder: string
   /** Extra CSS applied to the app (advanced customisation). */
@@ -42,6 +46,8 @@ export const DEFAULT_SETTINGS: Settings = {
   width: 'normal',
   language: 'de',
   spellcheck: true,
+  openEntries: 'peek',
+  pageRail: 'minimap',
   dailyFolder: 'Tagesnotizen',
   customCss: '',
   favorites: [],
@@ -69,6 +75,8 @@ export function parseSettings(raw: unknown): Settings {
     width: pick(['normal', 'wide', 'full'] as const, r.width, d.width),
     language: pick(['de', 'en'] as const, r.language, d.language),
     spellcheck: typeof r.spellcheck === 'boolean' ? r.spellcheck : d.spellcheck,
+    openEntries: pick(['peek', 'page'] as const, r.openEntries, d.openEntries),
+    pageRail: pick(['minimap', 'progress', 'off'] as const, r.pageRail, d.pageRail),
     dailyFolder:
       typeof r.dailyFolder === 'string' && r.dailyFolder.trim() && !r.dailyFolder.includes('..')
         ? r.dailyFolder.trim()

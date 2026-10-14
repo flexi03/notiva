@@ -27,6 +27,7 @@ export function useDatabase(
   const ws = useWorkspace()
   const run = useAction()
   const openPage = useApp((s) => s.openPage)
+  const openEntry = useApp((s) => s.openEntry)
   const page = ws.get(dbPath)
   const def: DatabaseDef | null = page?.database ?? null
   const [viewIndex, setViewIndexState] = useState(() => {
@@ -103,7 +104,7 @@ export function useDatabase(
     async addRow(values: FrontmatterData = {}, open = false) {
       const prefilled = { ...defaultsFromFilters(view.filter, def), ...values }
       const path = await run(() => ws.createRow(dbPath, t('page.untitled'), prefilled))
-      if (path && open) openPage(path)
+      if (path && open) openEntry(path)
       return path
     },
     setValue(rowPath: string, property: string, value: FormulaValue) {
@@ -115,7 +116,9 @@ export function useDatabase(
       const empty = stored === null || stored === '' || (Array.isArray(stored) && stored.length === 0)
       return run(() => ws.setProperty(rowPath, property, empty ? undefined : stored))
     },
-    openRow: openPage,
+    /** Opens a row in the side panel (or as page, see `openEntry`). */
+    openRow: openEntry,
+    openPage,
     deleteRow: (rowPath: string) => run(() => ws.trash(rowPath)),
   }
 }

@@ -7,7 +7,7 @@ export async function openDemo(page: Page): Promise<void> {
   await guard(page)
   await page.goto('/')
   await page.getByRole('button', { name: /Demo ausprobieren/ }).click()
-  await expect(page.getByRole('heading', { level: 1 }).getByRole('textbox')).toHaveValue('Studium')
+  await expect(await pageTitle(page)).toHaveValue('Studium')
 }
 
 export async function guard(page: Page): Promise<string[]> {
@@ -53,16 +53,40 @@ export async function quickOpen(page: Page, query: string): Promise<void> {
   await page.keyboard.press('Enter')
 }
 
+/** Title field of the page in the main area. */
 export async function pageTitle(page: Page) {
-  return page.getByRole('heading', { level: 1 }).getByRole('textbox')
+  return page.locator('#main').getByRole('heading', { level: 1 }).getByRole('textbox')
 }
 
-/** In-app navigation (hash change without reload – the demo vault lives in memory). */
-export async function go(page: Page, hash: string): Promise<void> {
-  await page.evaluate(
+/** The side panel ("Vorschau") that database entries and cards open in. */
+export function peek(page: Page) {
+  return page
+    .getByRole('dialog')
+    .filter({ has: page.getByRole('button', { name: 'Als ganze Seite öffnen' }) })
+}
+
+export function peekTitle(page: Page) {
+  return peek(page).getByRole('heading', { level: 1 }).getByRole('textbox')
+}
+
+/**
+ * In-app navigation (hash change without reload – the demo vault lives in memory). Waits until the
+ * app has rendered the new route (`#main[data-route]`), so the next locator can't hit the previous
+ * screen.
+ */
+export async function go(page: Page, hash: string, { wait = true } = {}): Promise<void> {
+  const target = await page.evaluate(
     (h) => {
       location.hash = h
+      return location.hash
     },
     hash.replace(/^\//, ''),
   )
+  if (wait) await expect(page.locator('#main')).toHaveAttribute('data-route', routeOf(target))
+}
+
+/** The app writes routes with encodeURIComponent; the browser may keep other escapes. */
+function routeOf(hash: string): string {
+  const match = /^#\/p\/(.*)$/.exec(hash)
+  return match ? `#/p/${encodeURIComponent(decodeURIComponent(match[1]!))}` : hash || '#/'
 }

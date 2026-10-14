@@ -18,6 +18,18 @@ export interface BlockActions extends BlockInputCallbacks {
 }
 
 const INTERACTIVE = 'a, button, input, summary, select, textarea, label, [data-interactive]'
+/** How the block is drawn in the page rail's minimap (see PageRail). */
+const RAIL_KIND: Partial<Record<ReturnType<typeof blockType>, string>> = {
+  heading: 'heading',
+  list: 'list',
+  tasks: 'list',
+  widget: 'box',
+  code: 'box',
+  math: 'box',
+  table: 'box',
+  callout: 'box',
+  divider: 'divider',
+}
 const SPACING: Partial<Record<ReturnType<typeof blockType>, string>> = {
   heading: 'pt-5 pb-0.5',
   widget: 'py-2',
@@ -68,6 +80,8 @@ export function Block({
         !editing && !isWidget && 'cursor-text',
       )}
       data-block-id={block.id}
+      data-rail={RAIL_KIND[type] ?? 'text'}
+      {...(type === 'heading' ? { 'data-level': /^#+/.exec(block.text.trimStart())![0].length } : {})}
       onDragOver={onDragOver}
       onDragLeave={() => setDrop(null)}
       onDrop={(e) => {
