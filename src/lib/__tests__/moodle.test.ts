@@ -5,6 +5,7 @@ import {
   applyMoodleImport,
   cleanEventTitle,
   importTargets,
+  materialsOf,
   parseIcs,
   planMoodleImport,
   snapshotFromIcs,
@@ -187,5 +188,97 @@ describe('import into the study dashboard', () => {
     expect(plan.map((p) => p.title)).toEqual(['Übungsblatt 4', 'Quiz Kapitel 2'])
     expect(plan[0]).toMatchObject({ values: { Modul: ['[[Lineare Algebra]]'], Fällig: '2026-10-21' } })
     expect(plan[1]).toMatchObject({ values: { Art: 'Lernen', Modul: ['[[Datenbanken]]'] } })
+  })
+})
+
+describe('course materials', () => {
+  const contents = [
+    {
+      name: 'Woche 1',
+      modules: [
+        {
+          id: 77,
+          name: 'Vorlesung 1 – Folien',
+          modname: 'resource',
+          url: 'https://moodle.example.org/mod/resource/view.php?id=77',
+          contents: [
+            {
+              type: 'file',
+              filename: 'vl01.pdf',
+              fileurl:
+                'https://moodle.example.org/webservice/pluginfile.php/1/mod_resource/content/1/vl01.pdf?forcedownload=1',
+              filesize: 123456,
+              mimetype: 'application/pdf',
+              timemodified: 1790000000,
+            },
+          ],
+        },
+        {
+          id: 78,
+          name: 'Skript (extern)',
+          modname: 'url',
+          contents: [{ type: 'url', fileurl: 'https://skript.example.org/la.pdf' }],
+        },
+        {
+          id: 79,
+          name: 'Böser Link',
+          modname: 'url',
+          contents: [{ type: 'url', fileurl: 'javascript:alert(1)' }],
+        },
+        {
+          id: 80,
+          name: 'Übungen',
+          modname: 'folder',
+          contents: [
+            { type: 'file', filename: 'blatt1.pdf', fileurl: 'https://moodle.example.org/f/blatt1.pdf' },
+          ],
+        },
+        { id: 81, name: 'Forum', modname: 'forum' },
+      ],
+    },
+  ]
+
+  it('lists files, links and folder contents per course', () => {
+    const list = materialsOf('course:42', contents)
+    expect(list.map((m) => [m.id, m.kind, m.title])).toEqual([
+      ['file:77:vl01.pdf', 'file', 'Vorlesung 1 – Folien'],
+      ['url:78', 'url', 'Skript (extern)'],
+      ['file:80:blatt1.pdf', 'file', 'Übungen / blatt1.pdf'],
+    ])
+    expect(list[0]).toMatchObject({ section: 'Woche 1', mimetype: 'application/pdf', size: 123456 })
+    expect(materialsOf('course:42', 'kaputt')).toEqual([])
+  })
+
+  it('adds materials and Moodle notifications to the snapshot', () => {
+    const snap = snapshotFromWebService(
+      'https://moodle.example.org',
+      {
+        ...WS,
+        contents: { '42': contents },
+        notices: {
+          notifications: [
+            {
+              id: 9,
+              subject: 'Neuer Beitrag im Forum',
+              smallmessage: '<b>Hallo</b>',
+              contexturl: 'https://moodle.example.org/mod/forum/discuss.php?d=1',
+              timecreated: 1790000000,
+            },
+          ],
+        },
+      },
+      now,
+    )
+    expect(snap.materials).toHaveLength(3)
+    expect(snap.materials![0]!.courseId).toBe('course:42')
+    expect(snap.notices).toEqual([
+      {
+        id: 'notice:9',
+        subject: 'Neuer Beitrag im Forum',
+        text: 'Hallo',
+        url: 'https://moodle.example.org/mod/forum/discuss.php?d=1',
+        time: new Date(1790000000 * 1000).toISOString(),
+      },
+    ])
   })
 })

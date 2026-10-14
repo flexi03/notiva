@@ -1,4 +1,5 @@
 import type { MoodleSnapshot } from '../moodle'
+import type { AppNotification } from '../notifications'
 import type { VaultAdapter, VaultFile } from './types'
 
 export type GitStatus = 'modified' | 'added' | 'deleted' | 'renamed' | 'untracked'
@@ -90,6 +91,23 @@ export interface MoodleBridge {
   open(url: string, external: boolean): Promise<void>
 }
 
+export interface NotifySettings {
+  system: boolean
+  intervalMinutes: number
+}
+
+export interface NotificationBridge {
+  list(): Promise<AppNotification[]>
+  add(items: AppNotification[]): Promise<void>
+  markRead(ids: string[] | 'all'): Promise<void>
+  clear(): Promise<void>
+  settings(): Promise<NotifySettings>
+  setSettings(settings: NotifySettings): Promise<NotifySettings>
+  onChange(callback: () => void): () => void
+  /** A system notification was clicked (null = the summary banner). */
+  onOpen(callback: (id: string | null) => void): () => void
+}
+
 /** API exposed by electron/preload.ts via contextBridge. Paths are validated again in the main process. */
 export interface NotivaBridge {
   platform: string
@@ -109,6 +127,8 @@ export interface NotivaBridge {
   aiCli?: CliBridge
   /** Git for the open folder (desktop app only). */
   git?: GitBridge
+  /** Notification center storage and system banners (desktop app only). */
+  notifications?: NotificationBridge
   /** Moodle courses and deadlines (desktop app only). */
   moodle?: MoodleBridge
   /** Command line for AI apps to start the MCP server on the open folder. */

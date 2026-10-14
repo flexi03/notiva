@@ -13,6 +13,8 @@ import {
   dialog,
   ipcMain,
   net,
+  Notification,
+  powerMonitor,
   protocol,
   safeStorage,
   session,
@@ -37,6 +39,9 @@ import {
   type MoodleConfig,
 } from './moodle'
 import { clearMoodleSession, openMoodlePage, ssoLogin } from './moodleWindow'
+import { NotificationStore, parseNotifySettings, type NotifySettings } from './notifier'
+import { deadlineReminders, moodleNews, type AppNotification } from '../src/lib/notifications'
+import type { MoodleSnapshot } from '../src/lib/moodle'
 
 const DIST = path.join(__dirname, '..', 'dist')
 const userFile = (name: string) => path.join(process.env.NOTIVA_E2E_USERDATA ?? app.getPath('userData'), name)
@@ -59,15 +64,20 @@ let vault: FsVault | null = null
 let watcher: FSWatcher | null = null
 let window: BrowserWindow | null = null
 
-async function readConfig(): Promise<{ lastFolder?: string }> {
+interface AppConfig {
+  lastFolder?: string
+  notify?: NotifySettings
+}
+
+async function readConfig(): Promise<AppConfig> {
   try {
-    return JSON.parse(await fs.readFile(CONFIG(), 'utf8')) as { lastFolder?: string }
+    return JSON.parse(await fs.readFile(CONFIG(), 'utf8')) as AppConfig
   } catch {
     return {}
   }
 }
 
-async function writeConfig(config: { lastFolder?: string }): Promise<void> {
+async function writeConfig(config: AppConfig): Promise<void> {
   await fs.mkdir(path.dirname(CONFIG()), { recursive: true })
   await fs.writeFile(CONFIG(), JSON.stringify(config))
 }
@@ -125,6 +135,85 @@ async function saveMoodle(config: MoodleConfig | null): Promise<boolean> {
     await fs.writeFile(MOODLE(), safeStorage.encryptString(json), { mode: 0o600 })
   else return (moodleRemembered = false)
   return (moodleRemembered = true)
+}
+
+/* ---------- notification center + Moodle polling ---------- */
+
+const notifications = new NotificationStore(
+  userFile('notifications.json'),
+  (added) => void showBanners(added),
+  () => window?.webContents.send('notifications:changed'),
+)
+
+async function showBanners(added: AppNotification[]): Promise<void> {
+  const settings = parseNotifySettings((await readConfig()).notify)
+  if (!settings.system || !Notification.isSupported() || process.env.NOTIVA_E2E_USERDATA) return
+  const banner =
+    added.length > 3
+      ? new Notification({ title: 'Notiva', body: `${added.length} Neuigkeiten – z. B. ${added[0]!.title}` })
+      : null
+  for (const n of banner ? [] : added) {
+    const one = new Notification({
+      title: n.course ? `${n.course}: ${n.title}` : n.title,
+      ...(n.body ? { body: n.body } : {}),
+    })
+    one.on('click', () => focusNotification(n.id))
+    one.show()
+  }
+  banner?.on('click', () => focusNotification(null))
+  banner?.show()
+}
+
+function focusNotification(id: string | null): void {
+  if (!window) return
+  if (window.isMinimized()) window.restore()
+  window.show()
+  window.focus()
+  window.webContents.send('notifications:open', id)
+}
+
+const LOCALE = () => (app.getLocale().startsWith('de') ? 'de-DE' : 'en-US')
+
+/** Fetches Moodle, stores the snapshot and turns the differences into notifications. */
+async function pollMoodle(): Promise<MoodleSnapshot> {
+  const config = await loadMoodle()
+  if (!config) throw new Error('Moodle ist nicht verbunden')
+  const snapshot = await moodleClient.fetch(config)
+  const previous = await fs
+    .readFile(MOODLE_SNAPSHOT(), 'utf8')
+    .then((text) => JSON.parse(text) as MoodleSnapshot)
+    .catch(() => null)
+  await fs.writeFile(MOODLE_SNAPSHOT(), JSON.stringify(snapshot), { mode: 0o600 })
+  const now = new Date()
+  await notifications.add([
+    ...moodleNews(previous, snapshot, { now, locale: LOCALE() }),
+    ...deadlineReminders(
+      snapshot.events.map((e) => ({
+        id: e.id,
+        title: e.title,
+        due: e.due,
+        ...(e.course ? { course: e.course.name } : {}),
+        ...(e.url ? { target: { type: 'url' as const, url: e.url } } : {}),
+      })),
+      { now, locale: LOCALE() },
+    ),
+  ])
+  return snapshot
+}
+
+let pollTimer: ReturnType<typeof setTimeout> | null = null
+
+/** Checks Moodle now and then every few minutes (settings) – quietly, errors only end this round. */
+async function schedulePolling(delay?: number): Promise<void> {
+  if (pollTimer) clearTimeout(pollTimer)
+  const minutes = parseNotifySettings((await readConfig()).notify).intervalMinutes
+  pollTimer = setTimeout(
+    async () => {
+      if (await loadMoodle()) await pollMoodle().catch(() => undefined)
+      void schedulePolling()
+    },
+    delay ?? minutes * 60_000,
+  )
 }
 
 function mcpLaunch(): McpLaunch {
@@ -261,6 +350,8 @@ function registerIpc(): void {
         : request,
     )
     const remembered = await saveMoodle(config)
+    // First fetch right away: it is the baseline for "what's new".
+    void pollMoodle().catch(() => undefined)
     return { ...statusOf(config), remembered }
   })
   handle('moodle:disconnect', async () => {
@@ -268,12 +359,24 @@ function registerIpc(): void {
     await clearMoodleSession()
     return statusOf(null)
   })
-  handle('moodle:fetch', async () => {
-    const config = await loadMoodle()
-    if (!config) throw new Error('Moodle ist nicht verbunden')
-    const snapshot = await moodleClient.fetch(config)
-    await fs.writeFile(MOODLE_SNAPSHOT(), JSON.stringify(snapshot), { mode: 0o600 })
-    return snapshot
+  handle('moodle:fetch', async () => pollMoodle())
+  handle('notifications:list', async () => notifications.all())
+  handle('notifications:add', async (raw: unknown) => {
+    // From the renderer: reminders for the vault's own tasks.
+    await notifications.add(Array.isArray(raw) ? (raw as AppNotification[]).slice(0, 50) : [])
+  })
+  handle('notifications:markRead', async (ids: unknown) =>
+    notifications.markRead(
+      ids === 'all' ? 'all' : Array.isArray(ids) ? ids.filter((i) => typeof i === 'string') : [],
+    ),
+  )
+  handle('notifications:clear', async () => notifications.clear())
+  handle('notifications:settings', async () => parseNotifySettings((await readConfig()).notify))
+  handle('notifications:setSettings', async (raw: unknown) => {
+    const notify = parseNotifySettings(raw)
+    await writeConfig({ ...(await readConfig()), notify })
+    void schedulePolling()
+    return notify
   })
   // Moodle pages open in a Notiva window with the university login – or in the system browser.
   handle('moodle:open', async (raw: unknown, external: unknown) => {
@@ -354,6 +457,9 @@ app.whenReady().then(async () => {
   registerProtocol()
   registerIpc()
   createWindow()
+  // Check Moodle shortly after start, then regularly – and after waking from sleep.
+  void schedulePolling(20_000)
+  powerMonitor.on('resume', () => void schedulePolling(10_000))
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })

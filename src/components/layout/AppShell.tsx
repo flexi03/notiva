@@ -14,6 +14,10 @@ import { DiffSheet } from '@/components/git/DiffView'
 import { ActivityBar } from './ActivityBar'
 import { AssistantPanel } from '@/components/ai/AssistantPanel'
 import { MoodleImportDialog } from '@/components/moodle/MoodleImport'
+import { NotificationPanel, openNotification } from '@/components/notifications/NotificationPanel'
+import { taskReminders, useNotifications } from '@/app/notifications'
+import type { Workspace } from '@/lib/workspace'
+import { electronBridge } from '@/lib/vault'
 import { moodleAvailable, useMoodle } from '@/app/moodle'
 
 /** Sidebar (drawer on small screens) + main area + global overlays and shortcuts. */
@@ -21,6 +25,7 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
   const ws = useWorkspace()
   const { sidebarOpen, setSidebar, setSearch, setNewPage, route, rightPanel, leftView } = useApp()
   useGitSync()
+  useNotificationSync(ws)
   useEffect(() => {
     if (moodleAvailable()) void useMoodle.getState().refresh()
   }, [])
@@ -79,7 +84,15 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
         data-left-view={leftView ?? 'pages'}
       >
         <div className={cx('h-full', leftView ? 'w-[24rem] max-[899px]:w-[min(26rem,100vw)]' : 'w-[17rem]')}>
-          {leftView === 'assistant' ? <AssistantPanel /> : leftView === 'git' ? <GitPanel /> : <Sidebar />}
+          {leftView === 'assistant' ? (
+            <AssistantPanel />
+          ) : leftView === 'git' ? (
+            <GitPanel />
+          ) : leftView === 'notifications' ? (
+            <NotificationPanel />
+          ) : (
+            <Sidebar />
+          )}
         </div>
       </div>
       <main ref={mainRef} className="min-w-0 flex-1 overflow-y-auto" id="main" data-route={routeHash(route)}>
@@ -87,6 +100,7 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
       </main>
       {rightPanel === 'assistant' && <AssistantPanel />}
       {rightPanel === 'git' && <GitPanel />}
+      {rightPanel === 'notifications' && <NotificationPanel />}
       <ActivityBar side="right" />
       <DiffSheet />
       <MoodleImportDialog />
@@ -96,4 +110,30 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
       <ToastHost />
     </div>
   )
+}
+
+/**
+ * Keeps the notification center current: loads it, follows changes from the main process (Moodle
+ * polling), reacts to clicked system banners and adds reminders for the vault's own tasks.
+ */
+function useNotificationSync(ws: Workspace): void {
+  useEffect(() => {
+    const store = useNotifications.getState()
+    void store.load()
+    const bridge = electronBridge()?.notifications
+    const offChange = bridge?.onChange(() => void useNotifications.getState().load())
+    const offOpen = bridge?.onOpen((id) => {
+      useApp.getState().openView('notifications')
+      const n = id ? useNotifications.getState().list.find((x) => x.id === id) : undefined
+      if (n) openNotification(n, ws)
+    })
+    const remind = () => void useNotifications.getState().add(taskReminders(ws))
+    remind()
+    const timer = setInterval(remind, 30 * 60_000)
+    return () => {
+      offChange?.()
+      offOpen?.()
+      clearInterval(timer)
+    }
+  }, [ws])
 }

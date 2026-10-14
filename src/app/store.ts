@@ -68,12 +68,12 @@ interface AppState {
   dismissToast(): void
 }
 
-export type ViewId = 'assistant' | 'git'
+export type ViewId = 'assistant' | 'git' | 'notifications'
 export type Side = 'left' | 'right'
-export const VIEWS: ViewId[] = ['assistant', 'git']
+export const VIEWS: ViewId[] = ['assistant', 'git', 'notifications']
 
 const LAYOUT_KEY = 'notiva.layout'
-const DEFAULT_SIDES: Record<ViewId, Side> = { assistant: 'left', git: 'left' }
+const DEFAULT_SIDES: Record<ViewId, Side> = { assistant: 'left', git: 'left', notifications: 'right' }
 
 /** Device-local layout (like VS Code's workbench state); falls back to the defaults. */
 export function loadViewSides(): Record<ViewId, Side> {

@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
-import { Files, GitBranch, Sparkles } from 'lucide-react'
+import { Bell, Files, GitBranch, Sparkles } from 'lucide-react'
+import { unreadCount, useNotifications } from '@/app/notifications'
 import { useGit } from '@/app/git'
 import { useApp, VIEWS, type Side, type ViewId } from '@/app/store'
 import { t } from '@/i18n'
@@ -9,9 +10,9 @@ const DRAG_TYPE = 'application/x-notiva-view'
 
 /** Label, shortcut label and icon of each movable view. */
 export function viewInfo(view: ViewId): { label: string; icon: (size: number) => ReactNode } {
-  return view === 'assistant'
-    ? { label: t('ai.toggle'), icon: (size) => <Sparkles size={size} /> }
-    : { label: t('git.toggle'), icon: (size) => <GitBranch size={size} /> }
+  if (view === 'assistant') return { label: t('ai.toggle'), icon: (size) => <Sparkles size={size} /> }
+  if (view === 'notifications') return { label: t('notify.toggle'), icon: (size) => <Bell size={size} /> }
+  return { label: t('git.toggle'), icon: (size) => <GitBranch size={size} /> }
 }
 
 /**
@@ -90,6 +91,7 @@ function ViewItem({ view, side }: { view: ViewId; side: Side }) {
   const toggle = useApp((s) => s.toggleView)
   const setDragging = useApp((s) => s.setDraggingView)
   const changes = useGit((s) => s.state?.changes.length ?? 0)
+  const unread = useNotifications((s) => unreadCount(s.list))
   const { label, icon } = viewInfo(view)
   return (
     <BarButton
@@ -97,7 +99,7 @@ function ViewItem({ view, side }: { view: ViewId; side: Side }) {
       title={`${label} – ${t('views.dragHint')}`}
       active={active}
       side={side}
-      badge={view === 'git' ? changes : 0}
+      badge={view === 'git' ? changes : view === 'notifications' ? unread : 0}
       onClick={() => toggle(view)}
       draggable
       onDragStart={(e) => {

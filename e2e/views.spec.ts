@@ -7,7 +7,10 @@ test.describe('KI und Änderungen links oder rechts', () => {
   test('stehen standardmäßig links statt der Seitenliste', async ({ page }) => {
     await openDemo(page)
     const left = page.getByRole('navigation', { name: 'Werkzeugleiste', exact: true })
-    await expect(page.getByRole('navigation', { name: 'Werkzeugleiste rechts' })).toHaveCount(0)
+    // Right bar: only the notifications by default.
+    const rightBar = page.getByRole('navigation', { name: 'Werkzeugleiste rechts' })
+    await expect(rightBar.getByRole('button')).toHaveCount(1)
+    await expect(rightBar.getByRole('button', { name: 'Benachrichtigungen' })).toBeVisible()
     await left.getByRole('button', { name: /KI-Assistent/ }).click()
     const assistant = page.getByRole('complementary', { name: 'Assistent' })
     await expect(assistant).toBeVisible()

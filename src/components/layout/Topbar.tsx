@@ -1,6 +1,7 @@
 import { useRef, useState, type ReactNode } from 'react'
-import { ChevronRight, GitBranch, MoreHorizontal, PanelLeft, Sparkles, Star } from 'lucide-react'
+import { Bell, ChevronRight, GitBranch, MoreHorizontal, PanelLeft, Sparkles, Star } from 'lucide-react'
 import { gitAvailable, useGit } from '@/app/git'
+import { unreadCount, useNotifications } from '@/app/notifications'
 import { useApp, useWorkspace } from '@/app/store'
 import { usePageActions } from '@/app/hooks/usePageActions'
 import { t } from '@/i18n'
@@ -52,6 +53,7 @@ export function Topbar({ title, actions }: { title?: string; actions?: ReactNode
       {actions}
       <AssistantToggle />
       <GitToggle />
+      <NotificationToggle />
       {page && (
         <>
           <IconButton
@@ -134,6 +136,25 @@ function GitToggle() {
       className="min-[900px]:hidden"
     >
       <GitBranch size={16} />
+    </IconButton>
+  )
+}
+
+function NotificationToggle() {
+  const open = useApp(
+    (s) => s.rightPanel === 'notifications' || (s.sidebarOpen && s.leftView === 'notifications'),
+  )
+  const toggle = useApp((s) => s.toggleView)
+  const unread = useNotifications((s) => unreadCount(s.list))
+  return (
+    <IconButton
+      label={unread ? t('notify.toggleUnread', { count: unread }) : t('notify.toggle')}
+      onClick={() => toggle('notifications')}
+      active={open}
+      className="relative min-[900px]:hidden"
+    >
+      <Bell size={16} />
+      {unread > 0 && <span aria-hidden className="absolute top-1 right-1 size-2 rounded-full bg-accent" />}
     </IconButton>
   )
 }

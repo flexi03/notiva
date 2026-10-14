@@ -30,6 +30,36 @@ export interface MoodleEvent {
   url?: string
 }
 
+/** A course material: an uploaded file (script, slides …), a link or a Moodle page. */
+export interface MoodleMaterial {
+  /** Stable key, e.g. "file:77:skript.pdf" or "url:78". */
+  id: string
+  courseId: string
+  section: string
+  /** Name of the activity in Moodle (e.g. "Vorlesung 3 – Folien"). */
+  title: string
+  kind: 'file' | 'url' | 'page'
+  /** file: file name */
+  filename?: string
+  /** file: download URL (needs the token – only the main process adds it); url: the link. */
+  url: string
+  mimetype?: string
+  size?: number
+  /** ISO date-time of the last change. */
+  modified?: string
+  /** Page of the activity in Moodle. */
+  activityUrl?: string
+}
+
+/** Moodle's own notifications (forum posts, grading, announcements …). */
+export interface MoodleNotice {
+  id: string
+  subject: string
+  text: string
+  url?: string
+  time: string
+}
+
 export interface MoodleSnapshot {
   site: string
   source: 'webservice' | 'calendar'
@@ -38,6 +68,8 @@ export interface MoodleSnapshot {
   courses: MoodleCourse[]
   events: MoodleEvent[]
   grades: Array<{ course: string; grade: string }>
+  materials?: MoodleMaterial[]
+  notices?: MoodleNotice[]
 }
 
 /* ---------- iCalendar (Moodle: Kalender → Exportieren → Kalender-URL) ---------- */
@@ -169,7 +201,16 @@ function plain(value: unknown): string {
 /** Builds the snapshot from the raw web service answers (all untrusted). */
 export function snapshotFromWebService(
   site: string,
-  raw: { siteInfo: unknown; courses: unknown; events: unknown; grades?: unknown },
+  raw: {
+    siteInfo: unknown
+    courses: unknown
+    events: unknown
+    grades?: unknown
+    /** core_course_get_contents per course id */
+    contents?: Record<string, unknown>
+    /** message_popup_get_popup_notifications */
+    notices?: unknown
+  },
   now = new Date(),
 ): MoodleSnapshot {
   const base = site.replace(/\/+$/, '')
@@ -210,6 +251,23 @@ export function snapshotFromWebService(
     .map((g) => ({ course: byId.get(`course:${text(g.courseid)}`)?.name ?? '', grade: plain(g.grade) }))
     .filter((g) => g.course && g.grade && g.grade !== '-')
   const user = plain(info.fullname)
+  const materials = courses.flatMap((c) => materialsOf(c.id, raw.contents?.[c.id.slice('course:'.length)]))
+  const noticeList =
+    isObject(raw.notices) && Array.isArray(raw.notices.notifications) ? raw.notices.notifications : []
+  const notices = noticeList
+    .filter(isObject)
+    .filter((n) => n.id !== undefined && plain(n.subject))
+    .slice(0, 100)
+    .map((n): MoodleNotice => {
+      const url = text(n.contexturl)
+      return {
+        id: `notice:${text(n.id)}`,
+        subject: plain(n.subject),
+        text: plain(n.smallmessage || n.fullmessage).slice(0, 500),
+        ...(/^https?:/i.test(url) ? { url } : {}),
+        time: new Date(Number(n.timecreated ?? 0) * 1000).toISOString(),
+      }
+    })
   return {
     site: base,
     source: 'webservice',
@@ -218,7 +276,73 @@ export function snapshotFromWebService(
     courses,
     events,
     grades,
+    materials,
+    notices,
   }
+}
+
+/** Files and links of one course from core_course_get_contents (untrusted). */
+export function materialsOf(courseId: string, raw: unknown): MoodleMaterial[] {
+  if (!Array.isArray(raw)) return []
+  const out: MoodleMaterial[] = []
+  for (const section of raw.filter(isObject)) {
+    const sectionName = plain(section.name)
+    for (const mod of (Array.isArray(section.modules) ? section.modules : []).filter(isObject)) {
+      const modname = text(mod.modname)
+      const cmid = text(mod.id)
+      const title = plain(mod.name)
+      const activityUrl = /^https?:/i.test(text(mod.url)) ? text(mod.url) : undefined
+      const contents = (Array.isArray(mod.contents) ? mod.contents : []).filter(isObject)
+      if (!cmid || !title) continue
+      if (modname === 'url') {
+        const link = text(contents[0]?.fileurl)
+        if (/^https?:/i.test(link))
+          out.push({
+            id: `url:${cmid}`,
+            courseId,
+            section: sectionName,
+            title,
+            kind: 'url',
+            url: link,
+            ...(activityUrl ? { activityUrl } : {}),
+          })
+        continue
+      }
+      if (modname === 'page' && activityUrl) {
+        out.push({
+          id: `page:${cmid}`,
+          courseId,
+          section: sectionName,
+          title,
+          kind: 'page',
+          url: activityUrl,
+          activityUrl,
+        })
+        continue
+      }
+      if (modname !== 'resource' && modname !== 'folder') continue
+      for (const file of contents) {
+        const filename = plain(file.filename)
+        const fileurl = text(file.fileurl)
+        if (text(file.type) !== 'file' || !filename || !/^https?:/i.test(fileurl)) continue
+        const modified = Number(file.timemodified)
+        out.push({
+          id: `file:${cmid}:${filename}`,
+          courseId,
+          section: sectionName,
+          title: modname === 'folder' ? `${title} / ${filename}` : title,
+          kind: 'file',
+          filename,
+          url: fileurl,
+          ...(text(file.mimetype) ? { mimetype: text(file.mimetype) } : {}),
+          ...(typeof file.filesize === 'number' ? { size: file.filesize } : {}),
+          ...(modified > 0 ? { modified: new Date(modified * 1000).toISOString() } : {}),
+          ...(activityUrl ? { activityUrl } : {}),
+        })
+      }
+    }
+  }
+  return out.slice(0, 2000)
 }
 
 /* ---------- import plan ---------- */

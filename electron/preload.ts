@@ -37,6 +37,24 @@ contextBridge.exposeInMainWorld('notiva', {
     snapshot: () => invoke('moodle:snapshot'),
     open: (url: string, external: boolean) => invoke<void>('moodle:open', url, external),
   },
+  notifications: {
+    list: () => invoke('notifications:list'),
+    add: (items: object[]) => invoke<void>('notifications:add', items),
+    markRead: (ids: string[] | 'all') => invoke<void>('notifications:markRead', ids),
+    clear: () => invoke<void>('notifications:clear'),
+    settings: () => invoke('notifications:settings'),
+    setSettings: (settings: object) => invoke('notifications:setSettings', settings),
+    onChange(callback: () => void) {
+      const listener = () => callback()
+      ipcRenderer.on('notifications:changed', listener)
+      return () => ipcRenderer.removeListener('notifications:changed', listener)
+    },
+    onOpen(callback: (id: string | null) => void) {
+      const listener = (_e: unknown, id: string | null) => callback(id)
+      ipcRenderer.on('notifications:open', listener)
+      return () => ipcRenderer.removeListener('notifications:open', listener)
+    },
+  },
   git: {
     state: () => invoke('git:state'),
     show: (rev: string, path: string) => invoke<string | null>('git:show', rev, path),

@@ -16,6 +16,8 @@ import { expandPack } from '../src/lib/templates'
 import { ssoAnswer } from '../electron/moodleSso'
 
 const TOKEN = 'tok1234567890abcdef'
+/** Switched on later: Moodle then has a new assignment, a new script and a forum message. */
+const news = { on: false }
 const day = 86_400
 const now = Math.floor(Date.now() / 1000)
 
@@ -65,9 +67,76 @@ function fakeMoodle(): Promise<{ server: Server; url: string; calls: string[] }>
             { id: 42, shortname: 'LA', fullname: 'Lineare Algebra' },
             { id: 43, shortname: 'BS', fullname: 'Betriebssysteme' },
           ])
+        if (fn === 'core_course_get_contents')
+          return send(
+            body.get('courseid') === '42'
+              ? [
+                  {
+                    name: 'Woche 1',
+                    modules: [
+                      {
+                        id: 77,
+                        name: 'Vorlesung 1',
+                        modname: 'resource',
+                        contents: [
+                          {
+                            type: 'file',
+                            filename: 'vl01.pdf',
+                            fileurl: `${base}/webservice/pluginfile.php/1/vl01.pdf`,
+                            timemodified: now - 10 * day,
+                          },
+                        ],
+                      },
+                      ...(news.on
+                        ? [
+                            {
+                              id: 78,
+                              name: 'Vorlesung 2 – Skript',
+                              modname: 'resource',
+                              contents: [
+                                {
+                                  type: 'file',
+                                  filename: 'vl02.pdf',
+                                  fileurl: `${base}/webservice/pluginfile.php/1/vl02.pdf`,
+                                  timemodified: now - 60,
+                                },
+                              ],
+                            },
+                          ]
+                        : []),
+                    ],
+                  },
+                ]
+              : [],
+          )
+        if (fn === 'message_popup_get_popup_notifications')
+          return send({
+            notifications: news.on
+              ? [
+                  {
+                    id: 9,
+                    subject: 'Raumänderung: heute H3',
+                    smallmessage: 'Die Vorlesung ist heute in H3.',
+                    timecreated: now - 30,
+                  },
+                ]
+              : [],
+          })
         if (fn === 'core_calendar_get_action_events_by_timesort')
           return send({
             events: [
+              ...(news.on
+                ? [
+                    {
+                      id: 503,
+                      name: 'Blatt 6 ist fällig',
+                      activityname: 'Blatt 6',
+                      modulename: 'assign',
+                      timesort: now + 9 * day,
+                      course: { id: 42 },
+                    },
+                  ]
+                : []),
               {
                 id: 501,
                 name: 'Blatt 5 ist fällig',
@@ -231,4 +300,26 @@ test('zeigt die Kurse und öffnet sie in der App', async () => {
   await page.waitForLoadState()
   expect(page.url()).toBe(`${moodle.url}/course/view.php?id=42`)
   await page.close()
+})
+
+test('meldet Neuigkeiten aus Moodle im Benachrichtigungscenter', async () => {
+  news.on = true
+  await window.getByRole('button', { name: 'Aktualisieren' }).click()
+  const bar = window.getByRole('navigation', { name: 'Werkzeugleiste rechts' })
+  const bell = bar.getByRole('button', { name: /Benachrichtigungen/ })
+  await expect(bell).toContainText('3')
+  await bell.click()
+  const panel = window.getByRole('complementary', { name: 'Benachrichtigungen' })
+  const list = panel.getByRole('list', { name: 'Benachrichtigungen' })
+  await expect(list).toContainText('Neue Abgabe: Blatt 6')
+  await expect(list).toContainText('Neue Unterlage: Vorlesung 2 – Skript')
+  await expect(list).toContainText('Mitteilung: Raumänderung: heute H3')
+  await panel.getByRole('button', { name: 'Alle als gelesen markieren' }).click()
+  await expect(bell).not.toContainText('3')
+  // Stored on the device, not in the vault.
+  expect(readFileSync(path.join(userData, 'notifications.json'), 'utf8')).toContain('Blatt 6')
+  for (const file of allFiles(folder)) expect(readFileSync(file, 'utf8')).not.toContain('Raumänderung')
+  // A second check finds nothing new.
+  await window.getByRole('button', { name: 'Aktualisieren' }).click()
+  await expect(bell).not.toContainText('3')
 })

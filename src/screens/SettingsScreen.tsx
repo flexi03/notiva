@@ -7,6 +7,7 @@ import { exportVault } from './exportVault'
 import { Row, Section } from './settingsLayout'
 import { AiSettingsSection, McpSection } from './AiSettings'
 import { MoodleSection } from '@/components/moodle/MoodleSettings'
+import { NotificationSettingsSection } from '@/components/notifications/NotificationSettings'
 import { PromptEditor } from '@/components/ai/PromptEditor'
 
 function Swatches<T extends string>({
@@ -184,6 +185,10 @@ export function SettingsScreen() {
 
         <Section title={t('settings.moodle')}>
           <MoodleSection />
+        </Section>
+
+        <Section title={t('notify.title')}>
+          <NotificationSettingsSection />
         </Section>
 
         <Section title={t('settings.advanced')}>

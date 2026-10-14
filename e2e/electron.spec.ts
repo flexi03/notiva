@@ -44,6 +44,7 @@ test('Renderer ist abgeschottet (kein Node, nur die Notiva-Brücke)', async () =
       'lastFolder',
       'mcpInfo',
       'moodle',
+      'notifications',
       'onVaultChange',
       'openExternal',
       'pickFolder',

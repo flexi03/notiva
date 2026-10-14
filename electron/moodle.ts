@@ -201,7 +201,7 @@ export class MoodleClient {
     const siteInfo = await this.call(site, secret, 'core_webservice_get_site_info')
     const userId = (siteInfo as { userid?: number }).userid ?? config.userId ?? 0
     const from = Math.floor(now.getTime() / 1000) - 86_400
-    const [courses, events, grades] = await Promise.all([
+    const [courses, events, grades, notices] = await Promise.all([
       this.call(site, secret, 'core_enrol_get_users_courses', { userid: userId }),
       this.call(site, secret, 'core_calendar_get_action_events_by_timesort', {
         timesortfrom: from,
@@ -210,8 +210,26 @@ export class MoodleClient {
       }),
       // Not every Moodle allows the grade overview – it's optional.
       this.call(site, secret, 'gradereport_overview_get_course_grades').catch(() => null),
+      this.call(site, secret, 'message_popup_get_popup_notifications', { useridto: userId, limit: 30 }).catch(
+        () => null,
+      ),
     ])
-    return snapshotFromWebService(site, { siteInfo, courses, events, grades }, now)
+    // Materials per course (scripts, slides, links); a course that fails is just skipped.
+    const contents: Record<string, unknown> = {}
+    const ids = Array.isArray(courses)
+      ? courses
+          .map((c: unknown) => String((c as { id?: unknown }).id ?? ''))
+          .filter(Boolean)
+          .slice(0, 40)
+      : []
+    await Promise.all(
+      ids.map(async (id) => {
+        contents[id] = await this.call(site, secret, 'core_course_get_contents', { courseid: id }).catch(
+          () => null,
+        )
+      }),
+    )
+    return snapshotFromWebService(site, { siteInfo, courses, events, grades, contents, notices }, now)
   }
 }
 
