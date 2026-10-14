@@ -1,3 +1,4 @@
+import type { MoodleSnapshot } from '../moodle'
 import type { VaultAdapter, VaultFile } from './types'
 
 export type GitStatus = 'modified' | 'added' | 'deleted' | 'renamed' | 'untracked'
@@ -63,6 +64,29 @@ export interface McpLaunch {
   env: Record<string, string>
 }
 
+export interface MoodleStatus {
+  connected: boolean
+  mode?: 'webservice' | 'calendar'
+  site?: string
+  user?: string
+  /** false: no keychain – the access is kept only until the app closes. */
+  remembered?: boolean
+}
+
+export interface MoodleBridge {
+  status(): Promise<MoodleStatus>
+  connect(
+    request:
+      | { mode: 'login'; site: string; username: string; password: string }
+      | { mode: 'token'; site: string; token: string }
+      | { mode: 'calendar'; url: string },
+  ): Promise<MoodleStatus>
+  disconnect(): Promise<MoodleStatus>
+  fetch(): Promise<MoodleSnapshot>
+  /** The last fetched data (null if never fetched or not connected). */
+  snapshot(): Promise<MoodleSnapshot | null>
+}
+
 /** API exposed by electron/preload.ts via contextBridge. Paths are validated again in the main process. */
 export interface NotivaBridge {
   platform: string
@@ -82,6 +106,8 @@ export interface NotivaBridge {
   aiCli?: CliBridge
   /** Git for the open folder (desktop app only). */
   git?: GitBridge
+  /** Moodle courses and deadlines (desktop app only). */
+  moodle?: MoodleBridge
   /** Command line for AI apps to start the MCP server on the open folder. */
   mcpInfo?(): Promise<McpLaunch>
   /** HTTP for the AI assistant (the renderer itself has no network access). */

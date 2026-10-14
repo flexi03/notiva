@@ -14,6 +14,7 @@ import {
   ipcMain,
   net,
   protocol,
+  safeStorage,
   session,
   shell,
   type IpcMainInvokeEvent,
@@ -27,9 +28,14 @@ import { GitRepo, type GitState } from './git'
 import { loadShellPath } from './shellPath'
 import { cliArgs, detectClis, parseCliRequest, startCli, type CliInfo, type McpLaunch } from './aiCli'
 import type { ChildProcess } from 'node:child_process'
+import { MoodleClient, parseConnect, parseStoredConfig, statusOf, type MoodleConfig } from './moodle'
 
 const DIST = path.join(__dirname, '..', 'dist')
-const CONFIG = () => path.join(process.env.NOTIVA_E2E_USERDATA ?? app.getPath('userData'), 'config.json')
+const userFile = (name: string) => path.join(process.env.NOTIVA_E2E_USERDATA ?? app.getPath('userData'), name)
+const CONFIG = () => userFile('config.json')
+/** Moodle access (encrypted) and the last fetched data (no secrets, read by the MCP server). */
+const MOODLE = () => userFile('moodle.bin')
+const MOODLE_SNAPSHOT = () => userFile('moodle-snapshot.json')
 const CSP =
   "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'"
 
@@ -79,6 +85,40 @@ let clis: Promise<CliInfo[]> | null = null
 let cliRunCounter = 0
 const cliRuns = new Map<number, ChildProcess>()
 
+const moodleClient = new MoodleClient((url, init) => net.fetch(url, init))
+let moodle: MoodleConfig | null | undefined
+let moodleRemembered = true
+
+/** E2E tests (unpackaged) store the Moodle access unencrypted – no keychain prompts on CI. */
+const plainSecrets = () => !app.isPackaged && !!process.env.NOTIVA_E2E_USERDATA
+
+async function loadMoodle(): Promise<MoodleConfig | null> {
+  if (moodle !== undefined) return moodle
+  try {
+    const raw = await fs.readFile(MOODLE())
+    moodle = parseStoredConfig(plainSecrets() ? raw.toString('utf8') : safeStorage.decryptString(raw))
+  } catch {
+    moodle = null
+  }
+  return moodle
+}
+
+/** Saves the access encrypted; without a keychain (some Linux setups) it lasts only this session. */
+async function saveMoodle(config: MoodleConfig | null): Promise<boolean> {
+  moodle = config
+  if (!config) {
+    await fs.rm(MOODLE(), { force: true })
+    await fs.rm(MOODLE_SNAPSHOT(), { force: true })
+    return true
+  }
+  const json = JSON.stringify(config)
+  if (plainSecrets()) await fs.writeFile(MOODLE(), json, { mode: 0o600 })
+  else if (safeStorage.isEncryptionAvailable())
+    await fs.writeFile(MOODLE(), safeStorage.encryptString(json), { mode: 0o600 })
+  else return (moodleRemembered = false)
+  return (moodleRemembered = true)
+}
+
 function mcpLaunch(): McpLaunch {
   const script = app.isPackaged
     ? path.join(process.resourcesPath, 'mcp', 'notiva-mcp.mjs')
@@ -86,7 +126,7 @@ function mcpLaunch(): McpLaunch {
   return {
     command: process.execPath,
     args: [script, requireVault().root],
-    env: { ELECTRON_RUN_AS_NODE: '1' },
+    env: { ELECTRON_RUN_AS_NODE: '1', NOTIVA_MOODLE_SNAPSHOT: MOODLE_SNAPSHOT() },
   }
 }
 
@@ -200,6 +240,34 @@ function registerIpc(): void {
   handle('git:init', async () => (await GitRepo.init(requireVault())).state())
   handle('git:push', async () => (await requireRepo()).push())
   handle('git:pull', async () => (await requireRepo()).pull())
+  handle('moodle:status', async () => {
+    const config = await loadMoodle()
+    return { ...statusOf(config), ...(config ? { remembered: moodleRemembered } : {}) }
+  })
+  handle('moodle:connect', async (raw: unknown) => {
+    const config = await moodleClient.connect(parseConnect(raw))
+    const remembered = await saveMoodle(config)
+    return { ...statusOf(config), remembered }
+  })
+  handle('moodle:disconnect', async () => {
+    await saveMoodle(null)
+    return statusOf(null)
+  })
+  handle('moodle:fetch', async () => {
+    const config = await loadMoodle()
+    if (!config) throw new Error('Moodle ist nicht verbunden')
+    const snapshot = await moodleClient.fetch(config)
+    await fs.writeFile(MOODLE_SNAPSHOT(), JSON.stringify(snapshot), { mode: 0o600 })
+    return snapshot
+  })
+  handle('moodle:snapshot', async () => {
+    if (!(await loadMoodle())) return null
+    try {
+      return JSON.parse(await fs.readFile(MOODLE_SNAPSHOT(), 'utf8')) as unknown
+    } catch {
+      return null
+    }
+  })
   handle('app:openExternal', async (url: unknown) => {
     if (typeof url === 'string' && /^(https?:|mailto:)/i.test(url)) await shell.openExternal(url)
   })

@@ -4,6 +4,8 @@
  */
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { Workspace } from '../src/lib/workspace'
+import { readFile } from 'node:fs/promises'
+import type { MoodleSnapshot } from '../src/lib/moodle'
 import { createServer, folderVault } from './server'
 
 const USAGE = `Notiva MCP-Server
@@ -26,7 +28,18 @@ async function main(): Promise<void> {
     process.exit(2)
   }
   const ws = await Workspace.open(await folderVault(folder))
-  const server = createServer(ws, { readOnly: args.includes('--read-only') })
+  // Started by the desktop app: the last Moodle fetch (no secrets) lies in its profile folder.
+  const snapshotFile = process.env.NOTIVA_MOODLE_SNAPSHOT
+  const moodle = snapshotFile
+    ? async () => {
+        try {
+          return JSON.parse(await readFile(snapshotFile, 'utf8')) as MoodleSnapshot
+        } catch {
+          return null
+        }
+      }
+    : undefined
+  const server = createServer(ws, { readOnly: args.includes('--read-only'), ...(moodle ? { moodle } : {}) })
   await server.connect(new StdioServerTransport())
   process.stderr.write(`notiva-mcp: ${ws.all().length} Seiten in ${folder}\n`)
 }

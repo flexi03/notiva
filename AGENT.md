@@ -32,7 +32,7 @@ Alle Daten sind Markdown-Dateien in einem Ordner („Vault“). Kein Server, kei
 
 ```
 src/lib/            path, frontmatter, links, blocks, markdown, plainText, editing, formula, database, dates,
-                    templates, widgets, settings, route, minimap, workspace, vault/ (Adapter), packs/ (Vorlagen),
+                    templates, widgets, settings, route, minimap, workspace, moodle (Import-Plan), pdfText, vault/ (Adapter), packs/ (Vorlagen),
                     ai/ (Werkzeuge, Agent, Anbieter – gemeinsam für Assistent und MCP)
 src/i18n/           de.ts (Quelle), en.ts, t()
 src/app/            store.ts (zustand: Workspace, Route, Einstellungen, Dialoge, Vorschau), vaults.ts (Speicher öffnen),
@@ -44,7 +44,7 @@ src/components/     ui/ (Design-System), layout/ (Shell, Seitenleiste, Topbar), 
                     Seite je Ansicht in `useApp().viewSides`, pro Gerät gespeichert)
 src/screens/        Start, Tag, Suche, Neue Seite, Vorlagen, Papierkorb, Einstellungen, Willkommen
 electron/           main.ts (sicherer Hauptprozess), preload.ts (Brücke), vaultFs.ts (Dateizugriff, auch für MCP),
-                    aiRequest.ts (geprüfte KI-Anfragen), aiCli.ts (Claude Code & Co.), git.ts (git-CLI),
+                    aiRequest.ts (geprüfte KI-Anfragen), aiCli.ts (Claude Code & Co.), git.ts (git-CLI), moodle.ts (Moodle-Zugang),
                     shellPath.ts (PATH der Login-Shell)
 mcp/                MCP-Server (server.ts + Tests, main.ts = CLI) → npm run mcp:build
 e2e/                Playwright: Abläufe, Layout, Barrierefreiheit, Sicherheit, Electron (inkl. Git und CLI mit

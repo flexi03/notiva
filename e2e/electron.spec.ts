@@ -43,6 +43,7 @@ test('Renderer ist abgeschottet (kein Node, nur die Notiva-Brücke)', async () =
       'git',
       'lastFolder',
       'mcpInfo',
+      'moodle',
       'onVaultChange',
       'openExternal',
       'pickFolder',
@@ -157,7 +158,10 @@ test('startet den MCP-Server für den offenen Ordner mit der App selbst', async 
     ).notiva.mcpInfo(),
   )
   expect(info.args[1]).toBe(realpathSync(folder))
-  expect(info.env).toEqual({ ELECTRON_RUN_AS_NODE: '1' })
+  expect(info.env).toEqual({
+    ELECTRON_RUN_AS_NODE: '1',
+    NOTIVA_MOODLE_SNAPSHOT: expect.stringMatching(/moodle-snapshot\.json$/),
+  })
   // Speak MCP with the exact command line AI apps would use.
   const child = spawn(info.command, info.args, { env: { ...process.env, ...info.env } })
   const lines: string[] = []

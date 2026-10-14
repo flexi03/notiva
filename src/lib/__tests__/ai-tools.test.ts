@@ -4,14 +4,33 @@ import { Workspace } from '../workspace'
 import { runTool, TOOLS } from '../ai/tools'
 import { validate } from '../ai/schema'
 import { MODULHANDBUCH_PDF } from '@/test/fixtures/pdf'
+import type { MoodleSnapshot } from '../moodle'
 
 const now = new Date(2026, 9, 14, 10)
 
-async function setup() {
+const MOODLE: MoodleSnapshot = {
+  site: 'https://moodle.example.org',
+  source: 'webservice',
+  fetchedAt: now.toISOString(),
+  courses: [{ id: 'course:43', name: 'Betriebssysteme' }],
+  events: [
+    {
+      id: 'event:1',
+      title: 'Shell-Projekt',
+      due: '2026-10-28T10:00:00.000Z',
+      course: { id: 'course:43', name: 'Betriebssysteme' },
+      kind: 'assign',
+    },
+    { id: 'event:2', title: 'Alt', due: '2026-09-01T10:00:00.000Z', kind: 'assign' },
+  ],
+  grades: [{ course: 'Betriebssysteme', grade: '1,3' }],
+}
+
+async function setup(moodle: MoodleSnapshot | null = MOODLE) {
   const ws = await Workspace.open(new MemoryVault())
   await installPack(ws, studyPack, {}, '', now)
   const call = async (name: string, input: unknown) => {
-    const outcome = await runTool({ ws, now }, name, input)
+    const outcome = await runTool({ ws, now, moodle: async () => moodle }, name, input)
     return { ...outcome, data: outcome.ok ? (JSON.parse(outcome.text) as unknown) : null }
   }
   return { ws, call }
@@ -344,6 +363,35 @@ describe('AI tools: labels', () => {
     for (const tool of TOOLS) {
       expect(Object.keys(de)).toContain(`ai.tool.${tool.name}`)
       expect(Object.keys(en)).toContain(`ai.tool.${tool.name}`)
+      if (tool.destructive) expect(Object.keys(de)).toContain(`ai.confirm.${tool.name}`)
     }
+  })
+})
+
+describe('AI tools: Moodle', () => {
+  it('shows upcoming deadlines and grades', async () => {
+    const { call } = await setup()
+    const data = (await call('moodle_overview', {})).data as {
+      deadlines: Array<{ title: string }>
+      grades: unknown[]
+    }
+    expect(data.deadlines.map((d) => d.title)).toEqual(['Shell-Projekt'])
+    expect(data.grades).toHaveLength(1)
+  })
+
+  it('imports into the dashboard and links the new pages', async () => {
+    const { ws, call } = await setup()
+    const result = await call('import_moodle', {})
+    expect(result.data).toMatchObject({ folder: 'Studium', created: ['Betriebssysteme', 'Shell-Projekt'] })
+    expect(result.touched).toHaveLength(2)
+    expect(ws.rows('Studium/Aufgaben.md').find((r) => r.title === 'Shell-Projekt')!.data.Modul).toEqual([
+      '[[Betriebssysteme]]',
+    ])
+    expect(((await call('import_moodle', {})).data as { created: string[] }).created).toEqual([])
+  })
+
+  it('tells the model when Moodle is not connected', async () => {
+    const { call } = await setup(null)
+    expect((await call('moodle_overview', {})).text).toContain('Einstellungen → Moodle')
   })
 })

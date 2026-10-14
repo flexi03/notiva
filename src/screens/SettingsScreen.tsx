@@ -6,6 +6,7 @@ import { Topbar } from '@/components/layout/Topbar'
 import { exportVault } from './exportVault'
 import { Row, Section } from './settingsLayout'
 import { AiSettingsSection, McpSection } from './AiSettings'
+import { MoodleSection } from '@/components/moodle/MoodleSettings'
 import { PromptEditor } from '@/components/ai/PromptEditor'
 
 function Swatches<T extends string>({
@@ -179,6 +180,10 @@ export function SettingsScreen() {
 
         <Section title={t('settings.mcp')}>
           <McpSection />
+        </Section>
+
+        <Section title={t('settings.moodle')}>
+          <MoodleSection />
         </Section>
 
         <Section title={t('settings.advanced')}>

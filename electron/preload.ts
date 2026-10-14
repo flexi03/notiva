@@ -29,6 +29,13 @@ contextBridge.exposeInMainWorld('notiva', {
     ipcRenderer.on('vault:changed', listener)
     return () => ipcRenderer.removeListener('vault:changed', listener)
   },
+  moodle: {
+    status: () => invoke('moodle:status'),
+    connect: (request: object) => invoke('moodle:connect', request),
+    disconnect: () => invoke('moodle:disconnect'),
+    fetch: () => invoke('moodle:fetch'),
+    snapshot: () => invoke('moodle:snapshot'),
+  },
   git: {
     state: () => invoke('git:state'),
     show: (rev: string, path: string) => invoke<string | null>('git:show', rev, path),

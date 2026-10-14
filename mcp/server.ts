@@ -5,6 +5,7 @@
  */
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js'
+import type { MoodleSnapshot } from '../src/lib/moodle'
 import { runTool, TOOLS } from '../src/lib/ai/tools'
 import type { VaultAdapter } from '../src/lib/vault/types'
 import { Workspace } from '../src/lib/workspace'
@@ -16,6 +17,8 @@ export interface ServerOptions {
   /** Offer only tools that change nothing. */
   readOnly?: boolean
   now?: () => Date
+  /** Moodle data for moodle_overview / import_moodle (the app passes its last fetch). */
+  moodle?: () => Promise<MoodleSnapshot | null>
 }
 
 /** VaultAdapter over a real folder (Node). */
@@ -65,7 +68,11 @@ export function createServer(ws: Workspace, options: ServerOptions = {}): Server
     // The app, sync tools or editors may have changed files since the last call.
     await ws.reload()
     const outcome = await runTool(
-      { ws, ...(options.now ? { now: options.now() } : {}) },
+      {
+        ws,
+        ...(options.now ? { now: options.now() } : {}),
+        ...(options.moodle ? { moodle: options.moodle } : {}),
+      },
       tool.name,
       request.params.arguments ?? {},
     )

@@ -1,4 +1,5 @@
-import { Copy, Download, Pencil, Printer, Sparkles, Star, Trash2 } from 'lucide-react'
+import { Copy, Download, GraduationCap, Pencil, Printer, Sparkles, Star, Trash2 } from 'lucide-react'
+import { useMoodle } from '@/app/moodle'
 import { useAssistant } from '@/app/assistant'
 import { useApp } from '@/app/store'
 import { findWidgets } from '@/lib/widgets'
@@ -45,6 +46,12 @@ export function pageMenuItems(
         useAssistant.getState().setDraft(customizePrompt(page.title, !!page.database))
         useApp.getState().openView('assistant')
       },
+    })
+  if (page && useMoodle.getState().status?.connected && findWidgets(page.body).length > 0)
+    items.push({
+      label: t('moodle.menu'),
+      icon: <GraduationCap size={14} />,
+      onSelect: () => useMoodle.getState().setImportOpen(true),
     })
   if (extra.print)
     items.push({ label: t('page.print'), icon: <Printer size={14} />, onSelect: () => window.print() })

@@ -13,12 +13,17 @@ import { GitPanel } from '@/components/git/GitPanel'
 import { DiffSheet } from '@/components/git/DiffView'
 import { ActivityBar } from './ActivityBar'
 import { AssistantPanel } from '@/components/ai/AssistantPanel'
+import { MoodleImportDialog } from '@/components/moodle/MoodleImport'
+import { moodleAvailable, useMoodle } from '@/app/moodle'
 
 /** Sidebar (drawer on small screens) + main area + global overlays and shortcuts. */
 export function AppShell({ children, overlays }: { children: ReactNode; overlays?: ReactNode }) {
   const ws = useWorkspace()
   const { sidebarOpen, setSidebar, setSearch, setNewPage, route, rightPanel, leftView } = useApp()
   useGitSync()
+  useEffect(() => {
+    if (moodleAvailable()) void useMoodle.getState().refresh()
+  }, [])
   const actions = usePageActions(ws)
   const mainRef = useRef<HTMLElement>(null)
 
@@ -84,6 +89,7 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
       {rightPanel === 'git' && <GitPanel />}
       <ActivityBar side="right" />
       <DiffSheet />
+      <MoodleImportDialog />
       {overlays}
       <PeekHost />
       <PromptHost />

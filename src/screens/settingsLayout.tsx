@@ -1,10 +1,13 @@
-import type { ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
 
 /** Layout pieces of the settings screen (shared by its sections). */
 export function Section({ title, children }: { title: string; children: ReactNode }) {
+  const id = useId()
   return (
-    <section className="border-t border-line py-6">
-      <h2 className="mb-4 text-lg font-bold">{title}</h2>
+    <section aria-labelledby={id} className="border-t border-line py-6">
+      <h2 id={id} className="mb-4 text-lg font-bold">
+        {title}
+      </h2>
       <div className="space-y-5">{children}</div>
     </section>
   )

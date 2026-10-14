@@ -26,12 +26,16 @@ import { pdfText } from '../pdfText'
 import { findWidgets, parseWidget, resolveFilterDates, widgetBlock, type WidgetSpec } from '../widgets'
 import { parse as parseYaml } from 'yaml'
 import { FORMAT_GUIDE } from './guide'
+import { applyMoodleImport, importTargets, planMoodleImport, type MoodleSnapshot } from '../moodle'
+import { toIsoDate } from '../dates'
 import type { Page, Workspace } from '../workspace'
 import { InputError, validate, type JsonSchema } from './schema'
 
 export interface ToolContext {
   ws: Workspace
   now?: Date
+  /** Current Moodle data – only in the desktop app (fresh) and its MCP server (last fetch). */
+  moodle?: () => Promise<MoodleSnapshot | null>
 }
 
 export interface ToolDef {
@@ -173,6 +177,15 @@ const filterSchema: JsonSchema = {
     },
     required: ['property', 'op'],
   },
+}
+
+async function moodleData(ctx: ToolContext): Promise<MoodleSnapshot> {
+  const snapshot = ctx.moodle ? await ctx.moodle() : null
+  if (!snapshot)
+    throw new InputError(
+      'Moodle ist nicht verbunden. Der Nutzer kann es in der Desktop-App unter Einstellungen → Moodle verbinden.',
+    )
+  return snapshot
 }
 
 /** File types read_file returns as text. */
@@ -842,6 +855,69 @@ export const TOOLS: ToolDef[] = [
     },
   },
   {
+    name: 'moodle_overview',
+    description:
+      'Holt Kurse, anstehende Abgaben/Termine und (falls freigegeben) Bewertungen aus dem verbundenen Moodle des Nutzers.',
+    readOnly: true,
+    inputSchema: { type: 'object', properties: {} },
+    async run(ctx) {
+      const snap = await moodleData(ctx)
+      const today = toIsoDate(ctx.now ?? new Date())
+      return {
+        site: snap.site,
+        source: snap.source,
+        fetchedAt: snap.fetchedAt,
+        courses: snap.courses.map((c) => ({
+          name: c.name,
+          ...(c.shortname ? { shortname: c.shortname } : {}),
+        })),
+        deadlines: snap.events
+          .filter((e) => toIsoDate(new Date(e.due)) >= today)
+          .map((e) => ({
+            title: e.title,
+            due: e.due,
+            ...(e.course ? { course: e.course.name } : {}),
+            kind: e.kind,
+          })),
+        grades: snap.grades,
+      }
+    },
+  },
+  {
+    name: 'import_moodle',
+    description:
+      'Übernimmt Moodle-Kurse als Module und anstehende Abgaben als Aufgaben ins Studien-Dashboard (verknüpft, ohne Doppelte; aktualisiert verschobene Termine, löscht nichts).',
+    readOnly: false,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        folder: { type: 'string', description: 'Ordner des Dashboards, z. B. "Studium" (optional)' },
+        only: { type: 'string', enum: ['all', 'tasks', 'modules'], description: 'Standard: all' },
+      },
+    },
+    async run(ctx, input) {
+      const snap = await moodleData(ctx)
+      const targets = importTargets(ctx.ws)
+      const folder = typeof input.folder === 'string' ? input.folder.trim().replace(/\/+$/, '') : undefined
+      const target = folder ? targets.find((t) => t.folder === folder) : targets[0]
+      if (!target)
+        throw new InputError(
+          'Kein Dashboard mit den Datenbanken „Aufgaben“ oder „Module“ gefunden – erst die Vorlage „Studium“ anlegen.',
+        )
+      const only = input.only ?? 'all'
+      const plan = planMoodleImport(ctx.ws, snap, target, ctx.now).filter(
+        (p) => only === 'all' || (only === 'tasks' ? p.what === 'task' : p.what === 'module'),
+      )
+      const touched = await applyMoodleImport(ctx.ws, plan)
+      return {
+        folder: target.folder,
+        created: plan.filter((p) => p.kind === 'create').map((p) => p.title),
+        updated: plan.filter((p) => p.kind === 'update').map((p) => p.title),
+        paths: touched,
+      }
+    },
+  },
+  {
     name: 'rename_page',
     description: 'Benennt eine Seite um; Links auf sie werden überall angepasst.',
     readOnly: false,
@@ -899,7 +975,8 @@ export function findTool(name: string): ToolDef | undefined {
 /** Paths a successful tool call created or changed (for links in the chat). */
 function touchedPaths(tool: ToolDef, result: unknown): string[] {
   if (tool.readOnly || typeof result !== 'object' || result === null) return []
-  const path = (result as { path?: unknown }).path
+  const { path, paths } = result as { path?: unknown; paths?: unknown }
+  if (Array.isArray(paths)) return paths.filter((p): p is string => typeof p === 'string')
   return typeof path === 'string' ? [path] : []
 }
 

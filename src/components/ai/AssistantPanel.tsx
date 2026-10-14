@@ -7,6 +7,7 @@ import {
   FileText,
   BookOpen,
   FolderInput,
+  GraduationCap,
   LayoutGrid,
   Paperclip,
   Link2,
@@ -56,6 +57,8 @@ const TOOL_ICONS: Record<string, ReactNode> = {
   update_database: <Database size={13} />,
   list_files: <Paperclip size={13} />,
   read_file: <Paperclip size={13} />,
+  moodle_overview: <GraduationCap size={13} />,
+  import_moodle: <GraduationCap size={13} />,
 }
 
 /** "Liest Studium/Module.md" – what the call is about, from its most telling argument. */

@@ -184,6 +184,7 @@ export const useAssistant = create<AssistantState>((set, get) => ({
           messages,
           readOnly: !settings.allowWrites,
           signal: controller.signal,
+          ...(electronBridge()?.moodle ? { moodle: () => electronBridge()!.moodle!.fetch() } : {}),
           onUpdate: (next) => {
             if (alive()) set({ messages: next })
           },

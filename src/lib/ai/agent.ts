@@ -3,7 +3,7 @@
  * sends the results back, until the model answers in text. Used by the in-app assistant.
  */
 import type { Workspace } from '../workspace'
-import { findTool, runTool, TOOLS, type ToolDef } from './tools'
+import { findTool, runTool, TOOLS, type ToolContext, type ToolDef } from './tools'
 
 export type Part =
   | { type: 'text'; text: string }
@@ -53,6 +53,7 @@ export interface AgentOptions {
   maxSteps?: number
   signal?: AbortSignal
   now?: Date
+  moodle?: ToolContext['moodle']
 }
 
 export function toolSpecs(readOnly = false): ToolSpec[] {
@@ -65,7 +66,18 @@ export function toolSpecs(readOnly = false): ToolSpec[] {
 
 /** Runs the tool loop and returns the conversation including all new messages. */
 export async function runAgent(options: AgentOptions): Promise<Message[]> {
-  const { provider, ws, system, readOnly = false, confirm, onUpdate, maxSteps = 12, signal, now } = options
+  const {
+    provider,
+    ws,
+    system,
+    readOnly = false,
+    confirm,
+    onUpdate,
+    maxSteps = 12,
+    signal,
+    now,
+    moodle,
+  } = options
   const messages = options.messages.slice()
   const tools = toolSpecs(readOnly)
   for (let step = 0; step < maxSteps; step++) {
@@ -88,7 +100,11 @@ export async function runAgent(options: AgentOptions): Promise<Message[]> {
         results.push(rejected(call, 'Der Nutzer hat diese Aktion abgelehnt.'))
         continue
       }
-      const outcome = await runTool({ ws, ...(now ? { now } : {}) }, call.name, call.input)
+      const outcome = await runTool(
+        { ws, ...(now ? { now } : {}), ...(moodle ? { moodle } : {}) },
+        call.name,
+        call.input,
+      )
       results.push({
         type: 'tool_result',
         id: call.id,
