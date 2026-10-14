@@ -566,6 +566,12 @@ export const de = {
   'lecture.summarize': 'Zusammenfassen lassen',
   'error.title': 'Hier ist etwas schiefgegangen.',
   'error.retry': 'Erneut versuchen',
+  'autosave.label': 'Automatisch speichern',
+  'autosave.hint': 'Änderungen landen sofort in der Datei. Aus: erst mit ⌘S bzw. Strg+S oder „Speichern“.',
+  'autosave.unsaved': '{count} ungespeichert – Speichern',
+  'autosave.shortcut': 'Speichern (⌘S)',
+  'autosave.saved': '{count} Seite(n) gespeichert',
+  'autosave.nothing': 'Alles ist gespeichert',
   'moodle.desktopOnly':
     'Moodle lässt sich in der Desktop-App verbinden – der Browser darf andere Server nicht direkt abfragen.',
   'moodle.intro':

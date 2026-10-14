@@ -134,6 +134,9 @@ export function SettingsScreen() {
         </Section>
 
         <Section title={t('settings.editor')}>
+          <Row label={t('autosave.label')} hint={t('autosave.hint')}>
+            <Switch label={t('autosave.label')} checked={settings.autosave} onChange={set('autosave')} />
+          </Row>
           <Row label={t('settings.spellcheck')}>
             <Switch
               label={t('settings.spellcheck')}

@@ -247,3 +247,45 @@ describe('documents in the tree', () => {
     expect(JSON.stringify(ws.tree())).not.toContain('bild.png')
   })
 })
+
+describe('autosave off', () => {
+  it('keeps changes in memory until saveAll', async () => {
+    const vault = new MemoryVault('Test', { 'A.md': '# A\n' })
+    const ws = await Workspace.open(vault)
+    await ws.setAutosave(false)
+    await ws.save('A.md', { body: '# A\n\nNeu\n' })
+    const created = await ws.createPage({ title: 'B', body: 'Entwurf' })
+    // Visible in the app …
+    expect(ws.get('A.md')!.body).toContain('Neu')
+    expect(ws.get(created)).toBeTruthy()
+    // … but not on disk yet.
+    expect(await vault.read('A.md')).toBe('# A\n')
+    await expect(vault.read('B.md')).rejects.toThrow()
+    expect(ws.unsaved().sort()).toEqual(['A.md', 'B.md'])
+    // A reload (e.g. file watcher) keeps them.
+    await ws.reload()
+    expect(ws.get('A.md')!.body).toContain('Neu')
+    expect(await ws.saveAll()).toBe(2)
+    expect(await vault.read('A.md')).toContain('Neu')
+    expect(await vault.read('B.md')).toBe('Entwurf')
+    expect(ws.unsaved()).toEqual([])
+  })
+
+  it('writes pending changes when it is switched on, before moves, and can discard them', async () => {
+    const vault = new MemoryVault('Test', { 'A.md': 'alt', 'C.md': 'c' })
+    const ws = await Workspace.open(vault)
+    await ws.setAutosave(false)
+    await ws.save('A.md', { body: 'neu' })
+    await ws.setAutosave(true)
+    expect(await vault.read('A.md')).toBe('neu')
+
+    await ws.setAutosave(false)
+    await ws.save('A.md', { body: 'vor dem Umbenennen' })
+    const moved = await ws.rename('A.md', 'Z')
+    expect(await vault.read(moved)).toBe('vor dem Umbenennen')
+
+    await ws.save('C.md', { body: 'verworfen' })
+    await ws.discardUnsaved()
+    expect(ws.get('C.md')!.body).toBe('c')
+  })
+})

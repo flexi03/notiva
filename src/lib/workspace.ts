@@ -79,6 +79,9 @@ const stem = (path: string) => basename(path, extname(path))
 export class Workspace {
   readonly vault: VaultAdapter
   private pages = new Map<string, Page>()
+  /** Autosave off: page texts waiting for "Speichern" (path → file text). */
+  private pending = new Map<string, string>()
+  private autosaveOn = true
   /** Frontmatter as written in each file – saves only touch the keys that really changed. */
   private yamlSource = new Map<string, string>()
   private files: VaultFile[] = []
@@ -133,6 +136,11 @@ export class Workspace {
           else next.set(file.path, this.buildPage(file.path, await this.vault.read(file.path), file.mtime))
         }),
     )
+    // Unsaved pages (autosave off) win over what is on disk.
+    for (const [path, text] of this.pending) {
+      next.set(path, this.buildPage(path, text, Date.now()))
+      if (!files.some((f) => f.path === path)) files.push({ path, mtime: Date.now(), size: text.length })
+    }
     this.files = files
     this.pages = next
     for (const path of this.yamlSource.keys()) if (!next.has(path)) this.yamlSource.delete(path)
@@ -412,7 +420,8 @@ export class Workspace {
 
   private async writePage(path: string, data: FrontmatterData, body: string): Promise<void> {
     const text = serializeMarkdown({ data, body }, this.yamlSource.get(path))
-    await this.vault.write(path, text)
+    if (this.autosaveOn) await this.vault.write(path, text)
+    else this.pending.set(path, text)
     this.pages.set(path, this.buildPage(path, text, Date.now()))
     if (!this.files.some((f) => f.path === path))
       this.files.push({ path, mtime: Date.now(), size: text.length })
@@ -483,6 +492,44 @@ export class Workspace {
     })
   }
 
+  /* ---------- autosave ---------- */
+
+  get autosave(): boolean {
+    return this.autosaveOn
+  }
+
+  /** Turning autosave on writes everything that is still pending. */
+  async setAutosave(on: boolean): Promise<void> {
+    this.autosaveOn = on
+    if (on) await this.saveAll()
+  }
+
+  /** Pages with changes that are not on disk yet. */
+  unsaved(): string[] {
+    return [...this.pending.keys()]
+  }
+
+  /** Writes all pending changes ("Speichern" / ⌘S). */
+  saveAll(): Promise<number> {
+    return this.run(() => this.flushPending())
+  }
+
+  private async flushPending(): Promise<number> {
+    const entries = [...this.pending]
+    for (const [path, text] of entries) {
+      await this.vault.write(path, text)
+      this.pending.delete(path)
+    }
+    if (entries.length) this.changed()
+    return entries.length
+  }
+
+  /** Drops pending changes and reloads from disk. */
+  async discardUnsaved(): Promise<void> {
+    this.pending.clear()
+    await this.reload()
+  }
+
   /** The page as Markdown text, frontmatter formatted like in the file. */
   source(path: string): string {
     const page = this.pages.get(path)
@@ -497,7 +544,8 @@ export class Workspace {
       const parsed = parseMarkdown(text)
       if (parsed.error) throw new Error(parsed.error)
       if (text === this.source(path)) return
-      await this.vault.write(path, text)
+      if (this.autosaveOn) await this.vault.write(path, text)
+      else this.pending.set(path, text)
       this.pages.set(path, this.buildPage(path, text, Date.now()))
       this.changed()
     })
@@ -584,6 +632,8 @@ export class Workspace {
 
   private move(path: string, target: string, newTitle?: string): Promise<string> {
     return this.run(async () => {
+      // Moving works on the files: unsaved changes go to disk first.
+      await this.flushPending()
       const page = this.pages.get(path)!
       const incoming = this.incomingTargets(path)
       const oldFolder = path.slice(0, -3)
@@ -625,6 +675,7 @@ export class Workspace {
   trash(path: string): Promise<TrashEntry> {
     return this.run(async () => {
       if (!this.pages.has(path)) throw new Error(`Not found: ${path}`)
+      await this.flushPending()
       const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
       const folder = path.slice(0, -3)
       const files = this.files

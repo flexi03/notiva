@@ -537,6 +537,18 @@ function createWindow(): void {
     if (!url.startsWith('app://notiva/')) event.preventDefault()
   })
   window.webContents.on('will-attach-webview', (event) => event.preventDefault())
+  // Autosave off and unsaved changes: the page asks to stay – let the user decide.
+  window.webContents.on('will-prevent-unload', (event) => {
+    const choice = dialog.showMessageBoxSync(window!, {
+      type: 'warning',
+      buttons: ['Abbrechen', 'Ohne Speichern schließen'],
+      defaultId: 0,
+      cancelId: 0,
+      message: 'Es gibt ungespeicherte Änderungen.',
+      detail: 'Mit ⌘S bzw. Strg+S speichern, dann schließen.',
+    })
+    if (choice === 1) event.preventDefault()
+  })
   window.on('closed', () => {
     window = null
   })

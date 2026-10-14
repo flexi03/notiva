@@ -3,7 +3,7 @@ import { useSyncExternalStore } from 'react'
 import { parseRoute, routeHash, type Route } from '@/lib/route'
 import { DEFAULT_SETTINGS, parseSettings, type Settings } from '@/lib/settings'
 import type { Workspace } from '@/lib/workspace'
-import { setLanguage } from '@/i18n'
+import { setLanguage, t } from '@/i18n'
 
 export interface Toast {
   id: number
@@ -132,6 +132,7 @@ export const useApp = create<AppState>((set, get) => ({
   async setWorkspace(ws) {
     const settings = ws ? parseSettings(await ws.readMeta('settings.json')) : DEFAULT_SETTINGS
     setLanguage(settings.language)
+    await ws?.setAutosave(settings.autosave)
     set({ ws, settings })
   },
   navigate(route) {
@@ -186,6 +187,7 @@ export const useApp = create<AppState>((set, get) => ({
     const settings = parseSettings({ ...get().settings, ...patch })
     setLanguage(settings.language)
     set({ settings })
+    void get().ws?.setAutosave(settings.autosave)
     void get().ws?.writeMeta('settings.json', settings)
   },
   setSidebar: (sidebarOpen) => set({ sidebarOpen }),
@@ -220,4 +222,12 @@ export function useAction() {
       showToast(error instanceof Error ? error.message : String(error))
       return undefined
     })
+}
+
+/** ⌘S / "Speichern": writes everything pending and says so. */
+export async function saveAllNow(): Promise<void> {
+  const { ws, showToast } = useApp.getState()
+  if (!ws) return
+  const count = await ws.saveAll()
+  showToast(count ? t('autosave.saved', { count }) : t('autosave.nothing'))
 }

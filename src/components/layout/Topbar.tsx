@@ -2,7 +2,7 @@ import { useRef, useState, type ReactNode } from 'react'
 import { Bell, ChevronRight, GitBranch, MoreHorizontal, PanelLeft, Sparkles, Star } from 'lucide-react'
 import { gitAvailable, useGit } from '@/app/git'
 import { unreadCount, useNotifications } from '@/app/notifications'
-import { useApp, useWorkspace } from '@/app/store'
+import { saveAllNow, useApp, useWorkspace } from '@/app/store'
 import { usePageActions } from '@/app/hooks/usePageActions'
 import { t } from '@/i18n'
 import { cx, IconButton, MenuList, Popover } from '@/components/ui'
@@ -50,6 +50,7 @@ export function Topbar({ title, actions }: { title?: string; actions?: ReactNode
         <li className="min-w-0 truncate px-1.5 font-semibold text-ink">{page?.title ?? title}</li>
         {page && <GitChip path={page.path} />}
       </ol>
+      <UnsavedButton />
       {actions}
       <AssistantToggle />
       <GitToggle />
@@ -156,5 +157,23 @@ function NotificationToggle() {
       <Bell size={16} />
       {unread > 0 && <span aria-hidden className="absolute top-1 right-1 size-2 rounded-full bg-accent" />}
     </IconButton>
+  )
+}
+
+/** Autosave off: shows how many pages wait for saving – click (or ⌘S) saves them. */
+function UnsavedButton() {
+  const ws = useWorkspace()
+  const count = ws.autosave ? 0 : ws.unsaved().length
+  if (!count) return null
+  return (
+    <button
+      type="button"
+      onClick={() => void saveAllNow()}
+      title={t('autosave.shortcut')}
+      className="flex shrink-0 items-center gap-1.5 rounded-full border border-[var(--git-modified)] px-2.5 py-0.5 text-[12.5px] font-semibold text-[var(--git-modified)] hover:bg-hover"
+    >
+      <span aria-hidden className="size-1.5 rounded-full bg-[var(--git-modified)]" />
+      {t('autosave.unsaved', { count })}
+    </button>
   )
 }

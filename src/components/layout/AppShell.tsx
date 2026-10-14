@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
-import { useApp, useWorkspace } from '@/app/store'
+import { saveAllNow, useApp, useWorkspace } from '@/app/store'
 import { usePageActions } from '@/app/hooks/usePageActions'
 import { routeHash } from '@/lib/route'
 import { cx, ErrorBoundary } from '@/components/ui'
@@ -26,6 +26,14 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
   const { sidebarOpen, setSidebar, setSearch, setNewPage, route, rightPanel, leftView } = useApp()
   useGitSync()
   useNotificationSync(ws)
+  // Unsaved changes (autosave off): ask before the window closes.
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (ws.unsaved().length) e.preventDefault()
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [ws])
   useEffect(() => {
     if (moodleAvailable()) void useMoodle.getState().refresh()
   }, [])
@@ -35,7 +43,10 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey
-      if (mod && e.key.toLowerCase() === 'k') {
+      if (mod && e.key.toLowerCase() === 's' && !e.shiftKey) {
+        e.preventDefault()
+        void saveAllNow()
+      } else if (mod && e.key.toLowerCase() === 'k') {
         e.preventDefault()
         setSearch(true)
       } else if (mod && e.key.toLowerCase() === 'n' && !e.shiftKey) {

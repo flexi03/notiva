@@ -562,6 +562,12 @@ export const en: Record<MessageKey, string> = {
   'lecture.summarize': 'Summarize',
   'error.title': 'Something went wrong here.',
   'error.retry': 'Try again',
+  'autosave.label': 'Save automatically',
+  'autosave.hint': 'Changes go to the file right away. Off: only with ⌘S / Ctrl+S or “Save”.',
+  'autosave.unsaved': '{count} unsaved – Save',
+  'autosave.shortcut': 'Save (⌘S)',
+  'autosave.saved': '{count} page(s) saved',
+  'autosave.nothing': 'Everything is saved',
   'moodle.desktopOnly':
     'Connect Moodle in the desktop app – the browser may not query other servers directly.',
   'moodle.intro':
