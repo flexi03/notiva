@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Code2, NotebookPen, RotateCcw, X } from 'lucide-react'
-import { Terminal } from '@xterm/xterm'
+import { Terminal, type ITheme } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
 import { t } from '@/i18n'
@@ -9,6 +9,57 @@ import { IconButton } from '@/components/ui'
 
 const css = (name: string, fallback: string) =>
   getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
+
+/** Colors from the app theme (light or dark) – ANSI colors readable on both. */
+export function terminalTheme(): ITheme {
+  const dark = document.documentElement.dataset.theme === 'dark'
+  const base = {
+    background: css('--sunken', dark ? '#1b1d21' : '#f4f4f2'),
+    foreground: css('--ink', dark ? '#e6e6e3' : '#1d1d1b'),
+    cursor: css('--accent', dark ? '#7cc4ad' : '#2f6f5e'),
+    cursorAccent: css('--sunken', dark ? '#1b1d21' : '#f4f4f2'),
+    selectionBackground: dark ? 'rgba(124,196,173,0.35)' : 'rgba(47,111,94,0.25)',
+  }
+  return dark
+    ? {
+        ...base,
+        black: '#3b3f46',
+        red: '#ff7b72',
+        green: '#7ee787',
+        yellow: '#e3b341',
+        blue: '#79c0ff',
+        magenta: '#d2a8ff',
+        cyan: '#56d4dd',
+        white: '#d0d0cc',
+        brightBlack: '#6e7681',
+        brightRed: '#ffa198',
+        brightGreen: '#aff5b4',
+        brightYellow: '#f8e3a1',
+        brightBlue: '#a5d6ff',
+        brightMagenta: '#e2c5ff',
+        brightCyan: '#b3f0ff',
+        brightWhite: '#ffffff',
+      }
+    : {
+        ...base,
+        black: '#1d1d1b',
+        red: '#c0392b',
+        green: '#1e7a3e',
+        yellow: '#8a6200',
+        blue: '#1f5fbf',
+        magenta: '#8e3fa8',
+        cyan: '#0e7380',
+        white: '#6b6b66',
+        brightBlack: '#57574f',
+        brightRed: '#e0483a',
+        brightGreen: '#2a9a50',
+        brightYellow: '#a87900',
+        brightBlue: '#2f74e0',
+        brightMagenta: '#a855c7',
+        brightCyan: '#13909f',
+        brightWhite: '#3a3a36',
+      }
+}
 
 /**
  * A shell in a folder of the vault (desktop app). Output can be copied into the notes as a code
@@ -38,12 +89,7 @@ export function TerminalPanel({
       fontSize: 12.5,
       cursorBlink: true,
       convertEol: false,
-      theme: {
-        background: css('--bg-sunken', '#f4f4f2'),
-        foreground: css('--ink', '#1d1d1b'),
-        cursor: css('--accent', '#2f6f5e'),
-        selectionBackground: 'rgba(47,111,94,0.3)',
-      },
+      theme: terminalTheme(),
     })
     const fit = new FitAddon()
     terminal.loadAddon(fit)
@@ -59,6 +105,12 @@ export function TerminalPanel({
       if (disposed) void api.stop(started)
       else id = started
     })
+    // Follow the light/dark switch of the app.
+    const themeWatch = new MutationObserver(() => (terminal.options.theme = terminalTheme()))
+    themeWatch.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme', 'style', 'class'],
+    })
     const observer = new ResizeObserver(() => {
       fit.fit()
       if (id !== null) void api.resize(id, terminal.cols, terminal.rows)
@@ -68,6 +120,7 @@ export function TerminalPanel({
     return () => {
       disposed = true
       observer.disconnect()
+      themeWatch.disconnect()
       offData()
       offExit()
       input.dispose()
