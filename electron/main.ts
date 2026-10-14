@@ -28,9 +28,9 @@ import { pathToFileURL } from 'node:url'
 import { FsVault } from './vaultFs'
 import { parseAiRequest } from './aiRequest'
 import { GitRepo, type GitState } from './git'
-import { loadShellPath } from './shellPath'
+import { loadShellPath, which } from './shellPath'
 import { cliArgs, detectClis, parseCliRequest, startCli, type CliInfo, type McpLaunch } from './aiCli'
-import type { ChildProcess } from 'node:child_process'
+import { spawn, type ChildProcess } from 'node:child_process'
 import {
   checkUrl,
   MoodleClient,
@@ -59,6 +59,21 @@ import { courseInfoNews } from '../src/lib/moodleInfo'
 import { findPlanLinks, type PlanLink } from '../src/lib/examPlan'
 
 const DIST = path.join(__dirname, '..', 'dist')
+/** Build output and dependencies stay out of Git in code folders. */
+const CODE_GITIGNORE = `# Von Notiva angelegt – Abhängigkeiten und Build-Ausgaben nicht ins Git
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+target/
+build/
+out/
+dist/
+*.class
+.idea/
+.DS_Store
+`
 const userFile = (name: string) => path.join(process.env.NOTIVA_E2E_USERDATA ?? app.getPath('userData'), name)
 const CONFIG = () => userFile('config.json')
 /** Moodle access (encrypted) and the last fetched data (no secrets, read by the MCP server). */
@@ -537,6 +552,37 @@ function registerIpc(): void {
   // Opens a vault file (e.g. slides as .pptx) with the system's default app.
   handle('vault:openWithSystem', async (p: unknown) => {
     const absolute = await requireVault().resolve(p as string)
+    const error = await shell.openPath(absolute)
+    if (error) throw new Error(error)
+  })
+  // Code folders inside the vault (e.g. a lab project): create with a .gitignore, open in an editor.
+  handle('code:init', async (p: unknown) => {
+    const absolute = await requireVault().resolve(p as string)
+    await fs.mkdir(absolute, { recursive: true })
+    const ignore = path.join(absolute, '.gitignore')
+    if (!(await fs.stat(ignore).catch(() => null))) await fs.writeFile(ignore, CODE_GITIGNORE)
+  })
+  handle('code:open', async (p: unknown, how: unknown) => {
+    const absolute = await requireVault().resolve(p as string)
+    await fs.mkdir(absolute, { recursive: true })
+    if (how === 'finder') {
+      const error = await shell.openPath(absolute)
+      if (error) throw new Error(error)
+      return
+    }
+    if (how === 'terminal') {
+      if (process.platform === 'darwin') return void spawn('open', ['-a', 'Terminal', absolute]).unref()
+      throw new Error('Terminal öffnen gibt es bisher nur auf dem Mac')
+    }
+    // Editor: VS Code (command line), else the app, else the folder.
+    const code = await which('code')
+    if (code) return void spawn(code, [absolute], { detached: true, stdio: 'ignore' }).unref()
+    if (process.platform === 'darwin') {
+      const ok = await new Promise<boolean>((resolve) =>
+        spawn('open', ['-a', 'Visual Studio Code', absolute]).on('exit', (c) => resolve(c === 0)),
+      )
+      if (ok) return
+    }
     const error = await shell.openPath(absolute)
     if (error) throw new Error(error)
   })

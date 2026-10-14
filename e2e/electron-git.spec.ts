@@ -1,6 +1,6 @@
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test'
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -100,4 +100,22 @@ test('verwirft neue Seiten nach Rückfrage', async () => {
   await window.getByRole('dialog').getByRole('button', { name: 'Änderungen verwerfen' }).click()
   await expect.poll(() => existsSync(path.join(folder, 'Wegwerfseite.md'))).toBe(false)
   await expect(panel()).toContainText('Keine Änderungen')
+})
+
+test('legt einen Code-Ordner im Studium an – mit .gitignore, im selben Git', async () => {
+  writeFileSync(path.join(folder, 'Datenbanken.md'), '# Datenbanken\n\n```notiva\ntype: related\n```\n')
+  await window.waitForTimeout(800)
+  await window.evaluate(() => (location.hash = '#/p/Datenbanken.md'))
+  await window.getByRole('button', { name: 'Code-Ordner' }).click()
+  await window.getByRole('dialog').getByRole('button', { name: 'Code-Ordner' }).click()
+  const section = window.getByRole('region', { name: 'Code-Ordner' })
+  await expect(section.getByRole('button', { name: 'In VS Code öffnen' })).toBeVisible()
+  await expect.poll(() => existsSync(path.join(folder, 'Datenbanken/Praktikum/.gitignore'))).toBe(true)
+  writeFileSync(path.join(folder, 'Datenbanken/Praktikum/Query.sql'), 'SELECT 1;\n')
+  mkdirSync(path.join(folder, 'Datenbanken/Praktikum/node_modules/x'), { recursive: true })
+  writeFileSync(path.join(folder, 'Datenbanken/Praktikum/node_modules/x/index.js'), '')
+  await expect(section).toContainText('Dateien')
+  const status = git('status', '--porcelain', '-uall')
+  expect(status).toContain('Datenbanken/Praktikum/Query.sql')
+  expect(status).not.toContain('node_modules')
 })

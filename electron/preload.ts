@@ -104,6 +104,10 @@ contextBridge.exposeInMainWorld('notiva', {
     ipcRenderer.on('menu:command', listener)
     return () => ipcRenderer.removeListener('menu:command', listener)
   },
+  code: {
+    init: (folder: string) => invoke<void>('code:init', folder),
+    open: (folder: string, how: 'editor' | 'finder' | 'terminal') => invoke<void>('code:open', folder, how),
+  },
   notifications: {
     onAdded: (callback: (counts: Record<string, number>) => void) => {
       const listener = (_e: unknown, counts: Record<string, number>) => callback(counts)

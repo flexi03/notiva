@@ -102,6 +102,13 @@ werden die Dateien darin mit aufgelistet (Unterlagen aus Moodle).
 Filterwerte können relativ sein: `today`, `today+7` (Datum) sowie `@semester`, `@nextSemester`,
 `@lastSemester` (Semester als Text, z. B. `WiSe 26/27`).
 
+## Code-Ordner
+
+Eine Seite mit `code: true` ist ein Code-Ordner: Der Code liegt im gleichnamigen Ordner daneben
+(`Datenbanken/Praktikum.md` → `Datenbanken/Praktikum/`), im selben Git wie die Notizen. Notiva legt dort eine
+`.gitignore` für Abhängigkeiten und Build-Ausgaben an und zeigt Knöpfe für VS Code, Finder und Terminal.
+`node_modules`, `__pycache__`, `venv` und Punkt-Ordner liest Notiva nicht ein.
+
 ## Studium
 
 Das Studien-Dashboard (`Studium.md`) kann eine Prüfungsordnung tragen:

@@ -39,5 +39,10 @@ export class VaultError extends Error {
 
 /** Folders that are never listed (other apps' metadata, VCS, dependencies). */
 export function isIgnoredSegment(segment: string): boolean {
-  return (segment.startsWith('.') && segment !== '.notiva') || segment === 'node_modules'
+  return (
+    (segment.startsWith('.') && segment !== '.notiva') ||
+    segment === 'node_modules' ||
+    segment === '__pycache__' ||
+    segment === 'venv'
+  )
 }

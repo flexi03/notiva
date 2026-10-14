@@ -11,6 +11,7 @@ import { DatabaseView } from '@/components/database/DatabaseView'
 import { BlockEditor } from './BlockEditor'
 import { EmojiPicker } from './EmojiPicker'
 import { PageProperties } from './PageProperties'
+import { CodeFolder } from '@/components/code/CodeFolder'
 import { SourceEditor } from './SourceEditor'
 import { PageRail } from './PageRail'
 import { ChangeMarker } from './Block'
@@ -198,6 +199,8 @@ export function PageContent({
               <PageProperties page={page} />
             </div>
           )}
+
+          {page.data.code === true && <CodeFolder page={page} />}
 
           <div className="mt-6">
             {source ? (

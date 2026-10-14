@@ -181,6 +181,11 @@ export interface NotivaBridge {
   openExternal(url: string): Promise<void>
   /** eCampus exam results (desktop). */
   ecampus?: EcampusBridge
+  /** Code folders in the vault: create (.gitignore), open in editor/Finder/Terminal. */
+  code?: {
+    init(folder: string): Promise<void>
+    open(folder: string, how: 'editor' | 'finder' | 'terminal'): Promise<void>
+  }
   /** Menu bar commands (see src/app/commands.ts). */
   onMenu?(callback: (id: string) => void): () => void
   examPlan?: {

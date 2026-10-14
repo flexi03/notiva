@@ -1,4 +1,5 @@
-import { ExternalLink, FileText, Plus } from 'lucide-react'
+import { Code2, ExternalLink, FileText, Plus } from 'lucide-react'
+import { createCodeFolder } from '@/components/code/CodeFolder'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import { toIsoDate } from '@/lib/dates'
@@ -114,11 +115,32 @@ export function Related({ from }: { from: string }) {
           </ul>
         </section>
       ))}
-      {notesDb && (
-        <Button size="sm" icon={<Plus size={13} />} onClick={() => void newNote()}>
-          {t('related.newNote')}
+      <div className="flex flex-wrap gap-2">
+        {notesDb && (
+          <Button size="sm" icon={<Plus size={13} />} onClick={() => void newNote()}>
+            {t('related.newNote')}
+          </Button>
+        )}
+        <Button
+          size="sm"
+          icon={<Code2 size={13} />}
+          onClick={() =>
+            void run(async () => {
+              const name = await useApp
+                .getState()
+                .ask({
+                  title: t('code.askName'),
+                  initial: t('code.defaultName'),
+                  confirmLabel: t('code.create'),
+                })
+              if (name?.trim())
+                navigate({ name: 'page', path: await createCodeFolder(ws, from, name.trim()) })
+            })
+          }
+        >
+          {t('code.create')}
         </Button>
-      )}
+      </div>
     </div>
   )
 }
