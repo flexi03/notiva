@@ -7,7 +7,12 @@ import type { Session } from 'electron'
 export function keepSessionCookies(ses: Session, days = 14): void {
   ses.cookies.on('changed', (_event, cookie, cause, removed) => {
     // Server cookies arrive as "inserted" (Electron ≥ 40) or "explicit"; ours are no session cookies.
-    if (removed || !/^(explicit|inserted|overwrite)/.test(cause) || cookie.session === false || !cookie.domain)
+    if (
+      removed ||
+      !/^(explicit|inserted|overwrite)/.test(cause) ||
+      cookie.session === false ||
+      !cookie.domain
+    )
       return
     const host = cookie.domain.replace(/^\./, '')
     void ses.cookies

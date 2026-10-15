@@ -2,6 +2,8 @@ import { useState, type ReactNode } from 'react'
 import { Bell, Files, GitBranch, Settings, Sparkles, Trash2 } from 'lucide-react'
 import { unreadCount, useNotifications } from '@/app/notifications'
 import { useGit } from '@/app/git'
+import { SyncButton } from './SyncButton'
+import { electronBridge } from '@/lib/vault'
 import { isPlace, useApp, VIEWS, type Side, type ViewId } from '@/app/store'
 import { t } from '@/i18n'
 import { cx } from '@/components/ui'
@@ -59,6 +61,8 @@ export function ActivityBar({ side }: { side: Side }) {
       {views.map((view) => (
         <ViewItem key={view} view={view} side={side} />
       ))}
+      {/* Sync sits next to the notifications (desktop app). */}
+      {electronBridge() && sides.notifications === side && <SyncButton />}
       {target && (
         <span className="mt-1 px-1 text-center text-[10px] leading-tight text-ink-3" aria-hidden>
           {t('views.dropHere')}

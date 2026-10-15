@@ -3,6 +3,7 @@ import { useEcampus } from '@/app/ecampus'
 import { useMoodle } from '@/app/moodle'
 import { useApp } from '@/app/store'
 import { setupHint } from '@/app/study'
+import { syncAll } from '@/app/sync'
 import { forgetVault, openFolder } from '@/app/vaults'
 import type { Workspace } from '@/lib/workspace'
 
@@ -31,6 +32,7 @@ export const COMMANDS = [
   'syncStudy',
   'examPlan',
   'setupCheck',
+  'syncAll',
 ] as const
 export type CommandId = (typeof COMMANDS)[number]
 
@@ -92,6 +94,8 @@ export function runCommand(
       return app.navigate({ name: 'settings', section: 'study' })
     case 'examPlan':
       return void syncExamPlan(ws).catch(() => undefined)
+    case 'syncAll':
+      return void syncAll(ws)
     case 'setupCheck':
       return void setupHint(ws)
   }

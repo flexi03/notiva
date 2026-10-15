@@ -97,6 +97,8 @@ export function buildMenu(getWindow: () => BrowserWindow | null): void {
     {
       label: 'Studium',
       submenu: [
+        item('Alles synchronisieren', 'syncAll'),
+        { type: 'separator' },
         item('Moodle jetzt abrufen', 'fetchMoodle'),
         item('eCampus-Noten jetzt abrufen', 'fetchEcampus'),
         item('Prüfungsplan prüfen', 'examPlan'),
