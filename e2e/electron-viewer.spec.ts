@@ -73,13 +73,23 @@ test('markiert ausgewählten Text und speichert ihn in der Notizseite', async ()
   expect(notes()).toContain('color: green')
   // The PDF itself is untouched.
   expect(readFileSync(path.join(folder, 'Skripte/Graphen.pdf')).equals(readFileSync(PDF))).toBe(true)
-  const list = window.getByRole('list', { name: 'Markierungen und Notizen' })
+  // Plain colour marks are listed compactly (closed list).
+  await window.getByText('Markierungen (1)').click()
+  const list = window.getByRole('list', { name: 'Markierungen ohne Kommentar' })
   await expect(list).toContainText('Definition: Ein Graph')
 })
 
 test('schreibt Notizen pro Seite', async () => {
   await window.getByRole('textbox', { name: 'Notiz zur aktuellen Seite' }).fill('Dijkstra nochmal üben')
   await expect.poll(notes).toContain('## Seite 1\n\nDijkstra nochmal üben')
+  // Formatted after leaving the field; code blocks can be copied without editing.
+  const field = window.getByRole('textbox', { name: 'Notiz zur aktuellen Seite' })
+  await field.fill('Dijkstra nochmal üben\n\n```sql\nSELECT * FROM kante;\n```')
+  await field.blur()
+  const copy = window.getByRole('button', { name: 'Code kopieren' })
+  await copy.click()
+  await expect.poll(() => app.evaluate(({ clipboard }) => clipboard.readText())).toBe('SELECT * FROM kante;')
+  await expect(window.getByRole('textbox', { name: 'Notiz zur aktuellen Seite' })).toHaveCount(0)
 })
 
 test('zeichnet mit dem Stift, setzt Notizen und radiert', async () => {

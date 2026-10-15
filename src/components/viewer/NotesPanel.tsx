@@ -39,6 +39,11 @@ export function NotesPanel({
 }) {
   const openPage = useApp((s) => s.openPage)
   const sorted = [...annotations].sort((a, b) => a.page - b.page)
+  // Notes and commented highlights in full; plain colour marks compact in a closed list.
+  const isMark = (a: Annotation) =>
+    a.type === 'ink' || (a.type === 'highlight' && !a.comment?.trim() && a.id !== activeId)
+  const detailed = sorted.filter((a) => !isMark(a))
+  const marks = sorted.filter(isMark)
   const activeRef = useRef<HTMLLIElement>(null)
   const [width, setWidth] = useStoredWidth('pdf-notes', 320, 240, 720)
   useEffect(() => {
@@ -64,77 +69,68 @@ export function NotesPanel({
         {sorted.length === 0 ? (
           <p className="p-3 text-[13px] text-ink-3">{t('viewer.noAnnotations')}</p>
         ) : (
-          <ul aria-label={t('viewer.annotations')} className="divide-y divide-line">
-            {sorted.map((a) => (
-              <li
-                key={a.id}
-                ref={a.id === activeId ? activeRef : undefined}
-                className={cx('group p-3', a.id === activeId && 'bg-hover')}
-              >
-                <div className="flex items-start gap-2">
-                  <span className="mt-0.5 shrink-0" style={{ color: COLOR_VALUES[a.color] }} aria-hidden>
-                    {a.type === 'highlight' ? (
-                      <Highlighter size={15} />
-                    ) : a.type === 'note' ? (
-                      <StickyNote size={15} />
-                    ) : a.type === 'text' ? (
-                      <Type size={15} />
-                    ) : (
-                      <PenLine size={15} />
-                    )}
-                  </span>
-                  <button
-                    type="button"
-                    className="min-w-0 flex-1 text-left"
-                    onClick={() => {
-                      onActivate(a.id)
-                      onJump(a.page)
-                    }}
-                  >
-                    <span className="block text-[11.5px] text-ink-3">
-                      {t('viewer.onPage', { page: a.page })}
-                    </span>
-                    <span className="line-clamp-3 block text-[13px]">
-                      {a.type === 'highlight'
-                        ? `„${a.text ?? ''}“`
-                        : a.type === 'note' || a.type === 'text'
-                          ? a.text || t('viewer.emptyNote')
-                          : t('viewer.drawing')}
-                    </span>
-                  </button>
-                  <IconButton
-                    size="sm"
-                    label={t('viewer.remove')}
-                    onClick={() => onRemove(a.id)}
-                    className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-                  >
-                    <Trash2 size={13} />
-                  </IconButton>
-                </div>
-                {a.id === activeId && (a.type === 'note' || a.type === 'highlight') && (
-                  <AutoTextArea
-                    autoFocus={a.type === 'note' && !a.text}
-                    aria-label={a.type === 'note' ? t('viewer.noteText') : t('viewer.comment')}
-                    placeholder={a.type === 'note' ? t('viewer.noteText') : t('viewer.comment')}
-                    defaultValue={a.type === 'note' ? a.text : (a.comment ?? '')}
-                    onBlur={(e) => {
-                      const value = e.target.value.trim()
-                      if (a.type === 'note' ? value !== a.text : value !== (a.comment ?? ''))
-                        onUpdate(a.id, a.type === 'note' ? { text: value } : { comment: value })
-                    }}
-                    className="mt-2 max-h-[40vh] w-full rounded-control border border-line bg-surface px-2 py-1.5 text-[13px] focus:border-accent focus:outline-none"
+          <>
+            {detailed.length > 0 && (
+              <ul aria-label={t('viewer.annotations')} className="divide-y divide-line">
+                {detailed.map((a) => (
+                  <AnnotationItem
+                    key={a.id}
+                    a={a}
+                    active={a.id === activeId}
+                    itemRef={a.id === activeId ? activeRef : undefined}
+                    onActivate={onActivate}
+                    onJump={onJump}
+                    onUpdate={onUpdate}
+                    onRemove={onRemove}
                   />
-                )}
-                {a.id !== activeId && a.type === 'highlight' && a.comment && (
-                  <MarkdownView
-                    markdown={a.comment}
-                    untrusted
-                    className="md mt-1 pl-6 text-[12.5px] text-ink-2"
-                  />
-                )}
-              </li>
-            ))}
-          </ul>
+                ))}
+              </ul>
+            )}
+            {marks.length > 0 && (
+              <details className="border-t border-line" open={marks.some((a) => a.id === activeId)}>
+                <summary className="cursor-pointer px-3 py-2 text-[12.5px] font-semibold text-ink-2">
+                  {t('viewer.marks', { count: marks.length })}
+                </summary>
+                <ul aria-label={t('viewer.marksList')} className="pb-1">
+                  {marks.map((a) => (
+                    <li
+                      key={a.id}
+                      className={cx(
+                        'group flex items-center gap-1.5 px-3 py-0.5',
+                        a.id === activeId && 'bg-hover',
+                      )}
+                    >
+                      <span
+                        className="size-2 shrink-0 rounded-full"
+                        style={{ background: COLOR_VALUES[a.color] }}
+                        aria-hidden
+                      />
+                      <button
+                        type="button"
+                        className="min-w-0 flex-1 truncate text-left text-[12px] text-ink-2"
+                        title={a.type === 'highlight' ? a.text : undefined}
+                        onClick={() => {
+                          onActivate(a.id)
+                          onJump(a.page)
+                        }}
+                      >
+                        <span className="text-ink-3">S. {a.page}</span>{' '}
+                        {a.type === 'highlight' ? a.text : t('viewer.drawing')}
+                      </button>
+                      <IconButton
+                        size="sm"
+                        label={t('viewer.remove')}
+                        onClick={() => onRemove(a.id)}
+                        className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                      >
+                        <Trash2 size={12} />
+                      </IconButton>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
+          </>
         )}
       </div>
       {notesPath && (
@@ -196,5 +192,100 @@ function PageNoteEditor({ value, onSave }: { value: string; onSave: (text: strin
       }}
       className="max-h-[40vh] min-h-20 w-full rounded-control border border-line bg-surface px-2 py-1.5 text-[13px] focus:border-accent focus:outline-none"
     />
+  )
+}
+
+/** One note / commented highlight: formatted text; edit on click (or right away when empty). */
+function AnnotationItem({
+  a,
+  active,
+  itemRef,
+  onActivate,
+  onJump,
+  onUpdate,
+  onRemove,
+}: {
+  a: Annotation
+  active: boolean
+  itemRef: React.Ref<HTMLLIElement> | undefined
+  onActivate: (id: string) => void
+  onJump: (page: number) => void
+  onUpdate: (id: string, patch: Partial<Annotation>) => void
+  onRemove: (id: string) => void
+}) {
+  const field = a.type === 'note' || a.type === 'text' ? 'text' : 'comment'
+  const saved = (field === 'text' ? (a as { text?: string }).text : (a as { comment?: string }).comment) ?? ''
+  // Shown right after leaving the field – before the file round trip is back.
+  const [value, setValue] = useState(saved)
+  const [editing, setEditing] = useState(false)
+  const [seen, setSeen] = useState(saved)
+  if (seen !== saved) {
+    setSeen(saved)
+    setValue(saved)
+  }
+  const editable = a.type === 'note' || a.type === 'highlight'
+  return (
+    <li ref={itemRef} className={cx('group p-3', active && 'bg-hover')}>
+      <div className="flex items-start gap-2">
+        <span className="mt-0.5 shrink-0" style={{ color: COLOR_VALUES[a.color] }} aria-hidden>
+          {a.type === 'highlight' ? (
+            <Highlighter size={15} />
+          ) : a.type === 'note' ? (
+            <StickyNote size={15} />
+          ) : a.type === 'text' ? (
+            <Type size={15} />
+          ) : (
+            <PenLine size={15} />
+          )}
+        </span>
+        <button
+          type="button"
+          className="min-w-0 flex-1 text-left"
+          onClick={() => {
+            onActivate(a.id)
+            onJump(a.page)
+          }}
+        >
+          <span className="block text-[11.5px] text-ink-3">{t('viewer.onPage', { page: a.page })}</span>
+          {a.type === 'highlight' && (
+            <span className="line-clamp-2 block text-[12.5px] text-ink-2">„{a.text ?? ''}“</span>
+          )}
+        </button>
+        <IconButton
+          size="sm"
+          label={t('viewer.remove')}
+          onClick={() => onRemove(a.id)}
+          className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+        >
+          <Trash2 size={13} />
+        </IconButton>
+      </div>
+      {editable && (editing || (active && !value)) ? (
+        <AutoTextArea
+          autoFocus
+          aria-label={a.type === 'note' ? t('viewer.noteText') : t('viewer.comment')}
+          placeholder={a.type === 'note' ? t('viewer.noteText') : t('viewer.comment')}
+          defaultValue={value}
+          onBlur={(e) => {
+            const next = e.target.value.trim()
+            setEditing(false)
+            setValue(next)
+            if (next !== saved) onUpdate(a.id, { [field]: next } as Partial<Annotation>)
+          }}
+          className="mt-2 max-h-[40vh] w-full rounded-control border border-line bg-surface px-2 py-1.5 text-[13px] focus:border-accent focus:outline-none"
+        />
+      ) : value ? (
+        <div
+          role={editable ? 'button' : undefined}
+          tabIndex={editable ? 0 : undefined}
+          title={editable ? t('viewer.clickToEdit') : undefined}
+          onClick={(e) => editable && !(e.target as HTMLElement).closest('a,button') && setEditing(true)}
+          onKeyDown={(e) => editable && e.key === 'Enter' && setEditing(true)}
+          className={cx('mt-1 pl-6', editable && 'cursor-text rounded-control hover:bg-hover')}
+        >
+          <MarkdownView markdown={value} untrusted className="md text-[13px]" />
+        </div>
+      ) : null}
+    </li>
   )
 }

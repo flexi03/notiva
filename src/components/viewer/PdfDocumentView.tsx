@@ -14,6 +14,7 @@ import {
   StickyNote,
   Type,
 } from 'lucide-react'
+import { CommentMarkers } from './CommentMarkers'
 import { TerminalPanel } from '@/components/terminal/TerminalPanel'
 import { ResizeHandle, useStoredWidth } from '@/components/layout/ResizeHandle'
 import { workFolderFor } from '@/lib/codeFolders'
@@ -317,22 +318,35 @@ export function PdfDocumentView({
               tool !== 'select' && '[&_.textLayer]:pointer-events-none',
             )}
             overlay={(page, size, scale) => (
-              <AnnotationLayer
-                page={page}
-                size={size}
-                scale={scale}
-                annotations={notes.annotations}
-                tool={tool}
-                color={color}
-                activeId={activeId}
-                onAdd={(a) => void notes.add(a)}
-                onRemove={(id) => void notes.remove(id)}
-                onOpen={(id) => {
-                  setPanel(true)
-                  setActiveId(id)
-                }}
-                onUpdate={(id, patch) => void notes.update(id, patch)}
-              />
+              <>
+                <CommentMarkers
+                  page={page}
+                  size={size}
+                  scale={scale}
+                  annotations={notes.annotations}
+                  activeId={activeId}
+                  onOpen={(id) => {
+                    setPanel(true)
+                    setActiveId(activeId === id ? null : id)
+                  }}
+                />
+                <AnnotationLayer
+                  page={page}
+                  size={size}
+                  scale={scale}
+                  annotations={notes.annotations}
+                  tool={tool}
+                  color={color}
+                  activeId={activeId}
+                  onAdd={(a) => void notes.add(a)}
+                  onRemove={(id) => void notes.remove(id)}
+                  onOpen={(id) => {
+                    setPanel(true)
+                    setActiveId(id)
+                  }}
+                  onUpdate={(id, patch) => void notes.update(id, patch)}
+                />
+              </>
             )}
           />
           {selection && (

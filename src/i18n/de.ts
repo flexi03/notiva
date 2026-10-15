@@ -503,6 +503,8 @@ export const de = {
   'file.zoomOut': 'Verkleinern',
   'file.fitWidth': 'An Breite anpassen',
   'viewer.clickToEdit': 'Klicken zum Bearbeiten',
+  'viewer.marks': 'Markierungen ({count})',
+  'viewer.marksList': 'Markierungen ohne Kommentar',
   'viewer.notes': 'Notizen zum Dokument',
   'viewer.pageNote': 'Notiz zu Seite {page}',
   'viewer.pageNoteLabel': 'Notiz zur aktuellen Seite',
@@ -571,6 +573,8 @@ export const de = {
   'transcribe.removeModel': '„{name}“ löschen',
   'transcribe.localHint':
     'Modelle liegen im App-Profil (nicht im Ordner). Whisper startet beim Aufnehmen von selbst und beendet sich nach 10 Minuten ohne Aufnahme.',
+  'lecture.collapse': 'Einklappen',
+  'lecture.expand': 'Aufklappen',
   'lecture.title': 'Vorlesung live',
   'lecture.intro':
     'Nimmt auf, schreibt mit ({provider}) und blättert zur Folie, über die gerade gesprochen wird.',
@@ -721,6 +725,9 @@ export const de = {
   'terminal.restart': 'Neu starten',
   'terminal.toggle': 'Terminal',
   'terminal.saved': 'In die Notizen zu Seite {page} übernommen',
+  'editor.copy': 'Kopieren',
+  'editor.copied': 'Kopiert ✓',
+  'editor.copyCode': 'Code kopieren',
   'grades.title': 'Noten & Leistungen',
   'grades.source': 'Aus eCampus · Stand {time}',
   'grades.import': 'In Module übernehmen …',

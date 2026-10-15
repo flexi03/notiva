@@ -176,3 +176,8 @@ button {
     opacity: 0.5;
   }
 }
+
+/* While a panel is resized: no width transitions (ResizeHandle). */
+body[data-resizing] * {
+  transition: none !important;
+}

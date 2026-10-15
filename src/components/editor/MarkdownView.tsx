@@ -1,4 +1,5 @@
 import { memo, useEffect, useMemo, useRef, type MouseEvent } from 'react'
+import { t } from '@/i18n'
 import { useApp, useWorkspace } from '@/app/store'
 import { renderMarkdown } from '@/lib/markdown'
 import { dirname, isSafePath, joinPath, normalizePath } from '@/lib/path'
@@ -72,8 +73,55 @@ export const MarkdownView = memo(function MarkdownView({
     }
   }, [html, from, ws])
 
+  // Code blocks get a copy button (e.g. SQL commands in notes next to a lab PDF).
+  useEffect(() => {
+    const root = ref.current
+    if (!root) return
+    for (const pre of root.querySelectorAll<HTMLPreElement>('pre')) {
+      if (pre.querySelector('button[data-copy]')) continue
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.dataset.copy = ''
+      button.className = 'code-copy'
+      button.title = t('editor.copyCode')
+      button.setAttribute('aria-label', t('editor.copyCode'))
+      button.textContent = t('editor.copy')
+      pre.classList.add('relative')
+      pre.append(button)
+    }
+  }, [html])
+
   const onClick = (e: MouseEvent) => {
     const target = e.target as HTMLElement
+    const copy = target.closest<HTMLButtonElement>('button[data-copy]')
+    if (copy) {
+      e.preventDefault()
+      e.stopPropagation()
+      const code = copy.parentElement?.querySelector('code') ?? copy.parentElement
+      const text = Array.from(code?.childNodes ?? [])
+        .filter((n) => !(n instanceof HTMLElement && n.dataset.copy !== undefined))
+        .map((n) => n.textContent ?? '')
+        .join('')
+        .replace(/\n$/, '')
+      const done = () => {
+        copy.textContent = t('editor.copied')
+        setTimeout(() => (copy.textContent = t('editor.copy')), 1500)
+      }
+      // Clipboard API, else the classic way (e.g. when the window has no focus permission).
+      void (navigator.clipboard?.writeText(text) ?? Promise.reject(new Error('no clipboard')))
+        .then(done)
+        .catch(() => {
+          const area = document.createElement('textarea')
+          area.value = text
+          area.style.position = 'fixed'
+          area.style.opacity = '0'
+          document.body.append(area)
+          area.select()
+          if (document.execCommand('copy')) done()
+          area.remove()
+        })
+      return
+    }
     const checkbox = target.closest<HTMLInputElement>('input.task-checkbox')
     if (checkbox) {
       e.preventDefault()

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 /** Width (or height) remembered on this device. */
 export function useStoredWidth(key: string, initial: number, min: number, max: number) {
@@ -10,14 +10,19 @@ export function useStoredWidth(key: string, initial: number, min: number, max: n
       return initial
     }
   })
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const set = (value: number) => {
     const next = Math.round(Math.min(max, Math.max(min, value)))
     setWidth(next)
-    try {
-      localStorage.setItem(`notiva:size:${key}`, String(next))
-    } catch {
-      /* private mode */
-    }
+    // Stored once the dragging pauses, not on every pixel.
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => {
+      try {
+        localStorage.setItem(`notiva:size:${key}`, String(next))
+      } catch {
+        /* private mode */
+      }
+    }, 250)
   }
   return [width, set] as const
 }
@@ -44,16 +49,28 @@ export function ResizeHandle({
     e.preventDefault()
     const origin = vertical ? e.clientY : e.clientX
     const base = width
+    let frame = 0
+    let latest = base
+    // At most one layout per frame; no width animations while dragging (smooth like VS Code).
     const move = (ev: PointerEvent) => {
       const delta = (vertical ? ev.clientY : ev.clientX) - origin
-      onResize(side === 'right' ? base + delta : base - delta)
+      latest = side === 'right' ? base + delta : base - delta
+      if (!frame)
+        frame = requestAnimationFrame(() => {
+          frame = 0
+          onResize(latest)
+        })
     }
     const up = () => {
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', up)
+      cancelAnimationFrame(frame)
+      onResize(latest)
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
+      delete document.body.dataset.resizing
     }
+    document.body.dataset.resizing = ''
     document.body.style.cursor = vertical ? 'row-resize' : 'col-resize'
     document.body.style.userSelect = 'none'
     window.addEventListener('pointermove', move)
