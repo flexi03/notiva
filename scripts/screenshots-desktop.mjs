@@ -1,12 +1,14 @@
-// README image of a lab in the desktop app: code file in the editor, terminal below (dark).
-// `npm run build && npm run electron:build && node scripts/screenshot-lab.mjs`
+// README images from the desktop app (dark): a lab (code file in the editor, terminal below) and a
+// lecture PDF with highlights, a comment, a page note and a pen stroke.
+// `npm run build && npm run electron:build && node scripts/screenshots-desktop.mjs`
 // A clean shell (prompt "$ ", no profile) so no user or host name shows up.
 import { _electron as electron } from '@playwright/test'
-import { chmodSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
 const OUT = new URL('../docs/images/praktikum.png', import.meta.url).pathname
+const OUT_PDF = new URL('../docs/images/pdf.png', import.meta.url).pathname
 // The folder name shows in the sidebar.
 const folder = path.join(mkdtempSync(path.join(os.tmpdir(), 'notiva-lab-')), 'Studium')
 const lab = path.join(folder, 'Datenbanken', 'Praktikum 3')
@@ -49,6 +51,31 @@ INSERT INTO kunde VALUES (1, 'Ada'), (2, 'Linus'), (3, 'Grace');
 INSERT INTO bestellung (kunde_id, betrag) VALUES (1, 120), (2, 80.5), (1, 42), (3, 210);
 `,
 )
+// Lecture slides with notes (format: docs/FORMAT.md, "PDF-Notizen").
+mkdirSync(path.join(folder, 'Skripte'))
+writeFileSync(path.join(folder, 'Skripte.md'), '---\nicon: 📚\n---\n# Skripte\n')
+copyFileSync(
+  new URL('../e2e/fixtures/graphen.pdf', import.meta.url).pathname,
+  path.join(folder, 'Skripte/Graphen.pdf'),
+)
+writeFileSync(
+  path.join(folder, 'Skripte/Graphen (Notizen).md'),
+  `---
+pdf: Graphen.pdf
+annotations:
+  - { id: a1, type: highlight, page: 1, color: yellow, rects: [[80, 134, 252, 18], [80, 174, 291, 18]], text: 'Definition: Ein Graph G = (V, E) besteht aus Knoten V und Kanten E.', comment: 'Kommt in jeder Klausur dran' }
+  - { id: a2, type: highlight, page: 1, color: green, rects: [[80, 214, 262, 18]], text: 'Beispiel: Wegesuche mit Dijkstra' }
+  - { id: a3, type: note, page: 1, color: blue, x: 400, y: 214, text: 'Dijkstra nur ohne negative Kanten' }
+  - { id: a4, type: ink, page: 1, color: red, width: 2.5, points: '80,198 180,200 300,197 372,199' }
+  - { id: a5, type: highlight, page: 2, color: yellow, rects: [[80, 174, 157, 18]], text: 'Laufzeit O(|V| + |E|)' }
+---
+## Seite 1
+
+- **Graph** = Knoten + Kanten, gerichtet oder ungerichtet
+- Dijkstra: *Prioritätswarteschlange*, Laufzeit $O((V+E)\\log V)$
+`,
+)
+
 const shell = path.join(path.dirname(folder), 'shell.sh')
 // Notiva asks the login shell for PATH at start (with a command) – that one runs normally.
 writeFileSync(
@@ -69,8 +96,8 @@ const app = await electron.launch({
 })
 try {
   const window = await app.firstWindow()
-  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1440, 900))
   await window.getByRole('button', { name: 'Ordner wählen' }).click()
+  // A fixed 1440×900 view, whatever screen this runs on (the notes column opens from 1100 px).
   await window.evaluate(() => (location.hash = '#/f/Datenbanken%2FPraktikum%203%2Fabfragen.py'))
   const term = window.getByTestId('terminal')
   await term.waitFor({ timeout: 15_000 })
@@ -88,6 +115,24 @@ try {
   await window.mouse.move(0, 0)
   await window.waitForTimeout(800)
   await window.screenshot({ path: OUT })
+
+  // The lecture PDF with its notes beside it.
+  await window.evaluate(() => (location.hash = '#/f/Skripte%2FGraphen.pdf'))
+  await window.locator('[data-page="1"] canvas').waitFor({ timeout: 15_000 })
+  // Room for the PDF and its notes on any screen: sidebar in, notes column out, lecture panel closed.
+  await window.keyboard.press('ControlOrMeta+\\')
+  const notes = window.getByRole('button', { name: 'Notizen ein-/ausblenden' })
+  if ((await notes.getAttribute('aria-pressed')) !== 'true') await notes.click()
+  await window
+    .getByRole('button', { name: 'Einklappen' })
+    .first()
+    .click()
+    .catch(() => undefined)
+  await window.waitForTimeout(2000)
+  await window.evaluate(() => (document.documentElement.dataset.theme = 'dark'))
+  await window.mouse.move(0, 0)
+  await window.waitForTimeout(600)
+  await window.screenshot({ path: OUT_PDF })
 } finally {
   await app.close()
 }

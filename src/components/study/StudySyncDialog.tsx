@@ -100,7 +100,7 @@ export function StudySyncDialog({ onClose }: { onClose: () => void }) {
               </Field>
             </div>
           )}
-          {creating && <OtherUniversity what="study" />}
+          {creating && <OtherUniversity what="study" onLeave={onClose} />}
           {preview.ok && (
             <>
               <p className="text-sm font-medium">

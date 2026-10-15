@@ -67,7 +67,7 @@ In der Demo liegt alles im Speicher: in Tests mit `go(page, '#/…')` navigieren
 
 ## Konventionen
 
-- TypeScript strict, Prettier (`npm run format`), Commit-Nachrichten auf Englisch, ein Commit pro Feature/Meilenstein.
+- TypeScript strict, Prettier (`npm run format`), Commit-Nachrichten auf Englisch (ohne Claude-Session-Link), ein Commit pro Feature/Meilenstein.
 - Beispieldaten ohne echte Personen; Module/Prüfungen sind generisch.
 - Neue Vorlagen-Pakete: `src/lib/packs/`, in `TEMPLATE_PACKS` eintragen, `packs.test.ts` prüft automatisch,
   dass jedes Paket ohne YAML-Fehler installierbar ist.

@@ -90,13 +90,14 @@ export async function withProgress<T>(
     setTimeout(() => useProgress.getState().dismiss(id), options.action?.(result) ? 12_000 : 5000)
     return result
   } catch (e) {
-    patch(id, {
-      state: 'error',
-      message:
-        e instanceof Error
-          ? e.message.replace(/^Error invoking remote method '[^']+': (\w*Error: )?/, '')
-          : String(e),
-    })
+    // Reason in plain words, the technical text below, and a fix (or "Noch einmal").
+    const { explain } = await import('./fixes')
+    const { message, note, action } = explain(
+      e,
+      () => void withProgress(label, work, options).catch(() => undefined),
+    )
+    patch(id, { state: 'error', message, ...(note ? { note } : {}), ...(action ? { action } : {}) })
+    if (e && typeof e === 'object') (e as { reported?: boolean }).reported = true
     throw e
   }
 }

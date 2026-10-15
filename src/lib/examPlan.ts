@@ -176,14 +176,16 @@ export interface PlannedExam {
  * The plan's entries for the user's open modules (not passed): same program (e.g. "BMI18"), then by
  * module name ("BMI 96: Mobile Anwendungen" → elective "Mobile Anwendungen"). Dated entries only.
  */
-export function examsForStudy(entries: PlanEntry[], state: StudyState): PlannedExam[] {
+export function examsForStudy(entries: PlanEntry[], state: StudyState, since?: Date): PlannedExam[] {
+  // Old dates (before `since`, e.g. 30 days ago) are not entered – only recent and upcoming ones.
+  const from = since ? since.toISOString().slice(0, 10) : ''
   const code = state.program.planCode
   const open = state.modules.filter(
     (m) => m.status !== 'Bestanden' && m.status !== 'Endgültig nicht bestanden',
   )
   const out: PlannedExam[] = []
   for (const entry of entries) {
-    if (!entry.date) continue
+    if (!entry.date || entry.date < from) continue
     if (code && entry.program && entry.program.replace(/\s/g, '') !== code) continue
     const name = entry.name.replace(/^[A-Z]{2,5}\s?\d{1,3}[:.]\s*/, '')
     const found = matchModuleName(name, state.program)?.module

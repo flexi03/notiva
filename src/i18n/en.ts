@@ -328,6 +328,25 @@ export const en: Record<MessageKey, string> = {
   'kind.electron': 'Folder',
 
   'common.cancel': 'Cancel',
+  'common.next': 'Next',
+  'fix.installGit': 'Install Git',
+  'fix.gitInstalling': 'Installing Git …',
+  'fix.gitDownload': 'Opened the Git download page',
+  'fix.gitAfter': 'When the installation is done, restart Notiva – then it finds Git.',
+  'fix.gitIdentity': 'Enter name and email',
+  'fix.gitName': 'Your name for Git commits',
+  'fix.gitNameLabel': 'Name (shown in every commit, e.g. your GitHub name)',
+  'fix.gitEmail': 'Your email for Git commits',
+  'fix.gitEmailLabel': 'Email (e.g. GitHub’s “noreply” address to keep yours private)',
+  'fix.gitIdentityDone': 'Git knows you now',
+  'fix.gitInit': 'Set up Git here',
+  'fix.gitPull': 'Get changes (pull)',
+  'fix.connectStudy': 'Connect again',
+  'fix.aiSettings': 'Set up AI',
+  'fix.notificationSettings': 'Allow notifications',
+  'fix.chooseFolder': 'Choose the folder again',
+  'fix.restart': 'Restart Notiva',
+  'fix.retry': 'Try again',
   'common.save': 'Save',
   'common.create': 'Create',
   'common.delete': 'Delete',
@@ -511,13 +530,22 @@ export const en: Record<MessageKey, string> = {
   'news.kind.grade': '{count} new grades',
   'news.kind.reminder': '{count} reminders',
   'notify.test': 'Send a test notification',
-  'notify.openSystem': 'Open macOS notification settings',
-  'notify.testResult.shown':
+  'notify.openSystem.mac': 'Open macOS notification settings',
+  'notify.testResult.shown.mac':
     'macOS accepted the notification. If you do not see it, check Do Not Disturb/Focus.',
   'notify.testResult.helper':
     'Sent via “Notiva”. If nothing appears, allow “Notiva” in the macOS notification settings (or check Focus/Do Not Disturb).',
-  'notify.testResult.refused':
+  'notify.testResult.refused.mac':
     'macOS refused the notification. Open the notification settings and allow “Electron” (development build) or “Notiva” – Notiva sent one via “Script Editor” instead.',
+  'notify.openSystem.win': 'Open Windows notification settings',
+  'notify.testResult.shown.win':
+    'Windows accepted the notification. If you do not see it, check Do Not Disturb or Notiva under Settings → System → Notifications.',
+  'notify.testResult.refused.win':
+    'Windows did not show the notification. Allow Notiva under Settings → System → Notifications.',
+  'notify.testResult.shown.linux':
+    'The notification was sent. If nothing appears, check your desktop’s notifications (GNOME/KDE, Do Not Disturb).',
+  'notify.testResult.refused.linux':
+    'The notification could not be sent – a notification service (e.g. GNOME/KDE) is needed.',
   'notify.testResult.unsupported': 'This system does not support notifications.',
   'notify.interval': 'Check Moodle',
   'notify.intervalHint': 'While the app runs, also after waking from sleep.',
@@ -695,7 +723,7 @@ export const en: Record<MessageKey, string> = {
   'study.dialogTitle': 'Update studies',
   'uni.other': 'Another university?',
   'uni.other.study':
-    'Choose “Own programme / other university”. Moodle and eCampus addresses then live in Studium/Hochschule.md – fill them in yourself or let the AI assistant do it.',
+    'Choose “Own programme / other university” above. Enter the Moodle and eCampus addresses afterwards – or let the AI assistant do it.',
   'uni.other.moodle':
     'Any Moodle works: enter the address of your Moodle start page above. If your university signs in differently, the AI assistant helps – or open an issue on GitHub.',
   'uni.other.ecampus':
@@ -786,7 +814,9 @@ export const en: Record<MessageKey, string> = {
   'code.hint':
     'The code lives in “{folder}” in your vault – in the same Git as your notes. Dependencies and build output (node_modules, target …) stay out.',
   'code.openEditor': 'Open in VS Code',
-  'code.openFinder': 'Show in Finder',
+  'code.openFinder.mac': 'Show in Finder',
+  'code.openFinder.win': 'Show in Explorer',
+  'code.openFinder.linux': 'Show in file manager',
   'code.inAppTerminal': 'Terminal here',
   'code.hideTerminal': 'Close terminal',
   'code.openTerminal': 'Terminal',
@@ -962,6 +992,8 @@ export const en: Record<MessageKey, string> = {
   'ai.error.model': 'Model “{model}” not found. ({message})',
   'ai.error.generic': 'Error: {message}',
 
+  'git.whatIsGit':
+    'Git keeps versions of your notes and labs – you see what changed and can upload to GitHub. Notiva uses the Git program on your computer for it.',
   'git.title': 'Changes',
   'git.toggle': 'Changes (Git) (⌘⇧G)',
   'git.desktopOnly': 'Git is available in the desktop app',

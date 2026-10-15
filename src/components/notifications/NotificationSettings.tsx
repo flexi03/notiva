@@ -9,6 +9,8 @@ const CHECKS: CheckKind[] = ['moodle', 'materials', 'courseInfo', 'grades', 'exa
 /** Settings → Benachrichtigungen: system banners and how often Moodle is checked (desktop). */
 export function NotificationSettingsSection() {
   const bridge = electronBridge()?.notifications
+  // Texts and buttons per system: no macOS hints on Windows or Linux.
+  const os = { darwin: 'mac', win32: 'win' }[electronBridge()?.platform ?? ''] ?? 'linux'
   const [settings, setSettings] = useState<NotifySettings | null>(null)
   const [test, setTest] = useState<string | null>(null)
   useEffect(() => {
@@ -33,9 +35,9 @@ export function NotificationSettingsSection() {
             <Button size="sm" onClick={() => void bridge.test!().then(setTest, () => setTest('unsupported'))}>
               {t('notify.test')}
             </Button>
-            {bridge.openSystemSettings && (
+            {bridge.openSystemSettings && os !== 'linux' && (
               <Button size="sm" onClick={() => void bridge.openSystemSettings!()}>
-                {t('notify.openSystem')}
+                {t(`notify.openSystem.${os as 'mac' | 'win'}`)}
               </Button>
             )}
           </div>
@@ -46,7 +48,9 @@ export function NotificationSettingsSection() {
                 test === 'shown' || test === 'helper' ? 'text-sm text-accent' : 'text-sm text-danger'
               }
             >
-              {t(`notify.testResult.${test as 'shown' | 'helper' | 'refused' | 'unsupported'}`)}
+              {test === 'unsupported' || test === 'helper'
+                ? t(`notify.testResult.${test}`)
+                : t(`notify.testResult.${test as 'shown' | 'refused'}.${os as 'mac' | 'win' | 'linux'}`)}
             </p>
           )}
         </div>

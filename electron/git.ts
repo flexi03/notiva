@@ -53,7 +53,8 @@ const queues = new Map<string, Promise<unknown>>()
 function run(cwd: string, args: string[], options: { allowFail?: boolean; timeout?: number } = {}) {
   return new Promise<{ code: number; stdout: string; stderr: string }>((resolve, reject) => {
     execFile(
-      'git',
+      // E2E tests: a missing git (NOTIVA_E2E_GIT) shows the "install Git" fix.
+      process.env.NOTIVA_E2E_GIT ?? 'git',
       args,
       {
         cwd,
@@ -307,4 +308,45 @@ export class GitRepo {
     const r = await run(this.vault.root, ['pull', '--ff-only'], { timeout: 120_000 })
     return (r.stdout || r.stderr).trim()
   }
+}
+
+/**
+ * One-click fix "Git fehlt": Windows installs it with winget (the system asks for permission),
+ * macOS opens Apple's installer for the command line tools; elsewhere (or without winget) the
+ * download page. Returns what happened so the app can explain the next step.
+ */
+export async function installGit(openUrl: (url: string) => Promise<void>): Promise<'installing' | 'opened'> {
+  const { spawn } = await import('node:child_process')
+  const started = (cmd: string, args: string[]) =>
+    new Promise<boolean>((resolve) => {
+      const child = spawn(cmd, args, { detached: true, stdio: 'ignore', windowsHide: false })
+      child.once('error', () => resolve(false))
+      child.once('spawn', () => {
+        child.unref()
+        resolve(true)
+      })
+    })
+  if (process.platform === 'win32') {
+    // A visible window so the user sees the progress (and the permission prompt).
+    const ok = await started('cmd.exe', [
+      '/c',
+      'start',
+      '"Git installieren"',
+      'cmd',
+      '/k',
+      'winget install --id Git.Git -e --source winget --accept-package-agreements --accept-source-agreements',
+    ])
+    if (ok) return 'installing'
+    await openUrl('https://git-scm.com/download/win')
+    return 'opened'
+  }
+  if (process.platform === 'darwin' && (await started('xcode-select', ['--install']))) return 'installing'
+  await openUrl('https://git-scm.com/downloads')
+  return 'opened'
+}
+
+/** One-click fix "Git weiß nicht, wer du bist": name and email for commits (global). */
+export async function setGitIdentity(cwd: string, name: string, email: string): Promise<void> {
+  await run(cwd, ['config', '--global', 'user.name', name])
+  await run(cwd, ['config', '--global', 'user.email', email])
 }

@@ -12,6 +12,15 @@ import { tablePdf } from './fixtures/tablePdf'
  * A small HISinOne/QIS: login, exam administration with an iframe, QIS menu → "Notenspiegel" →
  * degree tree → results list. The session id ("asi") changes on every visit of the exam page.
  */
+// Exam dates relative to today (the app enters only the last 30 days and the future).
+const inDays = (n: number) => new Date(Date.now() + n * 86_400_000)
+const de = (d: Date) =>
+  `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`
+const iso = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+const EXAM = inDays(40)
+const MOVED = inDays(41)
+
 const fake = {
   sessions: new Set<string>(),
   /** Sessions of the identity provider (single sign-on without input while valid). */
@@ -20,7 +29,7 @@ const fake = {
   results: QIS_RESULTS_HTML,
   log: [] as string[],
   planFile: '20260608-SoSe2026-Pruefungsplanung.pdf',
-  plan: examPlan('20.08.2026'),
+  plan: examPlan(de(EXAM)),
 }
 
 /** Exam plan PDF: header and two rows (one of another program). */
@@ -269,15 +278,15 @@ test('holt den Prüfungsplan und trägt die eigenen Termine ein', async () => {
   const exams = path.join(folder, 'Studium/Prüfungen')
   const file = readdirSync(exams).find((f) => f.includes('Datenbanksysteme 1'))!
   const text = readFileSync(path.join(exams, file), 'utf8')
-  expect(text).toContain('Datum: 2026-08-20')
+  expect(text).toContain(`Datum: ${iso(EXAM)}`)
   expect(text).toContain('Beginn: 10:00')
   expect(readdirSync(exams).filter((f) => f.includes('Datenbanksysteme 1'))).toHaveLength(1)
   expect(readdirSync(path.join(folder, 'Studium/Unterlagen/Prüfungsplan'))).toEqual([fake.planFile])
   // A new version moves the date: updated and reported.
-  fake.plan = examPlan('21.08.2026')
+  fake.plan = examPlan(de(MOVED))
   fake.planFile = '20260701-SoSe2026-Pruefungsplanung.pdf'
   await window.getByRole('button', { name: 'Prüfungsplan prüfen' }).click()
-  await expect.poll(() => readFileSync(path.join(exams, file), 'utf8')).toContain('Datum: 2026-08-21')
+  await expect.poll(() => readFileSync(path.join(exams, file), 'utf8')).toContain(`Datum: ${iso(MOVED)}`)
   const bell = window
     .getByRole('navigation', { name: 'Werkzeugleiste rechts' })
     .getByRole('button', { name: /Benachrichtigungen/ })

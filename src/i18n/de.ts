@@ -328,6 +328,25 @@ export const de = {
   'kind.electron': 'Ordner',
 
   'common.cancel': 'Abbrechen',
+  'common.next': 'Weiter',
+  'fix.installGit': 'Git installieren',
+  'fix.gitInstalling': 'Git wird installiert …',
+  'fix.gitDownload': 'Download-Seite von Git geöffnet',
+  'fix.gitAfter': 'Wenn die Installation fertig ist, Notiva neu starten – dann findet es Git.',
+  'fix.gitIdentity': 'Name und E-Mail eintragen',
+  'fix.gitName': 'Dein Name für Git-Commits',
+  'fix.gitNameLabel': 'Name (erscheint in jedem Commit, z. B. dein GitHub-Name)',
+  'fix.gitEmail': 'Deine E-Mail für Git-Commits',
+  'fix.gitEmailLabel': 'E-Mail (z. B. die „noreply“-Adresse von GitHub, wenn sie privat bleiben soll)',
+  'fix.gitIdentityDone': 'Git kennt dich jetzt',
+  'fix.gitInit': 'Git hier einrichten',
+  'fix.gitPull': 'Änderungen holen (Pull)',
+  'fix.connectStudy': 'Neu verbinden',
+  'fix.aiSettings': 'KI einrichten',
+  'fix.notificationSettings': 'Mitteilungen erlauben',
+  'fix.chooseFolder': 'Ordner neu wählen',
+  'fix.restart': 'Notiva neu starten',
+  'fix.retry': 'Noch einmal',
   'common.save': 'Speichern',
   'common.create': 'Erstellen',
   'common.delete': 'Löschen',
@@ -514,13 +533,22 @@ export const de = {
   'news.kind.grade': '{count} neue Noten',
   'news.kind.reminder': '{count} Erinnerungen',
   'notify.test': 'Test-Mitteilung senden',
-  'notify.openSystem': 'Mitteilungseinstellungen von macOS öffnen',
-  'notify.testResult.shown':
+  'notify.openSystem.mac': 'Mitteilungseinstellungen von macOS öffnen',
+  'notify.testResult.shown.mac':
     'macOS hat die Mitteilung angenommen. Siehst du sie nicht, prüfe „Nicht stören“/Fokus.',
   'notify.testResult.helper':
     'Gesendet über „Notiva“. Siehst du nichts, erlaube „Notiva“ in den Mitteilungseinstellungen von macOS (oder prüfe Fokus/„Nicht stören“).',
-  'notify.testResult.refused':
+  'notify.testResult.refused.mac':
     'macOS hat die Mitteilung abgelehnt. Öffne die Mitteilungseinstellungen und erlaube dort „Electron“ (Entwicklungsversion) bzw. „Notiva“ – Notiva hat ersatzweise eine Mitteilung über „Skripteditor“ geschickt.',
+  'notify.openSystem.win': 'Benachrichtigungseinstellungen von Windows öffnen',
+  'notify.testResult.shown.win':
+    'Windows hat die Benachrichtigung angenommen. Siehst du sie nicht, prüfe „Nicht stören“ bzw. Benachrichtigungen für Notiva unter Einstellungen → System → Benachrichtigungen.',
+  'notify.testResult.refused.win':
+    'Windows hat die Benachrichtigung nicht angezeigt. Unter Einstellungen → System → Benachrichtigungen Notiva erlauben.',
+  'notify.testResult.shown.linux':
+    'Die Benachrichtigung wurde gesendet. Siehst du nichts, prüfe die Benachrichtigungen deiner Oberfläche (GNOME/KDE, „Nicht stören“).',
+  'notify.testResult.refused.linux':
+    'Die Benachrichtigung konnte nicht gesendet werden – ein Benachrichtigungsdienst (z. B. von GNOME/KDE) wird gebraucht.',
   'notify.testResult.unsupported': 'Dieses System unterstützt keine Mitteilungen.',
   'notify.interval': 'In Moodle nachsehen',
   'notify.intervalHint': 'Solange die App läuft, auch nach dem Aufwachen aus dem Ruhezustand.',
@@ -700,7 +728,7 @@ export const de = {
   'study.dialogTitle': 'Studium aktualisieren',
   'uni.other': 'Andere Hochschule?',
   'uni.other.study':
-    'Wähle „Eigener Studiengang / andere Hochschule“. Adressen für Moodle und eCampus stehen danach in Studium/Hochschule.md – selbst eintragen oder vom KI-Assistenten eintragen lassen.',
+    'Wähle oben „Eigener Studiengang / andere Hochschule“. Die Adressen von Moodle und eCampus trägst du danach ein – oder der KI-Assistent.',
   'uni.other.moodle':
     'Jedes Moodle funktioniert: oben die Adresse eurer Moodle-Startseite eintragen. Meldet sich eure Hochschule anders an, hilft der KI-Assistent – oder ein Issue auf GitHub.',
   'uni.other.ecampus':
@@ -792,7 +820,9 @@ export const de = {
   'code.hint':
     'Der Code liegt im Ordner „{folder}“ deines Studiums – im selben Git wie deine Notizen. Abhängigkeiten und Build-Ausgaben (node_modules, target …) bleiben draußen.',
   'code.openEditor': 'In VS Code öffnen',
-  'code.openFinder': 'Im Finder zeigen',
+  'code.openFinder.mac': 'Im Finder zeigen',
+  'code.openFinder.win': 'Im Explorer zeigen',
+  'code.openFinder.linux': 'Im Dateimanager zeigen',
   'code.inAppTerminal': 'Terminal hier',
   'code.hideTerminal': 'Terminal schließen',
   'code.openTerminal': 'Terminal-App',
@@ -969,6 +999,8 @@ export const de = {
   'ai.error.model': 'Modell „{model}“ nicht gefunden. ({message})',
   'ai.error.generic': 'Fehler: {message}',
 
+  'git.whatIsGit':
+    'Git speichert Versionen deiner Notizen und Praktika – du siehst, was sich geändert hat, und kannst zu GitHub hochladen. Notiva nutzt dafür das Git-Programm auf deinem Computer.',
   'git.title': 'Änderungen',
   'git.toggle': 'Änderungen (Git) (⌘⇧G)',
   'git.desktopOnly': 'Git gibt es in der Desktop-App',

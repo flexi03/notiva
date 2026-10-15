@@ -4,11 +4,11 @@ Everything beyond the [README](../README.en.md). Deutsch: [ANLEITUNG.md](ANLEITU
 
 ## Storage
 
-| Storage     | Where                                                | Platform                                |
-| ----------- | ---------------------------------------------------- | --------------------------------------- |
-| **Folder**  | a normal folder (syncable with iCloud/Syncthing/Git) | desktop app, Chrome/Edge                |
-| **Browser** | the browser's private storage (OPFS)                 | all modern browsers, also Safari on iOS |
-| **Demo**    | memory only, with the study dashboard                | everywhere                              |
+| Storage     | Where                                                | Platform                 |
+| ----------- | ---------------------------------------------------- | ------------------------ |
+| **Folder**  | a normal folder (syncable with iCloud/Syncthing/Git) | desktop app, Chrome/Edge |
+| **Browser** | the browser's private storage (OPFS)                 | all modern browsers      |
+| **Demo**    | memory only, with the study dashboard                | everywhere               |
 
 ## Studies
 

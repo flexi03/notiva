@@ -172,7 +172,10 @@ contextBridge.exposeInMainWorld('notiva', {
     init: () => invoke('git:init'),
     push: () => invoke<string>('git:push'),
     pull: () => invoke<string>('git:pull'),
+    install: () => invoke<'installing' | 'opened'>('git:install'),
+    setIdentity: (name: string, email: string) => invoke<void>('git:setIdentity', name, email),
   },
+  restart: () => invoke<void>('app:restart'),
   vault: {
     open: (folder: string) => invoke<{ name: string }>('vault:open', folder),
     list: () => invoke('vault:list'),

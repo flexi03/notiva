@@ -135,8 +135,29 @@ export async function installUpdate(): Promise<void> {
         stdio: 'ignore',
       }).unref()
     } else if (process.platform === 'win32') {
-      // NSIS: silent install over the old version, then start it.
-      spawn(downloaded, ['/S', '--force-run'], { detached: true, stdio: 'ignore' }).unref()
+      // NSIS must not run while Notiva still has its files open (that broke the app): a hidden
+      // PowerShell waits until Notiva has quit, installs silently, then starts the new version.
+      const q = (v: string) => `'${v.replaceAll("'", "''")}'`
+      const script = [
+        `try { Wait-Process -Id ${Number(pid)} -Timeout 60 -ErrorAction SilentlyContinue } catch {}`,
+        'Start-Sleep -Milliseconds 500',
+        `Start-Process -FilePath ${q(downloaded)} -ArgumentList '/S','--updated' -Wait`,
+        `Start-Process -FilePath ${q(process.execPath)}`,
+      ].join('; ')
+      spawn(
+        'powershell.exe',
+        [
+          '-NoProfile',
+          '-NonInteractive',
+          '-ExecutionPolicy',
+          'Bypass',
+          '-WindowStyle',
+          'Hidden',
+          '-Command',
+          script,
+        ],
+        { detached: true, stdio: 'ignore', windowsHide: true },
+      ).unref()
     } else {
       const target = process.env.APPIMAGE
       if (!target) throw new Error('Nur als AppImage aktualisierbar')
@@ -149,7 +170,9 @@ export async function installUpdate(): Promise<void> {
         stdio: 'ignore',
       }).unref()
     }
-    setTimeout(() => app.quit(), 300)
+    // The app saved everything before (src/app/update.ts) – quit for sure, a "Leave page?"
+    // prompt must not keep the old version running while the installer replaces it.
+    setTimeout(() => app.exit(0), 300)
   } catch (e) {
     set({ state: 'error', version: current.version, message: e instanceof Error ? e.message : String(e) })
     throw e

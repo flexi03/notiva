@@ -4,11 +4,11 @@ Alles, was über den Einstieg im [README](../README.md) hinausgeht. English: [GU
 
 ## Speicherorte
 
-| Speicher    | Wo                                                              | Plattform                                  |
-| ----------- | --------------------------------------------------------------- | ------------------------------------------ |
-| **Ordner**  | ein normaler Ordner (mit iCloud/Syncthing/Git synchronisierbar) | Desktop-App, Chrome/Edge                   |
-| **Browser** | privater Speicher des Browsers (OPFS)                           | alle modernen Browser, auch Safari auf iOS |
-| **Demo**    | nur im Arbeitsspeicher, mit Studien-Dashboard                   | überall                                    |
+| Speicher    | Wo                                                              | Plattform                |
+| ----------- | --------------------------------------------------------------- | ------------------------ |
+| **Ordner**  | ein normaler Ordner (mit iCloud/Syncthing/Git synchronisierbar) | Desktop-App, Chrome/Edge |
+| **Browser** | privater Speicher des Browsers (OPFS)                           | alle modernen Browser    |
+| **Demo**    | nur im Arbeitsspeicher, mit Studien-Dashboard                   | überall                  |
 
 ## Studium
 

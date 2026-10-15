@@ -1,6 +1,7 @@
 // Screenshots for the README from the demo vault: `npm run build && node scripts/screenshots.mjs`.
 // Starts `vite preview`, freezes the clock and writes PNGs to docs/images/.
 import { spawn } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { chromium } from '@playwright/test'
 
 const PORT = 4174
@@ -9,7 +10,6 @@ const OUT = new URL('../docs/images/', import.meta.url).pathname
 const SHOTS = [
   // Dark is the default look of the README; the grid alternates with light.
   ['dashboard', '/#/p/Studium.md', 'dark'],
-  ['datenbank', '/#/p/Studium%2FModule.md', 'light'],
   ['semester', '/#/semester', 'dark'],
   ['vorlagen', '/#/templates', 'light'],
   ['einstellungen', '/#/settings', 'dark'],
@@ -56,6 +56,19 @@ try {
       await page.close()
     }
   }
+  // Light and dark in one picture: the same dashboard, split slightly slanted in the middle.
+  const split = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 })
+  const img = (name) => `data:image/png;base64,${readFileSync(`${OUT}${name}.png`).toString('base64')}`
+  await split.setContent(`<style>
+    body { margin: 0 }
+    img { position: absolute; inset: 0; width: 1440px; height: 900px }
+    .light { clip-path: polygon(0 0, 54% 0, 46% 100%, 0 100%) }
+    .line { position: absolute; inset: 0; background: rgba(255,255,255,.55);
+      clip-path: polygon(53.9% 0, 54.1% 0, 46.1% 100%, 45.9% 100%) }
+  </style><img src="${img('dashboard')}"><img class="light" src="${img('hell')}"><div class="line"></div>`)
+  await split.waitForTimeout(300)
+  await split.screenshot({ path: `${OUT}hell-dunkel.png` })
+  await split.close()
   await browser.close()
 } finally {
   server.kill()

@@ -1,19 +1,19 @@
-# Notiva 📝 – Notizen, Datenbanken und Studium als Markdown-Dateien
+# Notiva 📝 – dein Studium und deine Notizen in Markdown
 
 <p align="center">
-  <img src="docs/images/dashboard.png" alt="Notiva: Studien-Dashboard mit Vorlesungszeit, Notenschnitt, ECTS und nächster Prüfung" width="900">
+  <img src="docs/images/hell-dunkel.png" alt="Notiva: Studien-Dashboard, links hell, rechts dunkel" width="900">
 </p>
 
 <p align="center">
-  <b>Wie Notion – nur lokal, frei und in Dateien, die dir gehören.</b><br>
-  Seiten, Datenbanken, Dashboards und ein komplettes Studium mit Moodle, eCampus und Prüfungsplan.<br>
-  Ohne Konto, ohne Cloud, ohne Tracking. Als Desktop-App und als Web-App fürs Handy.
+  <b>Notizen, Studium, Code und PDF-Anmerkungen an einem Ort – als Markdown-Dateien, die dir gehören.</b><br>
+  Ein Hub für dein Studium: Moodle, eCampus und Prüfungsplan angebunden, KI-Assistent auf Wunsch.<br>
+  Für die Hochschule Düsseldorf eingerichtet, für andere Hochschulen anpassbar. Für Laptop und PC.
 </p>
 
 <p align="center">
   <a href="LICENSE"><img alt="Lizenz: MIT" src="https://img.shields.io/badge/Lizenz-MIT-2563eb"></a>
-  <img alt="Version 0.1.1" src="https://img.shields.io/badge/Version-0.1.1-16a34a">
-  <img alt="macOS, Windows, Linux, Browser" src="https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Browser-ffffff">
+  <img alt="Version 0.1.2" src="https://img.shields.io/badge/Version-0.1.2-16a34a">
+  <img alt="macOS, Windows, Linux" src="https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux-ffffff">
 </p>
 
 <p align="center"><b>Deutsch</b> · <a href="README.en.md">English</a></p>
@@ -25,6 +25,8 @@
 - [Worum geht es?](#worum-geht-es)
 - [Was Notiva kann](#was-notiva-kann)
 - [Praktika mit Editor und Terminal](#praktika-mit-editor-und-terminal)
+- [Skripte lesen und anmerken](#skripte-lesen-und-anmerken)
+- [Hub mit Schnittstellen und KI](#hub-mit-schnittstellen-und-ki)
 - [Kurz erklärt: die wichtigsten Begriffe](#kurz-erklärt-die-wichtigsten-begriffe)
 - [Installieren und starten](#installieren-und-starten)
 - [Studium einrichten in 5 Schritten](#studium-einrichten-in-5-schritten)
@@ -39,54 +41,57 @@
 
 ## Worum geht es?
 
-Notion ist praktisch, aber deine Notizen liegen auf fremden Servern, und ohne Internet geht wenig. Notiva macht
-dasselbe mit **normalen Markdown-Dateien in einem Ordner auf deinem Gerät**. Du kannst den Ordner mit iCloud,
-Syncthing oder Git synchronisieren, mit jedem Texteditor öffnen und jederzeit mitnehmen.
+Im Studium liegt alles verstreut: Skripte in Moodle, Noten im eCampus, Termine im Prüfungsplan-PDF, Mitschriften
+in einer App, Praktikumscode in der nächsten. Notiva holt das an **einen Ort auf deinem Laptop** – als
+**normale Markdown-Dateien in einem Ordner**, den du mit Git, iCloud oder Syncthing synchronisieren und mit jedem
+Texteditor öffnen kannst.
 
-Dazu kommt ein **Studien-Modus**: Notiva holt Kurse, Unterlagen und Termine aus Moodle, Noten und Prüfungen aus
-dem eCampus (HISinOne) und den Prüfungsplan der Fakultät. Daraus entstehen Modulseiten, ein Stundenplan und
-„Mein Semester“. Voreingestellt ist die Hochschule Düsseldorf; andere Hochschulen trägst du in einer einzigen Seite
-ein ([docs/HOCHSCHULE.md](docs/HOCHSCHULE.md)).
+- **Notizen** schreibst du in einem Editor wie Notion, gespeichert wird reines Markdown.
+- **Studium**: Notiva liest Kurse, Unterlagen und Termine aus Moodle, Noten und Prüfungen aus dem eCampus (HISinOne)
+  und den Prüfungsplan der Fakultät – und baut daraus Modulseiten, Stundenplan und „Mein Semester“.
+- **Code**: Praktika bearbeitest du mit Editor und Terminal direkt beim Modul.
+- **Anmerkungen**: Skripte markierst und kommentierst du, ohne das PDF zu verändern.
+- **KI**, wenn du willst: ein Assistent, der sieht, woran du gerade arbeitest.
+
+Voreingestellt ist die Hochschule Düsseldorf; andere Hochschulen trägst du in einer einzigen Seite ein – oder lässt
+das den KI-Assistenten machen ([Andere Hochschule?](#andere-hochschule)).
 
 ## Was Notiva kann
 
 <table>
   <tr>
-    <td width="33%" align="center"><img src="docs/images/datenbank.png" alt="Datenbank mit Tabellenansicht" width="280"></td>
     <td width="33%" align="center"><img src="docs/images/semester.png" alt="Mein Semester" width="280"></td>
+    <td width="33%" align="center"><img src="docs/images/praktikum.png" alt="Praktikum mit Editor und Terminal" width="280"></td>
+    <td width="33%" align="center"><img src="docs/images/pdf.png" alt="PDF mit Markierungen und Notizen" width="280"></td>
+  </tr>
+  <tr>
+    <td valign="top"><b>Mein Semester</b><br>Alle Module, die du gerade belegst: Vorlesungen, neue Dateien, bearbeitete PDFs, Mitschriften und Code.</td>
+    <td valign="top"><b>Praktika</b><br>Code-Ordner pro Modul mit Editor, Terminal und Git – ein Klick aus „Mein Semester“.</td>
+    <td valign="top"><b>Skripte anmerken</b><br>Markieren, kommentieren, zeichnen, Seitennotizen – das PDF bleibt unverändert.</td>
+  </tr>
+  <tr>
+    <td width="33%" align="center"><img src="docs/images/hell.png" alt="Studien-Dashboard, helles Design" width="280"></td>
+    <td width="33%" align="center"><img src="docs/images/einstellungen.png" alt="Einstellungen mit Moodle und eCampus" width="280"></td>
     <td width="33%" align="center"><img src="docs/images/vorlagen.png" alt="Vorlagen" width="280"></td>
   </tr>
   <tr>
-    <td valign="top"><b>Datenbanken</b><br>Tabelle, Board, Kacheln, Liste und Kalender. Eigenschaften, Formeln, Relationen, Filter, Gruppen – jede Zeile ist eine Markdown-Datei.</td>
-    <td valign="top"><b>Mein Semester</b><br>Alle Module, die du gerade belegst: Vorlesungen, neue Dateien, bearbeitete PDFs, Mitschriften und Code.</td>
-    <td valign="top"><b>Vorlagen</b><br>Studien-Dashboard, Vorlesungsnotiz, Lernzettel, Projekte und mehr. Eigene Vorlagen sind normale Seiten.</td>
-  </tr>
-  <tr>
-    <td width="33%" align="center"><img src="docs/images/einstellungen.png" alt="Einstellungen" width="280"></td>
-    <td width="33%" align="center"><img src="docs/images/hell.png" alt="Helles Design" width="280"></td>
-    <td width="33%" align="center"><img src="docs/images/willkommen.png" alt="Startbildschirm" width="280"></td>
-  </tr>
-  <tr>
-    <td valign="top"><b>Einstellungen</b><br>Moodle, eCampus, Benachrichtigungen, KI, Speicher, Farben, Schrift, Sprache (Deutsch/Englisch).</td>
-    <td valign="top"><b>Hell & Dunkel</b><br>Folgt dem System oder fest einstellbar – hier hell, oben dunkel.</td>
-    <td valign="top"><b>Dein Speicherort</b><br>Ordner auf dem Gerät, privater Browser-Speicher (auch iPhone/iPad) oder eine Demo.</td>
+    <td valign="top"><b>Studien-Dashboard</b><br>Vorlesungszeit, Notenschnitt, ECTS, nächste Prüfung, fällige Aufgaben – hell oder dunkel.</td>
+    <td valign="top"><b>Schnittstellen</b><br>Moodle, eCampus, Prüfungsplan, Benachrichtigungen und KI an einer Stelle einrichten.</td>
+    <td valign="top"><b>Vorlagen</b><br>Vorlesungsnotiz, Lernzettel, Studien-Dashboard und mehr – eigene Vorlagen sind normale Seiten.</td>
   </tr>
 </table>
 
 **Außerdem:**
 
-- 📝 **Block-Editor** wie Notion, aber jeder Block ist echtes Markdown: `/`-Befehle, `[[Links]]`, Aufgaben, Callouts,
-  Formeln, Code mit Kopier-Knopf.
-- 🧩 **Dashboards** mit Kacheln: Kennzahlen, Fortschritt, Countdown, Listen, eingebettete Ansichten.
+- 📝 **Markdown-Editor** wie Notion: `/`-Befehle, `[[Links]]`, Aufgaben, Callouts, Formeln, Code mit Kopier-Knopf.
 - 🎓 **Studium**: Module mit Status, Versuchen und Note, gewichteter Notenschnitt, ECTS, Prüfungen, Stundenplan,
   Anzeige „Jetzt / Als Nächstes“.
-- 📄 **PDF-Ansicht** mit Suche, stufenlosem Zoom, Markierungen, Kommentaren und Seitennotizen.
 - 🎙️ **Vorlesungsmodus**: nimmt auf, schreibt lokal mit Whisper mit und folgt den Folien.
-- 💻 **Code-Ordner** pro Seite mit Editor, Terminal und Git.
-- 🤖 **KI, wenn du willst**: Assistent mit sichtbarem Kontext (Claude Code, Codex, Ollama, eigene Schlüssel) und ein
-  MCP-Server für Claude Desktop & Co. – mit abgesicherten Werkzeugen.
-- 🌿 **Git eingebaut**: Änderungen, Diff, Commit, Verlauf, Push/Pull.
+- 🤖 **KI-Assistent** mit sichtbarem Kontext (Claude Code, Codex, Ollama, eigene Schlüssel) und MCP-Server.
 - 🔔 **Benachrichtigungen** für neue Unterlagen, Fristen, Noten und Ausfälle.
+- 🌿 **Git eingebaut**: Änderungen, Diff, Commit, Verlauf, Push/Pull.
+- 📥 **Ablage** für schnell abgelegte Dateien und Texte.
+- 🗂️ **Tabellen, Boards und Kalender** für Aufgaben, Prüfungen und Module – jede Zeile ist eine Markdown-Datei.
 
 ## Praktika mit Editor und Terminal
 
@@ -107,6 +112,33 @@ wechseln:
 - **KI dazu:** Der Assistent sieht auf Wunsch die offene Datei oder PDF-Seite (Claude Code, Codex, Ollama, …).
 
 Terminal und Editor gibt es in der Desktop-App.
+
+## Skripte lesen und anmerken
+
+<p align="center">
+  <img src="docs/images/pdf.png" alt="Vorlesungsfolien mit Markierungen, Kommentar, Stiftstrich und Seitennotiz" width="900">
+</p>
+
+- **Markieren und kommentieren:** Text auswählen → Farbe; Kommentare hängen sichtbar am Text.
+- **Zeichnen, Textfelder, Haftnotizen** direkt auf der Folie – auswählen, verschieben, löschen, `⌘Z`.
+- **Seitennotizen** in Markdown (mit Formeln) in der Spalte daneben.
+- **Suchen, flüssig zoomen**, mit `←`/`→` blättern.
+- **Das PDF bleibt unverändert:** Alles steht in einer Markdown-Seite daneben (`Skript (Notizen).md`).
+- **KI fragen** zur aktuellen Folie oder zu einer Markierung.
+
+## Hub mit Schnittstellen und KI
+
+Notiva verbindet, was du im Studium sonst einzeln öffnest:
+
+| Quelle           | Was Notiva daraus macht                                                       |
+| ---------------- | ----------------------------------------------------------------------------- |
+| **Moodle**       | Kurse, Unterlagen (automatisch einsortiert), Termine, Ankündigungen, Ausfälle |
+| **eCampus**      | Noten, Versuche, bestandene Module, Prüfungsanmeldungen                       |
+| **Prüfungsplan** | deine Prüfungstermine (letzte 30 Tage und Zukunft) in _Prüfungen_             |
+| **Kurstexte**    | Vorlesungs-, Übungs- und Praktikumszeiten im Stundenplan                      |
+| **KI-Assistent** | fasst zusammen, beantwortet Fragen zum Skript, richtet andere Hochschulen ein |
+
+Die KI ist aus, bis du sie einschaltest – und zeigt vor dem Senden, was sie mitbekommt.
 
 ## Kurz erklärt: die wichtigsten Begriffe
 
@@ -137,13 +169,11 @@ git clone https://github.com/flexi03/notiva.git
 cd notiva
 npm install
 npm run electron     # Desktop-App
-npm run dev          # oder: Web-App unter http://localhost:5173
+npm run dev          # oder im Browser (ohne Terminal, Git und Anmeldungen)
 ```
 
 Eigene Installationspakete: `npm run dist:mac`, `npm run dist:win` oder `npm run dist:linux` (Ausgabe in `release/`).
 Die Pakete sind nicht signiert; macOS fragt beim ersten Öffnen nach (Rechtsklick → Öffnen).
-
-Als Web-App aufs Handy: Seite im Browser öffnen → „Zum Home-Bildschirm“.
 
 ## Studium einrichten in 5 Schritten
 
@@ -235,7 +265,7 @@ Nein. Alles funktioniert ohne. Lokal und kostenlos geht es mit Ollama oder LM St
 
 ```bash
 npm run check        # Typen, Lint, Unit-Tests
-npm run test:e2e     # Playwright: Desktop, Tablet, iPhone (WebKit) und Electron
+npm run test:e2e     # Playwright: Browser und Desktop-App (Electron)
 npm run build && node scripts/screenshots.mjs   # Bilder für dieses README
 ```
 

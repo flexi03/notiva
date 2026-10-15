@@ -229,12 +229,14 @@ export function useWorkspace(): Workspace {
 
 /** Runs an async action and shows its error as a toast instead of failing silently. */
 export function useAction() {
-  const showToast = useApp((s) => s.showToast)
-  return <T>(task: () => Promise<T>): Promise<T | undefined> =>
+  const run = <T>(task: () => Promise<T>): Promise<T | undefined> =>
     task().catch((error: unknown) => {
-      showToast(error instanceof Error ? error.message : String(error))
+      // Already shown by withProgress (with reason and fix)?
+      if (!(error && typeof error === 'object' && (error as { reported?: boolean }).reported))
+        void import('./fixes').then((m) => m.reportError(error, () => void run(task)))
       return undefined
     })
+  return run
 }
 
 /** ⌘S / "Speichern": writes everything pending and says so. */

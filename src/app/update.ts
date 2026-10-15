@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { announce, withProgress } from '@/app/progress'
+import { useApp } from '@/app/store'
 import { t } from '@/i18n'
 import type { UpdateStatus } from '@/lib/update'
 import { electronBridge } from '@/lib/vault'
@@ -15,6 +16,8 @@ export function installUpdate(latest: string): Promise<void> {
       else if (s.state === 'ready') task.detail(t('update.restarting'))
     })
     try {
+      // Nothing unsaved gets lost: the app quits right after the download.
+      await useApp.getState().ws?.saveAll()
       await bridge.install()
     } finally {
       off()

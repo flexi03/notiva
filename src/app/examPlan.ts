@@ -37,7 +37,8 @@ export function syncExamPlan(ws: Workspace): Promise<number> {
         const version = planVersion(pages)
         const target = `${preview.folder}/Unterlagen/Prüfungsplan/${file.name}`
         if (!ws.assets().some((f) => f.path === target)) await ws.writeFile(target, file.bytes)
-        const exams = examsForStudy(parsePlanTable(pages), preview.state)
+        // Only the last 30 days and the future.
+        const exams = examsForStudy(parsePlanTable(pages), preview.state, new Date(Date.now() - 30 * 86_400_000))
         const modules = ws.rows(`${preview.folder}/Module.md`)
         const plan = planExamDates(
           ws,

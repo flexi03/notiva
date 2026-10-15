@@ -120,6 +120,10 @@ describe('exam plans', () => {
     const exams = examsForStudy(parsePlanTable([PAGE]), state)
     // Mathematik 1 is passed, BMT18 is another program, the project has no date.
     expect(exams.map((e) => e.moduleNr)).toEqual(['BMI 07', 'BMI 96'])
+    // Only the last 30 days and the future: the July date drops out in mid-August.
+    const recent = examsForStudy(parsePlanTable([PAGE]), state, new Date('2026-08-01'))
+    expect(recent.every((e) => e.entry.date! >= '2026-08-01')).toBe(true)
+    expect(recent.length).toBeLessThan(exams.length)
 
     const ws = await Workspace.open(new MemoryVault())
     await installPack(ws, studyPack, {}, '', now)

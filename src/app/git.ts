@@ -70,7 +70,8 @@ export const useGit = create<GitStore>((set, get) => ({
     try {
       return await task(git)
     } catch (error) {
-      useApp.getState().showToast(error instanceof Error ? error.message : String(error))
+      const { reportError } = await import('./fixes')
+      reportError(error, () => void get().act(task))
       return undefined
     } finally {
       await get().refresh()

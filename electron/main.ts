@@ -26,7 +26,7 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { FsVault } from './vaultFs'
 import { parseAiRequest } from './aiRequest'
-import { GitRepo, type GitState } from './git'
+import { GitRepo, installGit, setGitIdentity, type GitState } from './git'
 import { loadShellPath, which } from './shellPath'
 import { cliArgs, detectClis, parseCliRequest, startCli, type CliInfo, type McpLaunch } from './aiCli'
 import { spawn, type ChildProcess } from 'node:child_process'
@@ -559,6 +559,7 @@ function registerIpc(): void {
   handle('notifications:openSystemSettings', async () => {
     if (process.platform === 'darwin')
       await shell.openExternal('x-apple.systempreferences:com.apple.Notifications-Settings.extension')
+    else if (process.platform === 'win32') await shell.openExternal('ms-settings:notifications')
   })
   handle('notifications:settings', async () => parseNotifySettings((await readConfig()).notify))
   handle('notifications:setSettings', async (raw: unknown) => {
@@ -764,6 +765,18 @@ function registerIpc(): void {
   handle('app:openExternal', async (url: unknown) => {
     if (typeof url === 'string' && /^(https?:|mailto:)/i.test(url)) await shell.openExternal(url)
   })
+  // One-click fixes (see src/lib/errors.ts).
+  handle('git:install', async () => installGit((url) => shell.openExternal(url)))
+  handle('git:setIdentity', async (name: unknown, email: unknown) => {
+    const n = String(name ?? '').trim()
+    const e = String(email ?? '').trim()
+    if (!n || !/^[^\s@]+@[^\s@]+$/.test(e)) throw new Error('Name und E-Mail angeben')
+    await setGitIdentity(requireVault().root, n.slice(0, 100), e.slice(0, 200))
+  })
+  handle('app:restart', async () => {
+    app.relaunch()
+    app.quit()
+  })
 }
 
 /** Serves dist/ under app://notiva/ – with path checks and a strict CSP header. */
@@ -859,6 +872,9 @@ function createWindow(): void {
   })
   void window.loadURL(process.env.NOTIVA_DEV_URL ?? 'app://notiva/index.html')
 }
+
+// Windows shows notifications only for a known app id (the installer's shortcut uses the same).
+if (process.platform === 'win32') app.setAppUserModelId('io.github.flexi03.notiva')
 
 app.whenReady().then(async () => {
   if (secondInstance) return

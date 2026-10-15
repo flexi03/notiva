@@ -115,18 +115,18 @@ Das Studien-Dashboard (`Studium.md`) kann eine Prüfungsordnung tragen:
 
 ```yaml
 studium:
-  programm: hsd-bmi-2018   # Studiengang + PO aus src/lib/study/catalog.ts
-  beginn: WiSe 24/25       # erstes Semester
+  programm: hsd-bmi-2018 # Studiengang + PO aus src/lib/study/catalog.ts
+  beginn: WiSe 24/25 # erstes Semester
 ```
 
 Dann gleicht Notiva den Ordner mit PO, eCampus und Moodle ab („Studium aktualisieren“, nach jedem Abruf
 automatisch). Einträge werden über Schlüssel wiedergefunden, die Notiva setzt:
 
-| Datenbank | Schlüssel | Notiva schreibt |
-| --- | --- | --- |
-| Module | `modul: BMI 01` | Nr, Status (+ `statusAuto`), Belegt (Semester), Fachsemester, ECTS, Note, Versuche, Verlauf, Bestanden im, Art, Bereich, Prüfungsform, Voraussetzung, Angebot, Lehrform, `pruefung`, `kurse` (Moodle-IDs); Praktikum und Link nur, wenn leer |
-| Semester | `fachsemester: 5` | Zeitraum, Status, Beginn, Ende, ECTS Plan, ECTS erreicht |
-| Kurse | `moodle: course:42` | Art (Modul/Orga/Sonstiges), Modul, Semester, Link, Ordner |
+| Datenbank | Schlüssel           | Notiva schreibt                                                                                                                                                                                                                              |
+| --------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Module    | `modul: BMI 01`     | Nr, Status (+ `statusAuto`), Belegt (Semester), Fachsemester, ECTS, Note, Versuche, Verlauf, Bestanden im, Art, Bereich, Prüfungsform, Voraussetzung, Angebot, Lehrform, `pruefung`, `kurse` (Moodle-IDs); Praktikum und Link nur, wenn leer |
+| Semester  | `fachsemester: 5`   | Zeitraum, Status, Beginn, Ende, ECTS Plan, ECTS erreicht                                                                                                                                                                                     |
+| Kurse     | `moodle: course:42` | Art (Modul/Orga/Sonstiges), Modul, Semester, Link, Ordner                                                                                                                                                                                    |
 
 Einen Status, den du selbst gesetzt hast, überschreibt Notiva erst, wenn sich die Fakten ändern
 (z. B. bestanden). Text, Notizen und eigene Eigenschaften bleiben unberührt.

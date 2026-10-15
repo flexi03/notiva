@@ -85,7 +85,9 @@ export function CodeFolder({ page }: { page: Page }) {
             {t('code.openEditor')}
           </Button>
           <Button icon={<FolderOpen size={15} />} onClick={() => open('finder')}>
-            {t('code.openFinder')}
+            {t(
+              `code.openFinder.${({ darwin: 'mac', win32: 'win' } as Record<string, 'mac' | 'win'>)[electronBridge()?.platform ?? ''] ?? 'linux'}`,
+            )}
           </Button>
           <Button icon={<SquareTerminal size={15} />} onClick={() => setTerminal((v) => !v)}>
             {terminal ? t('code.hideTerminal') : t('code.inAppTerminal')}

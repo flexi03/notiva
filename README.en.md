@@ -1,24 +1,24 @@
-# Notiva 📝 – notes, databases and your studies as Markdown files
+# Notiva 📝 – your studies and notes in Markdown
 
 <p align="center">
-  <img src="docs/images/dashboard.png" alt="Notiva: study dashboard with lecture weeks, grade average, ECTS and next exam" width="900">
+  <img src="docs/images/hell-dunkel.png" alt="Notiva: study dashboard, light on the left, dark on the right" width="900">
 </p>
 
 <p align="center">
-  <b>Like Notion – but local, free and in files you own.</b><br>
-  Pages, databases, dashboards and a full study planner with Moodle, eCampus and the exam schedule.<br>
-  No account, no cloud, no tracking. As a desktop app and as a web app for your phone.
+  <b>Notes, studies, code and PDF annotations in one place – as Markdown files you own.</b><br>
+  A hub for your studies: Moodle, eCampus and the exam schedule connected, an AI assistant if you want one.<br>
+  Set up for Hochschule Düsseldorf, adaptable to other universities. For laptop and PC.
 </p>
 
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-2563eb"></a>
-  <img alt="Version 0.1.1" src="https://img.shields.io/badge/Version-0.1.1-16a34a">
-  <img alt="macOS, Windows, Linux, browser" src="https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Browser-ffffff">
+  <img alt="Version 0.1.2" src="https://img.shields.io/badge/Version-0.1.2-16a34a">
+  <img alt="macOS, Windows, Linux" src="https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux-ffffff">
 </p>
 
-> The app speaks German and English (_Settings → General → Language_). The screenshots show the German demo.
-
 <p align="center"><a href="README.md">Deutsch</a> · <b>English</b></p>
+
+> The app speaks German and English (_Settings → General → Language_). The screenshots show the German demo.
 
 ---
 
@@ -27,6 +27,8 @@
 - [What is it about?](#what-is-it-about)
 - [What Notiva does](#what-notiva-does)
 - [Labs with editor and terminal](#labs-with-editor-and-terminal)
+- [Read and annotate lecture slides](#read-and-annotate-lecture-slides)
+- [A hub with connections and AI](#a-hub-with-connections-and-ai)
 - [Key terms](#key-terms)
 - [Install and run](#install-and-run)
 - [Set up your studies in 5 steps](#set-up-your-studies-in-5-steps)
@@ -41,53 +43,55 @@
 
 ## What is it about?
 
-Notion is handy, but your notes live on someone else's servers and little works offline. Notiva does the same with
-**plain Markdown files in a folder on your device**. Sync the folder with iCloud, Syncthing or Git, open it in any
-text editor and take it with you.
+At university everything is scattered: slides in Moodle, grades in eCampus, dates in the exam schedule PDF, notes in
+one app, lab code in another. Notiva brings it to **one place on your laptop** – as **plain Markdown files in a
+folder** you can sync with Git, iCloud or Syncthing and open in any text editor.
 
-On top of that there is a **study mode**: Notiva fetches courses, materials and dates from Moodle, grades and exams
-from eCampus (HISinOne) and the faculty's exam schedule. From that it builds module pages, a timetable and
-"My semester". The default is Hochschule Düsseldorf (Germany); other universities are configured on a single page
-([docs/HOCHSCHULE.md](docs/HOCHSCHULE.md), German).
+- **Notes** are written in an editor like Notion and saved as pure Markdown.
+- **Studies**: Notiva reads courses, materials and dates from Moodle, grades and exams from eCampus (HISinOne) and the
+  faculty's exam schedule – and builds module pages, a timetable and "My semester" from them.
+- **Code**: work on labs with editor and terminal right next to the module.
+- **Annotations**: highlight and comment on slides without changing the PDF.
+- **AI** if you want it: an assistant that sees what you are working on.
+
+The default is Hochschule Düsseldorf (Germany); other universities are set up on a single page – or by the AI
+assistant ([Another university?](#another-university)).
 
 ## What Notiva does
 
 <table>
   <tr>
-    <td width="33%" align="center"><img src="docs/images/datenbank.png" alt="Database table view" width="280"></td>
     <td width="33%" align="center"><img src="docs/images/semester.png" alt="My semester" width="280"></td>
+    <td width="33%" align="center"><img src="docs/images/praktikum.png" alt="Lab with editor and terminal" width="280"></td>
+    <td width="33%" align="center"><img src="docs/images/pdf.png" alt="PDF with highlights and notes" width="280"></td>
+  </tr>
+  <tr>
+    <td valign="top"><b>My semester</b><br>Every module you take now: lectures, new files, annotated PDFs, notes and code.</td>
+    <td valign="top"><b>Labs</b><br>A code folder per module with editor, terminal and Git – one click from "My semester".</td>
+    <td valign="top"><b>Annotate slides</b><br>Highlight, comment, draw, page notes – the PDF itself stays unchanged.</td>
+  </tr>
+  <tr>
+    <td width="33%" align="center"><img src="docs/images/hell.png" alt="Study dashboard, light theme" width="280"></td>
+    <td width="33%" align="center"><img src="docs/images/einstellungen.png" alt="Settings with Moodle and eCampus" width="280"></td>
     <td width="33%" align="center"><img src="docs/images/vorlagen.png" alt="Templates" width="280"></td>
   </tr>
   <tr>
-    <td valign="top"><b>Databases</b><br>Table, board, gallery, list and calendar. Properties, formulas, relations, filters, groups – every row is a Markdown file.</td>
-    <td valign="top"><b>My semester</b><br>Every module you are taking now: lectures, new files, annotated PDFs, notes and code.</td>
-    <td valign="top"><b>Templates</b><br>Study dashboard, lecture note, study sheet, projects and more. Your own templates are ordinary pages.</td>
-  </tr>
-  <tr>
-    <td width="33%" align="center"><img src="docs/images/einstellungen.png" alt="Settings" width="280"></td>
-    <td width="33%" align="center"><img src="docs/images/hell.png" alt="Light theme" width="280"></td>
-    <td width="33%" align="center"><img src="docs/images/willkommen.png" alt="Welcome screen" width="280"></td>
-  </tr>
-  <tr>
-    <td valign="top"><b>Settings</b><br>Moodle, eCampus, notifications, AI, storage, colors, font, language.</td>
-    <td valign="top"><b>Light & dark</b><br>Follows the system or set it yourself – light here, dark above.</td>
-    <td valign="top"><b>Your storage</b><br>A folder on your device, private browser storage (also iPhone/iPad) or a demo.</td>
+    <td valign="top"><b>Study dashboard</b><br>Lecture weeks, grade average, ECTS, next exam, tasks due – light or dark.</td>
+    <td valign="top"><b>Connections</b><br>Moodle, eCampus, exam schedule, notifications and AI set up in one place.</td>
+    <td valign="top"><b>Templates</b><br>Lecture note, study sheet, study dashboard and more – your own templates are ordinary pages.</td>
   </tr>
 </table>
 
 **Also:**
 
-- 📝 **Block editor** like Notion, but every block is real Markdown: `/` commands, `[[links]]`, tasks, callouts,
-  math, code with a copy button.
-- 🧩 **Dashboards** with tiles: numbers, progress, countdown, lists, embedded views.
+- 📝 **Markdown editor** like Notion: `/` commands, `[[links]]`, tasks, callouts, math, code with a copy button.
 - 🎓 **Studies**: modules with status, attempts and grade, ECTS-weighted average, exams, timetable, a "now / next" badge.
-- 📄 **PDF viewer** with search, smooth zoom, highlights, comments and page notes.
 - 🎙️ **Lecture mode**: records, transcribes locally with Whisper and follows the slides.
-- 💻 **Code folders** per page with editor, terminal and Git.
-- 🤖 **AI if you want it**: an assistant with visible context (Claude Code, Codex, Ollama, your own keys) and an MCP
-  server for Claude Desktop & co. – with guarded tools.
-- 🌿 **Built-in Git**: changes, diff, commit, history, push/pull.
+- 🤖 **AI assistant** with visible context (Claude Code, Codex, Ollama, your own keys) and an MCP server.
 - 🔔 **Notifications** for new materials, deadlines, grades and cancelled lectures.
+- 🌿 **Built-in Git**: changes, diff, commit, history, push/pull.
+- 📥 **Shelf** for files and text put aside quickly.
+- 🗂️ **Tables, boards and calendars** for tasks, exams and modules – every row is a Markdown file.
 
 ## Labs with editor and terminal
 
@@ -107,6 +111,33 @@ Work on lab assignments right next to your notes – no switching between editor
 - **AI on top:** the assistant can see the open file or PDF page (Claude Code, Codex, Ollama, …).
 
 Terminal and editor are part of the desktop app.
+
+## Read and annotate lecture slides
+
+<p align="center">
+  <img src="docs/images/pdf.png" alt="Lecture slides with highlights, a comment, a pen stroke and a page note" width="900">
+</p>
+
+- **Highlight and comment:** select text → color; comments stay visibly attached to the text.
+- **Draw, text boxes, sticky notes** right on the slide – select, move, delete, `⌘Z`.
+- **Page notes** in Markdown (with math) in the column beside it.
+- **Search, smooth zoom**, `←`/`→` to turn pages.
+- **The PDF stays unchanged:** everything lives in a Markdown page next to it (`Skript (Notizen).md`).
+- **Ask the AI** about the current slide or a highlight.
+
+## A hub with connections and AI
+
+Notiva connects what you otherwise open one by one:
+
+| Source            | What Notiva makes of it                                                        |
+| ----------------- | ------------------------------------------------------------------------------ |
+| **Moodle**        | courses, materials (sorted automatically), dates, announcements, cancellations |
+| **eCampus**       | grades, attempts, passed modules, exam registrations                           |
+| **Exam schedule** | your exam dates (last 30 days and upcoming) in _Prüfungen_                     |
+| **Course texts**  | lecture, exercise and lab times in the timetable                               |
+| **AI assistant**  | summarizes, answers questions about the slides, sets up other universities     |
+
+The AI is off until you turn it on – and shows what it will see before anything is sent.
 
 ## Key terms
 
@@ -139,13 +170,11 @@ git clone https://github.com/flexi03/notiva.git
 cd notiva
 npm install
 npm run electron     # desktop app
-npm run dev          # or: web app at http://localhost:5173
+npm run dev          # or in the browser (without terminal, Git and sign-ins)
 ```
 
 Installers: `npm run dist:mac`, `npm run dist:win` or `npm run dist:linux` (output in `release/`). They are unsigned;
 on macOS right-click → Open the first time.
-
-On your phone: open the web app in the browser → "Add to Home Screen".
 
 ## Set up your studies in 5 steps
 
@@ -235,7 +264,7 @@ No. Everything works without it. Free and local: Ollama or LM Studio.
 
 ```bash
 npm run check        # types, lint, unit tests
-npm run test:e2e     # Playwright: desktop, tablet, iPhone (WebKit) and Electron
+npm run test:e2e     # Playwright: browser and desktop app (Electron)
 npm run build && node scripts/screenshots.mjs   # images for this README
 ```
 

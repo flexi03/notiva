@@ -36,6 +36,10 @@ export interface GitBridge {
   init(): Promise<GitState>
   push(): Promise<string>
   pull(): Promise<string>
+  /** One-click fix: install Git (Windows: winget, macOS: command line tools, else the download page). */
+  install?(): Promise<'installing' | 'opened'>
+  /** One-click fix: name and email for commits (global git config). */
+  setIdentity?(name: string, email: string): Promise<void>
 }
 
 export type CliId = 'claude' | 'codex' | 'antigravity'
@@ -228,6 +232,8 @@ export interface NotivaBridge {
     audio: Uint8Array
   }): Promise<{ status: number; body: string }>
   /** Opens a vault file with the system's default app (desktop). */
+  /** Restarts the desktop app. */
+  restart?(): Promise<void>
   openWithSystem?(path: string): Promise<void>
   /** AI command line tools (Claude Code, Codex, Antigravity) – desktop app only. */
   aiCli?: CliBridge

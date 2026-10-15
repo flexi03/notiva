@@ -3,6 +3,20 @@
 Alle Versionen mit Downloads: [GitHub Releases](https://github.com/flexi03/notiva/releases).
 Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und installiert sie auf Wunsch selbst.
 
+## 0.1.2 – 2026-10-15
+
+- **Fehlermeldungen mit Grund und Ein-Klick-Fix:** bekannte Fehler (Git fehlt, Git-Name/E-Mail fehlen, kein
+  Repository, Push abgelehnt, keine Verbindung, Anmeldung abgelaufen, keine Berechtigung, KI nicht eingerichtet …)
+  erklärt Notiva in klaren Worten und bietet den passenden Knopf an – sonst „Noch einmal“.
+- **Git unter Windows:** statt endlos „Lädt …“ eine Erklärung und „Git installieren“ (winget; macOS: Command Line
+  Tools; sonst Download-Seite).
+- **Windows-Update repariert:** der Installer läuft erst, wenn Notiva beendet ist; vorher wird alles gespeichert.
+- **Benachrichtigungen pro System:** Windows und Linux zeigen keine macOS-Hinweise mehr; Windows-Einstellungen
+  öffnen sich direkt, Mitteilungen tragen unter Windows den App-Namen.
+- **Prüfungsplan:** nur Termine der letzten 30 Tage und der Zukunft werden eingetragen.
+- **Andere Hochschule mit KI:** der Dialog schließt sich, der Hinweis ist schlichter.
+- README neu: Notizen, Studium, Code, Anmerkungen und Schnittstellen im Fokus; Hell/Dunkel-Bild.
+
 ## 0.1.1 – 2026-10-15
 
 - **Andere Hochschulen:** beim Anlegen „Eigener Studiengang / andere Hochschule“ (Name, Studiengang, ECTS-Ziel) –

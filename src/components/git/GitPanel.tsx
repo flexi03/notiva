@@ -1,3 +1,4 @@
+import { explain } from '@/app/fixes'
 import { withProgress } from '@/app/progress'
 import { useEffect, useMemo, useState } from 'react'
 import {
@@ -77,9 +78,31 @@ function useStats(changes: GitChange[]): Map<string, DiffStats> {
   return stats
 }
 
+/** Git could not be read (e.g. not installed): why, the technical text, and a one-click fix. */
+function GitError({ error, retry }: { error: string; retry: () => void }) {
+  const { message, note, action } = explain(error, retry)
+  return (
+    <div role="alert" className="space-y-2 p-4 text-sm">
+      <p className="font-semibold">{message}</p>
+      <p className="text-[12.5px] text-ink-2">{t('git.whatIsGit')}</p>
+      {note && <p className="font-mono text-[11.5px] break-words text-ink-3">{note}</p>}
+      <div className="flex flex-wrap gap-2">
+        {action && (
+          <Button size="sm" variant="primary" onClick={action.run}>
+            {action.label}
+          </Button>
+        )}
+        <Button size="sm" variant="ghost" onClick={retry}>
+          {t('fix.retry')}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 /** Source control view in the right side bar (like VS Code). */
 export function GitPanel() {
-  const { state, loading, refresh, act, showDiff } = useGit()
+  const { state, loading, error, refresh, act, showDiff } = useGit()
   /** null = the automatic message (follows the selection); a string once the user edits it. */
   const [custom, setCustom] = useState<string | null>(null)
   const [excluded, setExcluded] = useState(new Set<string>())
@@ -141,6 +164,8 @@ export function GitPanel() {
           <EmptyState icon={<GitBranch size={22} />} title={t('git.desktopOnly')}>
             {t('git.desktopOnlyHint')}
           </EmptyState>
+        ) : !state && error ? (
+          <GitError error={error} retry={() => void refresh()} />
         ) : !state ? (
           <p className="p-4 text-sm text-ink-3">{t('common.loading')}</p>
         ) : !state.isRepo ? (
