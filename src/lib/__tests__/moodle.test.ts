@@ -295,6 +295,21 @@ describe('material categories', () => {
     expect(c('Datensatz', 'Labor', 'daten.csv')).toBe('Praktikum & Übung')
     expect(c('Klausurinfos', 'Allgemeines')).toBe('Sonstiges')
   })
+
+  it('decides by file name first, then section, then file type (real course layouts)', () => {
+    const c = (section: string, filename: string, title = filename) =>
+      materialCategory({ title, section, filename })
+    // A lab sheet inside a lecture topic, a lecture handout inside "Praktikum".
+    expect(c('Thema 1: Einführung', 'DBS2_Praktikum_01.pdf')).toBe('Praktikum & Übung')
+    expect(c('Praktikum 04 - Iterator', 'OOP2 - P04 - Iterator v14.pdf')).toBe('Praktikum & Übung')
+    expect(c('Vorlesung 4 : Binärbaum', 'OOP2 - 05-V- Binärbaum Aufbau.pdf')).toBe('Vorlesung')
+    // Topic sections without keywords: slides are lecture material, code/data belong to the lab.
+    expect(c('Was guckst Du - Wahrnehmung', 'MCI-06-Wahrnehmung.pdf')).toBe('Vorlesung')
+    expect(c('Thema 4: Änderungen mit SQL/DML', 'reset_movie_db.sql')).toBe('Praktikum & Übung')
+    // Exams and organisation are neither.
+    expect(c('Abschluss, Wiederholung', 'musterklausur_wise2425.pdf')).toBe('Sonstiges')
+    expect(c('Inhalte und Organisation', 'MCI-00-Organisation.pdf')).toBe('Sonstiges')
+  })
 })
 
 describe('HTML resources', () => {

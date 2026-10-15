@@ -92,21 +92,45 @@ export function safeFileName(name: string, fallback = 'Datei'): string {
 export const MATERIAL_CATEGORIES = ['Vorlesung', 'Praktikum & Übung', 'Sonstiges'] as const
 export type MaterialCategory = (typeof MATERIAL_CATEGORIES)[number]
 
+// Unambiguous words – in the file or activity name they decide, before the section.
+const LAB =
+  /praktik|übungsblatt|uebungsblatt|aufgabenblatt|übung|uebung|labor|\blab\b|tutorium|testat|abgabe|zusatzaufgabe|l(ö|oe)sung|quiz|exercise|assignment|(^|[\s_-])P\d{1,2}([\s_.-]|$)/i
+const LECTURE =
+  /vorlesung|folien|slides|skript|kapitel|chapter|lecture|(^|[\s_-])VL\s?\d|(^|[\s_-])V([\s_-]|$)|lektion/i
+const OTHER =
+  /klausur|prüfung|pruefung|\bexam|organisation|orga\b|modulhandbuch|checkliste|lehr-?lern|anerkennung|erstsemester|termine|teilnahme/i
+// Sections: weaker signals ("Thema 3", "Einheit 4" are topics of the lecture).
+const LAB_SECTION = /praktik|übung|uebung|labor|\blab\b|tutorium|zusatzaufgabe|exercise/i
+const LECTURE_SECTION = /vorlesung|lecture|lektion|kapitel|chapter|thema|einheit|woche|week|unit/i
+const OTHER_SECTION = /organisation|allgemein|informationen|klausur|prüfung|abschluss|grundlegendes|general/i
+// No word at all: code and data belong to labs, slides and videos to the lecture.
+const CODE =
+  /\.(sql|zip|tar|gz|java|py|ipynb|js|ts|html?|css|json|csv|xml|log|txt|c|cpp|h|kt|swift|r|m|sh|jar)$/i
+const SLIDES = /\.(pdf|pptx?|key|odp|mp4|mov|m4v)$/i
+
 /**
- * Lecture or lab/exercise? From the Moodle section, the activity name and the file name
- * ("Praktikum 3", "Übungsblatt", "Labor", "Aufgabe" vs. "Vorlesung", "Folien", "Skript", "Kapitel").
+ * Lecture or lab/exercise? The file and activity name decide first ("OOP2 - P03 …", "Kapitel05a",
+ * "Musterklausur"), then the Moodle section ("Praktikum 04 …", "Vorlesung 4: Binärbaum",
+ * "Organisation"), then the file type (code/data → lab, slides → lecture in topic sections).
  */
 export function materialCategory(
   m: Pick<MoodleMaterial, 'section' | 'title' | 'filename'>,
 ): MaterialCategory {
-  const lab =
-    /praktik|labor|\blab\b|übung|uebung|exercise|tutorium|aufgabe|blatt|assignment|testat|abgabe|projekt/i
-  const lecture =
-    /vorlesung|folien|skript|kapitel|lecture|slides|chapter|\bvl\b|\bvl ?\d|einheit|woche|week|unit/i
-  for (const text of [m.title, m.filename ?? '', m.section]) {
-    if (lab.test(text)) return 'Praktikum & Übung'
-    if (lecture.test(text)) return 'Vorlesung'
+  const names = [m.filename ?? '', m.title]
+  for (const name of names) {
+    if (LAB.test(name)) return 'Praktikum & Übung'
+    if (LECTURE.test(name)) return 'Vorlesung'
+    if (OTHER.test(name)) return 'Sonstiges'
   }
+  const section = m.section ?? ''
+  if (LAB_SECTION.test(section)) return 'Praktikum & Übung'
+  if (OTHER_SECTION.test(section)) return 'Sonstiges'
+  const file = m.filename ?? m.title
+  if (CODE.test(file)) return 'Praktikum & Übung'
+  if (LECTURE_SECTION.test(section)) return 'Vorlesung'
+  // A topic section without keywords ("Was guckst Du – Wahrnehmung"): slides are lecture material.
+  if (SLIDES.test(file) && section && !/^(allgemein|material|unterlagen|dokumente)/i.test(section))
+    return 'Vorlesung'
   return 'Sonstiges'
 }
 
