@@ -710,6 +710,15 @@ export const de = {
   'study.created': 'Studium angelegt – jetzt Moodle und eCampus verbinden',
   'study.createHint':
     'Notiva legt den Ordner „Studium“ an: Module nach Prüfungsordnung, eine Seite je Semester, Kurse, Prüfungen, Aufgaben und Orga – und richtet Git ein. Danach Moodle und eCampus verbinden, den Rest füllt Notiva selbst.',
+  'code.saved': 'Gespeichert',
+  'code.saving': 'Speichert …',
+  'code.unsaved': 'Nicht gespeichert',
+  'code.newFile': 'Neue Datei',
+  'code.newFileName': 'Name der Datei (z. B. aufgabe1.sql)',
+  'code.links': 'Links',
+  'code.moodleLinks': 'Aus Moodle',
+  'code.addLink': 'Link hinzufügen',
+  'code.addLinkAsk': 'Link (z. B. Aufgaben des Praktikums)',
   'code.title': 'Code-Ordner',
   'code.hint':
     'Der Code liegt im Ordner „{folder}“ deines Studiums – im selben Git wie deine Notizen. Abhängigkeiten und Build-Ausgaben (node_modules, target …) bleiben draußen.',

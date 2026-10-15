@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useDockRequests } from '@/app/dock'
 import { Columns2, Globe, Rows2 } from 'lucide-react'
 import { useApp } from '@/app/store'
 import { WebPane } from './WebPane'
@@ -56,6 +57,23 @@ export function TerminalDock({
       /* private mode */
     }
   }
+  const addWeb = (url: string, r = layout.length - 1) => {
+    const pane = `w${fresh()}`
+    setUrl(pane, url)
+    const row = layout[r]!
+    setLayout(row.length < 2 ? layout.map((x, i) => (i === r ? [...x, pane] : x)) : [...layout, [pane]])
+  }
+  // A link clicked elsewhere (code folder: links of the lab) opens here.
+  useEffect(() => {
+    const take = (web: ReturnType<typeof useDockRequests.getState>['web']) => {
+      if (!web || web.folder !== folder) return
+      useDockRequests.getState().done()
+      addWeb(web.url, 0)
+    }
+    take(useDockRequests.getState().web)
+    return useDockRequests.subscribe((s) => take(s.web))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [folder, layout, urls])
   const openWeb = async (r: number) => {
     const url = await useApp.getState().ask({
       title: t('web.ask'),
@@ -69,10 +87,7 @@ export function TerminalDock({
     } catch {
       return
     }
-    const pane = `w${fresh()}`
-    setUrl(pane, full)
-    const row = layout[r]!
-    setLayout(row.length < 2 ? layout.map((x, i) => (i === r ? [...x, pane] : x)) : [...layout, [pane]])
+    addWeb(full, r)
   }
   const close = (pane: string) => {
     const next = layout.map((r) => r.filter((p) => p !== pane)).filter((r) => r.length)

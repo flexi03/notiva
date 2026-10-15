@@ -9,6 +9,8 @@ import { electronBridge } from '@/lib/vault'
 import { Button, EmptyState, IconButton, Spinner } from '@/components/ui'
 import { Topbar } from '@/components/layout/Topbar'
 import { PdfDocumentView } from '@/components/viewer/PdfDocumentView'
+import { CodeFileView } from '@/components/code/CodeFileView'
+import { isTextFile } from '@/lib/codeFolders'
 import { LecturePanel } from '@/components/lecture/LecturePanel'
 
 /** A non-Markdown file of the vault: PDFs in Notiva's viewer, images inline, others via the system. */
@@ -36,7 +38,7 @@ export function FileScreen({ path, page }: { path: string; page?: number }) {
             new Blob([bytes.slice()], { type: path.endsWith('.svg') ? 'image/svg+xml' : '' }),
           )
           if (!cancelled) setState({ url: objectUrl })
-        } else if (/\.(txt|csv|md|json)$/i.test(path)) {
+        } else if (isTextFile(path) || /\.md$/i.test(path)) {
           const text = await ws.vault.read(path)
           if (!cancelled) setState({ text })
         } else if (!cancelled) setState({})
@@ -77,9 +79,7 @@ export function FileScreen({ path, page }: { path: string; page?: number }) {
             <img src={state.url} alt={name} className="max-w-full shadow-[var(--shadow-pop)]" />
           </div>
         ) : state.text !== undefined ? (
-          <pre tabIndex={0} className="h-full overflow-auto p-6 font-code text-[13px] whitespace-pre-wrap">
-            {state.text}
-          </pre>
+          <CodeFileView key={path} path={path} initial={state.text} />
         ) : (
           <EmptyState
             title={t('file.noPreview')}

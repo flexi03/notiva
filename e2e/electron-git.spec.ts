@@ -1,6 +1,6 @@
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test'
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -115,6 +115,26 @@ test('legt einen Code-Ordner im Studium an – mit .gitignore, im selben Git', a
   mkdirSync(path.join(folder, 'Datenbanken/Praktikum/node_modules/x'), { recursive: true })
   writeFileSync(path.join(folder, 'Datenbanken/Praktikum/node_modules/x/index.js'), '')
   await expect(section).toContainText('Dateien')
+  // Files open in the code editor (terminal below) and save by themselves.
+  await section.getByRole('button', { name: 'Neue Datei' }).click()
+  await window.getByRole('dialog').getByRole('textbox').fill('aufgabe1.sql')
+  await window.getByRole('dialog').getByRole('button', { name: 'Neue Datei' }).click()
+  const editor = window.getByTestId('code-editor')
+  await expect(editor).toBeVisible()
+  await editor.locator('.cm-content').click()
+  await window.keyboard.type('SELECT name FROM kunde;')
+  await expect
+    .poll(() => readFileSync(path.join(folder, 'Datenbanken/Praktikum/aufgabe1.sql'), 'utf8'))
+    .toBe('SELECT name FROM kunde;')
+  await expect(window.getByTestId('terminal')).toBeVisible()
+  await window.goBack()
+  // Links of the lab, opened beside the terminal.
+  await section.getByRole('button', { name: 'Link hinzufügen' }).click()
+  await window.getByRole('dialog').getByRole('textbox').fill('https://projectbase.example.org/-/snippets/41')
+  await window.getByRole('dialog').getByRole('button', { name: 'Link hinzufügen' }).click()
+  await expect(
+    section.getByRole('button', { name: 'https://projectbase.example.org/-/snippets/41' }),
+  ).toBeVisible()
   const status = git('status', '--porcelain', '-uall')
   expect(status).toContain('Datenbanken/Praktikum/Query.sql')
   expect(status).not.toContain('node_modules')

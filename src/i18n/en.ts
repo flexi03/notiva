@@ -705,6 +705,15 @@ export const en: Record<MessageKey, string> = {
   'study.created': 'Studies created – now connect Moodle and eCampus',
   'study.createHint':
     'Notiva creates the folder “Studium”: modules by regulations, a page per semester, courses, exams, tasks and organisation – and sets up Git. Then connect Moodle and eCampus, Notiva fills in the rest.',
+  'code.saved': 'Saved',
+  'code.saving': 'Saving …',
+  'code.unsaved': 'Not saved',
+  'code.newFile': 'New file',
+  'code.newFileName': 'File name (e.g. task1.sql)',
+  'code.links': 'Links',
+  'code.moodleLinks': 'From Moodle',
+  'code.addLink': 'Add link',
+  'code.addLinkAsk': 'Link (e.g. the lab tasks)',
   'code.title': 'Code folder',
   'code.hint':
     'The code lives in “{folder}” in your vault – in the same Git as your notes. Dependencies and build output (node_modules, target …) stay out.',

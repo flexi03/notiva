@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { Code2, FolderOpen, GitBranch, SquareTerminal } from 'lucide-react'
+import { Code2, FileCode2, FilePlus, FolderOpen, GitBranch, Globe, Link2, SquareTerminal } from 'lucide-react'
+import { useDockRequests } from '@/app/dock'
+import { useMoodle } from '@/app/moodle'
 import { TerminalDock } from '@/components/terminal/TerminalDock'
 import { useGit } from '@/app/git'
 import { useAction, useApp, useWorkspace } from '@/app/store'
@@ -31,6 +33,46 @@ export function CodeFolder({ page }: { page: Page }) {
     .sort((a, b) => a.localeCompare(b, 'de', { numeric: true }))
   const changes = useGit((s) => s.state?.changes.filter((c) => c.path.startsWith(`${folder}/`)).length ?? 0)
   const open = (how: 'editor' | 'finder' | 'terminal') => void run(() => bridge!.open(folder, how))
+  const navigate = useApp((s) => s.navigate)
+  // Links of the lab: own ones (frontmatter "links") and the links of the module's Moodle courses.
+  const links = Array.isArray(page.data.links)
+    ? page.data.links.filter((l): l is string => typeof l === 'string')
+    : []
+  const module = ws.get(`${page.path.slice(0, page.path.lastIndexOf('/'))}.md`)
+  const courses = Array.isArray(module?.data.kurse) ? module!.data.kurse.map(String) : []
+  const snapshot = useMoodle((s) => s.snapshot)
+  const moodleLinks = (snapshot?.materials ?? [])
+    .filter(
+      (m) =>
+        (m.kind === 'url' || m.kind === 'page') && courses.includes(m.courseId) && !links.includes(m.url),
+    )
+    .map((m) => ({ url: m.url, title: m.title, own: false }))
+  const openLink = (url: string) => {
+    setTerminal(true)
+    // The terminal area of this folder opens it beside the terminal.
+    setTimeout(() => useDockRequests.getState().openWeb(folder, url), 50)
+  }
+  const addLink = async () => {
+    const url = (
+      await useApp
+        .getState()
+        .ask({ title: t('code.addLinkAsk'), initial: 'https://', confirmLabel: t('code.addLink') })
+    )?.trim()
+    if (!url || !/^https?:\/\/\S+\.\S+/.test(url)) return
+    await run(() => ws.setProperty(page.path, 'links', [...links, url]))
+  }
+  const newFile = async () => {
+    const name = (
+      await useApp
+        .getState()
+        .ask({ title: t('code.newFileName'), initial: '', confirmLabel: t('code.newFile') })
+    )?.trim()
+    if (!name || name.includes('..') || name.startsWith('/')) return
+    await run(async () => {
+      await ws.writeFile(`${folder}/${name}`, '')
+      navigate({ name: 'file', path: `${folder}/${name}` })
+    })
+  }
   return (
     <section
       aria-label={t('code.title')}
@@ -72,18 +114,60 @@ export function CodeFolder({ page }: { page: Page }) {
           />
         </div>
       )}
-      {files.length > 0 && (
-        <details>
-          <summary className="cursor-pointer text-sm font-medium">
+      <div>
+        <div className="mb-1 flex items-center gap-2">
+          <h3 className="flex-1 text-[12.5px] font-semibold text-ink-2">
             {t('code.files', { count: files.length })}
-          </summary>
-          <ul className="mt-1 max-h-60 overflow-y-auto font-code text-[12.5px] text-ink-2">
+          </h3>
+          <Button size="sm" icon={<FilePlus size={13} />} onClick={() => void newFile()}>
+            {t('code.newFile')}
+          </Button>
+        </div>
+        {files.length > 0 && (
+          <ul className="max-h-60 overflow-y-auto">
             {files.slice(0, 300).map((f) => (
-              <li key={f}>{f.slice(folder.length + 1)}</li>
+              <li key={f}>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-1.5 rounded-control px-1 py-0.5 text-left font-code text-[12.5px] text-ink-2 hover:bg-hover"
+                  onClick={() =>
+                    navigate(f.endsWith('.md') ? { name: 'page', path: f } : { name: 'file', path: f })
+                  }
+                >
+                  <FileCode2 size={12} className="shrink-0 text-ink-3" />
+                  {f.slice(folder.length + 1)}
+                </button>
+              </li>
             ))}
           </ul>
-        </details>
-      )}
+        )}
+      </div>
+      <div>
+        <div className="mb-1 flex items-center gap-2">
+          <h3 className="flex-1 text-[12.5px] font-semibold text-ink-2">{t('code.links')}</h3>
+          <Button size="sm" icon={<Link2 size={13} />} onClick={() => void addLink()}>
+            {t('code.addLink')}
+          </Button>
+        </div>
+        {links.length === 0 && moodleLinks.length === 0 ? null : (
+          <ul className="space-y-0.5">
+            {[...links.map((url) => ({ url, title: url, own: true })), ...moodleLinks].map((l) => (
+              <li key={l.url} className="flex items-center gap-1.5 text-[13px]">
+                <Globe size={12} className="shrink-0 text-ink-3" />
+                <button
+                  type="button"
+                  className="min-w-0 truncate text-left text-accent hover:underline"
+                  title={l.url}
+                  onClick={() => openLink(l.url)}
+                >
+                  {l.title}
+                </button>
+                {!l.own && <span className="shrink-0 text-[11.5px] text-ink-3">{t('code.moodleLinks')}</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </section>
   )
 }
