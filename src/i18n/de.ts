@@ -822,6 +822,9 @@ export const de = {
     'Notiva prüft nach Moodle- und eCampus-Abrufen, was sich ändern würde, und fragt dich – nichts wird still übernommen.',
   'related.empty':
     'Noch nichts verknüpft – Mitschriften, Kurse, Prüfungen und Aufgaben mit diesem Modul erscheinen hier.',
+  'related.newSession': 'Termin hinzufügen',
+  'related.findTimes': 'Zeiten suchen',
+  'related.session': 'Termin',
   'related.newNote': 'Neue Mitschrift',
   'related.recent': 'Zuletzt geöffnet',
   'related.otherFiles': 'Weitere Dateien',
@@ -977,6 +980,7 @@ export const de = {
     'Hak an, was in deinen Stundenplan soll. Nicht Angehaktes schlägt Notiva nicht noch einmal vor.',
   'timetable.instead': 'statt deines Eintrags {own}',
   'timetable.groupHint': 'eine von mehreren Gruppen – nur deine anhaken',
+  'timetable.source': 'Gefunden in: {source}',
   'timetable.newHint': 'neu',
   'timetable.nothingNew': 'Keine neuen Zeiten in Moodle gefunden',
   'timetable.foundTitle': '{count} mögliche Zeiten für den Stundenplan',

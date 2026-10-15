@@ -19,6 +19,7 @@ interface Block {
   color: string
   path?: string
   exam?: boolean
+  source?: string
 }
 
 const minutes = (hhmm: string) => {
@@ -73,6 +74,7 @@ export function TimetableScreen() {
       end: r.end ? minutes(r.end) : minutes(r.start) + 90,
       color: module ? (colors.get(module.path) ?? moduleColor(module)) : 'gray',
       path: module?.path ?? r.path,
+      ...(r.source ? { source: r.source } : {}),
     })
   }
   const examDb = `${dash.folder}/Prüfungen.md`
@@ -202,6 +204,7 @@ export function TimetableScreen() {
                         onClick={(e) =>
                           b.exam ? openEntry(b.path!, e) : b.path && navigate({ name: 'page', path: b.path })
                         }
+                        title={b.source ? t('timetable.source', { source: b.source }) : undefined}
                         className="absolute inset-x-1 overflow-hidden rounded-control px-1.5 py-1 text-left text-[12px] leading-tight shadow-sm hover:brightness-95"
                         style={{
                           top: (b.start - from) * px,

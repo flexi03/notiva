@@ -1,8 +1,9 @@
-import { AlertTriangle, Code2, ExternalLink, FileText, Plus } from 'lucide-react'
+import { AlertTriangle, CalendarPlus, Code2, ExternalLink, FileText, Plus, Search } from 'lucide-react'
 import { createCodeFolder } from '@/components/code/CodeFolder'
 import { useRecent } from '@/app/recent'
 import { useMoodle } from '@/app/moodle'
 import { materialFolder } from '@/app/materials'
+import { suggestTimetable } from '@/app/schedule'
 import { MATERIAL_CATEGORIES } from '@/lib/moodle'
 import { courseIdsOf, materialFolderFor } from '@/lib/study/modules'
 import { useAction, useApp, useWorkspace } from '@/app/store'
@@ -59,6 +60,16 @@ export function Related({ from }: { from: string }) {
       navigate({ name: 'page', path })
     })
 
+  const timetableDb = ws.findDatabase('Stundenplan', from)
+  const newSession = () =>
+    run(async () => {
+      const path = await ws.createRow(timetableDb!.path, `${page.title} – ${t('related.session')}`, {
+        Modul: [`[[${ws.linkText(from)}]]`],
+        Typ: 'Vorlesung',
+      })
+      openEntry(path)
+    })
+
   return (
     <div className="related space-y-4 rounded-panel border border-line p-3" data-interactive>
       {moduleFiles.length > 0 && (
@@ -85,9 +96,22 @@ export function Related({ from }: { from: string }) {
               .map((p) => {
                 const link =
                   typeof p.data.Link === 'string' && /^https?:/.test(p.data.Link) ? p.data.Link : null
-                const meta = [p.data.Semester, p.data.Datum, p.data.Fällig, p.data.Status].filter(
-                  (v) => typeof v === 'string' && v,
-                ) as string[]
+                const str = (v: unknown) => (typeof v === 'string' && v ? v : '')
+                // Timetable rows: day, time, type and room – and where the time was found.
+                const time = str(p.data.Beginn)
+                  ? `${str(p.data.Beginn)}${str(p.data.Ende) ? `–${str(p.data.Ende)}` : ''}`
+                  : ''
+                const meta = [
+                  p.data.Semester,
+                  p.data.Datum,
+                  p.data.Fällig,
+                  p.data.Status,
+                  p.data.Tag,
+                  time,
+                  p.data.Typ,
+                  p.data.Raum,
+                ].filter((v) => typeof v === 'string' && v) as string[]
+                const source = str(p.data.Quelle)
                 return (
                   <li key={p.path}>
                     <div className="flex flex-wrap items-center gap-x-2">
@@ -99,6 +123,13 @@ export function Related({ from }: { from: string }) {
                         {p.title}
                       </button>
                       {meta.length > 0 && <span className="text-[12px] text-ink-3">{meta.join(' · ')}</span>}
+                      {source && (
+                        <span className="text-[12px] text-ink-3 italic" title={source}>
+                          {t('timetable.source', {
+                            source: source.length > 60 ? `${source.slice(0, 60)}…` : source,
+                          })}
+                        </span>
+                      )}
                       {link && (
                         <a
                           href={link}
@@ -120,6 +151,21 @@ export function Related({ from }: { from: string }) {
         {notesDb && (
           <Button size="sm" icon={<Plus size={13} />} onClick={() => void newNote()}>
             {t('related.newNote')}
+          </Button>
+        )}
+        {timetableDb && (
+          <Button size="sm" icon={<CalendarPlus size={13} />} onClick={() => void newSession()}>
+            {t('related.newSession')}
+          </Button>
+        )}
+        {timetableDb && courses.length > 0 && (
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={<Search size={13} />}
+            onClick={() => void run(() => suggestTimetable(ws, true))}
+          >
+            {t('related.findTimes')}
           </Button>
         )}
         <Button

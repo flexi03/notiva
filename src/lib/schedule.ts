@@ -16,6 +16,10 @@ export interface Session {
   room?: string
   /** "Gruppe A" – one of several parallel groups; the user attends only one */
   group?: string
+  /** The sentence it was read from ("Vorlesung dienstags 10:00–11:30 in 4.E.001"). */
+  snippet?: string
+  /** Where that sentence stands ("Moodle: BMI 32 Datenbanksysteme 2", "Folien: VL00.pdf, S. 4"). */
+  source?: string
 }
 
 const DAY_WORDS: Array<[RegExp, Day]> = [
@@ -78,6 +82,7 @@ export function findSessions(text: string, fallbackType?: SessionType, program?:
       end: pad(h2!, m2!),
       ...(room ? { room: (room[1] ?? room[2])! } : {}),
       ...(group ? { group: (group[1] ?? group[2])!.toUpperCase() } : {}),
+      snippet: piece.replace(/\s+/g, ' ').trim().slice(0, 160),
     }
     if (!out.some((s) => s.type === session.type && s.day === session.day && s.start === session.start))
       out.push(session)
@@ -94,6 +99,8 @@ export interface TimetableRow {
   type?: string
   module?: string
   room?: string
+  /** where the time was found ("Moodle: …", "Folien: …, S. 3") */
+  source?: string
 }
 
 export interface ScheduleChange {

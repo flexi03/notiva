@@ -814,6 +814,9 @@ export const en: Record<MessageKey, string> = {
   'study.autoSyncHint':
     'After Moodle and eCampus checks Notiva shows what would change and asks you – nothing is applied silently.',
   'related.empty': 'Nothing linked yet – notes, courses, exams and tasks of this module appear here.',
+  'related.newSession': 'Add session',
+  'related.findTimes': 'Find times',
+  'related.session': 'Session',
   'related.newNote': 'New note',
   'related.recent': 'Recently opened',
   'related.otherFiles': 'Other files',
@@ -968,6 +971,7 @@ export const en: Record<MessageKey, string> = {
   'timetable.reviewNote': 'Tick what goes into your timetable. Unticked ones are not suggested again.',
   'timetable.instead': 'instead of your entry {own}',
   'timetable.groupHint': 'one of several groups – tick only yours',
+  'timetable.source': 'Found in: {source}',
   'timetable.newHint': 'new',
   'timetable.nothingNew': 'No new times found in Moodle',
   'timetable.foundTitle': '{count} possible times for the timetable',

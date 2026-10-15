@@ -4,10 +4,14 @@ describe('timetable from course texts', () => {
   it('finds weekday, time, room and type', () => {
     const text =
       'Die Vorlesung findet dienstags 10:00–11:30 Uhr in 4.E.001 statt.\nPraktikum: Do, 14.15 - 15.45 Uhr, Raum 5.E.002'
-    expect(findSessions(text)).toEqual([
+    const found = findSessions(text)
+    expect(found).toMatchObject([
       { type: 'Vorlesung', day: 'Di', start: '10:00', end: '11:30', room: '4.E.001' },
       { type: 'Praktikum', day: 'Do', start: '14:15', end: '15:45', room: '5.E.002' },
     ])
+    // The sentence it came from – shown as the source in the suggestion.
+    expect(found[0]!.snippet).toContain('dienstags 10:00')
+    expect(found[1]!.snippet).toContain('Praktikum')
   })
   it('asks when the own entry differs', () => {
     const changes = planTimetable(
