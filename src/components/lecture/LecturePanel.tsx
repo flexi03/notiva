@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChevronDown, Mic, Pause, Play, Sparkles, Square } from 'lucide-react'
-import { loadTranscribeSettings, summarizeLecture, useLecture } from '@/app/lecture/session'
+import {
+  loadTranscribeSettings,
+  saveTranscribeSettings,
+  summarizeLecture,
+  useLecture,
+} from '@/app/lecture/session'
+import { withProgress } from '@/app/progress'
+import { electronBridge } from '@/lib/vault'
 import { useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import { clock } from '@/lib/lecture/transcript'
@@ -67,6 +74,49 @@ export function LecturePanel({ page, jump, doc, path }: SideProps) {
   }
 
   const start = async () => {
+    // Local Whisper without a model: offer to download it first (with progress), then start.
+    const settings = loadTranscribeSettings()
+    const whisper = electronBridge()?.whisper
+    if (settings.preset === 'local' && whisper) {
+      const status = await whisper.status()
+      if (!status.server) {
+        const go = await useApp
+          .getState()
+          .ask({ title: t('lecture.needsWhisper'), confirm: true, confirmLabel: t('lecture.toSettings') })
+        if (go !== null) useApp.getState().navigate({ name: 'settings', section: 'ai' })
+        return
+      }
+      const model = status.models.find((m) => m.id === settings.model) ?? status.models[0]!
+      if (!model.downloaded) {
+        const ok = await useApp.getState().ask({
+          title: t('lecture.downloadModel', { name: model.label }),
+          confirm: true,
+          confirmLabel: t('transcribe.download'),
+        })
+        if (ok === null) return
+        await withProgress(
+          t('transcribe.downloading', { name: model.label }),
+          async (task) => {
+            const off = whisper.onProgress(
+              (e) =>
+                e.total &&
+                task.update(
+                  e.done ?? 0,
+                  e.total,
+                  `${Math.round((e.done ?? 0) / 1e6)} / ${Math.round(e.total / 1e6)} MB`,
+                ),
+            )
+            try {
+              await whisper.download(model.id)
+            } finally {
+              off()
+            }
+          },
+          { success: () => t('transcribe.downloaded', { name: model.label }) },
+        )
+        saveTranscribeSettings({ ...settings, model: model.id })
+      }
+    }
     const texts = await slideTexts(doc)
     await lecture.start(ws, path, texts, page, keepAudio)
   }
@@ -203,6 +253,13 @@ export function LecturePanel({ page, jump, doc, path }: SideProps) {
             </p>
           )}
 
+          {mine && active && lecture.entries.length === 0 && (
+            <p className="mt-2 rounded-control bg-sunken p-2 text-[12.5px] text-ink-3" role="status">
+              {lecture.pending
+                ? t('lecture.transcribing', { count: lecture.pending })
+                : t('lecture.waitingForSpeech')}
+            </p>
+          )}
           {mine && lecture.entries.length > 0 && (
             <div
               className="mt-2 max-h-48 space-y-1 overflow-y-auto rounded-control bg-sunken p-2 text-[12.5px]"

@@ -589,6 +589,11 @@ export const de = {
     'Modelle liegen im App-Profil (nicht im Ordner). Whisper startet beim Aufnehmen von selbst und beendet sich nach 10 Minuten ohne Aufnahme.',
   'lecture.collapse': 'Einklappen',
   'lecture.expand': 'Aufklappen',
+  'lecture.downloadModel': 'Für die Mitschrift fehlt noch das Whisper-Modell „{name}“. Jetzt laden?',
+  'lecture.needsWhisper':
+    'Für die lokale Mitschrift muss erst whisper.cpp installiert werden – unter Einstellungen → KI & Transkription.',
+  'lecture.waitingForSpeech': 'Live-Transkript erscheint hier, sobald gesprochen wird …',
+  'lecture.toSettings': 'Zu den Einstellungen',
   'lecture.title': 'Vorlesung live',
   'lecture.intro':
     'Nimmt auf, schreibt mit ({provider}) und blättert zur Folie, über die gerade gesprochen wird.',
