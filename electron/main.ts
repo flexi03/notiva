@@ -13,7 +13,6 @@ import {
   dialog,
   ipcMain,
   net,
-  Notification,
   powerMonitor,
   protocol,
   safeStorage,
@@ -44,6 +43,7 @@ import {
 import { clearMoodleSession, openMoodlePage, ssoLogin } from './moodleWindow'
 import { WhisperEngine } from './whisper'
 import { buildMenu } from './menu'
+import { systemNotify } from './systemNotify'
 import { Terminals } from './terminal'
 import { Ecampus, NeedsLogin } from './ecampus'
 import { examNews, type ExamSnapshot } from '../src/lib/ecampus'
@@ -216,27 +216,15 @@ const notifications = new NotificationStore(
 
 async function showBanners(added: AppNotification[]): Promise<void> {
   const settings = parseNotifySettings((await readConfig()).notify)
-  if (!settings.system || !Notification.isSupported() || process.env.NOTIVA_E2E_USERDATA) return
-  const banner =
-    added.length > 3
-      ? new Notification({
-          title: 'Notiva',
-          body: `${added.length} Neuigkeiten – z. B. ${added[0]!.title}`,
-          silent: true,
-        })
-      : null
-  for (const n of banner ? [] : added) {
-    // Into the system's notification centre (macOS: Mitteilungszentrale) – never with a sound.
-    const one = new Notification({
-      title: n.course ? `${n.course}: ${n.title}` : n.title,
-      ...(n.body ? { body: n.body } : {}),
-      silent: true,
-    })
-    one.on('click', () => focusNotification(n.id))
-    one.show()
+  if (!settings.system || process.env.NOTIVA_E2E_USERDATA) return
+  if (added.length > 3) {
+    systemNotify('Notiva', `${added.length} Neuigkeiten – z. B. ${added[0]!.title}`, () =>
+      focusNotification(null),
+    )
+    return
   }
-  banner?.on('click', () => focusNotification(null))
-  banner?.show()
+  for (const n of added)
+    systemNotify(n.course ? `${n.course}: ${n.title}` : n.title, n.body ?? '', () => focusNotification(n.id))
 }
 
 function focusNotification(id: string | null): void {
@@ -545,9 +533,7 @@ function registerIpc(): void {
   )
   handle('notifications:clear', async () => notifications.clear())
   handle('notifications:test', async () => {
-    if (!Notification.isSupported())
-      throw new Error('Mitteilungen werden auf diesem System nicht unterstützt')
-    new Notification({ title: 'Notiva', body: 'So sehen Mitteilungen von Notiva aus.', silent: true }).show()
+    systemNotify('Notiva', 'So sehen Mitteilungen von Notiva aus.')
   })
   handle('notifications:settings', async () => parseNotifySettings((await readConfig()).notify))
   handle('notifications:setSettings', async (raw: unknown) => {
