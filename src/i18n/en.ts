@@ -44,6 +44,8 @@ export const en: Record<MessageKey, string> = {
   'semester.annotatedCount': '{count} annotated PDFs',
   'semester.tries': 'attempt {count}',
   'semester.newNote': 'Note',
+  'nav.studyGroup': 'Studies',
+  'nav.studyOverview': 'Overview',
   'nav.help': 'Help',
   'nav.timetable': 'Timetable',
   'semester.lab': 'Work on the lab',

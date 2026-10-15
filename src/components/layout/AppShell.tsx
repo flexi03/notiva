@@ -89,11 +89,8 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
     })
   }, [ws])
   const actions = usePageActions(ws)
-  // Widths like in VS Code: drag the edge; pages list and side views have their own width.
-  const [pagesWidth, setPagesWidth] = useStoredWidth('sidebar', 272, 200, 560)
-  const [viewWidth, setViewWidth] = useStoredWidth('sidebar-view', 384, 280, 800)
-  const sidebarWidth = leftView ? viewWidth : pagesWidth
-  const setSidebarWidth = leftView ? setViewWidth : setPagesWidth
+  // One width for the left side bar, whatever it shows (pages, assistant, Git …) – drag the edge.
+  const [sidebarWidth, setSidebarWidth] = useStoredWidth('sidebar-left', 320, 220, 800)
   const mainRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
@@ -155,7 +152,7 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
             sidebarOpen ? 'border-r border-line' : 'min-[900px]:w-0',
             'relative',
             sidebarOpen && 'min-[900px]:w-[var(--sidebar-w)]',
-            leftView ? 'max-[899px]:w-[min(26rem,100vw)]' : 'max-[899px]:w-[17rem]',
+            'max-[899px]:w-[min(22rem,100vw)]',
             'max-[899px]:fixed max-[899px]:inset-y-0 max-[899px]:left-0 max-[899px]:border-r max-[899px]:border-line max-[899px]:shadow-[var(--shadow-pop)]',
             sidebarOpen ? 'max-[899px]:translate-x-0' : 'max-[899px]:-translate-x-full',
           )}
@@ -171,14 +168,14 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
                 width={sidebarWidth}
                 onResize={setSidebarWidth}
                 label={t('nav.sidebar')}
-                reset={leftView ? 384 : 272}
+                reset={320}
               />
             </div>
           )}
           <div
             className={cx(
               'h-full min-[900px]:w-[var(--sidebar-w)]',
-              leftView ? 'max-[899px]:w-[min(26rem,100vw)]' : 'max-[899px]:w-[17rem]',
+              'max-[899px]:w-[min(22rem,100vw)]',
             )}
           >
             <ErrorBoundary resetKey={leftView ?? 'pages'}>

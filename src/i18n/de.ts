@@ -44,6 +44,8 @@ export const de = {
   'semester.annotatedCount': '{count} bearbeitete PDFs',
   'semester.tries': '{count}. Versuch',
   'semester.newNote': 'Mitschrift',
+  'nav.studyGroup': 'Studium',
+  'nav.studyOverview': 'Übersicht',
   'nav.help': 'Hilfe',
   'nav.timetable': 'Stundenplan',
   'semester.lab': 'Praktikum bearbeiten',

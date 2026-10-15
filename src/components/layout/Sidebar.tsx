@@ -1,22 +1,23 @@
 import {
   Award,
   BookOpenCheck,
+  CalendarClock,
   CalendarDays,
+  ChevronRight,
   Code2,
   FileText,
-  CalendarClock,
-  CircleHelp,
   GraduationCap,
+  Inbox,
   LayoutTemplate,
   LogOut,
   Plus,
+  School,
   Search,
   Settings,
   Star,
-  Inbox,
 } from 'lucide-react'
 import { moodleAvailable } from '@/app/moodle'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useRecent } from '@/app/recent'
 import { findStudyDashboard } from '@/lib/study/sync'
 import { useApp, useWorkspace } from '@/app/store'
@@ -69,10 +70,26 @@ export function Sidebar() {
     return parent ? `${page.title} · ${parent.title}` : page.title
   }
   const assets = new Set(ws.assets().map((f) => f.path))
+  const dash = findStudyDashboard(ws)
+  const [studyOpen, setStudyOpen] = useState(() => {
+    try {
+      return localStorage.getItem('notiva:nav-study') !== '0'
+    } catch {
+      return true
+    }
+  })
+  const toggleStudy = () => {
+    setStudyOpen(!studyOpen)
+    try {
+      localStorage.setItem('notiva:nav-study', studyOpen ? '0' : '1')
+    } catch {
+      /* private mode */
+    }
+  }
   const recent = useRecent((s) => s.files)
     .map((f) => f.path)
     .filter((p) => assets.has(p))
-    .slice(0, 5)
+    .slice(0, 8)
   const tags = [...ws.tags()].slice(0, 12)
   const mac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
 
@@ -126,45 +143,69 @@ export function Sidebar() {
           active={route.name === 'templates'}
           onClick={() => navigate({ name: 'templates' })}
         />
-        {findStudyDashboard(ws) && (
-          <NavButton
-            icon={<BookOpenCheck size={15} />}
-            label={t('nav.semester')}
-            active={route.name === 'semester'}
-            onClick={() => navigate({ name: 'semester' })}
-          />
-        )}
-        {findStudyDashboard(ws) && (
-          <NavButton
-            icon={<CalendarClock size={15} />}
-            label={t('nav.timetable')}
-            active={route.name === 'timetable'}
-            onClick={() => navigate({ name: 'timetable' })}
-          />
-        )}
-        {moodleAvailable() && (
-          <NavButton
-            icon={<GraduationCap size={15} />}
-            label={t('nav.moodle')}
-            active={route.name === 'moodle'}
-            onClick={() => navigate({ name: 'moodle' })}
-          />
-        )}
-        {moodleAvailable() && (
-          <NavButton
-            icon={<Award size={15} />}
-            label={t('nav.grades')}
-            active={route.name === 'grades'}
-            onClick={() => navigate({ name: 'grades' })}
-          />
-        )}
-        <NavButton
-          icon={<CircleHelp size={15} />}
-          label={t('nav.help')}
-          active={route.name === 'help'}
-          onClick={() => navigate({ name: 'help' })}
-        />
       </div>
+
+      {/* Studies: one group, collapsible – everything about the semester in one place. */}
+      {(dash || moodleAvailable()) && (
+        <div className="mt-2 px-2">
+          <button
+            type="button"
+            aria-expanded={studyOpen}
+            onClick={() => toggleStudy()}
+            className="flex w-full items-center gap-1 rounded-control px-2 py-1 text-left text-[12px] font-semibold tracking-wide text-ink-3 hover:bg-hover hover:text-ink-2"
+          >
+            <ChevronRight
+              size={12}
+              className={studyOpen ? 'rotate-90 transition-transform' : 'transition-transform'}
+            />
+            {t('nav.studyGroup')}
+          </button>
+          {studyOpen && (
+            <div className="space-y-px">
+              {dash && (
+                <NavButton
+                  icon={<GraduationCap size={15} />}
+                  label={t('nav.studyOverview')}
+                  active={route.name === 'page' && route.path === dash.path}
+                  onClick={() => openPage(dash.path)}
+                />
+              )}
+              {dash && (
+                <NavButton
+                  icon={<BookOpenCheck size={15} />}
+                  label={t('nav.semester')}
+                  active={route.name === 'semester'}
+                  onClick={() => navigate({ name: 'semester' })}
+                />
+              )}
+              {dash && (
+                <NavButton
+                  icon={<CalendarClock size={15} />}
+                  label={t('nav.timetable')}
+                  active={route.name === 'timetable'}
+                  onClick={() => navigate({ name: 'timetable' })}
+                />
+              )}
+              {moodleAvailable() && (
+                <NavButton
+                  icon={<School size={15} />}
+                  label={t('nav.moodle')}
+                  active={route.name === 'moodle'}
+                  onClick={() => navigate({ name: 'moodle' })}
+                />
+              )}
+              {moodleAvailable() && (
+                <NavButton
+                  icon={<Award size={15} />}
+                  label={t('nav.grades')}
+                  active={route.name === 'grades'}
+                  onClick={() => navigate({ name: 'grades' })}
+                />
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="mt-1 min-h-0 flex-1 overflow-y-auto px-2 pb-2">
         {favorites.length > 0 && (
