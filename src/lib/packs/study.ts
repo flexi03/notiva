@@ -327,17 +327,17 @@ export const studyPack: TemplatePack = {
     row(
       'Module',
       'Lineare Algebra',
-      'Status: In Vorlesung\nSemester: ["[[2. Semester]]"]\nBelegt: ["{{semester}}"]\nFachsemester: 2\nPraktikum: Offen\nECTS: 9\nArt: Pflicht\nPrüfungsform: Klausur',
+      'Status: In Vorlesung\nBelegung: [Vorlesung, Übung, Prüfung]\nSemester: ["[[2. Semester]]"]\nBelegt: ["{{semester}}"]\nFachsemester: 2\nPraktikum: Offen\nECTS: 9\nArt: Pflicht\nPrüfungsform: Klausur',
     ),
     row(
       'Module',
       'Datenbanken',
-      'Status: In Vorlesung\nSemester: ["[[2. Semester]]"]\nBelegt: ["{{semester}}"]\nFachsemester: 2\nPraktikum: Offen\nECTS: 6\nArt: Pflicht\nPrüfungsform: Klausur',
+      'Status: In Vorlesung\nBelegung: [Vorlesung, Praktikum, Prüfung]\nSemester: ["[[2. Semester]]"]\nBelegt: ["{{semester}}"]\nFachsemester: 2\nPraktikum: Offen\nECTS: 6\nArt: Pflicht\nPrüfungsform: Klausur',
     ),
     row(
       'Module',
       'Software Engineering',
-      'Status: In Vorlesung\nSemester: ["[[2. Semester]]"]\nBelegt: ["{{semester}}"]\nFachsemester: 2\nPraktikum: Offen\nECTS: 6\nArt: Wahlpflicht\nPrüfungsform: Projekt',
+      'Status: In Vorlesung\nBelegung: [Vorlesung, Praktikum]\nSemester: ["[[2. Semester]]"]\nBelegt: ["{{semester}}"]\nFachsemester: 2\nPraktikum: Offen\nECTS: 6\nArt: Wahlpflicht\nPrüfungsform: Projekt',
     ),
     row(
       'Prüfungen',
