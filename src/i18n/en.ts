@@ -773,6 +773,9 @@ export const en: Record<MessageKey, string> = {
   'sync.last': 'Last checked',
   'sync.justNow': 'just now',
   'sync.minutesAgo': '{count} min ago',
+  'semester.courseActive': 'Course active',
+  'semester.courseInfo': 'Course info from Moodle',
+  'semester.showInactive': 'Show inactive courses',
   'semester.title': 'My semester',
   'semester.hint':
     'Your active modules (property “Belegung” in Module) – with lectures, files, annotated PDFs, notes and code.',

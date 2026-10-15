@@ -779,6 +779,9 @@ export const de = {
   'sync.last': 'Zuletzt geprüft',
   'sync.justNow': 'gerade eben',
   'sync.minutesAgo': 'vor {count} Min.',
+  'semester.courseActive': 'Kurs aktiv',
+  'semester.courseInfo': 'Kursinfos aus Moodle',
+  'semester.showInactive': 'Inaktive Kurse zeigen',
   'semester.title': 'Mein Semester',
   'semester.hint':
     'Deine aktiven Module (Eigenschaft „Belegung“ in Module) – mit Vorlesungen, Dateien, bearbeiteten PDFs, Mitschriften und Code.',

@@ -1,9 +1,10 @@
 import { BookOpen, Code2, FileText, NotebookPen, Sparkles } from 'lucide-react'
-import { useApp, useWorkspace } from '@/app/store'
+import { useState } from 'react'
+import { useAction, useApp, useWorkspace } from '@/app/store'
 import { getLanguage, t } from '@/i18n'
 import { activeModules } from '@/lib/semesterView'
 import { findStudyDashboard } from '@/lib/study/sync'
-import { Button, Chip, EmptyState } from '@/components/ui'
+import { Button, Chip, cx, EmptyState, Switch } from '@/components/ui'
 import { Topbar } from '@/components/layout/Topbar'
 
 const name = (path: string) => path.split('/').pop()!
@@ -15,7 +16,15 @@ const name = (path: string) => path.split('/').pop()!
 export function SemesterScreen() {
   const ws = useWorkspace()
   const { navigate, openEntry } = useApp()
+  const run = useAction()
   const dash = findStudyDashboard(ws)
+  const [showInactive, setShowInactive] = useState(() => {
+    try {
+      return localStorage.getItem('notiva:semester-inactive') === '1'
+    } catch {
+      return false
+    }
+  })
   const modules = dash ? activeModules(ws, dash.folder) : []
   const locale = getLanguage() === 'de' ? 'de-DE' : 'en-US'
   const fileButton = (path: string, extra?: string) => (
@@ -42,7 +51,22 @@ export function SemesterScreen() {
       <Topbar title={t('semester.title')} />
       <div className="mx-auto max-w-[var(--content-width)] px-4 py-8 sm:px-10">
         <h1 className="mb-1 text-[2rem] font-bold">{t('semester.title')}</h1>
-        <p className="mb-6 text-[13px] text-ink-3">{t('semester.hint')}</p>
+        <p className="mb-2 text-[13px] text-ink-3">{t('semester.hint')}</p>
+        <div className="mb-6">
+          <Switch
+            checked={showInactive}
+            label={t('semester.showInactive')}
+            onChange={(v) => {
+              setShowInactive(v)
+              try {
+                localStorage.setItem('notiva:semester-inactive', v ? '1' : '0')
+              } catch {
+                /* private mode */
+              }
+            }}
+          />
+          <span className="ml-2 text-[13px] text-ink-2">{t('semester.showInactive')}</span>
+        </div>
         {modules.length === 0 ? (
           <EmptyState
             title={t('semester.empty')}
@@ -93,30 +117,69 @@ export function SemesterScreen() {
                   )}
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
-                  {m.courses.map((c) => (
-                    <div key={c.course.path} className="min-w-0">
-                      <button
-                        type="button"
-                        className="mb-1 flex items-center gap-1.5 text-[13px] font-semibold text-ink-2 hover:underline"
-                        onClick={(e) => openEntry(c.course.path, e)}
-                      >
-                        <BookOpen size={13} /> {c.course.title}
-                      </button>
-                      {Object.keys(c.groups).length === 0 && (
-                        <p className="text-[12.5px] text-ink-3">{t('semester.noFiles')}</p>
-                      )}
-                      {['Vorlesung', 'Praktikum & Übung', 'Sonstiges']
-                        .filter((g) => c.groups[g]?.length)
-                        .map((g) => (
-                          <details key={g} open={g !== 'Sonstiges'} className="mb-1">
-                            <summary className="cursor-pointer text-[12.5px] text-ink-2">
-                              {g} ({c.groups[g]!.length})
+                  <div className="min-w-0 space-y-1.5 md:col-span-2">
+                    {m.courses
+                      .filter((c) => showInactive || c.course.data.Aktiv !== false)
+                      .sort(
+                        (a, b) => Number(b.course.data.Aktiv === true) - Number(a.course.data.Aktiv === true),
+                      )
+                      .map((c) => {
+                        const active = c.course.data.Aktiv === true
+                        return (
+                          <details
+                            key={c.course.path}
+                            open={active}
+                            className={cx(
+                              'rounded-control border-l-4 px-2 py-1',
+                              active
+                                ? 'border-accent bg-[color-mix(in_srgb,var(--accent)_7%,transparent)]'
+                                : 'border-line opacity-75',
+                            )}
+                          >
+                            <summary className="flex cursor-pointer items-center gap-2 text-[13px] font-semibold text-ink-2">
+                              <BookOpen size={13} className={active ? 'text-accent' : ''} />
+                              <span className="min-w-0 flex-1 truncate">{c.course.title}</span>
+                              {typeof c.course.data.Semester === 'string' && (
+                                <span className="text-[11.5px] font-normal text-ink-3">
+                                  {c.course.data.Semester}
+                                </span>
+                              )}
+                              <span onClick={(e) => e.stopPropagation()} className="flex items-center">
+                                <Switch
+                                  checked={active}
+                                  label={t('semester.courseActive')}
+                                  onChange={(v) => void run(() => ws.setProperty(c.course.path, 'Aktiv', v))}
+                                />
+                              </span>
                             </summary>
-                            <ul className="ml-2">{c.groups[g]!.slice(0, 60).map((f) => fileButton(f))}</ul>
+                            <div className="mt-1 ml-5">
+                              <button
+                                type="button"
+                                className="mb-1 text-[12px] text-accent hover:underline"
+                                onClick={(e) => openEntry(c.course.path, e)}
+                              >
+                                {t('semester.courseInfo')}
+                              </button>
+                              {Object.keys(c.groups).length === 0 && (
+                                <p className="text-[12.5px] text-ink-3">{t('semester.noFiles')}</p>
+                              )}
+                              {['Vorlesung', 'Praktikum & Übung', 'Sonstiges']
+                                .filter((g) => c.groups[g]?.length)
+                                .map((g) => (
+                                  <details key={g} open={g !== 'Sonstiges'} className="mb-1">
+                                    <summary className="cursor-pointer text-[12.5px] text-ink-2">
+                                      {g} ({c.groups[g]!.length})
+                                    </summary>
+                                    <ul className="ml-2">
+                                      {c.groups[g]!.slice(0, 60).map((f) => fileButton(f))}
+                                    </ul>
+                                  </details>
+                                ))}
+                            </div>
                           </details>
-                        ))}
-                    </div>
-                  ))}
+                        )
+                      })}
+                  </div>
                   <div className="min-w-0 space-y-2">
                     {m.annotated.length > 0 && (
                       <div>
