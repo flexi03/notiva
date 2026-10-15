@@ -24,3 +24,21 @@ export async function syncAll(ws: Workspace): Promise<void> {
     useSync.setState({ running: false })
   }
 }
+
+/** One source on its own ("check:moodle" …). */
+export async function syncOne(ws: Workspace, id: string): Promise<void> {
+  if (id === 'check:moodle') await useMoodle.getState().fetchNow()
+  else if (id === 'check:ecampus') await useEcampus.getState().fetchNow()
+  else if (id === 'check:examplan') await syncExamPlan(ws).catch(() => undefined)
+  else if (id === 'check:study') await autoSyncStudy(ws).catch(() => undefined)
+}
+
+export const SOURCES: Array<{
+  id: string
+  label: 'sync.moodle' | 'sync.ecampus' | 'sync.examplan' | 'sync.study'
+}> = [
+  { id: 'check:moodle', label: 'sync.moodle' },
+  { id: 'check:ecampus', label: 'sync.ecampus' },
+  { id: 'check:examplan', label: 'sync.examplan' },
+  { id: 'check:study', label: 'sync.study' },
+]

@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { useNotifications } from '@/app/notifications'
 import { useWorkspace } from '@/app/store'
-import { syncAll, useSync } from '@/app/sync'
+import { SOURCES, syncAll, syncOne, useSync } from '@/app/sync'
 import { getLanguage, t } from '@/i18n'
 import { Button, cx, IconButton, Popover } from '@/components/ui'
 import { electronBridge } from '@/lib/vault'
@@ -61,24 +61,35 @@ export function SyncButton() {
       >
         <div className="space-y-2 p-3">
           <p className="text-sm font-semibold">{t('sync.title')}</p>
-          {checks.length === 0 ? (
-            <p className="text-[13px] text-ink-3">{t('sync.never')}</p>
-          ) : (
-            <ul aria-label={t('sync.last')} className="space-y-1.5">
-              {checks.map((c) => (
-                <li key={c.id} className="text-[13px]">
-                  <span className="flex items-baseline gap-2">
-                    <span className="min-w-0 flex-1 truncate font-medium">{c.title}</span>
-                    <span className="shrink-0 text-[12px] text-ink-3">{ago(c.time)}</span>
+          <ul aria-label={t('sync.last')} className="space-y-1.5">
+            {SOURCES.map((source) => {
+              const c = checks.find((x) => x.id === source.id)
+              return (
+                <li key={source.id} className="flex items-start gap-2 text-[13px]">
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-baseline gap-2">
+                      <span className="min-w-0 flex-1 truncate font-medium">{t(source.label)}</span>
+                      <span className="shrink-0 text-[12px] text-ink-3">
+                        {c ? ago(c.time) : t('sync.neverShort')}
+                      </span>
+                    </span>
+                    {c?.body && <span className="block truncate text-[12.5px] text-ink-2">{c.body}</span>}
+                    {source.id in schedule && (
+                      <span className="block text-[11.5px] text-ink-3">{inMinutes(schedule[source.id])}</span>
+                    )}
                   </span>
-                  {c.body && <span className="block truncate text-[12.5px] text-ink-2">{c.body}</span>}
-                  {c.id in schedule && (
-                    <span className="block text-[11.5px] text-ink-3">{inMinutes(schedule[c.id])}</span>
-                  )}
+                  <IconButton
+                    size="sm"
+                    label={t('sync.one', { name: t(source.label) })}
+                    disabled={running}
+                    onClick={() => void syncOne(ws, source.id)}
+                  >
+                    <RefreshCw size={13} />
+                  </IconButton>
                 </li>
-              ))}
-            </ul>
-          )}
+              )
+            })}
+          </ul>
           <Button
             variant="primary"
             size="sm"
