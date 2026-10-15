@@ -138,6 +138,21 @@ test.describe('KI-Assistent', () => {
     )
   })
 
+  test('speichert Chats und öffnet frühere wieder', async ({ page }) => {
+    await openWithAi(page)
+    await fakeModel(page, () => ({ content: 'Antwort eins' }))
+    await ask(page, 'Erste Frage zu Graphen')
+    await expect(panel(page)).toContainText('Antwort eins')
+    await panel(page).getByRole('button', { name: 'Neuer Chat' }).click()
+    await expect(panel(page)).not.toContainText('Antwort eins')
+    await panel(page).getByRole('button', { name: 'Frühere Chats' }).click()
+    await page
+      .getByRole('list', { name: 'Frühere Chats' })
+      .getByRole('button', { name: /Erste Frage zu Graphen/ })
+      .click()
+    await expect(panel(page)).toContainText('Antwort eins')
+  })
+
   test('fragt vor dem Löschen und respektiert ein Nein', async ({ page }) => {
     await openWithAi(page)
     await fakeModel(page, (body) =>

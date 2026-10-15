@@ -1,3 +1,5 @@
+import { ChatHistory } from './ChatHistory'
+import { useChats } from '@/app/chats'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   ArrowUp,
@@ -72,8 +74,7 @@ function stepTarget(input: unknown): string {
 
 /** The AI chat in a side bar (left or right, overlay on small screens). */
 export function AssistantPanel() {
-  const { configured, settings, messages, sent, busy, error, send, stop, reset, draft, setDraft } =
-    useAssistant()
+  const { configured, settings, messages, sent, busy, error, send, stop, draft, setDraft } = useAssistant()
   const [promptOpen, setPromptOpen] = useState(false)
   const closeView = useApp((s) => s.closeView)
   const route = useApp((s) => s.route)
@@ -132,7 +133,12 @@ export function AssistantPanel() {
           <IconButton label={t('nav.settings')} onClick={() => navigate({ name: 'settings', section: 'ai' })}>
             <Settings2 size={16} />
           </IconButton>
-          <IconButton label={t('ai.newChat')} onClick={reset} disabled={messages.length === 0 && !error}>
+          <ChatHistory />
+          <IconButton
+            label={t('ai.newChat')}
+            onClick={() => useChats.getState().startNew()}
+            disabled={messages.length === 0 && !error}
+          >
             <SquarePen size={16} />
           </IconButton>
         </>
