@@ -19,6 +19,7 @@ import { MoodleImportDialog } from '@/components/moodle/MoodleImport'
 import { SettingsPanel } from './SettingsPanel'
 import { TextContextMenu } from './TextContextMenu'
 import { EventBadge } from './EventBadge'
+import { StatusBar } from './StatusBar'
 import { ShelfPanel } from './ShelfPanel'
 import { StudySyncDialog } from '@/components/study/StudySyncDialog'
 import { NotificationPanel, openNotification } from '@/components/notifications/NotificationPanel'
@@ -137,88 +138,96 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
   useEffect(() => electronBridge()?.onMenu?.((id) => runCommand(id, ws, actions, saveNow)), [ws, actions])
 
   return (
-    <div className="flex h-full" data-sidebar={sidebarOpen ? 'open' : 'closed'}>
-      {sidebarOpen && (
-        <div
-          className="no-print fixed inset-0 z-30 bg-[rgb(10_14_20/0.35)] min-[900px]:hidden"
-          onClick={() => setSidebar(false)}
-          aria-hidden
-        />
-      )}
-      <ActivityBar side="left" />
-      {/* Desktop: collapsing shrinks the width (a negative margin would slide it over the bar). */}
-      <div
-        className={cx(
-          'no-print z-30 h-full shrink-0 overflow-hidden transition-[width,transform] duration-200',
-          sidebarOpen ? 'border-r border-line' : 'min-[900px]:w-0',
-          'relative',
-          sidebarOpen && 'min-[900px]:w-[var(--sidebar-w)]',
-          leftView ? 'max-[899px]:w-[min(26rem,100vw)]' : 'max-[899px]:w-[17rem]',
-          'max-[899px]:fixed max-[899px]:inset-y-0 max-[899px]:left-0 max-[899px]:border-r max-[899px]:border-line max-[899px]:shadow-[var(--shadow-pop)]',
-          sidebarOpen ? 'max-[899px]:translate-x-0' : 'max-[899px]:-translate-x-full',
-        )}
-        aria-hidden={!sidebarOpen}
-        inert={!sidebarOpen}
-        data-left-view={leftView ?? 'pages'}
-        style={{ '--sidebar-w': `${sidebarWidth}px` } as CSSProperties}
-      >
+    <div className="flex h-full flex-col">
+      <div className="flex min-h-0 flex-1" data-sidebar={sidebarOpen ? 'open' : 'closed'}>
         {sidebarOpen && (
-          <div className="max-[899px]:hidden">
-            <ResizeHandle
-              side="right"
-              width={sidebarWidth}
-              onResize={setSidebarWidth}
-              label={t('nav.sidebar')}
-              reset={leftView ? 384 : 272}
-            />
-          </div>
+          <div
+            className="no-print fixed inset-0 z-30 bg-[rgb(10_14_20/0.35)] min-[900px]:hidden"
+            onClick={() => setSidebar(false)}
+            aria-hidden
+          />
         )}
+        <ActivityBar side="left" />
+        {/* Desktop: collapsing shrinks the width (a negative margin would slide it over the bar). */}
         <div
           className={cx(
-            'h-full min-[900px]:w-[var(--sidebar-w)]',
+            'no-print z-30 h-full shrink-0 overflow-hidden transition-[width,transform] duration-200',
+            sidebarOpen ? 'border-r border-line' : 'min-[900px]:w-0',
+            'relative',
+            sidebarOpen && 'min-[900px]:w-[var(--sidebar-w)]',
             leftView ? 'max-[899px]:w-[min(26rem,100vw)]' : 'max-[899px]:w-[17rem]',
+            'max-[899px]:fixed max-[899px]:inset-y-0 max-[899px]:left-0 max-[899px]:border-r max-[899px]:border-line max-[899px]:shadow-[var(--shadow-pop)]',
+            sidebarOpen ? 'max-[899px]:translate-x-0' : 'max-[899px]:-translate-x-full',
           )}
+          aria-hidden={!sidebarOpen}
+          inert={!sidebarOpen}
+          data-left-view={leftView ?? 'pages'}
+          style={{ '--sidebar-w': `${sidebarWidth}px` } as CSSProperties}
         >
-          <ErrorBoundary resetKey={leftView ?? 'pages'}>
-            {leftView === 'assistant' ? (
-              <AssistantPanel />
-            ) : leftView === 'git' ? (
-              <GitPanel />
-            ) : leftView === 'notifications' ? (
-              <NotificationPanel />
-            ) : leftView === 'settings' ? (
-              <SettingsPanel />
-            ) : leftView === 'shelf' ? (
-              <ShelfPanel />
-            ) : (
-              <Sidebar />
+          {sidebarOpen && (
+            <div className="max-[899px]:hidden">
+              <ResizeHandle
+                side="right"
+                width={sidebarWidth}
+                onResize={setSidebarWidth}
+                label={t('nav.sidebar')}
+                reset={leftView ? 384 : 272}
+              />
+            </div>
+          )}
+          <div
+            className={cx(
+              'h-full min-[900px]:w-[var(--sidebar-w)]',
+              leftView ? 'max-[899px]:w-[min(26rem,100vw)]' : 'max-[899px]:w-[17rem]',
             )}
-          </ErrorBoundary>
+          >
+            <ErrorBoundary resetKey={leftView ?? 'pages'}>
+              {leftView === 'assistant' ? (
+                <AssistantPanel />
+              ) : leftView === 'git' ? (
+                <GitPanel />
+              ) : leftView === 'notifications' ? (
+                <NotificationPanel />
+              ) : leftView === 'settings' ? (
+                <SettingsPanel />
+              ) : leftView === 'shelf' ? (
+                <ShelfPanel />
+              ) : (
+                <Sidebar />
+              )}
+            </ErrorBoundary>
+          </div>
         </div>
+        <main
+          ref={mainRef}
+          className="min-w-0 flex-1 overflow-y-auto"
+          id="main"
+          data-route={routeHash(route)}
+        >
+          <ScrollRootContext value={mainRef}>
+            <ErrorBoundary resetKey={routeHash(route)}>{children}</ErrorBoundary>
+          </ScrollRootContext>
+        </main>
+        <ErrorBoundary resetKey={rightPanel ?? ''}>
+          {rightPanel === 'assistant' && <AssistantPanel />}
+          {rightPanel === 'git' && <GitPanel />}
+          {rightPanel === 'notifications' && <NotificationPanel />}
+          {rightPanel === 'settings' && <SettingsPanel />}
+          {rightPanel === 'shelf' && <ShelfPanel />}
+        </ErrorBoundary>
+        <ActivityBar side="right" />
+        <DiffSheet />
+        <MoodleImportDialog />
+        <StudyDialogHost />
+        {overlays}
+        <PeekHost />
+        <PromptHost />
+        <ToastHost />
+        <TextContextMenu />
+        <EventBadge />
+        <ProgressHost />
       </div>
-      <main ref={mainRef} className="min-w-0 flex-1 overflow-y-auto" id="main" data-route={routeHash(route)}>
-        <ScrollRootContext value={mainRef}>
-          <ErrorBoundary resetKey={routeHash(route)}>{children}</ErrorBoundary>
-        </ScrollRootContext>
-      </main>
-      <ErrorBoundary resetKey={rightPanel ?? ''}>
-        {rightPanel === 'assistant' && <AssistantPanel />}
-        {rightPanel === 'git' && <GitPanel />}
-        {rightPanel === 'notifications' && <NotificationPanel />}
-        {rightPanel === 'settings' && <SettingsPanel />}
-        {rightPanel === 'shelf' && <ShelfPanel />}
-      </ErrorBoundary>
-      <ActivityBar side="right" />
-      <DiffSheet />
-      <MoodleImportDialog />
-      <StudyDialogHost />
-      {overlays}
-      <PeekHost />
-      <PromptHost />
-      <ToastHost />
-      <TextContextMenu />
-      <EventBadge />
-      <ProgressHost />
+      <StatusBar />
     </div>
   )
 }

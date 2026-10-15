@@ -31,8 +31,11 @@ function examEvents(ws: ReturnType<typeof useWorkspace>, folder: string): Calend
   })
 }
 
-/** Small, always visible: what runs now (and how long) and what comes next – click to open it. */
-export function EventBadge() {
+/**
+ * What runs now (and how long) and what comes next – click to open the script or module. `inline`:
+ * one row in the status bar (default place); otherwise a small floating badge top right.
+ */
+export function EventBadge({ inline = false }: { inline?: boolean }) {
   const ws = useWorkspace()
   const position = useApp((s) => s.settings.eventBadge)
   const [now, setNow] = useState(() => new Date())
@@ -40,7 +43,7 @@ export function EventBadge() {
     const timer = setInterval(() => setNow(new Date()), 30_000)
     return () => clearInterval(timer)
   }, [])
-  if (position === 'off') return null
+  if (position === 'off' || (inline ? position === 'top-right' : position !== 'top-right')) return null
   const dash = findStudyDashboard(ws)
   if (!dash) return null
   const { current, next } = nowAndNext(
@@ -71,7 +74,10 @@ export function EventBadge() {
         title={
           script ? t('event.openScript', { name: script.split('/').pop() ?? '' }) : t('event.openModule')
         }
-        className="flex w-full min-w-0 items-baseline gap-1.5 rounded-control text-left enabled:hover:underline"
+        className={cx(
+          'flex min-w-0 items-baseline gap-1.5 rounded-control text-left enabled:hover:underline',
+          !inline && 'w-full',
+        )}
       >
         <span className="shrink-0 text-[11px] font-semibold text-ink-3">{label}</span>
         <span className="min-w-0 truncate font-medium">{e.title}</span>
@@ -83,13 +89,31 @@ export function EventBadge() {
       </button>
     )
   }
+  if (inline)
+    return (
+      <div role="region" aria-label={t('event.next')} className="flex min-w-0 items-center gap-3">
+        <CalendarClock size={13} className="shrink-0 text-accent" aria-hidden />
+        {current &&
+          line(
+            t('event.now'),
+            current,
+            t('event.endsIn', { time: duration(current.end.getTime() - now.getTime()) }),
+          )}
+        {next &&
+          line(
+            t('event.next'),
+            next,
+            t('event.startsIn', { time: duration(next.start.getTime() - now.getTime()) }),
+          )}
+      </div>
+    )
   return (
     <div
       role="region"
       aria-label={t('event.next')}
       className={cx(
         'no-print fixed z-40 flex max-w-[min(26rem,calc(100vw-2rem))] items-start gap-2 rounded-panel border border-line bg-surface/95 px-3 py-1.5 text-[12.5px] shadow-[var(--shadow-pop)] backdrop-blur',
-        position === 'top-right' ? 'top-14 right-16' : 'bottom-4 left-4',
+        'top-14 right-16',
       )}
     >
       <CalendarClock size={14} className="mt-0.5 shrink-0 text-accent" />

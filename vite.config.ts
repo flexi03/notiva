@@ -42,6 +42,8 @@ function pdfjsAssets(): Plugin {
 }
 
 export default defineConfig({
+  // The app version (status bar, About) – from package.json.
+  define: { __APP_VERSION__: JSON.stringify(process.env.npm_package_version ?? '') },
   // Relative base so the same build works as PWA (any path) and inside Electron (app:// protocol).
   base: './',
   plugins: [react(), tailwindcss(), pdfjsAssets()],
