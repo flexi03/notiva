@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type ReactNode } from 'react'
 import type { PDFDocumentProxy } from '@/lib/pdfjs'
 import { pdfjs } from '@/lib/pdfjs'
+import { scrollIntoContainer } from '@/lib/scroll'
 
 export interface PdfViewerHandle {
   scrollToPage(page: number, smooth?: boolean): void
@@ -71,7 +72,7 @@ export const PdfViewer = forwardRef<
     content: () => (scroller.current?.firstElementChild as HTMLDivElement | null) ?? null,
     scrollToPage(page, smooth = false) {
       const el = scroller.current?.querySelector<HTMLElement>(`[data-page="${page}"]`)
-      el?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' })
+      scrollIntoContainer(el, 'start', smooth ? 'smooth' : 'auto')
     },
   }))
 

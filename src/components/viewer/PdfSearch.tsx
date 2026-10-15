@@ -3,6 +3,7 @@ import { ChevronDown, ChevronUp, X } from 'lucide-react'
 import type { PDFDocumentProxy } from '@/lib/pdfjs'
 import { t } from '@/i18n'
 import { IconButton } from '@/components/ui'
+import { scrollIntoContainer } from '@/lib/scroll'
 
 interface Hit {
   page: number
@@ -36,7 +37,7 @@ function markOnPage(page: number, query: string) {
     const hit = spans.find((s) => s.textContent?.toLowerCase().includes(query.toLowerCase()))
     if (hit) {
       hit.classList.add('pdf-search-hit')
-      hit.scrollIntoView({ block: 'center' })
+      scrollIntoContainer(hit, 'center')
     } else if (attempt < 10) setTimeout(() => tryMark(attempt + 1), 150)
   }
   setTimeout(() => tryMark(0), 250)

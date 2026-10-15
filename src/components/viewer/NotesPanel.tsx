@@ -8,6 +8,7 @@ import { t } from '@/i18n'
 import type { Annotation } from '@/lib/annotations'
 import { AutoTextArea, cx, IconButton } from '@/components/ui'
 import { COLOR_VALUES } from './AnnotationLayer'
+import { scrollIntoContainer } from '@/lib/scroll'
 
 /**
  * Notes next to a PDF: a free note for the current page and all highlights, sticky notes and
@@ -48,7 +49,7 @@ export function NotesPanel({
   const activeRef = useRef<HTMLLIElement>(null)
   const [width, setWidth] = useStoredWidth('pdf-notes', 320, 240, 720)
   useEffect(() => {
-    activeRef.current?.scrollIntoView({ block: 'nearest' })
+    scrollIntoContainer(activeRef.current)
   }, [activeId])
 
   return (

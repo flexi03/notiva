@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { cx } from '@/components/ui'
+import { scrollIntoContainer } from '@/lib/scroll'
 
 export interface Suggestion {
   id: string
@@ -24,7 +25,7 @@ interface SuggestMenuProps {
 export function SuggestMenu({ anchor, items, active, onPick, onHover, empty, label }: SuggestMenuProps) {
   const list = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    list.current?.querySelector<HTMLElement>(`[data-index="${active}"]`)?.scrollIntoView({ block: 'nearest' })
+    scrollIntoContainer(list.current?.querySelector<HTMLElement>(`[data-index="${active}"]`))
   }, [active])
   if (!anchor) return null
   const rect = anchor.getBoundingClientRect()

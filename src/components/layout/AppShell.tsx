@@ -135,8 +135,8 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
   useEffect(() => electronBridge()?.onMenu?.((id) => runCommand(id, ws, actions, saveNow)), [ws, actions])
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex min-h-0 flex-1" data-sidebar={sidebarOpen ? 'open' : 'closed'}>
+    <div className="flex h-full flex-col overflow-clip">
+      <div className="flex min-h-0 flex-1 overflow-clip" data-sidebar={sidebarOpen ? 'open' : 'closed'}>
         {sidebarOpen && (
           <div
             className="no-print fixed inset-0 z-30 bg-[rgb(10_14_20/0.35)] min-[900px]:hidden"
@@ -148,7 +148,7 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
         {/* Desktop: collapsing shrinks the width (a negative margin would slide it over the bar). */}
         <div
           className={cx(
-            'no-print z-30 h-full shrink-0 overflow-hidden transition-[width,transform] duration-200',
+            'no-print z-30 h-full shrink-0 overflow-clip transition-[width,transform] duration-200',
             sidebarOpen ? 'border-r border-line' : 'min-[900px]:w-0',
             'relative',
             sidebarOpen && 'min-[900px]:w-[var(--sidebar-w)]',
@@ -191,7 +191,7 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
           </div>
         </div>
         {/* Hints and toasts live in the content area – never over the side bars or the assistant. */}
-        <div className="relative flex min-w-0 flex-1">
+        <div className="relative flex min-w-0 flex-1 overflow-clip">
           <main
             ref={mainRef}
             className="min-w-0 flex-1 overflow-y-auto"

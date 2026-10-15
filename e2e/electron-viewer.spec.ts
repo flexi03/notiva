@@ -240,3 +240,25 @@ test('öffnet neben dem Terminal eine Webseite (abgeschottet)', async () => {
     await close.click().catch(() => undefined)
   server.close()
 })
+
+test('der App-Rahmen verrutscht nie (Blättern, Mausrad am Ende)', async () => {
+  await window.evaluate(() => (location.hash = '#/f/Skripte%2FGraphen.pdf'))
+  await window.locator('[data-page="1"]').waitFor()
+  for (const key of ['ArrowRight', 'ArrowRight', 'ArrowLeft', 'ArrowRight']) await window.keyboard.press(key)
+  await window.mouse.move(400, 400)
+  for (let i = 0; i < 20; i++) await window.mouse.wheel(0, 1200)
+  const shifted = await window.evaluate(() =>
+    [
+      document.documentElement,
+      document.body,
+      document.getElementById('root')!,
+      ...document.querySelectorAll('*'),
+    ]
+      .filter(
+        (e) => /hidden|clip/.test(getComputedStyle(e).overflowY) && (e.scrollTop > 0 || e.scrollLeft > 0),
+      )
+      .map((e) => `${e.tagName}.${String(e.className).slice(0, 40)}`),
+  )
+  expect(shifted).toEqual([])
+  expect(await window.evaluate(() => globalThis.scrollY)).toBe(0)
+})

@@ -35,6 +35,8 @@ html,
 body,
 #root {
   height: 100%;
+  /* The app frame never scrolls – only its panes do (clip: not even by script). */
+  overflow: clip;
 }
 
 body {

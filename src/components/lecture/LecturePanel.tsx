@@ -14,6 +14,7 @@ import { clock } from '@/lib/lecture/transcript'
 import { TRANSCRIBE_PRESETS } from '@/lib/lecture/transcribe'
 import { Button, Checkbox, cx, IconButton } from '@/components/ui'
 import type { SideProps } from '@/components/viewer/PdfDocumentView'
+import { scrollIntoContainer } from '@/lib/scroll'
 
 async function slideTexts(doc: SideProps['doc']): Promise<string[]> {
   const texts: string[] = []
@@ -52,7 +53,7 @@ export function LecturePanel({ page, jump, doc, path }: SideProps) {
 
   // Braces matter: scrollIntoView returns a Promise in current Chromium – never return it from an effect.
   useEffect(() => {
-    transcriptEnd.current?.scrollIntoView({ block: 'nearest' })
+    scrollIntoContainer(transcriptEnd.current)
   }, [lecture.entries.length])
 
   // Collapsible (remembered).
