@@ -924,12 +924,14 @@ export const en: Record<MessageKey, string> = {
     'Notiva creates the folder “Studium”: modules by regulations, a page per semester, courses, exams, tasks and organisation – and sets up Git. Then connect Moodle and eCampus, Notiva fills in the rest.',
   'clone.button': 'Get repository into the lab',
   'clone.ask': 'Get “{name}” into the lab?',
-  'clone.askNote': 'git clone {url}\ninto “{folder}”. Then the code is in the lab folder and opens in your editor.',
+  'clone.askNote':
+    'git clone {url}\ninto “{folder}”. Then the code is in the lab folder and opens in your editor.',
   'clone.confirm': 'Get it',
   'clone.running': 'Getting “{name}” …',
   'clone.done': '“{name}” is now in “{folder}”',
   'clone.login': 'The repository needs a login',
-  'clone.loginNote': 'In the Terminal, Git asks for your user name and an access token (GitLab: Preferences → Access Tokens, scope “read_repository”). The keychain remembers both for next time.',
+  'clone.loginNote':
+    'In the Terminal, Git asks for your user name and an access token (GitLab: Preferences → Access Tokens, scope “read_repository”). The keychain remembers both for next time.',
   'clone.inTerminal': 'Get it in the Terminal',
   'clone.noLab': 'First create a lab folder on the module page (“Create code folder”).',
   'course.openBrowser': 'Open in browser',

@@ -49,7 +49,11 @@ export async function cloneIntoLab(ws: Workspace, link: string, folder: string):
     return target
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e)
-    if (!/auth|credential|username|password|403|401|could not read|terminal prompts disabled|access denied|repository .*not found/i.test(message))
+    if (
+      !/auth|credential|username|password|403|401|could not read|terminal prompts disabled|access denied|repository .*not found/i.test(
+        message,
+      )
+    )
       return null
     // Login needed: replace the raw error with the reason and the one-click fix.
     useProgress.setState((s) => ({

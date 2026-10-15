@@ -18,7 +18,10 @@ export function courseIdsOf(data: FrontmatterData): string[] {
 }
 
 /** The module (page) a Moodle course belongs to. */
-export function moduleOfCourse<T extends { data: FrontmatterData }>(rows: T[], courseId: string): T | undefined {
+export function moduleOfCourse<T extends { data: FrontmatterData }>(
+  rows: T[],
+  courseId: string,
+): T | undefined {
   return rows.find((r) => courseIdsOf(r.data).includes(courseId))
 }
 

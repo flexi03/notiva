@@ -70,3 +70,20 @@ test.describe('KI und Änderungen links oder rechts', () => {
     await expect(page.getByRole('complementary', { name: 'Änderungen' })).toHaveAttribute('data-side', 'left')
   })
 })
+
+test('Hilfe erklärt einen Ort beim Anklicken und öffnet ihn', async ({ page }) => {
+  await openDemo(page)
+  await page.getByRole('contentinfo', { name: 'Statusleiste' }).getByRole('button', { name: 'Hilfe' }).click()
+  const place = page.getByRole('button', { name: /^Statusleiste/ })
+  await expect(place).toHaveAttribute('aria-expanded', 'false')
+  await place.click()
+  await expect(place).toHaveAttribute('aria-expanded', 'true')
+  await expect(
+    page.getByText('Laufende Aufgaben zeigen Balken, Anzahl und Restzeit', { exact: false }),
+  ).toBeVisible()
+  // Another place closes the first one and opens its target.
+  await page.getByRole('button', { name: /^Einstellungen ⌘/ }).click()
+  await expect(place).toHaveAttribute('aria-expanded', 'false')
+  await page.getByRole('button', { name: 'Öffnen', exact: true }).click()
+  await expect(page.getByRole('tab', { name: /Studium/ }).first()).toBeVisible()
+})

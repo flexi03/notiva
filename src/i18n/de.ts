@@ -934,12 +934,14 @@ export const de = {
     'Notiva legt den Ordner „Studium“ an: Module nach Prüfungsordnung, eine Seite je Semester, Kurse, Prüfungen, Aufgaben und Orga – und richtet Git ein. Danach Moodle und eCampus verbinden, den Rest füllt Notiva selbst.',
   'clone.button': 'Repository ins Praktikum holen',
   'clone.ask': '„{name}“ ins Praktikum holen?',
-  'clone.askNote': 'git clone {url}\nnach „{folder}“. Danach findest du den Code im Praktikumsordner und kannst ihn im Editor öffnen.',
+  'clone.askNote':
+    'git clone {url}\nnach „{folder}“. Danach findest du den Code im Praktikumsordner und kannst ihn im Editor öffnen.',
   'clone.confirm': 'Holen',
   'clone.running': '„{name}“ wird geholt …',
   'clone.done': '„{name}“ liegt jetzt in „{folder}“',
   'clone.login': 'Das Repository verlangt eine Anmeldung',
-  'clone.loginNote': 'Im Terminal fragt Git nach Benutzername und Zugangstoken (bei GitLab: Einstellungen → Access Tokens, Recht „read_repository“). Der Schlüsselbund merkt sich beides für das nächste Mal.',
+  'clone.loginNote':
+    'Im Terminal fragt Git nach Benutzername und Zugangstoken (bei GitLab: Einstellungen → Access Tokens, Recht „read_repository“). Der Schlüsselbund merkt sich beides für das nächste Mal.',
   'clone.inTerminal': 'Im Terminal holen',
   'clone.noLab': 'Lege zuerst auf der Modulseite einen Praktikumsordner an („Code-Ordner anlegen“).',
   'course.openBrowser': 'Im Browser öffnen',

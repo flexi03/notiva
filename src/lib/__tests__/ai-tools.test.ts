@@ -94,7 +94,12 @@ describe('AI tools: reading', () => {
     const { call } = await setup()
     expect((await call('read_page', { page: 'Gibt es nicht' })).text).toMatch(/nicht gefunden.*search_pages/)
     expect(
-      (await call('query_database', { database: 'Module', filter: [{ property: 'Lieblingsessen', op: 'eq' }] })).text,
+      (
+        await call('query_database', {
+          database: 'Module',
+          filter: [{ property: 'Lieblingsessen', op: 'eq' }],
+        })
+      ).text,
     ).toMatch(/Unbekannte Eigenschaft „Lieblingsessen“. Vorhanden: .*ECTS/)
     expect((await call('query_database', { database: 'Willkommen' })).ok).toBe(false)
   })

@@ -247,7 +247,9 @@ describe('study folder sync', () => {
     const course = ws.rows('Studium/Kurse.md')[0]!
     await ws.save(course.path, { body: 'Aus Moodle …\n\n## Meine Notizen\n\nKlausur: Kapitel 3 lernen\n' })
     await ws.writeFile('Studium/Unterlagen/BMI 13 SE WiSe 25/Vorlesung/SE-01.pdf', new Uint8Array([1]))
-    await ws.writeMeta('moodle-files.json', { m1: { path: 'Studium/Unterlagen/BMI 13 SE WiSe 25/Vorlesung/SE-01.pdf' } })
+    await ws.writeMeta('moodle-files.json', {
+      m1: { path: 'Studium/Unterlagen/BMI 13 SE WiSe 25/Vorlesung/SE-01.pdf' },
+    })
 
     const plan = planStudySync(ws, 'Studium', state())
     const migrate = plan.changes.filter((c) => c.what === 'migrate')
