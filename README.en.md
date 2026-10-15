@@ -14,10 +14,11 @@
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-2563eb"></a>
   <img alt="Version 0.1.0" src="https://img.shields.io/badge/Version-0.1.0-16a34a">
   <img alt="macOS, Windows, Linux, browser" src="https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Browser-ffffff">
-  <a href="README.md"><img alt="Deutsch" src="https://img.shields.io/badge/lang-Deutsch-lightgrey"></a>
 </p>
 
 > The app speaks German and English (_Settings → General → Language_). The screenshots show the German demo.
+
+<p align="center"><a href="README.md">Deutsch</a> · <b>English</b></p>
 
 ---
 
@@ -62,12 +63,12 @@ from eCampus (HISinOne) and the faculty's exam schedule. From that it builds mod
   </tr>
   <tr>
     <td width="33%" align="center"><img src="docs/images/einstellungen.png" alt="Settings" width="280"></td>
-    <td width="33%" align="center"><img src="docs/images/dunkel.png" alt="Dark theme" width="280"></td>
+    <td width="33%" align="center"><img src="docs/images/hell.png" alt="Light theme" width="280"></td>
     <td width="33%" align="center"><img src="docs/images/willkommen.png" alt="Welcome screen" width="280"></td>
   </tr>
   <tr>
     <td valign="top"><b>Settings</b><br>Moodle, eCampus, notifications, AI, storage, colors, font, language.</td>
-    <td valign="top"><b>Light & dark</b><br>Follows the system or set it yourself.</td>
+    <td valign="top"><b>Light & dark</b><br>Follows the system or set it yourself – light here, dark above.</td>
     <td valign="top"><b>Your storage</b><br>A folder on your device, private browser storage (also iPhone/iPad) or a demo.</td>
   </tr>
 </table>
@@ -107,7 +108,7 @@ Property names in the study template are German (`Note`, `Belegung`, `Prüfungen
 Silicon, `.dmg`), Windows (`.exe`) or Linux (`.AppImage`). The app is unsigned: on a Mac right-click → Open the first
 time, on Windows "More info → Run anyway".
 
-**Updates:** Notiva looks for new versions on start and every 6 hours, tells you and installs them with one click
+**Updates:** Notiva looks for new versions on start and every hour, tells you and installs them with one click
 ("Update now"); manually via _Notiva → Nach Updates suchen …_. What's new: [CHANGELOG.md](CHANGELOG.md).
 
 **From source** (requires [Node.js](https://nodejs.org) 24 or newer):

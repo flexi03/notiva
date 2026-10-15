@@ -892,7 +892,7 @@ app.whenReady().then(async () => {
   })
 })
 
-/** New version on GitHub: banner once per version, in-app hint every time it is found. */
+/** New version on GitHub (on start, then hourly): banner once per version, in-app hint each time. */
 function scheduleUpdateChecks(): void {
   let told = ''
   onUpdateStatus((s) => {
@@ -910,8 +910,8 @@ function scheduleUpdateChecks(): void {
     }
   })
   if (!app.isPackaged) return
-  setTimeout(() => void checkForUpdate(), 30_000)
-  setInterval(() => void checkForUpdate(), 6 * 60 * 60_000)
+  setTimeout(() => void checkForUpdate(), 10_000)
+  setInterval(() => void checkForUpdate(), 60 * 60_000)
 }
 
 app.on('will-quit', () => whisper.stop())

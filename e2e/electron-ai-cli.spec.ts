@@ -71,7 +71,8 @@ test('arbeitet über die Notiva-Werkzeuge und zeigt den gesendeten Prompt', asyn
   await window.keyboard.press('Escape')
 
   const { args, prompt } = calls().at(-1)!
-  expect(prompt).toBe('Leg eine Seite an')
+  // Context of the open page first, the request last.
+  expect(prompt.trim().split('\n').at(-1)).toBe('Leg eine Seite an')
   expect(arg(args, '--tools')).toBe('')
   expect(args).toContain('--strict-mcp-config')
   expect(arg(args, '--model')).toBe('opus')

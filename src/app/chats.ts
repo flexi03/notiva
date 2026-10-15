@@ -40,7 +40,9 @@ function store(chats: SavedChat[]): void {
 
 const titleOf = (messages: Message[]) => {
   const first = messages.find((m) => m.role === 'user')
-  const text = first?.parts.map((p) => ('text' in p ? p.text : '')).join(' ') ?? ''
+  // The context (open page, PDF) comes first – the title is what the user typed (the last part).
+  const typed = first?.parts.filter((p) => 'text' in p).at(-1)
+  const text = typed && 'text' in typed ? typed.text : ''
   return text.replace(/\s+/g, ' ').trim().slice(0, 70) || 'Chat'
 }
 

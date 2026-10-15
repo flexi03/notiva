@@ -48,7 +48,9 @@ process.stdin.on('end', async () => {
     clientInfo: { name: 'fake', version: '1' },
   })
   server.stdin.write(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }) + '\n')
-  const input = { title: 'Von Claude', body: `Auftrag: ${prompt}` }
+  // The app may put context (open page, PDF) before the request – the request is the last line.
+  const request = prompt.trim().split('\n').pop()
+  const input = { title: 'Von Claude', body: `Auftrag: ${request}` }
   out({
     type: 'assistant',
     session_id: session,

@@ -42,7 +42,7 @@ export async function checkUpdatesNow(): Promise<void> {
   else announce(t('update.none', { version: s.version }), { key: 'update' })
 }
 
-/** Shows a found update bottom left (the main process checks on start and every 6 hours). */
+/** Shows a found update bottom left (the main process checks on start and every hour). */
 export function useUpdateNotices(): void {
   useEffect(() => {
     const bridge = electronBridge()?.update

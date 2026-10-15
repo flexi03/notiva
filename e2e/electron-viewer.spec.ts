@@ -47,7 +47,7 @@ test('öffnet das PDF aus dem Seitenbaum', async () => {
   await window.keyboard.down('Control')
   await window.mouse.wheel(0, -60)
   await window.keyboard.up('Control')
-  await expect(window.getByText('180 %')).toBeVisible()
+  await expect(window.getByText('182 %')).toBeVisible()
   await window.getByRole('button', { name: 'An Breite anpassen' }).click()
   await expect(window.getByText('100 %')).toBeVisible()
   const toggle = window.getByRole('button', { name: 'Notizen ein-/ausblenden' })
@@ -213,7 +213,7 @@ test('öffnet neben dem Terminal eine Webseite (abgeschottet)', async () => {
   await new Promise<void>((r) => server.listen(0, '127.0.0.1', () => r()))
   const url = `http://127.0.0.1:${(server.address() as { port: number }).port}/p01`
   await window.getByRole('button', { name: 'Terminal', exact: true }).click()
-  await window.getByRole('button', { name: 'Webseite daneben' }).first().click()
+  await window.getByRole('button', { name: 'Webseite daneben' }).last().click()
   const dialog = window.getByRole('dialog')
   await dialog.getByRole('textbox').fill(url)
   await dialog.getByRole('button', { name: 'Webseite daneben' }).click()

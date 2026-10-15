@@ -14,8 +14,9 @@
   <a href="LICENSE"><img alt="Lizenz: MIT" src="https://img.shields.io/badge/Lizenz-MIT-2563eb"></a>
   <img alt="Version 0.1.0" src="https://img.shields.io/badge/Version-0.1.0-16a34a">
   <img alt="macOS, Windows, Linux, Browser" src="https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Browser-ffffff">
-  <a href="README.en.md"><img alt="English" src="https://img.shields.io/badge/lang-English-lightgrey"></a>
 </p>
+
+<p align="center"><b>Deutsch</b> · <a href="README.en.md">English</a></p>
 
 ---
 
@@ -60,12 +61,12 @@ ein ([docs/HOCHSCHULE.md](docs/HOCHSCHULE.md)).
   </tr>
   <tr>
     <td width="33%" align="center"><img src="docs/images/einstellungen.png" alt="Einstellungen" width="280"></td>
-    <td width="33%" align="center"><img src="docs/images/dunkel.png" alt="Dunkles Design" width="280"></td>
+    <td width="33%" align="center"><img src="docs/images/hell.png" alt="Helles Design" width="280"></td>
     <td width="33%" align="center"><img src="docs/images/willkommen.png" alt="Startbildschirm" width="280"></td>
   </tr>
   <tr>
     <td valign="top"><b>Einstellungen</b><br>Moodle, eCampus, Benachrichtigungen, KI, Speicher, Farben, Schrift, Sprache (Deutsch/Englisch).</td>
-    <td valign="top"><b>Hell & Dunkel</b><br>Folgt dem System oder fest einstellbar.</td>
+    <td valign="top"><b>Hell & Dunkel</b><br>Folgt dem System oder fest einstellbar – hier hell, oben dunkel.</td>
     <td valign="top"><b>Dein Speicherort</b><br>Ordner auf dem Gerät, privater Browser-Speicher (auch iPhone/iPad) oder eine Demo.</td>
   </tr>
 </table>
@@ -104,7 +105,7 @@ ein ([docs/HOCHSCHULE.md](docs/HOCHSCHULE.md)).
 macOS (Apple Silicon, `.dmg`), Windows (`.exe`) oder Linux (`.AppImage`). Die App ist nicht signiert: auf dem Mac beim
 ersten Öffnen Rechtsklick → Öffnen, unter Windows „Weitere Informationen → Trotzdem ausführen“.
 
-**Updates:** Notiva sieht beim Start und alle 6 Stunden nach neuen Versionen, meldet sie und installiert sie mit einem
+**Updates:** Notiva sieht beim Start und jede Stunde nach neuen Versionen, meldet sie und installiert sie mit einem
 Klick („Jetzt aktualisieren“); von Hand über _Notiva → Nach Updates suchen …_. Was neu ist: [CHANGELOG.md](CHANGELOG.md).
 
 **Aus dem Quelltext** (Voraussetzung: [Node.js](https://nodejs.org) 24 oder neuer):

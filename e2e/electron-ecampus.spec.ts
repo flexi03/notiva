@@ -243,7 +243,7 @@ test('zeigt Noten, Schnitt und ECTS und übernimmt sie in die Module', async () 
   expect(math).toContain('type: related')
   expect(readFileSync(path.join(folder, 'Studium.md'), 'utf8')).toContain('beginn: WiSe 24/25')
   // The dashboard opens and shows this semester's modules.
-  await expect(window.getByRole('heading', { name: 'Dieses Semester' })).toBeVisible()
+  await expect(window.getByRole('heading', { name: 'Belege ich gerade' })).toBeVisible()
   await expect(window.getByRole('region', { name: 'Module laufend' })).toBeVisible()
   await window.getByRole('button', { name: 'Noten & Leistungen' }).click()
 })

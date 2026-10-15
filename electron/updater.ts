@@ -1,6 +1,6 @@
 /**
  * Self-update from GitHub releases. electron-updater needs an Apple-signed app on macOS – Notiva
- * is not signed, so it does it itself: look up the latest release, tell the user, download the
+ * is not signed, so it does it itself: look up the latest release (on start and hourly), tell the user, download the
  * file for this system and swap the app after it quit (macOS: replace the .app, Windows: run the
  * installer, Linux: replace the AppImage), then start again. Only in the packaged app.
  */

@@ -7,12 +7,13 @@ const PORT = 4174
 const BASE = `http://localhost:${PORT}`
 const OUT = new URL('../docs/images/', import.meta.url).pathname
 const SHOTS = [
-  ['dashboard', '/#/p/Studium.md', 'light'],
+  // Dark is the default look of the README; the grid alternates with light.
+  ['dashboard', '/#/p/Studium.md', 'dark'],
   ['datenbank', '/#/p/Studium%2FModule.md', 'light'],
-  ['semester', '/#/semester', 'light'],
+  ['semester', '/#/semester', 'dark'],
   ['vorlagen', '/#/templates', 'light'],
-  ['einstellungen', '/#/settings', 'light'],
-  ['dunkel', '/#/p/Studium.md', 'dark'],
+  ['einstellungen', '/#/settings', 'dark'],
+  ['hell', '/#/p/Studium.md', 'light'],
 ]
 
 const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'ignore' })
@@ -28,7 +29,11 @@ try {
     await new Promise((r) => setTimeout(r, 200))
   }
   const browser = await chromium.launch()
-  const welcome = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 })
+  const welcome = await browser.newPage({
+    viewport: { width: 1440, height: 900 },
+    deviceScaleFactor: 2,
+    colorScheme: 'light',
+  })
   await welcome.goto(BASE + '/')
   await welcome.waitForTimeout(600)
   await welcome.screenshot({ path: `${OUT}willkommen.png` })

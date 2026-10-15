@@ -1,7 +1,7 @@
 # Changelog
 
 Alle Versionen mit Downloads: [GitHub Releases](https://github.com/flexi03/notiva/releases).
-Notiva prüft beim Start und alle 6 Stunden, ob es eine neue Version gibt, und installiert sie auf Wunsch selbst.
+Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und installiert sie auf Wunsch selbst.
 
 ## 0.1.0 – 2026-10-15
 
