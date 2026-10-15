@@ -17,6 +17,7 @@ import { ActivityBar } from './ActivityBar'
 import { AssistantPanel } from '@/components/ai/AssistantPanel'
 import { MoodleImportDialog } from '@/components/moodle/MoodleImport'
 import { SettingsPanel } from './SettingsPanel'
+import { TextContextMenu } from './TextContextMenu'
 import { TrashPanel } from './TrashPanel'
 import { NotificationPanel, openNotification } from '@/components/notifications/NotificationPanel'
 import { taskReminders, useNotifications } from '@/app/notifications'
@@ -210,6 +211,7 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
       <PeekHost />
       <PromptHost />
       <ToastHost />
+      <TextContextMenu />
       <ProgressHost />
     </div>
   )
