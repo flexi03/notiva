@@ -19,7 +19,7 @@ import { MoodleImportDialog } from '@/components/moodle/MoodleImport'
 import { SettingsPanel } from './SettingsPanel'
 import { TextContextMenu } from './TextContextMenu'
 import { EventBadge } from './EventBadge'
-import { TrashPanel } from './TrashPanel'
+import { ShelfPanel } from './ShelfPanel'
 import { NotificationPanel, openNotification } from '@/components/notifications/NotificationPanel'
 import { taskReminders, useNotifications } from '@/app/notifications'
 import type { Workspace } from '@/lib/workspace'
@@ -185,8 +185,8 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
               <NotificationPanel />
             ) : leftView === 'settings' ? (
               <SettingsPanel />
-            ) : leftView === 'trash' ? (
-              <TrashPanel />
+            ) : leftView === 'shelf' ? (
+              <ShelfPanel />
             ) : (
               <Sidebar />
             )}
@@ -203,7 +203,7 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
         {rightPanel === 'git' && <GitPanel />}
         {rightPanel === 'notifications' && <NotificationPanel />}
         {rightPanel === 'settings' && <SettingsPanel />}
-        {rightPanel === 'trash' && <TrashPanel />}
+        {rightPanel === 'shelf' && <ShelfPanel />}
       </ErrorBoundary>
       <ActivityBar side="right" />
       <DiffSheet />

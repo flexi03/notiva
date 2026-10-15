@@ -768,6 +768,15 @@ export class Workspace {
     })
   }
 
+  /** Deletes a non-Markdown file (pages go to the trash instead). */
+  removeFile(path: string): Promise<void> {
+    return this.run(async () => {
+      if (isMarkdown(path)) throw new Error(`Use trash() for pages: ${path}`)
+      await this.vault.remove(path)
+      await this.reload()
+    })
+  }
+
   writeFile(path: string, content: string | Uint8Array): Promise<void> {
     return this.run(async () => {
       await this.vault.write(path, content)

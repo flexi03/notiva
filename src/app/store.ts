@@ -70,10 +70,10 @@ interface AppState {
   dismissToast(): void
 }
 
-/** Side panels – and two places (trash, settings) that open as a screen. */
-export type ViewId = 'assistant' | 'git' | 'notifications' | 'trash' | 'settings'
+/** Side panels (movable between the left and right bar). */
+export type ViewId = 'assistant' | 'git' | 'notifications' | 'shelf' | 'settings'
 export type Side = 'left' | 'right'
-export const VIEWS: ViewId[] = ['assistant', 'git', 'notifications', 'trash', 'settings']
+export const VIEWS: ViewId[] = ['assistant', 'git', 'notifications', 'shelf', 'settings']
 /** No view opens as a screen any more – kept for views that might. */
 export const isPlace = (_view: ViewId): _view is never => false
 
@@ -82,7 +82,7 @@ const DEFAULT_SIDES: Record<ViewId, Side> = {
   assistant: 'left',
   git: 'left',
   notifications: 'right',
-  trash: 'right',
+  shelf: 'right',
   settings: 'right',
 }
 

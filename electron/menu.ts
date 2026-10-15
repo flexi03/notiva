@@ -93,7 +93,7 @@ export function buildMenu(getWindow: () => BrowserWindow | null): void {
         item('Studium', 'studyDashboard'),
         item('Noten & Leistungen', 'grades'),
         item('Moodle-Kurse', 'moodle'),
-        item('Papierkorb', 'trash'),
+        item('Ablage', 'shelf'),
       ],
     },
     {

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Bell, Files, GitBranch, Settings, Sparkles, Trash2 } from 'lucide-react'
+import { Bell, Files, GitBranch, Inbox, Settings, Sparkles } from 'lucide-react'
 import { unreadCount, useNotifications } from '@/app/notifications'
 import { useGit } from '@/app/git'
 import { SyncButton } from './SyncButton'
@@ -14,7 +14,7 @@ const DRAG_TYPE = 'application/x-notiva-view'
 export function viewInfo(view: ViewId): { label: string; icon: (size: number) => ReactNode } {
   if (view === 'assistant') return { label: t('ai.toggle'), icon: (size) => <Sparkles size={size} /> }
   if (view === 'notifications') return { label: t('notify.toggle'), icon: (size) => <Bell size={size} /> }
-  if (view === 'trash') return { label: t('nav.trash'), icon: (size) => <Trash2 size={size} /> }
+  if (view === 'shelf') return { label: t('shelf.title'), icon: (size) => <Inbox size={size} /> }
   if (view === 'settings') return { label: t('nav.settings'), icon: (size) => <Settings size={size} /> }
   return { label: t('git.toggle'), icon: (size) => <GitBranch size={size} /> }
 }
@@ -94,7 +94,7 @@ function ViewItem({ view, side }: { view: ViewId; side: Side }) {
   const active = useApp((s) =>
     isPlace(view)
       ? s.route.name === view
-      : (view === 'settings' || view === 'trash') && s.route.name === view
+      : view === 'settings' && s.route.name === view
         ? true
         : side === 'left'
           ? s.sidebarOpen && s.leftView === view

@@ -310,7 +310,12 @@ export function SettingsContent({ compact = false }: { compact?: boolean }) {
                   pages: ws.all().length,
                 })}
               </p>
-              <Button onClick={() => void exportVault(ws)}>{t('settings.exportAll')}</Button>
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={() => void exportVault(ws)}>{t('settings.exportAll')}</Button>
+                <Button variant="ghost" onClick={() => useApp.getState().navigate({ name: 'trash' })}>
+                  {t('settings.deletedPages')}
+                </Button>
+              </div>
               <p className="text-[13px] text-ink-3">{t('settings.about')}</p>
             </Section>
           </div>

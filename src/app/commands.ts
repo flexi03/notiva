@@ -23,6 +23,7 @@ export const COMMANDS = [
   'assistant',
   'git',
   'notifications',
+  'shelf',
   'trash',
   'templates',
   'studyDashboard',
@@ -76,8 +77,10 @@ export function runCommand(
       return app.toggleView('git')
     case 'notifications':
       return app.toggleView('notifications')
+    case 'shelf':
+      return app.toggleView('shelf')
     case 'trash':
-      return app.toggleView('trash')
+      return app.navigate({ name: 'trash' })
     case 'templates':
       return app.navigate({ name: 'templates' })
     case 'studyDashboard': {

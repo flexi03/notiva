@@ -11,7 +11,7 @@ import {
   Search,
   Settings,
   Star,
-  Trash2,
+  Inbox,
 } from 'lucide-react'
 import { moodleAvailable } from '@/app/moodle'
 import type { ReactNode } from 'react'
@@ -231,13 +231,12 @@ export function Sidebar() {
         )}
       </div>
 
-      {/* On wide screens trash and settings sit top right (activity bar). */}
+      {/* On wide screens shelf and settings sit top right (activity bar). */}
       <div className="space-y-px border-t border-line px-2 py-2 min-[900px]:hidden">
         <NavButton
-          icon={<Trash2 size={15} />}
-          label={t('nav.trash')}
-          active={route.name === 'trash'}
-          onClick={() => navigate({ name: 'trash' })}
+          icon={<Inbox size={15} />}
+          label={t('shelf.title')}
+          onClick={() => useApp.getState().openView('shelf')}
         />
         <NavButton
           icon={<Settings size={15} />}
