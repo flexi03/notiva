@@ -30,6 +30,7 @@ export const de = {
   'update.restarting': 'Notiva startet neu …',
   'update.none': 'Notiva {version} ist aktuell',
   'update.failed': 'Updates konnten nicht geprüft werden',
+  'semester.lab': 'Praktikum bearbeiten',
   'shelf.title': 'Ablage',
   'shelf.placeholder': 'Text ablegen …',
   'shelf.add': 'Ablegen',
@@ -697,6 +698,27 @@ export const de = {
   'study.synced': '{count} Änderungen im Studium übernommen',
   'study.sync': 'Studium aktualisieren …',
   'study.dialogTitle': 'Studium aktualisieren',
+  'uni.other': 'Andere Hochschule?',
+  'uni.other.study':
+    'Wähle „Eigener Studiengang / andere Hochschule“. Adressen für Moodle und eCampus stehen danach in Studium/Hochschule.md – selbst eintragen oder vom KI-Assistenten eintragen lassen.',
+  'uni.other.moodle':
+    'Jedes Moodle funktioniert: oben die Adresse eurer Moodle-Startseite eintragen. Meldet sich eure Hochschule anders an, hilft der KI-Assistent – oder ein Issue auf GitHub.',
+  'uni.other.ecampus':
+    'eCampus setzt HISinOne/QIS voraus. Für eure Hochschule die Adressen in Studium/Hochschule.md eintragen (oder vom KI-Assistenten), sonst ein Issue auf GitHub öffnen – dann wird sie fest eingebaut.',
+  'uni.openProfile': 'Hochschule.md öffnen',
+  'uni.askAi': 'KI-Assistent fragen',
+  'uni.aiDraft':
+    'Stelle Notiva auf meine Hochschule ein (Studium/Hochschule.md): Hochschule …, unser Moodle ist …, eCampus …',
+  'uni.issue': 'Issue auf GitHub',
+  'study.own': 'Eigener Studiengang / andere Hochschule',
+  'study.ownUniversity': 'Hochschule',
+  'study.ownProgram': 'Studiengang',
+  'study.ownEcts': 'ECTS-Ziel',
+  'study.createdPlain': 'Studium angelegt',
+  'study.noModulesYet': 'Studium angelegt – noch ohne Module',
+  'study.noModulesNote':
+    'Module kommen aus Moodle und eCampus (Einstellungen → Studium verbinden, dann abgleichen) – oder du legst sie unter „Module“ mit „+ Neu“ selbst an.',
+  'study.connect': 'Moodle & eCampus verbinden',
   'study.program': 'Studiengang und Prüfungsordnung',
   'study.start': 'Erstes Semester',
   'study.setupHint':

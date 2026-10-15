@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="Lizenz: MIT" src="https://img.shields.io/badge/Lizenz-MIT-2563eb"></a>
-  <img alt="Version 0.1.0" src="https://img.shields.io/badge/Version-0.1.0-16a34a">
+  <img alt="Version 0.1.1" src="https://img.shields.io/badge/Version-0.1.1-16a34a">
   <img alt="macOS, Windows, Linux, Browser" src="https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Browser-ffffff">
 </p>
 
@@ -24,9 +24,11 @@
 
 - [Worum geht es?](#worum-geht-es)
 - [Was Notiva kann](#was-notiva-kann)
+- [Praktika mit Editor und Terminal](#praktika-mit-editor-und-terminal)
 - [Kurz erklärt: die wichtigsten Begriffe](#kurz-erklärt-die-wichtigsten-begriffe)
 - [Installieren und starten](#installieren-und-starten)
 - [Studium einrichten in 5 Schritten](#studium-einrichten-in-5-schritten)
+- [Andere Hochschule?](#andere-hochschule)
 - [Ohne eigene Daten ausprobieren](#ohne-eigene-daten-ausprobieren)
 - [Wie die Dateien aussehen](#wie-die-dateien-aussehen)
 - [Deine Daten](#deine-daten)
@@ -86,6 +88,26 @@ ein ([docs/HOCHSCHULE.md](docs/HOCHSCHULE.md)).
 - 🌿 **Git eingebaut**: Änderungen, Diff, Commit, Verlauf, Push/Pull.
 - 🔔 **Benachrichtigungen** für neue Unterlagen, Fristen, Noten und Ausfälle.
 
+## Praktika mit Editor und Terminal
+
+<p align="center">
+  <img src="docs/images/praktikum.png" alt="Praktikum in Notiva: Python-Datei im Editor, darunter das Terminal mit der Ausgabe" width="900">
+</p>
+
+Praktikumsaufgaben bearbeitest du direkt neben deinen Notizen – ohne zwischen Editor, Terminal, Moodle und PDF zu
+wechseln:
+
+- **Ein Klick:** In _Mein Semester_ hat jedes Modul mit Praktikum oder Übung den Knopf **„Praktikum bearbeiten“**.
+  Notiva legt einen Code-Ordner zum Modul an (mit `.gitignore`) und öffnet ihn.
+- **Editor und Terminal:** Dateien (Python, Java, SQL, JS, HTML, …) mit Syntaxhervorhebung bearbeiten, darunter ein
+  echtes Terminal im Ordner – auch zwei nebeneinander. Verläufe bleiben erhalten.
+- **Aufgabe daneben:** das Aufgabenblatt als PDF mit Terminal darunter, Moodle-Seiten und Links des Kurses als
+  Webseite neben dem Terminal.
+- **Git eingebaut:** Änderungen ansehen, committen, pushen – mit Fortschrittsanzeige.
+- **KI dazu:** Der Assistent sieht auf Wunsch die offene Datei oder PDF-Seite (Claude Code, Codex, Ollama, …).
+
+Terminal und Editor gibt es in der Desktop-App.
+
 ## Kurz erklärt: die wichtigsten Begriffe
 
 | Begriff         | Bedeutung                                                                                                  |
@@ -126,16 +148,31 @@ Als Web-App aufs Handy: Seite im Browser öffnen → „Zum Home-Bildschirm“.
 ## Studium einrichten in 5 Schritten
 
 1. **Ordner wählen.** Beim ersten Start „Ordner wählen“ und einen leeren Ordner anlegen, z. B. `Studium`.
-2. **Studien-Ordner anlegen.** _Vorlagen → Studien-Dashboard → Verwenden_. Studiengang, ECTS-Ziel und Vorlesungszeit
-   eintragen. Notiva legt Module, Semester, Prüfungen, Aufgaben und Stundenplan an.
+2. **Studium anlegen.** Unten links „Studium einrichten → Einrichten“ → „Studium anlegen“ (oder _Einstellungen → Studium_).
+   Studiengang und erstes Semester wählen – oder **„Eigener Studiengang / andere Hochschule“** mit Name und ECTS-Ziel.
+   Notiva legt Dashboard, Semester, Prüfungen, Aufgaben und Stundenplan an.
 3. **Hochschule prüfen.** `Studium/Hochschule.md` öffnen. Für die HSD passt alles; für eine andere Hochschule die
-   Adressen ändern ([Anleitung](docs/HOCHSCHULE.md), Vorlage in [examples/](examples/)).
+   Adressen eintragen ([Anleitung](docs/HOCHSCHULE.md), Vorlage in [examples/](examples/)) – oder den KI-Assistenten
+   bitten.
 4. **Moodle und eCampus verbinden** (Desktop-App). _Einstellungen → Studium_. Die Anmeldung läuft im Fenster deiner
    Hochschule; Notiva speichert kein Passwort.
-5. **Synchronisieren.** In der Werkzeugleiste auf das Sync-Symbol → „Jetzt alles synchronisieren“. Danach prüft
-   Notiva im Hintergrund selbst und meldet Neues.
+5. **Synchronisieren.** In der Werkzeugleiste auf das Sync-Symbol → „Jetzt alles synchronisieren“. Jetzt kommen die
+   **Module** dazu – mit Status, Versuchen und Noten. Danach prüft Notiva im Hintergrund selbst und meldet Neues.
+
+**Ohne Moodle oder eCampus?** Dann bleibt _Module_ zunächst leer – leg deine Fächer dort mit „+ Neu“ an (Name, ECTS,
+Fachsemester, _Belegung_) oder trag sie als Liste in `Hochschule.md` ein. Die Seite _Module_ erklärt beide Wege.
 
 Ausführlich, mit KI, Git, Tastenkürzeln und MCP: [docs/ANLEITUNG.md](docs/ANLEITUNG.md).
+
+## Andere Hochschule?
+
+Notiva ist auf die Hochschule Düsseldorf voreingestellt, funktioniert aber auch anderswo:
+
+- **Moodle** läuft mit jeder Moodle-Adresse (_Einstellungen → Studium → Moodle_).
+- **Noten und Prüfungen** kommen aus HISinOne/QIS-Portalen; die Adressen stehen in `Studium/Hochschule.md`.
+- **Der KI-Assistent** kann die Seite für dich ausfüllen: „Stelle Notiva auf die Uni X ein, unser Moodle ist …“.
+- **Klappt etwas nicht?** [Issue auf GitHub öffnen](https://github.com/flexi03/notiva/issues/new?template=hochschule.md)
+  (Vorlage „Hochschule“) – dann wird deine Hochschule fest eingebaut. Bitte keine Passwörter oder Noten posten.
 
 ## Ohne eigene Daten ausprobieren
 
@@ -185,7 +222,7 @@ CSV; die übernimmt Notiva noch nicht automatisch.
 
 **Funktioniert das an meiner Hochschule?**
 Moodle läuft überall. eCampus-Noten setzen HISinOne voraus. Adressen, Prüfungsplan und Studiengang stellst du in
-`Studium/Hochschule.md` ein ([docs/HOCHSCHULE.md](docs/HOCHSCHULE.md)).
+`Studium/Hochschule.md` ein ([docs/HOCHSCHULE.md](docs/HOCHSCHULE.md)) – siehe [Andere Hochschule?](#andere-hochschule).
 
 **Warum zeigt macOS keine Mitteilungen?**
 Die App ist nicht signiert. Notiva nutzt dann eine kleine Hilfs-App „Notiva“. Erlauben unter

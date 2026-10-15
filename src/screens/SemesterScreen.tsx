@@ -1,4 +1,5 @@
-import { BookOpen, Code2, FileText, NotebookPen, Sparkles } from 'lucide-react'
+import { BookOpen, Code2, FileText, NotebookPen, Sparkles, SquareTerminal } from 'lucide-react'
+import { createCodeFolder } from '@/components/code/CodeFolder'
 import { useState } from 'react'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { getLanguage, t } from '@/i18n'
@@ -114,6 +115,22 @@ export function SemesterScreen() {
                   ))}
                   {typeof m.module.data.Status === 'string' && (
                     <span className="text-[12.5px] text-ink-3">{m.module.data.Status}</span>
+                  )}
+                  {/* Labs: one click to the module's code folder – editor, terminal, task links. */}
+                  {(m.code.length > 0 || m.belegung.some((b) => b === 'Praktikum' || b === 'Übung')) && (
+                    <Button
+                      size="sm"
+                      className="ml-auto"
+                      icon={<SquareTerminal size={14} />}
+                      onClick={async () =>
+                        navigate({
+                          name: 'page',
+                          path: m.code[0]?.path ?? (await createCodeFolder(ws, m.module.path, 'Praktikum')),
+                        })
+                      }
+                    >
+                      {t('semester.lab')}
+                    </Button>
                   )}
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">

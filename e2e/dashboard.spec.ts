@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { openDemo, pageErrors, pageTitle, peek, peekTitle } from './helpers'
+import { go, openDemo, pageErrors, pageTitle, peek, peekTitle } from './helpers'
 
 test.describe('Studien-Dashboard', () => {
   test.beforeEach(async ({ page }) => openDemo(page))
@@ -49,5 +49,20 @@ test.describe('Studien-Dashboard', () => {
     await peek(page).getByRole('button', { name: 'Schließen' }).click()
     await expect(page.getByRole('region', { name: 'Notenschnitt' })).toContainText('1,66')
     await expect(page.getByRole('region', { name: 'ECTS' })).toContainText('24')
+  })
+
+  test('Mein Semester: „Praktikum bearbeiten“ legt den Code-Ordner des Moduls an', async ({ page }) => {
+    await go(page, '/#/semester')
+    const dbs = page.getByRole('region', { name: 'Datenbanken' })
+    await dbs.getByRole('button', { name: 'Praktikum bearbeiten' }).click()
+    await expect(await pageTitle(page)).toHaveValue('Praktikum')
+    // Second time: the same folder opens again.
+    await go(page, '/#/semester')
+    await expect(page.getByRole('region', { name: 'Datenbanken' })).toContainText('Praktikum')
+    await page
+      .getByRole('region', { name: 'Datenbanken' })
+      .getByRole('button', { name: 'Praktikum bearbeiten' })
+      .click()
+    await expect(await pageTitle(page)).toHaveValue('Praktikum')
   })
 })

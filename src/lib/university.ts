@@ -13,9 +13,25 @@ export interface UniversityProfile {
   moodle: { site: string }
   ecampus: { startUrl: string; examsUrl: string; ssoUrl?: string }
   examPlans?: { page: string; programCode?: string }
-  /** Built-in program (catalogue id) – or an own one (modules below). */
+  /** Built-in program (catalogue id) – or an own one (modules below, or "eigen" without a list). */
   program?: string
   modules?: CatalogModule[]
+  /** Own program without a catalogue: its name and ECTS goal. */
+  programTitle?: string
+  ects?: number
+}
+
+/** Where to report a university Notiva can't talk to yet. */
+export const ISSUES_URL = 'https://github.com/flexi03/notiva/issues/new?template=hochschule.md'
+/** The id of an own program (no built-in catalogue). */
+export const OWN_PROGRAM = 'eigen'
+
+/** Start for another university: no addresses (filled in later or by the assistant). */
+export const EMPTY_PROFILE: UniversityProfile = {
+  name: 'Meine Hochschule',
+  moodle: { site: '' },
+  ecampus: { startUrl: '', examsUrl: '' },
+  program: OWN_PROGRAM,
 }
 
 export const HSD_PROFILE: UniversityProfile = {
@@ -78,7 +94,8 @@ function parseModules(raw: unknown): CatalogModule[] | undefined {
 export function parseUniversityProfile(data: FrontmatterData | undefined): UniversityProfile {
   const raw = data?.hochschule
   if (!isObject(raw)) return HSD_PROFILE
-  const base = HSD_PROFILE
+  // "vorlage: keine" – another university: nothing from the HSD as fallback.
+  const base = raw.vorlage === 'keine' || raw.template === 'none' ? EMPTY_PROFILE : HSD_PROFILE
   const moodle = isObject(raw.moodle) ? raw.moodle : {}
   const ecampus = isObject(raw.ecampus) ? raw.ecampus : {}
   const plans = isObject(raw.pruefungsplan) ? raw.pruefungsplan : isObject(raw.examPlans) ? raw.examPlans : {}
@@ -101,6 +118,10 @@ export function parseUniversityProfile(data: FrontmatterData | undefined): Unive
         ? { program: base.program }
         : {}),
     ...(modules ? { modules } : {}),
+    ...(str(raw.studiengangName ?? raw.programTitle)
+      ? { programTitle: str(raw.studiengangName ?? raw.programTitle)! }
+      : {}),
+    ...(Number(raw.ectsZiel ?? raw.ects) > 0 ? { ects: Number(raw.ectsZiel ?? raw.ects) } : {}),
   }
 }
 
@@ -110,6 +131,21 @@ export function programFor(
   setupProgram: string | undefined,
 ): StudyProgram | undefined {
   const builtIn = programById(setupProgram ?? profile.program)
+  // Own program without a module list: modules come from Moodle/eCampus or are added by hand.
+  if (!profile.modules && !builtIn && (setupProgram ?? profile.program) === OWN_PROGRAM)
+    return {
+      id: OWN_PROGRAM,
+      code: 'M',
+      title: profile.programTitle ?? 'Eigener Studiengang',
+      degree: '',
+      university: profile.name,
+      po: '',
+      ...(profile.examPlans?.programCode ? { planCode: profile.examPlans.programCode } : {}),
+      semesters: 6,
+      ects: profile.ects ?? 180,
+      modules: [],
+      sources: { ...(profile.examPlans ? { examPlans: profile.examPlans.page } : {}) },
+    }
   if (!profile.modules) return builtIn
   const semesters = Math.max(6, ...profile.modules.map((m) => m.semester ?? 0))
   return {
@@ -157,8 +193,44 @@ eingestellt. An einer anderen Hochschule trägst du oben ihre Adressen ein – o
     - { nr: INF 01, name: Programmieren 1, ects: 5, semester: 1, offered: WiSe, exam: Klausur, prerequisite: Praktikum }
 \`\`\`
 
-Mehr dazu: docs/HOCHSCHULE.md im Notiva-Projekt.
+Mehr dazu: docs/HOCHSCHULE.md im Notiva-Projekt. Klappt etwas nicht? Issue auf GitHub: ${ISSUES_URL}
 `
+
+/** Profile page for another university: name and program, addresses still empty. */
+export function ownProfilePage(university: string, program: string, ects: number): string {
+  const q = (s: string) => JSON.stringify(s)
+  return `---
+icon: 🏫
+hochschule:
+  name: ${q(university)}
+  vorlage: keine
+  moodle:
+    adresse: ""
+  ecampus:
+    startseite: ""
+    pruefungen: ""
+    anmeldung: ""
+  studiengang: eigen
+  studiengangName: ${q(program)}
+  ectsZiel: ${ects}
+---
+Hier stellst du Notiva auf **${university.replace(/[*_`[\]]/g, '')}** ein. Noch sind keine Adressen eingetragen.
+
+1. **Moodle:** oben unter \`moodle.adresse\` die Startseite eures Moodle eintragen (z. B. \`https://moodle.uni-x.de\`) –
+   oder in den Einstellungen unter _Studium → Moodle_ verbinden.
+2. **eCampus/HISinOne** (Noten, Prüfungen): Startseite, Seite der Prüfungsverwaltung und Anmelde-Link eintragen.
+3. **Module:** kommen beim Abgleich aus Moodle/eCampus – oder als eigene Liste unter \`module:\` (siehe unten), oder
+   du legst sie in _Module_ mit „+ Neu“ an.
+
+**Einfacher:** den KI-Assistenten bitten – „Stelle Notiva auf ${university.replace(/[*_`[\]"]/g, '')} ein, unser Moodle ist …“.
+**Klappt etwas nicht?** Ein Issue auf GitHub hilft, die Hochschule fest einzubauen: ${ISSUES_URL}
+
+\`\`\`yaml
+  module:
+    - { nr: INF 01, name: Programmieren 1, ects: 5, semester: 1, offered: WiSe, exam: Klausur, prerequisite: Praktikum }
+\`\`\`
+`
+}
 
 export function profileFromPage(text: string): UniversityProfile {
   const m = /^---\n([\s\S]*?)\n---/.exec(text)

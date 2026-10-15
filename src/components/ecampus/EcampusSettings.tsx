@@ -1,3 +1,4 @@
+import { OtherUniversity } from '@/components/study/OtherUniversity'
 import { useEffect, useState } from 'react'
 import { ecampusAvailable, useEcampus } from '@/app/ecampus'
 import { useApp } from '@/app/store'
@@ -13,7 +14,8 @@ export function EcampusSection() {
   const profile = currentProfile(useApp((s) => s.ws))
   const [startUrl, setStartUrl] = useState(profile.ecampus.startUrl)
   const [examsUrl, setExamsUrl] = useState(profile.ecampus.examsUrl)
-  const [advanced, setAdvanced] = useState(false)
+  // Another university without addresses yet: show the fields right away.
+  const [advanced, setAdvanced] = useState(!profile.ecampus.startUrl)
   const desktop = ecampusAvailable()
 
   useEffect(() => {
@@ -99,6 +101,7 @@ export function EcampusSection() {
           {error}
         </p>
       )}
+      <OtherUniversity what="ecampus" />
     </>
   )
 }

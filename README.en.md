@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-2563eb"></a>
-  <img alt="Version 0.1.0" src="https://img.shields.io/badge/Version-0.1.0-16a34a">
+  <img alt="Version 0.1.1" src="https://img.shields.io/badge/Version-0.1.1-16a34a">
   <img alt="macOS, Windows, Linux, browser" src="https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Browser-ffffff">
 </p>
 
@@ -26,9 +26,11 @@
 
 - [What is it about?](#what-is-it-about)
 - [What Notiva does](#what-notiva-does)
+- [Labs with editor and terminal](#labs-with-editor-and-terminal)
 - [Key terms](#key-terms)
 - [Install and run](#install-and-run)
 - [Set up your studies in 5 steps](#set-up-your-studies-in-5-steps)
+- [Another university?](#another-university)
 - [Try it without your own data](#try-it-without-your-own-data)
 - [What the files look like](#what-the-files-look-like)
 - [Your data](#your-data)
@@ -87,6 +89,25 @@ from eCampus (HISinOne) and the faculty's exam schedule. From that it builds mod
 - 🌿 **Built-in Git**: changes, diff, commit, history, push/pull.
 - 🔔 **Notifications** for new materials, deadlines, grades and cancelled lectures.
 
+## Labs with editor and terminal
+
+<p align="center">
+  <img src="docs/images/praktikum.png" alt="A lab in Notiva: Python file in the editor, the terminal with its output below" width="900">
+</p>
+
+Work on lab assignments right next to your notes – no switching between editor, terminal, Moodle and PDF:
+
+- **One click:** in _My semester_ every module with a lab or exercise has a **"Work on the lab"** button. Notiva
+  creates a code folder for the module (with `.gitignore`) and opens it.
+- **Editor and terminal:** edit files (Python, Java, SQL, JS, HTML, …) with syntax highlighting, a real terminal in
+  the folder below – two side by side if you like. History is kept.
+- **Assignment beside it:** the assignment PDF with a terminal below, the course's Moodle pages and links as a web
+  page next to the terminal.
+- **Built-in Git:** see changes, commit, push – with progress.
+- **AI on top:** the assistant can see the open file or PDF page (Claude Code, Codex, Ollama, …).
+
+Terminal and editor are part of the desktop app.
+
 ## Key terms
 
 | Term         | Meaning                                                                                             |
@@ -129,16 +150,30 @@ On your phone: open the web app in the browser → "Add to Home Screen".
 ## Set up your studies in 5 steps
 
 1. **Choose a folder.** On first start pick "Choose a folder" and create an empty one, e.g. `Studies`.
-2. **Create the study folder.** _Templates → Studien-Dashboard → Use_. Enter programme, ECTS goal and lecture period.
-   Notiva creates modules, semesters, exams, tasks and a timetable.
-3. **Check your university.** Open `Studium/Hochschule.md`. For HSD everything fits; for another university change the
-   addresses ([guide](docs/HOCHSCHULE.md), template in [examples/](examples/)).
+2. **Create your studies.** Bottom left "Set up your studies → Set up" → "Create studies" (or _Settings → Studies_).
+   Pick programme and first semester – or **"Own programme / other university"** with name and ECTS goal. Notiva
+   creates dashboard, semesters, exams, tasks and a timetable.
+3. **Check your university.** Open `Studium/Hochschule.md` – see [Another university?](#another-university). For HSD everything fits; for another university enter the
+   addresses ([guide](docs/HOCHSCHULE.md), template in [examples/](examples/)) – or ask the AI assistant.
 4. **Connect Moodle and eCampus** (desktop app). _Settings → Studies_. You sign in on your university's own page;
    Notiva never stores a password.
-5. **Sync.** Click the sync icon in the tool bar → "Sync everything now". From then on Notiva checks in the background
-   and tells you what is new.
+5. **Sync.** Click the sync icon in the tool bar → "Sync everything now". Now the **modules** arrive – with status,
+   attempts and grades. From then on Notiva checks in the background and tells you what is new.
+
+**No Moodle or eCampus?** Then _Module_ stays empty at first – add your courses there with "+ New" (name, ECTS,
+semester, _Belegung_) or list them in `Hochschule.md`. The _Module_ page explains both.
 
 In depth – AI, Git, shortcuts, MCP: [docs/GUIDE.en.md](docs/GUIDE.en.md).
+
+## Another university?
+
+Notiva is set up for Hochschule Düsseldorf but works elsewhere too:
+
+- **Moodle** works with any Moodle address (_Settings → Studies → Moodle_).
+- **Grades and exams** come from HISinOne/QIS portals; their addresses live in `Studium/Hochschule.md`.
+- **The AI assistant** can fill that page in: "Set Notiva up for University X, our Moodle is …".
+- **Something doesn't work?** [Open an issue on GitHub](https://github.com/flexi03/notiva/issues/new?template=hochschule.md)
+  (template "Hochschule") so your university gets built in. Please don't post passwords or grades.
 
 ## Try it without your own data
 

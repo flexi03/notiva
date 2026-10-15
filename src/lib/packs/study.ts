@@ -39,6 +39,11 @@ ${MODULE_ROW_TEMPLATE.split('\n')
   .join('\n')}
 ---
 Alle Module deines Studiums nach Prüfungsordnung. Oben umschalten: **Dieses Semester**, **Nächstes Semester**, **Studienverlauf** (nach Fachsemester) oder **Offen** (was noch fehlt). Jede Modulseite sammelt Moodle-Kurs, Unterlagen, Mitschriften, Prüfungen und Aufgaben des Moduls.
+
+> [!tip] Wie kommen die Module hierher?
+> - **Importieren:** _Einstellungen → Studium_ – Moodle und eCampus verbinden, dann „Jetzt alles synchronisieren“. Notiva legt die Module deiner Prüfungsordnung an und trägt Status, Versuche und Noten ein.
+> - **Selbst anlegen:** unten „+ Neu“ – Name, ECTS, Fachsemester. Setz die _Belegung_ (Vorlesung, Praktikum, …), dann erscheint das Modul in _Mein Semester_.
+> - **Eigene Liste:** in _Hochschule.md_ unter \`module:\` – oder den KI-Assistenten bitten, sie aus dem Modulhandbuch zu übernehmen.
 `
 
 const EXAMS = `---

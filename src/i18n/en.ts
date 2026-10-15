@@ -30,6 +30,7 @@ export const en: Record<MessageKey, string> = {
   'update.restarting': 'Notiva is restarting …',
   'update.none': 'Notiva {version} is up to date',
   'update.failed': 'Could not check for updates',
+  'semester.lab': 'Work on the lab',
   'shelf.title': 'Shelf',
   'shelf.placeholder': 'Put text aside …',
   'shelf.add': 'Add',
@@ -692,6 +693,27 @@ export const en: Record<MessageKey, string> = {
   'study.synced': '{count} changes applied to your studies',
   'study.sync': 'Update studies …',
   'study.dialogTitle': 'Update studies',
+  'uni.other': 'Another university?',
+  'uni.other.study':
+    'Choose “Own programme / other university”. Moodle and eCampus addresses then live in Studium/Hochschule.md – fill them in yourself or let the AI assistant do it.',
+  'uni.other.moodle':
+    'Any Moodle works: enter the address of your Moodle start page above. If your university signs in differently, the AI assistant helps – or open an issue on GitHub.',
+  'uni.other.ecampus':
+    'eCampus needs HISinOne/QIS. Enter your university’s addresses in Studium/Hochschule.md (or let the AI assistant do it), otherwise open an issue on GitHub so it gets built in.',
+  'uni.openProfile': 'Open Hochschule.md',
+  'uni.askAi': 'Ask the AI assistant',
+  'uni.aiDraft':
+    'Set Notiva up for my university (Studium/Hochschule.md): university …, our Moodle is …, eCampus …',
+  'uni.issue': 'Issue on GitHub',
+  'study.own': 'Own programme / other university',
+  'study.ownUniversity': 'University',
+  'study.ownProgram': 'Programme',
+  'study.ownEcts': 'ECTS goal',
+  'study.createdPlain': 'Study folder created',
+  'study.noModulesYet': 'Study folder created – no modules yet',
+  'study.noModulesNote':
+    'Modules come from Moodle and eCampus (Settings → Studies, connect, then sync) – or add them yourself under “Module” with “+ New”.',
+  'study.connect': 'Connect Moodle & eCampus',
   'study.program': 'Degree and regulations',
   'study.start': 'First semester',
   'study.setupHint':

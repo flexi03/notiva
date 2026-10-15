@@ -1,3 +1,4 @@
+import { OtherUniversity } from '@/components/study/OtherUniversity'
 import { currentProfile } from '@/app/university'
 import { useEffect, useState } from 'react'
 import { ipcMessage, moodleAvailable, useMoodle } from '@/app/moodle'
@@ -175,6 +176,7 @@ export function MoodleSection() {
             ? t('moodle.openLogin')
             : t('moodle.connect')}
       </Button>
+      <OtherUniversity what="moodle" />
     </form>
   )
 }

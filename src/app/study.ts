@@ -6,7 +6,7 @@ import { t } from '@/i18n'
 import { moduleResults, type ExamSnapshot } from '@/lib/ecampus'
 import type { MoodleSnapshot } from '@/lib/moodle'
 import { programById } from '@/lib/study/catalog'
-import { programFor, PROFILE_PAGE } from '@/lib/university'
+import { ownProfilePage, OWN_PROGRAM, programFor, PROFILE_PAGE } from '@/lib/university'
 import { currentProfile } from '@/app/university'
 import { studyState, type StudyState } from '@/lib/study/state'
 import {
@@ -172,23 +172,42 @@ export async function setupHint(ws: Workspace): Promise<void> {
  * A new, empty study folder: structure of the study template (no sample data), degree and first
  * semester, Git (desktop), then everything that eCampus and Moodle already know.
  */
+/** Another university / own program: what the user typed when creating the study folder. */
+export interface OwnStudy {
+  university: string
+  program: string
+  ects: number
+}
+
+/**
+ * Creates the study folder. Modules are not made up front: they come with the first sync from
+ * Moodle/eCampus (only when one is connected) or are added by hand – the Module page explains how.
+ */
 export async function createStudyFolder(
   ws: Workspace,
   setup: StudySetup,
   folder = 'Studium',
-): Promise<string> {
-  const program = programById(setup.program)
+  own?: OwnStudy,
+): Promise<{ dashboard: string; imported: boolean }> {
+  const program = setup.program === OWN_PROGRAM ? undefined : programById(setup.program)
   const current = termRange(termOf(new Date()))
   const { files } = expandPack(studyPack, '', {
     name: folder,
-    studiengang: program ? `${program.title} (${program.degree})` : 'mein Studium',
-    ectsZiel: program?.ects ?? 180,
+    studiengang: program ? `${program.title} (${program.degree})` : own?.program || 'mein Studium',
+    ectsZiel: program?.ects ?? own?.ects ?? 180,
     semesterStart: current.start,
     semesterEnd: current.end,
   })
   const sample = new RegExp(`^${folder}/(Semester|Module|Prüfungen|Aufgaben|Stundenplan|Mitschriften)/`)
-  await ws.createFiles(files.filter((f) => !sample.test(f.path)))
-  if (!ws.get(`${folder}/Hochschule.md`)) await ws.writeFile(`${folder}/Hochschule.md`, PROFILE_PAGE)
+  // Another university: its own profile page instead of the pack's HSD one.
+  await ws.createFiles(
+    files.filter((f) => !sample.test(f.path) && !(own && f.path === `${folder}/Hochschule.md`)),
+  )
+  if (!ws.get(`${folder}/Hochschule.md`))
+    await ws.writeFile(
+      `${folder}/Hochschule.md`,
+      own ? ownProfilePage(own.university, own.program, own.ects) : PROFILE_PAGE,
+    )
   await ws.reload()
   const dashboard = `${folder}.md`
   await ws.save(dashboard, { data: { ...ws.get(dashboard)!.data, ...setupData(setup) } })
@@ -197,10 +216,13 @@ export async function createStudyFolder(
     const state = await git.state().catch(() => null)
     if (state && !state.isRepo) await git.init().catch(() => undefined)
   }
-  const preview = previewStudy(ws, await studySources())
-  if (preview.ok) {
+  // Only with data from Moodle or eCampus – without, the modules would be guesses.
+  const sources = await studySources()
+  const connected = Boolean(sources.moodle?.courses.length || sources.exams?.records.length)
+  const preview = connected ? previewStudy(ws, sources) : null
+  if (preview?.ok) {
     await preview.plan.apply()
     await syncTimetable(ws).catch(() => undefined)
   }
-  return dashboard
+  return { dashboard, imported: Boolean(preview?.ok) }
 }

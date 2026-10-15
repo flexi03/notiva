@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { syncTimetable } from '@/app/schedule'
 import { createStudyFolder, previewStudy, setupHint, studySources, type StudySources } from '@/app/study'
-import { withProgress } from '@/app/progress'
+import { announce, withProgress } from '@/app/progress'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import { PROGRAMS } from '@/lib/study/catalog'
 import { setupData, type StudyChange, type StudySetup } from '@/lib/study/sync'
 import { addTerms, termLabel, termOf } from '@/lib/study/terms'
-import { Button, Dialog, Field, Select } from '@/components/ui'
+import { OWN_PROGRAM } from '@/lib/university'
+import { Button, Dialog, Field, Select, TextInput } from '@/components/ui'
+import { OtherUniversity } from './OtherUniversity'
 
 /**
  * "Studium aktualisieren": program and first semester (once), then a preview of what changes in the
@@ -19,6 +21,10 @@ export function StudySyncDialog({ onClose }: { onClose: () => void }) {
   const navigate = useApp((s) => s.navigate)
   const [sources, setSources] = useState<StudySources | null>(null)
   const [setup, setSetup] = useState<StudySetup | null>(null)
+  // Another university / own program (only when creating the folder).
+  const [ownUniversity, setOwnUniversity] = useState('')
+  const [ownProgram, setOwnProgram] = useState('')
+  const [ownEcts, setOwnEcts] = useState('180')
   useEffect(() => {
     void studySources().then(setSources)
   }, [])
@@ -33,6 +39,8 @@ export function StudySyncDialog({ onClose }: { onClose: () => void }) {
     setSetup({ program: chosen?.program ?? PROGRAMS[0]!.id, start: chosen?.start ?? terms[4]!, ...patch })
 
   const changes = preview?.ok ? preview.plan.changes : []
+  const creating = Boolean(preview && !preview.ok && preview.reason === 'noFolder')
+  const own = chosen?.program === OWN_PROGRAM
   const groups = (['schema', 'module', 'semester', 'course'] as const)
     .map((what) => ({ what, items: changes.filter((c) => c.what === what) }))
     .filter((g) => g.items.length)
@@ -57,6 +65,7 @@ export function StudySyncDialog({ onClose }: { onClose: () => void }) {
                     {`${p.title} (${p.degree}) · ${p.university} · PO ${p.po}`}
                   </option>
                 ))}
+                <option value={OWN_PROGRAM}>{t('study.own')}</option>
               </Select>
             </Field>
             <Field label={t('study.start')}>
@@ -74,6 +83,24 @@ export function StudySyncDialog({ onClose }: { onClose: () => void }) {
               </Select>
             </Field>
           </div>
+          {creating && own && (
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Field label={t('study.ownUniversity')}>
+                <TextInput value={ownUniversity} onChange={(e) => setOwnUniversity(e.target.value)} />
+              </Field>
+              <Field label={t('study.ownProgram')}>
+                <TextInput value={ownProgram} onChange={(e) => setOwnProgram(e.target.value)} />
+              </Field>
+              <Field label={t('study.ownEcts')}>
+                <TextInput
+                  value={ownEcts}
+                  inputMode="numeric"
+                  onChange={(e) => setOwnEcts(e.target.value.replace(/\D/g, ''))}
+                />
+              </Field>
+            </div>
+          )}
+          {creating && <OtherUniversity what="study" />}
           {preview.ok && (
             <>
               <p className="text-sm font-medium">
@@ -121,15 +148,33 @@ export function StudySyncDialog({ onClose }: { onClose: () => void }) {
         {preview && !preview.ok && preview.reason === 'noFolder' && (
           <Button
             variant="primary"
-            disabled={!chosen}
+            disabled={!chosen || (own && (!ownUniversity.trim() || !ownProgram.trim()))}
             onClick={() => {
               onClose()
+              const ownStudy = own
+                ? {
+                    university: ownUniversity.trim(),
+                    program: ownProgram.trim(),
+                    ects: Number(ownEcts) || 180,
+                  }
+                : undefined
               void run(() =>
-                withProgress(t('study.creating'), () => createStudyFolder(ws, chosen!), {
-                  success: () => t('study.created'),
-                }).then((path) => {
-                  navigate({ name: 'page', path })
-                  void setupHint(ws)
+                withProgress(t('study.creating'), () => createStudyFolder(ws, chosen!, 'Studium', ownStudy), {
+                  success: ({ imported }) => (imported ? t('study.created') : t('study.createdPlain')),
+                }).then(({ dashboard, imported }) => {
+                  navigate({ name: 'page', path: dashboard })
+                  if (imported) return void setupHint(ws)
+                  // No Moodle/eCampus yet: how the modules get in.
+                  announce(t('study.noModulesYet'), {
+                    state: 'info',
+                    sticky: true,
+                    key: 'setup',
+                    note: t('study.noModulesNote'),
+                    action: {
+                      label: t('study.connect'),
+                      run: () => navigate({ name: 'settings', section: 'study' }),
+                    },
+                  })
                 }),
               )
             }}
