@@ -7,6 +7,11 @@ import { Button, EmptyState } from '@/components/ui'
 import { Topbar } from '@/components/layout/Topbar'
 
 export function TrashScreen() {
+  return <TrashContent />
+}
+
+/** The trash – full screen or compact in a side panel. */
+export function TrashContent({ compact = false }: { compact?: boolean }) {
   const ws = useWorkspace()
   const run = useAction()
   const { openPage, ask } = useApp()
@@ -16,9 +21,9 @@ export function TrashScreen() {
 
   return (
     <>
-      <Topbar title={t('trash.title')} />
+      {!compact && <Topbar title={t('trash.title')} />}
       <div className="mx-auto max-w-[var(--content-width)] px-4 py-10 sm:px-10">
-        <h1 className="mb-6 text-[2rem] font-bold">{t('trash.title')}</h1>
+        {!compact && <h1 className="mb-6 text-[2rem] font-bold">{t('trash.title')}</h1>}
         {entries && entries.length === 0 && (
           <EmptyState icon={<Trash2 size={28} />} title={t('trash.empty')} />
         )}

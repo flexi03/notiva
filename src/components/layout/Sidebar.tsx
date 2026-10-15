@@ -1,5 +1,6 @@
 import {
   Award,
+  BookOpenCheck,
   CalendarDays,
   Code2,
   FileText,
@@ -15,6 +16,7 @@ import {
 import { moodleAvailable } from '@/app/moodle'
 import type { ReactNode } from 'react'
 import { useRecent } from '@/app/recent'
+import { findStudyDashboard } from '@/lib/study/sync'
 import { useApp, useWorkspace } from '@/app/store'
 import { usePageActions } from '@/app/hooks/usePageActions'
 import { forgetVault } from '@/app/vaults'
@@ -128,6 +130,14 @@ export function Sidebar() {
             label={t('nav.moodle')}
             active={route.name === 'moodle'}
             onClick={() => navigate({ name: 'moodle' })}
+          />
+        )}
+        {findStudyDashboard(ws) && (
+          <NavButton
+            icon={<BookOpenCheck size={15} />}
+            label={t('nav.semester')}
+            active={route.name === 'semester'}
+            onClick={() => navigate({ name: 'semester' })}
           />
         )}
         {moodleAvailable() && (

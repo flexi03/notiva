@@ -17,6 +17,7 @@ import { ActivityBar } from './ActivityBar'
 import { AssistantPanel } from '@/components/ai/AssistantPanel'
 import { MoodleImportDialog } from '@/components/moodle/MoodleImport'
 import { SettingsPanel } from './SettingsPanel'
+import { TrashPanel } from './TrashPanel'
 import { NotificationPanel, openNotification } from '@/components/notifications/NotificationPanel'
 import { taskReminders, useNotifications } from '@/app/notifications'
 import type { Workspace } from '@/lib/workspace'
@@ -182,6 +183,8 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
               <NotificationPanel />
             ) : leftView === 'settings' ? (
               <SettingsPanel />
+            ) : leftView === 'trash' ? (
+              <TrashPanel />
             ) : (
               <Sidebar />
             )}
@@ -198,6 +201,7 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
         {rightPanel === 'git' && <GitPanel />}
         {rightPanel === 'notifications' && <NotificationPanel />}
         {rightPanel === 'settings' && <SettingsPanel />}
+        {rightPanel === 'trash' && <TrashPanel />}
       </ErrorBoundary>
       <ActivityBar side="right" />
       <DiffSheet />

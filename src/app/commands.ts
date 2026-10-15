@@ -33,6 +33,7 @@ export const COMMANDS = [
   'examPlan',
   'setupCheck',
   'syncAll',
+  'semester',
 ] as const
 export type CommandId = (typeof COMMANDS)[number]
 
@@ -73,7 +74,7 @@ export function runCommand(
     case 'notifications':
       return app.toggleView('notifications')
     case 'trash':
-      return app.navigate({ name: 'trash' })
+      return app.toggleView('trash')
     case 'templates':
       return app.navigate({ name: 'templates' })
     case 'studyDashboard': {
@@ -94,6 +95,8 @@ export function runCommand(
       return app.navigate({ name: 'settings', section: 'study' })
     case 'examPlan':
       return void syncExamPlan(ws).catch(() => undefined)
+    case 'semester':
+      return app.navigate({ name: 'semester' })
     case 'syncAll':
       return void syncAll(ws)
     case 'setupCheck':

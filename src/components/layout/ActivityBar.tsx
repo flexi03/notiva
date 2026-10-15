@@ -94,7 +94,7 @@ function ViewItem({ view, side }: { view: ViewId; side: Side }) {
   const active = useApp((s) =>
     isPlace(view)
       ? s.route.name === view
-      : view === 'settings' && s.route.name === 'settings'
+      : (view === 'settings' || view === 'trash') && s.route.name === view
         ? true
         : side === 'left'
           ? s.sidebarOpen && s.leftView === view

@@ -72,7 +72,8 @@ interface AppState {
 export type ViewId = 'assistant' | 'git' | 'notifications' | 'trash' | 'settings'
 export type Side = 'left' | 'right'
 export const VIEWS: ViewId[] = ['assistant', 'git', 'notifications', 'trash', 'settings']
-export const isPlace = (view: ViewId): view is 'trash' => view === 'trash'
+/** No view opens as a screen any more – kept for views that might. */
+export const isPlace = (_view: ViewId): _view is never => false
 
 const LAYOUT_KEY = 'notiva.layout'
 const DEFAULT_SIDES: Record<ViewId, Side> = {

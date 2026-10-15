@@ -1,3 +1,4 @@
+import { SemesterScreen } from './screens/SemesterScreen'
 import { GradesScreen } from '@/screens/GradesScreen'
 import { CourseScreen } from '@/screens/CourseScreen'
 import { FileScreen } from '@/screens/FileScreen'
@@ -78,6 +79,8 @@ export function App() {
         )
       ) : route.name === 'grades' ? (
         <GradesScreen />
+      ) : route.name === 'semester' ? (
+        <SemesterScreen />
       ) : route.name === 'file' ? (
         <FileScreen key={route.path} path={route.path} {...(route.page ? { page: route.page } : {})} />
       ) : (

@@ -88,6 +88,7 @@ export function buildMenu(getWindow: () => BrowserWindow | null): void {
         item('Zurück', 'back', 'CmdOrCtrl+['),
         item('Vorwärts', 'forward', 'CmdOrCtrl+]'),
         { type: 'separator' },
+        item('Mein Semester', 'semester'),
         item('Studium', 'studyDashboard'),
         item('Noten & Leistungen', 'grades'),
         item('Moodle-Kurse', 'moodle'),

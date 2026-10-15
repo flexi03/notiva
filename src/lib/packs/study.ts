@@ -117,6 +117,12 @@ database:
     - [ ] 
 ---
 Deine Mitschriften zu Vorlesungen und Übungen – jede gehört zu einem Modul und erscheint auf dessen Seite.
+
+## Bearbeitete PDFs
+
+\`\`\`notiva
+type: annotated
+\`\`\`
 `
 
 const ORGA = `---

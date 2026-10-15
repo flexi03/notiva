@@ -69,6 +69,8 @@ export type WidgetSpec =
   | { type: 'view'; source: string; view?: string; limit?: number; filter?: Filter[] }
   /** Everything linked to the page, grouped by database (module page: courses, notes, exams …). */
   | { type: 'related' }
+  /** PDFs with own highlights/notes, newest first. */
+  | { type: 'annotated' }
 
 export interface WidgetParseResult {
   widget: WidgetSpec | null
@@ -183,6 +185,7 @@ export function parseWidget(source: string): WidgetParseResult {
     }
   }
   if (data.type === 'related') return { widget: { type: 'related' } }
+  if (data.type === 'annotated') return { widget: { type: 'annotated' } }
   return { widget: null, error: `Unbekannter Widget-Typ: ${String(data.type)}` }
 }
 

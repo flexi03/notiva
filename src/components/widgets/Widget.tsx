@@ -4,6 +4,7 @@ import { useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import { parseWidget, widgetSource } from '@/lib/widgets'
 import { DatabaseView } from '@/components/database/DatabaseView'
+import { Annotated } from './Annotated'
 import { Related } from './Related'
 import { Tiles } from './Tiles'
 
@@ -14,6 +15,7 @@ export function Widget({ source, from }: { source: string; from: string }) {
   if (!widget) return <WidgetError message={error ?? ''} />
   if (widget.type === 'tiles') return <Tiles spec={widget} from={from} />
   if (widget.type === 'related') return <Related from={from} />
+  if (widget.type === 'annotated') return <Annotated />
   const db = ws.findDatabase(widget.source, from)
   if (!db) return <WidgetError message={t('db.notFound', { name: widget.source })} />
   return (

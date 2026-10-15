@@ -769,6 +769,7 @@ function createWindow(): void {
     backgroundColor: '#f5f6f8',
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     trafficLightPosition: { x: 14, y: 16 },
+    // macOS window buttons always visible (also with panels open, after fullscreen).
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
@@ -783,6 +784,11 @@ function createWindow(): void {
   })
   // Embedded web pages: no preload, no Node, sandboxed, own session (Moodle links: the Moodle
   // session with the university login); only http(s).
+  if (process.platform === 'darwin') {
+    window.setWindowButtonVisibility(true)
+    window.on('leave-full-screen', () => window?.setWindowButtonVisibility(true))
+    window.on('focus', () => window?.setWindowButtonVisibility(true))
+  }
   window.webContents.on('will-attach-webview', (event, prefs, params) => {
     delete prefs.preload
     prefs.nodeIntegration = false
