@@ -36,7 +36,7 @@ export function ContextBar() {
       {page && chip(include.page, page.title, <FileText size={11} />, 'page')}
       {pdf &&
         chip(
-          include.pdfPage && !include.pdfAll,
+          include.pdfPage,
           t('ai.ctxPdfPage', { name, page: pdf.page }),
           <ScrollText size={11} />,
           'pdfPage',

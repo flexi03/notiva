@@ -24,7 +24,17 @@ export const useAiContext = create<AiContextState>((set, get) => ({
     if (cur?.path === file?.path && cur?.page === file?.page) return
     set({ file })
   },
-  toggle: (key) => set({ include: { ...get().include, [key]: !get().include[key] } }),
+  toggle: (key) => {
+    const include = get().include
+    // "Diese Seite" and "Ganzes PDF" are a choice: picking the page while the whole PDF is on
+    // switches back to the page (and the other way round).
+    if (key === 'pdfPage' && include.pdfAll)
+      return set({ include: { ...include, pdfAll: false, pdfPage: true } })
+    if (key === 'pdfAll' && !include.pdfAll)
+      return set({ include: { ...include, pdfAll: true, pdfPage: false } })
+    if (key === 'pdfAll') return set({ include: { ...include, pdfAll: false, pdfPage: true } })
+    set({ include: { ...include, [key]: !include[key] } })
+  },
 }))
 
 const PAGE_MAX = 12_000
