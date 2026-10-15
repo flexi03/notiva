@@ -5,6 +5,12 @@ name: Release
 on:
   push:
     tags: ['v*']
+  # By hand for an existing tag (Actions → Release → Run workflow).
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag, z. B. v0.1.0'
+        required: true
 
 permissions:
   contents: write
@@ -24,6 +30,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -38,7 +46,7 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ inputs.tag || github.ref_name }}
         run: |
           gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "Notiva ${TAG#v}" --notes "Siehe CHANGELOG.md" || true
           shopt -s nullglob
