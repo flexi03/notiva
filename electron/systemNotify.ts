@@ -18,6 +18,8 @@ import { app, Notification } from 'electron'
 const HELPER_DIR = path.join(os.homedir(), 'Library', 'Application Support', 'Notiva-Mitteilungen')
 const HELPER = path.join(HELPER_DIR, 'Notiva.app')
 const SEP = String.fromCharCode(31)
+/** Bumped when the helper changes – an older one is rebuilt. */
+const HELPER_VERSION = '2'
 const APPLET = `on run
   set dir to POSIX path of (path to home folder) & "Library/Application Support/Notiva-Mitteilungen/inbox/"
   set names to paragraphs of (do shell script "ls " & quoted form of dir & " 2>/dev/null || true")
@@ -44,7 +46,14 @@ let helperReady: Promise<boolean> | null = null
 function ensureHelper(): Promise<boolean> {
   helperReady ??= (async () => {
     try {
-      if (await fs.stat(path.join(HELPER, 'Contents', 'Info.plist')).catch(() => null)) return true
+      const marker = path.join(HELPER_DIR, 'version')
+      const current = await fs.readFile(marker, 'utf8').catch(() => '')
+      if (
+        current.trim() === HELPER_VERSION &&
+        (await fs.stat(path.join(HELPER, 'Contents', 'Info.plist')).catch(() => null))
+      )
+        return true
+      await fs.rm(HELPER, { recursive: true, force: true })
       await fs.mkdir(path.join(HELPER_DIR, 'inbox'), { recursive: true })
       await run('osacompile', ['-o', HELPER, '-e', APPLET])
       const plist = path.join(HELPER, 'Contents', 'Info.plist')
@@ -63,9 +72,21 @@ function ensureHelper(): Promise<boolean> {
       for (const candidate of icon)
         if (await fs.stat(candidate).catch(() => null)) {
           await fs.copyFile(candidate, path.join(HELPER, 'Contents', 'Resources', 'applet.icns'))
+          // osacompile also writes the script icon into Assets.car, which macOS prefers
+          // (CFBundleIconName) – remove both so the Notiva icon is used.
+          await fs.rm(path.join(HELPER, 'Contents', 'Resources', 'Assets.car'), { force: true })
+          await run('/usr/libexec/PlistBuddy', ['-c', 'Delete :CFBundleIconName', plist]).catch(
+            () => undefined,
+          )
           break
         }
       await run('codesign', ['--force', '--deep', '-s', '-', HELPER]).catch(() => undefined)
+      // Tell Launch Services (and so the notification centre) about the new icon.
+      await run(
+        '/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister',
+        ['-f', HELPER],
+      ).catch(() => undefined)
+      await fs.writeFile(marker, HELPER_VERSION)
       return true
     } catch {
       helperReady = null
@@ -89,8 +110,11 @@ async function viaHelper(title: string, body: string): Promise<boolean> {
 }
 
 /** Fallback when macOS refuses Notiva's own notifications: the "Notiva" helper, else AppleScript. */
-function fallback(title: string, body: string): void {
-  void viaHelper(title, body).then((ok) => ok || viaAppleScript(title, body))
+function fallback(title: string, body: string): Promise<boolean> {
+  return viaHelper(title, body).then((ok) => {
+    if (!ok) viaAppleScript(title, body)
+    return ok
+  })
 }
 
 let nativeRefused = false
@@ -115,7 +139,7 @@ function viaAppleScript(title: string, body: string): void {
 }
 
 export function systemNotify(title: string, body: string, onClick?: () => void): void {
-  if (process.platform === 'darwin' && nativeRefused) return fallback(title, body)
+  if (process.platform === 'darwin' && nativeRefused) return void fallback(title, body)
   if (!Notification.isSupported()) return
   const n = new Notification({ title, body, silent: true })
   shown.add(n)
@@ -125,13 +149,16 @@ export function systemNotify(title: string, body: string, onClick?: () => void):
     shown.delete(n)
     if (process.platform !== 'darwin') return
     nativeRefused = true
-    fallback(title, body)
+    void fallback(title, body)
   })
   n.show()
 }
 
-/** Test: did macOS take the notification? "shown", "refused" (then AppleScript was used) or "unsupported". */
-export function testNotify(): Promise<'shown' | 'refused' | 'unsupported'> {
+/**
+ * Test: "shown" (Notiva's own), "helper" (macOS refused those, the "Notiva" helper sent it – the
+ * normal case for the unsigned app), "refused" (only AppleScript was left) or "unsupported".
+ */
+export function testNotify(): Promise<'shown' | 'helper' | 'refused' | 'unsupported'> {
   if (!Notification.isSupported()) return Promise.resolve('unsupported')
   return new Promise((resolve) => {
     const n = new Notification({
@@ -150,8 +177,10 @@ export function testNotify(): Promise<'shown' | 'refused' | 'unsupported'> {
       clearTimeout(timer)
       shown.delete(n)
       nativeRefused = true
-      if (process.platform === 'darwin') fallback('Notiva', 'So sehen Mitteilungen von Notiva aus.')
-      resolve('refused')
+      if (process.platform !== 'darwin') return resolve('refused')
+      void fallback('Notiva', 'So sehen Mitteilungen von Notiva aus.').then((ok) =>
+        resolve(ok ? 'helper' : 'refused'),
+      )
     })
     n.show()
   })

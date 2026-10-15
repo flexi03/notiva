@@ -506,6 +506,8 @@ export const en: Record<MessageKey, string> = {
   'notify.openSystem': 'Open macOS notification settings',
   'notify.testResult.shown':
     'macOS accepted the notification. If you do not see it, check Do Not Disturb/Focus.',
+  'notify.testResult.helper':
+    'Sent via “Notiva”. If nothing appears, allow “Notiva” in the macOS notification settings (or check Focus/Do Not Disturb).',
   'notify.testResult.refused':
     'macOS refused the notification. Open the notification settings and allow “Electron” (development build) or “Notiva” – Notiva sent one via “Script Editor” instead.',
   'notify.testResult.unsupported': 'This system does not support notifications.',

@@ -40,8 +40,13 @@ export function NotificationSettingsSection() {
             )}
           </div>
           {test && (
-            <p role="status" className={test === 'shown' ? 'text-sm text-accent' : 'text-sm text-danger'}>
-              {t(`notify.testResult.${test as 'shown' | 'refused' | 'unsupported'}`)}
+            <p
+              role="status"
+              className={
+                test === 'shown' || test === 'helper' ? 'text-sm text-accent' : 'text-sm text-danger'
+              }
+            >
+              {t(`notify.testResult.${test as 'shown' | 'helper' | 'refused' | 'unsupported'}`)}
             </p>
           )}
         </div>

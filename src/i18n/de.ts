@@ -509,6 +509,8 @@ export const de = {
   'notify.openSystem': 'Mitteilungseinstellungen von macOS öffnen',
   'notify.testResult.shown':
     'macOS hat die Mitteilung angenommen. Siehst du sie nicht, prüfe „Nicht stören“/Fokus.',
+  'notify.testResult.helper':
+    'Gesendet über „Notiva“. Siehst du nichts, erlaube „Notiva“ in den Mitteilungseinstellungen von macOS (oder prüfe Fokus/„Nicht stören“).',
   'notify.testResult.refused':
     'macOS hat die Mitteilung abgelehnt. Öffne die Mitteilungseinstellungen und erlaube dort „Electron“ (Entwicklungsversion) bzw. „Notiva“ – Notiva hat ersatzweise eine Mitteilung über „Skripteditor“ geschickt.',
   'notify.testResult.unsupported': 'Dieses System unterstützt keine Mitteilungen.',
