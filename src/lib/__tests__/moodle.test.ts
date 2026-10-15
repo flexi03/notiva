@@ -310,6 +310,18 @@ describe('material categories', () => {
     expect(c('Abschluss, Wiederholung', 'musterklausur_wise2425.pdf')).toBe('Sonstiges')
     expect(c('Inhalte und Organisation', 'MCI-00-Organisation.pdf')).toBe('Sonstiges')
   })
+
+  it('knows the short forms VL (lecture) and P01 / P1 / Ü2 (lab, exercise)', () => {
+    const c = (filename: string) => materialCategory({ title: filename, section: 'Material', filename })
+    expect(c('DBS2_VL03_Normalformen.pdf')).toBe('Vorlesung')
+    expect(c('VL 7 Graphen.pdf')).toBe('Vorlesung')
+    expect(c('Graphen-VL.pdf')).toBe('Vorlesung')
+    expect(c('P01_Aufgaben.pdf')).toBe('Praktikum & Übung')
+    expect(c('DBS2 P1.pdf')).toBe('Praktikum & Übung')
+    expect(c('Mathe_Ü2.pdf')).toBe('Praktikum & Übung')
+    // Not a short form: "VLAN".
+    expect(c('VLAN-Konfiguration.pdf')).not.toBe('Vorlesung')
+  })
 })
 
 describe('HTML resources', () => {

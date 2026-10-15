@@ -332,7 +332,8 @@ test('meldet Neuigkeiten aus Moodle im Benachrichtigungscenter', async () => {
   await window.getByRole('button', { name: 'Aktualisieren' }).click()
   const bar = window.getByRole('navigation', { name: 'Werkzeugleiste rechts' })
   const bell = bar.getByRole('button', { name: /Benachrichtigungen/ })
-  await expect(bell).toContainText('4')
+  // 4 news + the (one) suggestion to save the new scripts.
+  await expect(bell).toContainText('5')
   await bell.click()
   const panel = window.getByRole('complementary', { name: 'Benachrichtigungen' })
   const list = panel.getByRole('list', { name: 'Benachrichtigungen' })
@@ -344,20 +345,38 @@ test('meldet Neuigkeiten aus Moodle im Benachrichtigungscenter', async () => {
   // Changed course texts (section summary) – with the new text.
   await expect(list).toContainText('Geändert: Woche 1')
   await expect(list).toContainText('Klausur am 03.02.')
+  await expect(list).toContainText('neue Unterlagen in Moodle')
   await panel.getByRole('button', { name: 'Alle als gelesen markieren' }).click()
-  await expect(bell).not.toContainText('4')
+  await expect(bell).not.toContainText('5')
   // Stored on the device, not in the vault.
   expect(readFileSync(path.join(userData, 'notifications.json'), 'utf8')).toContain('Blatt 6')
   for (const file of allFiles(folder)) expect(readFileSync(file, 'utf8')).not.toContain('Raumänderung')
   // A second check finds nothing new.
   await window.getByRole('button', { name: 'Aktualisieren' }).click()
-  await expect(bell).not.toContainText('4')
+  await expect(bell).not.toContainText('5')
 })
 
-test('speichert neue Skripte automatisch – mit Fortschritt und Bestätigung', async () => {
+test('schlägt neue Skripte vor und speichert sie nach Bestätigung – mit Fortschritt', async () => {
+  test.setTimeout(90_000)
   await closeSettings()
-  // The fetches above already saved the course's PDFs into the vault.
+  // The fetches above found new PDFs: suggested (hint + notification), not saved silently.
   const saved = path.join(folder, 'Studium/Unterlagen/Lineare Algebra/Vorlesung/vl01.pdf')
+  expect(existsSync(saved)).toBe(false)
+  // The suggestion waits in the notifications (until decided).
+  const panel = window.getByRole('complementary', { name: 'Benachrichtigungen' })
+  if (!(await panel.isVisible()))
+    await window
+      .getByRole('navigation', { name: 'Werkzeugleiste rechts' })
+      .getByRole('button', { name: /Benachrichtigungen/ })
+      .click()
+  await panel
+    .getByRole('button', { name: /neue Unterlagen in Moodle/ })
+    .first()
+    .click()
+  await panel.getByRole('button', { name: 'Ansehen und entscheiden' }).first().click()
+  const dialog = window.getByRole('dialog', { name: /neue Unterlagen in Moodle/ })
+  await expect(dialog).toContainText('vl01.pdf')
+  await dialog.getByRole('button', { name: 'Speichern' }).click()
   await expect.poll(() => existsSync(saved)).toBe(true)
   expect(readFileSync(saved).subarray(0, 4).toString()).toBe('%PDF')
   expect(existsSync(path.join(folder, 'Studium/Unterlagen/Lineare Algebra/Vorlesung/vl02.pdf'))).toBe(true)
@@ -366,9 +385,9 @@ test('speichert neue Skripte automatisch – mit Fortschritt und Bestätigung', 
   // A manual refresh shows its progress and ends with a confirmation.
   await window.getByRole('button', { name: 'Moodle', exact: true }).click()
   await window.getByRole('button', { name: 'Aktualisieren' }).click()
-  await expect(
-    window.getByTestId('progress-task').filter({ hasText: 'Moodle abgerufen: 2 Kurse, 2 Unterlagen' }).last(),
-  ).toBeVisible()
+  await expect(window.getByTestId('progress-summary')).toContainText(
+    'Moodle abgerufen: 2 Kurse, 2 Unterlagen',
+  )
 
   await window.getByRole('button', { name: 'Unterlagen (2)' }).click()
   const week = window.getByRole('region', { name: 'Woche 1' })

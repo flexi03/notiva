@@ -141,3 +141,55 @@ describe('check results', () => {
     expect(newsSummary([])).toBe('nichts Neues')
   })
 })
+
+describe('sign-in and suggestion entries', () => {
+  it('keeps relogin/review targets and replaces a suggestion instead of piling them up', async () => {
+    const { mergeNotifications, parseNotifications } = await import('../notifications')
+    const parsed = parseNotifications([
+      {
+        id: 'ecampus-login:1',
+        kind: 'notice',
+        title: 'x',
+        time: '2026-10-15T10:00:00Z',
+        target: { type: 'relogin', service: 'ecampus' },
+      },
+      {
+        id: 'suggest:materials',
+        kind: 'material',
+        title: 'y',
+        time: '2026-10-15T10:00:00Z',
+        target: { type: 'review', what: 'materials' },
+      },
+      {
+        id: 'bad',
+        kind: 'notice',
+        title: 'z',
+        time: '2026-10-15T10:00:00Z',
+        target: { type: 'relogin', service: 'evil' },
+      },
+    ])
+    expect(parsed.map((n) => n.target)).toEqual([
+      { type: 'relogin', service: 'ecampus' },
+      { type: 'review', what: 'materials' },
+      undefined,
+    ])
+    const one = {
+      id: 'suggest:materials',
+      kind: 'material' as const,
+      title: '1 neue',
+      body: 'a',
+      time: '2026-10-15T10:00:00Z',
+    }
+    const first = mergeNotifications([], [one])
+    expect(first.added).toHaveLength(1)
+    const same = mergeNotifications(
+      first.list.map((n) => ({ ...n, read: true })),
+      [{ ...one, time: '2026-10-15T11:00:00Z' }],
+    )
+    expect(same.added).toHaveLength(0)
+    expect(same.list.filter((n) => n.id === 'suggest:materials')).toHaveLength(1)
+    const changed = mergeNotifications(same.list, [{ ...one, title: '2 neue', body: 'a, b' }])
+    expect(changed.added).toHaveLength(1)
+    expect(changed.list.filter((n) => n.id === 'suggest:materials')).toHaveLength(1)
+  })
+})

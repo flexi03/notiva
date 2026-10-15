@@ -1,3 +1,4 @@
+import { review } from '@/app/review'
 import { relogin } from '@/app/relogin'
 import { courseIdsOf } from '@/lib/study/modules'
 import { useEffect, useState } from 'react'
@@ -36,6 +37,26 @@ const ICONS: Record<NotificationKind, typeof Bell> = {
   check: RefreshCw,
 }
 
+/** Colour per kind – a warning (sign in again, cancelled lecture) stands out in red. */
+const COLORS: Record<NotificationKind, string> = {
+  deadline: 'orange',
+  moved: 'orange',
+  reminder: 'yellow',
+  material: 'green',
+  updated: 'blue',
+  notice: 'purple',
+  grade: 'pink',
+  check: 'gray',
+}
+export function notificationColor(n: AppNotification): string {
+  if (
+    n.target?.type === 'relogin' ||
+    /^⚠|ausfall|fällt aus|abgesagt|bitte neu anmelden|fehler/i.test(`${n.title} ${n.body ?? ''}`)
+  )
+    return 'red'
+  return COLORS[n.kind]
+}
+
 /** Opens what a notification is about: the Notiva page, the saved file, the course or the Moodle page. */
 export async function openNotification(n: AppNotification, ws: Workspace): Promise<void> {
   void useNotifications.getState().markRead([n.id])
@@ -47,6 +68,7 @@ export async function openNotification(n: AppNotification, ws: Workspace): Promi
   const target = n.target
   if (!target) return
   if (target.type === 'relogin') return void relogin(target.service).catch(() => undefined)
+  if (target.type === 'review') return void review(target.what, ws)
   if (target.type === 'page') return ws.get(target.path) ? app.openEntry(target.path) : undefined
   if (target.type === 'route') return app.navigate(parseRoute(target.hash))
   if (target.type === 'material') {
@@ -89,6 +111,7 @@ function actionLabel(n: AppNotification): string {
   if (target.type === 'course') return t('notify.open.course')
   if (target.type === 'url') return t('notify.open.moodle')
   if (target.type === 'relogin') return t('notify.open.relogin')
+  if (target.type === 'review') return t('notify.open.review')
   return t('notify.open.default')
 }
 
@@ -172,10 +195,19 @@ export function NotificationPanel() {
                       setOpen(open === n.id ? null : n.id)
                       if (!n.read) void markRead([n.id])
                     }}
-                    className="flex w-full items-start gap-2.5 px-3 py-2.5 text-left hover:bg-hover"
+                    className="flex w-full items-start gap-2.5 py-2.5 pr-3 pl-2.5 text-left hover:bg-hover"
+                    style={{ borderLeft: `3px solid var(--opt-${notificationColor(n)}-ink)` }}
+                    data-color={notificationColor(n)}
                   >
-                    <span className={cx('mt-0.5 shrink-0', n.read ? 'text-ink-3' : 'text-accent')}>
-                      <Icon size={16} aria-hidden />
+                    <span
+                      className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full"
+                      style={{
+                        background: `var(--opt-${notificationColor(n)})`,
+                        color: `var(--opt-${notificationColor(n)}-ink)`,
+                        opacity: n.read ? 0.7 : 1,
+                      }}
+                    >
+                      <Icon size={14} aria-hidden />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-baseline gap-2">

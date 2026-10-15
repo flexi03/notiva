@@ -97,10 +97,10 @@ export async function missingMaterials(ws: Workspace, snapshot: MoodleSnapshot):
 
 let running: Promise<number> | null = null
 
-/** Saves all new/updated documents – with progress bar and confirmation. Runs once at a time. */
-export function syncMaterials(ws: Workspace, snapshot: MoodleSnapshot): Promise<number> {
+/** Saves new/updated documents (all, or the chosen ids) – with progress bar and confirmation. */
+export function syncMaterials(ws: Workspace, snapshot: MoodleSnapshot, only?: Set<string>): Promise<number> {
   running ??= (async () => {
-    const todo = await missingMaterials(ws, snapshot)
+    const todo = (await missingMaterials(ws, snapshot)).filter((m) => !only || only.has(m.id))
     if (todo.length === 0) return 0
     const course = (id: string) => snapshot.courses.find((c) => c.id === id)?.name ?? ''
     const moduleNames = await moduleNamesOf(ws, snapshot)
@@ -135,6 +135,62 @@ async function moduleNamesOf(ws: Workspace, snapshot: MoodleSnapshot): Promise<R
   const preview = previewStudy(ws, { moodle: snapshot, exams: null })
   if (!preview.ok) return {}
   return Object.fromEntries(preview.state.modules.flatMap((m) => m.courses.map((c) => [c.id, m.module.name])))
+}
+
+/**
+ * After a background check: new materials are suggested, not saved silently – a hint (and an entry
+ * in the notifications) with "Speichern" and "Ansehen".
+ */
+export async function suggestMaterials(ws: Workspace, snapshot: MoodleSnapshot): Promise<number> {
+  const todo = await missingMaterials(ws, snapshot)
+  if (!todo.length) return 0
+  const course = (id: string) => snapshot.courses.find((c) => c.id === id)?.name ?? ''
+  const names = todo
+    .slice(0, 3)
+    .map((m) => `„${m.filename ?? m.title}“ (${course(m.courseId)})`)
+    .join(', ')
+  const note = `${names}${todo.length > 3 ? ` und ${todo.length - 3} weitere` : ''}`
+  await electronBridge()?.notifications?.add([
+    {
+      id: 'suggest:materials',
+      kind: 'material',
+      title: t('materials.suggested', { count: todo.length }),
+      body: note,
+      time: new Date().toISOString(),
+      target: { type: 'review', what: 'materials' },
+    },
+  ])
+  const { announce } = await import('@/app/progress')
+  announce(t('materials.suggested', { count: todo.length }), {
+    state: 'info',
+    key: 'materials-suggestions',
+    note,
+    action: { label: t('materials.review'), run: () => void reviewMaterials(ws) },
+  })
+  return todo.length
+}
+
+/** "Ansehen": the new materials to tick – the ticked ones are saved (with progress). */
+export async function reviewMaterials(ws: Workspace): Promise<number> {
+  const snapshot = await electronBridge()?.moodle?.snapshot()
+  if (!snapshot) return 0
+  const todo = await missingMaterials(ws, snapshot)
+  if (!todo.length) return 0
+  const { useApp } = await import('@/app/store')
+  const course = (id: string) => snapshot.courses.find((c) => c.id === id)?.name ?? ''
+  const picked = await useApp.getState().ask({
+    title: t('materials.suggested', { count: todo.length }),
+    label: t('materials.reviewNote'),
+    confirmLabel: t('materials.save'),
+    checklist: todo.map((m) => ({
+      value: m.id,
+      label: m.filename ?? m.title,
+      detail: [course(m.courseId), m.section].filter(Boolean).join(' · '),
+      checked: true,
+    })),
+  })
+  if (picked === null) return 0
+  return syncMaterials(ws, snapshot, new Set(JSON.parse(picked) as string[]))
 }
 
 export const isPdf = (path: string) => /\.pdf$/i.test(path)

@@ -68,7 +68,13 @@ export function explain(
 /** Shows an error with its reason and fix (bottom left). */
 export function reportError(error: unknown, retry?: () => void): void {
   const { message, note, action } = explain(error, retry)
-  announce(message, { state: 'info', sticky: true, ...(note ? { note } : {}), ...(action ? { action } : {}) })
+  announce(message, {
+    state: 'info',
+    sticky: true,
+    open: true,
+    ...(note ? { note } : {}),
+    ...(action ? { action } : {}),
+  })
 }
 
 async function installGit(): Promise<void> {

@@ -89,14 +89,25 @@ export function autoSyncStudy(ws: Workspace): Promise<number> {
         { type: 'page', path: preview.dashboard },
       ),
     ])
-    if (count > 0)
+    if (count > 0) {
+      await electronBridge()?.notifications?.add([
+        {
+          id: 'suggest:study',
+          kind: 'notice',
+          title: t('study.suggested', { count }),
+          body: studyChangeNote(preview.plan.changes) || t('study.suggestedNote'),
+          time: new Date().toISOString(),
+          target: { type: 'review', what: 'study' },
+        },
+      ])
       announce(t('study.suggested', { count }), {
         state: 'info',
-        sticky: true,
+
         key: 'study-suggestions',
         note: studyChangeNote(preview.plan.changes) || t('study.suggestedNote'),
         action: { label: t('study.review'), run: () => useApp.getState().setStudyDialog(true) },
       })
+    }
     await syncTimetable(ws).catch(() => undefined)
     return count
   })().finally(() => (running = null))

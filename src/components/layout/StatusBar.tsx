@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Bug, CircleHelp, Info } from 'lucide-react'
+import { Bug, CircleHelp, Info, Lightbulb } from 'lucide-react'
+import { useNotifications } from '@/app/notifications'
 import { useApp } from '@/app/store'
 import { t } from '@/i18n'
 import { electronBridge } from '@/lib/vault'
 import { EventBadge } from './EventBadge'
+import { ProgressHost, ProgressSummary } from './ProgressHost'
+import { ToastLine } from './Toast'
 
 const ISSUE_URL = 'https://github.com/flexi03/notiva/issues/new'
 
@@ -13,6 +16,10 @@ const ISSUE_URL = 'https://github.com/flexi03/notiva/issues/new'
  */
 export function StatusBar() {
   const navigate = useApp((s) => s.navigate)
+  // Open suggestions (study, timetable, materials) wait in the notifications – counted here.
+  const suggestions = useNotifications(
+    (s) => s.list.filter((n) => n.target?.type === 'review' && !n.read).length,
+  )
   const [version, setVersion] = useState<string | null>(
     typeof __APP_VERSION__ === 'string' && __APP_VERSION__ ? __APP_VERSION__ : null,
   )
@@ -32,11 +39,23 @@ export function StatusBar() {
   return (
     <footer
       aria-label={t('status.bar')}
-      className="no-print flex h-7 shrink-0 items-center gap-2 border-t border-line bg-sunken px-2 text-[12px]"
+      className="no-print relative flex h-7 shrink-0 items-center gap-2 border-t border-line bg-sunken px-2 text-[12px]"
     >
       <div className="min-w-0 flex-1 overflow-hidden">
         <EventBadge inline />
       </div>
+      <ToastLine />
+      <ProgressSummary />
+      {suggestions > 0 && (
+        <button
+          type="button"
+          className={`${item} font-semibold text-accent`}
+          onClick={() => useApp.getState().openView('notifications')}
+          title={t('status.suggestionsHint')}
+        >
+          <Lightbulb size={13} /> {t('status.suggestions', { count: suggestions })}
+        </button>
+      )}
       <button
         type="button"
         className={item}
@@ -61,6 +80,7 @@ export function StatusBar() {
       >
         <Bug size={13} /> <span className="max-[700px]:hidden">{t('settings.reportIssue')}</span>
       </button>
+      <ProgressHost />
     </footer>
   )
 }

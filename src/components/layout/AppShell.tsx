@@ -5,8 +5,6 @@ import { usePageActions } from '@/app/hooks/usePageActions'
 import { routeHash } from '@/lib/route'
 import { cx, ErrorBoundary } from '@/components/ui'
 import { Sidebar } from './Sidebar'
-import { ToastHost } from './Toast'
-import { ProgressHost } from './ProgressHost'
 import { PromptHost } from './PromptHost'
 import { PeekHost } from './PeekHost'
 import { ScrollRootContext } from './scrollRoot'
@@ -35,7 +33,7 @@ import { useRecent } from '@/app/recent'
 import { t } from '@/i18n'
 import type { NotificationKind } from '@/lib/notifications'
 import { syncExamPlan } from '@/app/examPlan'
-import { syncMaterials } from '@/app/materials'
+import { suggestMaterials } from '@/app/materials'
 import { useEcampus } from '@/app/ecampus'
 import { useUpdateNotices } from '@/app/update'
 
@@ -84,7 +82,9 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
       const snapshot = await electronBridge()!.moodle!.snapshot()
       if (!snapshot) return
       useMoodle.setState({ snapshot })
-      if (useApp.getState().settings.moodleAutoSave) await syncMaterials(ws, snapshot).catch(() => undefined)
+      // New materials are suggested (save after confirming), never saved silently.
+      if (useApp.getState().settings.moodleAutoSave)
+        await suggestMaterials(ws, snapshot).catch(() => undefined)
       if (useApp.getState().settings.studyAutoSync) void autoSyncStudy(ws).catch(() => undefined)
     })
   }, [ws])
@@ -172,12 +172,7 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
               />
             </div>
           )}
-          <div
-            className={cx(
-              'h-full min-[900px]:w-[var(--sidebar-w)]',
-              'max-[899px]:w-[min(22rem,100vw)]',
-            )}
-          >
+          <div className={cx('h-full min-[900px]:w-[var(--sidebar-w)]', 'max-[899px]:w-[min(22rem,100vw)]')}>
             <ErrorBoundary resetKey={leftView ?? 'pages'}>
               {leftView === 'assistant' ? (
                 <AssistantPanel />
@@ -195,16 +190,19 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
             </ErrorBoundary>
           </div>
         </div>
-        <main
-          ref={mainRef}
-          className="min-w-0 flex-1 overflow-y-auto"
-          id="main"
-          data-route={routeHash(route)}
-        >
-          <ScrollRootContext value={mainRef}>
-            <ErrorBoundary resetKey={routeHash(route)}>{children}</ErrorBoundary>
-          </ScrollRootContext>
-        </main>
+        {/* Hints and toasts live in the content area – never over the side bars or the assistant. */}
+        <div className="relative flex min-w-0 flex-1">
+          <main
+            ref={mainRef}
+            className="min-w-0 flex-1 overflow-y-auto"
+            id="main"
+            data-route={routeHash(route)}
+          >
+            <ScrollRootContext value={mainRef}>
+              <ErrorBoundary resetKey={routeHash(route)}>{children}</ErrorBoundary>
+            </ScrollRootContext>
+          </main>
+        </div>
         <ErrorBoundary resetKey={rightPanel ?? ''}>
           {rightPanel === 'assistant' && <AssistantPanel />}
           {rightPanel === 'git' && <GitPanel />}
@@ -219,10 +217,8 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
         {overlays}
         <PeekHost />
         <PromptHost />
-        <ToastHost />
         <TextContextMenu />
         <EventBadge />
-        <ProgressHost />
       </div>
       <StatusBar />
     </div>

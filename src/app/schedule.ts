@@ -181,9 +181,21 @@ export async function suggestTimetable(ws: Workspace, interactive = false): Prom
     return done
   }
   if (interactive) return review()
+  await electronBridge()?.notifications?.add([
+    {
+      id: 'suggest:timetable',
+      kind: 'deadline',
+      title: t('timetable.foundTitle', { count: list.length }),
+      body: list
+        .slice(0, 3)
+        .map((x) => `${x.module.title}: ${x.session.type} ${when(x.session)}`)
+        .join(' · '),
+      time: new Date().toISOString(),
+      target: { type: 'review', what: 'timetable' },
+    },
+  ])
   announce(t('timetable.foundTitle', { count: list.length }), {
     state: 'info',
-    sticky: true,
     key: 'timetable-suggestions',
     note: t('timetable.foundNote'),
     action: { label: t('timetable.review'), run: () => void review() },

@@ -1,3 +1,4 @@
+import { useNotifications } from '@/app/notifications'
 import { create } from 'zustand'
 import { withProgress } from '@/app/progress'
 import { t } from '@/i18n'
@@ -50,7 +51,10 @@ export const useMoodle = create<MoodleState>((set) => ({
         async (task) => {
           const off = bridge.onProgress((e) => task.update(e.done, e.total, e.text))
           try {
-            return await bridge.fetch()
+            const snapshot = await bridge.fetch()
+            // The check's line ("… gefunden – neu: …") for the confirmation below.
+            await useNotifications.getState().load()
+            return snapshot
           } finally {
             off()
           }
@@ -62,6 +66,7 @@ export const useMoodle = create<MoodleState>((set) => ({
               materials: s.materials?.length ?? 0,
               events: s.events.length,
             }),
+          note: () => useNotifications.getState().list.find((n) => n.id === 'check:moodle')?.body,
         },
       )
       set({ snapshot, loading: false })

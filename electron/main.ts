@@ -60,8 +60,8 @@ import {
   checkResult,
   deadlineReminders,
   moodleNews,
-  newsSummary,
   type AppNotification,
+  checkBody,
 } from '../src/lib/notifications'
 import { materialCategory, type MoodleSnapshot } from '../src/lib/moodle'
 import { courseInfoNews } from '../src/lib/moodleInfo'
@@ -279,7 +279,22 @@ async function pollMoodle(contents = true): Promise<MoodleSnapshot> {
     ),
   ]
   const added = await notifications.add(news)
-  await notifications.add([checkResult('moodle', 'Moodle geprüft', newsSummary(added), now)])
+  await notifications.add([
+    checkResult(
+      'moodle',
+      'Moodle geprüft',
+      checkBody(
+        [
+          [snapshot.courses.length, 'Kurs', 'Kurse'],
+          [snapshot.materials?.length ?? 0, 'Unterlage', 'Unterlagen'],
+          [snapshot.events.length, 'Termin', 'Termine'],
+        ],
+        added,
+      ),
+      now,
+      { type: 'route', hash: '#/moodle' },
+    ),
+  ])
   return snapshot
 }
 
@@ -306,10 +321,16 @@ async function pollEcampus(): Promise<ExamSnapshot> {
     lastRun.grades = Date.now()
     const added = await notifications.add(examNews(previous, next))
     await notifications.add([
-      checkResult('ecampus', 'eCampus geprüft', newsSummary(added), new Date(), {
-        type: 'route',
-        hash: '#/grades',
-      }),
+      checkResult(
+        'ecampus',
+        'eCampus geprüft',
+        checkBody([[next.records.length, 'Leistung', 'Leistungen']], added),
+        new Date(),
+        {
+          type: 'route',
+          hash: '#/grades',
+        },
+      ),
     ])
     window?.webContents.send('ecampus:polled')
     return next

@@ -94,9 +94,9 @@ export type MaterialCategory = (typeof MATERIAL_CATEGORIES)[number]
 
 // Unambiguous words – in the file or activity name they decide, before the section.
 const LAB =
-  /praktik|übungsblatt|uebungsblatt|aufgabenblatt|übung|uebung|labor|\blab\b|tutorium|testat|abgabe|zusatzaufgabe|l(ö|oe)sung|quiz|exercise|assignment|(^|[\s_-])P\d{1,2}([\s_.-]|$)/i
+  /praktik|übungsblatt|uebungsblatt|aufgabenblatt|übung|uebung|labor|\blab\b|tutorium|testat|abgabe|zusatzaufgabe|l(ö|oe)sung|quiz|exercise|assignment|(^|[\s_.-])(P|PR|Ü|UE)[\s_-]?\d{1,2}([\s_.-]|$)/i
 const LECTURE =
-  /vorlesung|folien|slides|skript|kapitel|chapter|lecture|(^|[\s_-])VL\s?\d|(^|[\s_-])V([\s_-]|$)|lektion/i
+  /vorlesung|folien|slides|skript|kapitel|chapter|lecture|lektion|(^|[\s_.-])VL([\s_.-]?\d|[\s_.-]|$)|(^|[\s_-])V([\s_-]|$)/i
 const OTHER =
   /klausur|prüfung|pruefung|\bexam|organisation|orga\b|modulhandbuch|checkliste|lehr-?lern|anerkennung|erstsemester|termine|teilnahme/i
 // Sections: weaker signals ("Thema 3", "Einheit 4" are topics of the lecture).

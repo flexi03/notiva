@@ -23,13 +23,20 @@ test.beforeAll(async () => {
   await window.getByRole('button', { name: 'Ordner wählen' }).click()
 })
 
+/** Hints wait in the status bar – open their list (if closed) and find one. */
+async function hint(text: string) {
+  const summary = window.getByTestId('progress-summary')
+  await expect(summary).toBeVisible({ timeout: 20_000 })
+  if ((await summary.getAttribute('aria-expanded')) !== 'true') await summary.click()
+  return window.getByTestId('progress-task').filter({ hasText: text }).last()
+}
+
 test.afterAll(async () => {
   await app?.close()
 })
 
 test('legt ein Studium an einer anderen Hochschule an – ohne Module vorab', async () => {
-  const hint = window.getByTestId('progress-task').filter({ hasText: 'Studium einrichten' })
-  await hint.getByRole('button', { name: 'Einrichten' }).click()
+  await (await hint('Studium einrichten')).getByRole('button', { name: 'Einrichten' }).click()
   await window.getByRole('button', { name: 'Studium anlegen' }).click()
   const dialog = window.getByRole('dialog', { name: 'Studium aktualisieren' })
   await expect(dialog).toContainText('Andere Hochschule?')
@@ -43,9 +50,10 @@ test('legt ein Studium an einer anderen Hochschule an – ohne Module vorab', as
   await dialog.getByRole('textbox', { name: 'Studiengang' }).fill('Informatik B.Sc.')
   await create.click()
 
-  await expect(window.getByTestId('progress-task').filter({ hasText: 'noch ohne Module' })).toBeVisible({
+  await expect(window.getByTestId('progress-summary')).toContainText(/noch ohne Module|Hinweis/, {
     timeout: 20_000,
   })
+  await expect(await hint('noch ohne Module')).toBeVisible()
   const profile = path.join(folder, 'Studium/Hochschule.md')
   await expect.poll(() => existsSync(profile)).toBe(true)
   const text = readFileSync(profile, 'utf8')
@@ -62,11 +70,7 @@ test('legt ein Studium an einer anderen Hochschule an – ohne Module vorab', as
   expect(readFileSync(path.join(folder, 'Studium.md'), 'utf8')).toContain('Informatik B.Sc.')
 
   // Moodle settings: no HSD address, the hint for other universities.
-  await window
-    .getByTestId('progress-task')
-    .filter({ hasText: 'noch ohne Module' })
-    .getByRole('button', { name: 'Moodle & eCampus verbinden' })
-    .click()
+  await (await hint('noch ohne Module')).getByRole('button', { name: 'Moodle & eCampus verbinden' }).click()
   await expect(window.getByText('Andere Hochschule?').first()).toBeVisible()
   await expect(window.getByRole('textbox', { name: 'Moodle-Adresse' })).toHaveValue('')
 })

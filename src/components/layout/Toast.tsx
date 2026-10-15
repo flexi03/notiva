@@ -8,7 +8,7 @@ export function ToastHost() {
   return (
     <div
       aria-live="polite"
-      className="no-print pointer-events-none fixed inset-x-0 bottom-10 z-[44] flex justify-center px-4"
+      className="no-print pointer-events-none absolute inset-x-0 bottom-3 z-[44] flex justify-center px-4"
     >
       {toast && (
         <div className="pointer-events-auto flex max-w-md items-center gap-3 rounded-panel bg-ink px-4 py-2.5 text-sm text-paper shadow-[var(--shadow-pop)]">
@@ -36,5 +36,28 @@ export function ToastHost() {
         </div>
       )}
     </div>
+  )
+}
+
+/** Short confirmations ("Kopiert", "Gespeichert") as a line in the status bar – never over content. */
+export function ToastLine() {
+  const { toast, dismissToast } = useApp()
+  if (!toast) return null
+  return (
+    <span role="status" className="inline-flex min-w-0 items-center gap-1.5 text-ink">
+      <span className="truncate font-medium">{toast.message}</span>
+      {toast.action && (
+        <button
+          type="button"
+          className="shrink-0 rounded px-1.5 font-semibold text-accent hover:bg-hover"
+          onClick={() => {
+            toast.action!.run()
+            dismissToast()
+          }}
+        >
+          {toast.action.label}
+        </button>
+      )}
+    </span>
   )
 }

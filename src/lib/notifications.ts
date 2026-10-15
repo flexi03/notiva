@@ -26,6 +26,8 @@ export type NotificationTarget =
   | { type: 'course'; courseId: string }
   /** The sign-in expired: one click opens the sign-in window again. */
   | { type: 'relogin'; service: 'ecampus' | 'moodle' }
+  /** Notiva suggests changes (study sync, timetable, new materials) – confirm them here. */
+  | { type: 'review'; what: 'study' | 'timetable' | 'materials' }
 
 export interface AppNotification {
   /** Stable – the same news never shows twice. */
@@ -183,14 +185,24 @@ export function mergeNotifications(
 ): { list: AppNotification[]; added: AppNotification[] } {
   // Check results replace their older entry (same id) – no new news, no banner.
   const checks = incoming.filter((n) => n.kind === 'check')
-  const replaced = new Set(checks.map((n) => n.id))
+  // Suggestions ("suggest:materials" …): one per kind, replaced by the newer one; only news (unread,
+  // banner) when what is suggested changed.
+  const suggestions = incoming.filter((n) => n.kind !== 'check' && n.id.startsWith('suggest:'))
+  const before = new Map(existing.map((n) => [n.id, n]))
+  const freshSuggestions = suggestions.filter(
+    (n) => before.get(n.id)?.body !== n.body || before.get(n.id)?.read === false,
+  )
+  const replaced = new Set([...checks, ...suggestions].map((n) => n.id))
   const rest = existing.filter((n) => !replaced.has(n.id))
   const known = new Set(rest.map((n) => n.id))
-  const added = incoming.filter((n) => n.kind !== 'check' && !known.has(n.id) && (known.add(n.id), true))
-  const list = [...added, ...checks.map((n) => ({ ...n, read: true })), ...rest]
+  const added = incoming.filter(
+    (n) => n.kind !== 'check' && !n.id.startsWith('suggest:') && !known.has(n.id) && (known.add(n.id), true),
+  )
+  const kept = suggestions.filter((n) => !freshSuggestions.includes(n)).map((n) => ({ ...n, read: true }))
+  const list = [...added, ...freshSuggestions, ...kept, ...checks.map((n) => ({ ...n, read: true })), ...rest]
     .sort((a, b) => b.time.localeCompare(a.time))
     .slice(0, MAX_NOTIFICATIONS)
-  return { list, added }
+  return { list, added: [...added, ...freshSuggestions.filter((n) => before.get(n.id)?.body !== n.body)] }
 }
 
 /** Validates notifications read from disk or sent by the renderer (untrusted). */
@@ -234,7 +246,12 @@ export function parseNotifications(raw: unknown): AppNotification[] {
               ? { type: 'route', hash: t.hash }
               : t?.type === 'course' && typeof t.courseId === 'string' && /^course:\d+$/.test(t.courseId)
                 ? { type: 'course', courseId: t.courseId }
-                : undefined
+                : t?.type === 'relogin' && (t.service === 'ecampus' || t.service === 'moodle')
+                  ? { type: 'relogin', service: t.service }
+                  : t?.type === 'review' &&
+                      (t.what === 'study' || t.what === 'timetable' || t.what === 'materials')
+                    ? { type: 'review', what: t.what }
+                    : undefined
     const body = str(r.body)
     const course = str(r.course, 200)
     out.push({
@@ -289,4 +306,36 @@ export function newsSummary(news: AppNotification[]): string {
     return `${n} ${n === 1 ? one : many}`
   })
   return parts.length ? parts.join(' · ') : 'nichts Neues'
+}
+
+/** "36 Kurse · 826 Unterlagen · 30 Termine" – what a check saw (zero counts left out). */
+export function foundSummary(found: Array<[number, string, string]>): string {
+  return found
+    .filter(([n]) => n > 0)
+    .map(([n, one, many]) => `${n} ${n === 1 ? one : many}`)
+    .join(' · ')
+}
+
+/** "2 neue Dateien („Blatt 3.pdf“, „VL07.pdf“) · 1 Mitteilung („Raumänderung“)" */
+export function newsDetails(news: AppNotification[], max = 3): string {
+  const groups = new Map<NotificationKind, AppNotification[]>()
+  for (const n of news) if (n.kind !== 'check') groups.set(n.kind, [...(groups.get(n.kind) ?? []), n])
+  return [...groups]
+    .map(([kind, list]) => {
+      const [one, many] = NEWS_WORDS[kind] ?? ['Neuigkeit', 'Neuigkeiten']
+      const titles = list.slice(0, max).map((n) => `„${n.title.slice(0, 50)}“`)
+      return `${list.length} ${list.length === 1 ? one : many} (${titles.join(', ')}${list.length > max ? ', …' : ''})`
+    })
+    .join(' · ')
+}
+
+/**
+ * The line of every check: what was found and what of it is new – "36 Kurse · 826 Unterlagen
+ * gefunden – neu: 2 neue Dateien („…“)" or "… gefunden – nichts Neues".
+ */
+export function checkBody(found: Array<[number, string, string]>, news: AppNotification[]): string {
+  const seen = foundSummary(found)
+  const fresh = news.filter((n) => n.kind !== 'check')
+  const tail = fresh.length ? `neu: ${newsDetails(fresh)}` : 'nichts Neues'
+  return seen ? `${seen} gefunden – ${tail}` : tail
 }

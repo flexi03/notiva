@@ -204,13 +204,13 @@ test('meldet sich an und findet die Leistungsübersicht selbst', async () => {
   await section().getByRole('button', { name: 'Anmelden & Leistungen holen' }).click()
   const login = await popup
   // Progress is visible while the user signs in.
-  await expect(window.getByTestId('progress-task').filter({ hasText: 'eCampus: Anmeldung' })).toBeVisible()
+  await expect(window.getByTestId('progress-summary')).toContainText('eCampus: Anmeldung')
   await login.getByLabel('Benutzer').fill('alex')
   await login.getByLabel('Passwort').fill('geheim')
   await login.getByRole('button', { name: 'Anmelden' }).click()
-  await expect(
-    window.getByTestId('progress-task').filter({ hasText: '5 Leistungen aus eCampus gelesen' }),
-  ).toBeVisible({ timeout: 20_000 })
+  await expect(window.getByTestId('progress-summary')).toContainText('5 Leistungen aus eCampus gelesen', {
+    timeout: 20_000,
+  })
   await expect(section().getByRole('status')).toContainText('5 Einträge')
   expect(fake.log.some((l) => l.includes('next=list.vm'))).toBe(true)
   // The login is in the app profile – the password nowhere.
@@ -236,9 +236,7 @@ test('zeigt Noten, Schnitt und ECTS und übernimmt sie in die Module', async () 
   await expect(dialog).toContainText('5. Fachsemester (WiSe 26/27)')
   await expect(dialog).toContainText('Objektorientierte Programmierung 1')
   await dialog.getByRole('button', { name: /Änderungen übernehmen/ }).click()
-  await expect(
-    window.getByTestId('progress-task').filter({ hasText: 'Änderungen im Studium übernommen' }),
-  ).toBeVisible({
+  await expect(window.getByTestId('progress-summary')).toContainText('Änderungen im Studium übernommen', {
     timeout: 20_000,
   })
   await expect
@@ -270,9 +268,7 @@ test('holt den Prüfungsplan und trägt die eigenen Termine ein', async () => {
   await expect.poll(() => readFileSync(dash, 'utf8')).toContain('pruefungsplan')
   await window.waitForTimeout(800)
   await window.getByRole('button', { name: 'Prüfungsplan prüfen' }).click()
-  await expect(
-    window.getByTestId('progress-task').filter({ hasText: 'Prüfungstermine eingetragen' }),
-  ).toBeVisible({
+  await expect(window.getByTestId('progress-summary')).toContainText('Prüfungstermine eingetragen', {
     timeout: 20_000,
   })
   const exams = path.join(folder, 'Studium/Prüfungen')

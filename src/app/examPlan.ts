@@ -38,7 +38,11 @@ export function syncExamPlan(ws: Workspace): Promise<number> {
         const target = `${preview.folder}/Unterlagen/Prüfungsplan/${file.name}`
         if (!ws.assets().some((f) => f.path === target)) await ws.writeFile(target, file.bytes)
         // Only the last 30 days and the future.
-        const exams = examsForStudy(parsePlanTable(pages), preview.state, new Date(Date.now() - 30 * 86_400_000))
+        const exams = examsForStudy(
+          parsePlanTable(pages),
+          preview.state,
+          new Date(Date.now() - 30 * 86_400_000),
+        )
         const modules = ws.rows(`${preview.folder}/Module.md`)
         const plan = planExamDates(
           ws,
@@ -66,9 +70,14 @@ export function syncExamPlan(ws: Workspace): Promise<number> {
           checkResult(
             'examplan',
             'Prüfungsplan geprüft',
-            plan.changes.length
-              ? `${plan.changes.length} Termine eingetragen oder geändert`
-              : 'keine neuen Termine für dich',
+            `${exams.length} Prüfungen für dich im Plan – ${
+              plan.changes.length
+                ? `neu oder geändert: ${plan.changes
+                    .slice(0, 3)
+                    .map((c) => `„${c.title}“`)
+                    .join(', ')}${plan.changes.length > 3 ? ` und ${plan.changes.length - 3} weitere` : ''}`
+                : 'nichts Neues'
+            }`,
             new Date(),
             { type: 'page', path: `${preview.folder}/Prüfungen.md` },
           ),
