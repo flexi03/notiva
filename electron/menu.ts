@@ -10,8 +10,8 @@ export function buildMenu(getWindow: () => BrowserWindow | null): void {
   const item = (label: string, id: string, accelerator?: string): MenuItemConstructorOptions => ({
     label,
     click: send(id),
-    // The app handles its own shortcuts; "Ordner öffnen" exists only here.
-    ...(accelerator ? { accelerator, registerAccelerator: id === 'openFolder' } : {}),
+    // The app handles its own shortcuts; these exist only here.
+    ...(accelerator ? { accelerator, registerAccelerator: ['openFolder', 'undo', 'redo'].includes(id) } : {}),
   })
   const mac = process.platform === 'darwin'
   const template: MenuItemConstructorOptions[] = [
@@ -59,8 +59,9 @@ export function buildMenu(getWindow: () => BrowserWindow | null): void {
     {
       label: 'Bearbeiten',
       submenu: [
-        { role: 'undo', label: 'Widerrufen' },
-        { role: 'redo', label: 'Wiederholen' },
+        // Text: the usual undo; PDF: highlights, ink, notes (src/app/undo.ts).
+        item('Widerrufen', 'undo', 'CmdOrCtrl+Z'),
+        item('Wiederholen', 'redo', 'Shift+CmdOrCtrl+Z'),
         { type: 'separator' },
         { role: 'cut', label: 'Ausschneiden' },
         { role: 'copy', label: 'Kopieren' },

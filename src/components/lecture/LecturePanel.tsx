@@ -55,7 +55,7 @@ export function LecturePanel({ page, jump, doc, path }: SideProps) {
     transcriptEnd.current?.scrollIntoView({ block: 'nearest' })
   }, [lecture.entries.length])
 
-  // Collapsible (remembered); a running recording keeps it open.
+  // Collapsible (remembered).
   const [openState, setOpenState] = useState(() => {
     try {
       return localStorage.getItem('notiva:lecture-open') !== '0'
@@ -63,7 +63,8 @@ export function LecturePanel({ page, jump, doc, path }: SideProps) {
       return true
     }
   })
-  const open = openState || active
+  // Also while recording – the header keeps showing the time and the red dot.
+  const open = openState
   const toggleOpen = () => {
     setOpenState(!open)
     try {

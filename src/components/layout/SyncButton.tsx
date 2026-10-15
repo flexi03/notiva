@@ -5,6 +5,7 @@ import { useWorkspace } from '@/app/store'
 import { syncAll, useSync } from '@/app/sync'
 import { getLanguage, t } from '@/i18n'
 import { Button, cx, IconButton, Popover } from '@/components/ui'
+import { electronBridge } from '@/lib/vault'
 
 /** Sync button: what was checked when (and with what result) – and sync everything now. */
 export function SyncButton() {
@@ -15,6 +16,17 @@ export function SyncButton() {
   const list = useNotifications((s) => s.list)
   const checks = list.filter((n) => n.kind === 'check')
   const [now, setNow] = useState(0)
+  const [schedule, setSchedule] = useState<Record<string, number | null>>({})
+  const inMinutes = (at: number | null | undefined) => {
+    if (at === undefined) return ''
+    if (at === null) return t('sync.manual')
+    const min = Math.max(0, Math.round((at - now) / 60_000))
+    return min < 60
+      ? t('sync.nextIn', { count: min })
+      : t('sync.nextAt', {
+          time: new Date(at).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }),
+        })
+  }
   const locale = getLanguage() === 'de' ? 'de-DE' : 'en-US'
   const ago = (iso: string) => {
     const min = Math.round((now - Date.parse(iso)) / 60_000)
@@ -29,6 +41,10 @@ export function SyncButton() {
         label={t('sync.title')}
         onClick={() => {
           setNow(Date.now())
+          void electronBridge()
+            ?.syncSchedule?.()
+            .then(setSchedule)
+            .catch(() => undefined)
           setOpen((v) => !v)
         }}
         active={open}
@@ -56,6 +72,9 @@ export function SyncButton() {
                     <span className="shrink-0 text-[12px] text-ink-3">{ago(c.time)}</span>
                   </span>
                   {c.body && <span className="block truncate text-[12.5px] text-ink-2">{c.body}</span>}
+                  {c.id in schedule && (
+                    <span className="block text-[11.5px] text-ink-3">{inMinutes(schedule[c.id])}</span>
+                  )}
                 </li>
               ))}
             </ul>

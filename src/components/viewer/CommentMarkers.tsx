@@ -1,4 +1,6 @@
-import { MessageSquare } from 'lucide-react'
+import { useState } from 'react'
+import { MessageSquare, StickyNote } from 'lucide-react'
+import { t } from '@/i18n'
 import type { Annotation } from '@/lib/annotations'
 import { COLOR_VALUES } from './AnnotationLayer'
 import { MarkdownView } from '@/components/editor/MarkdownView'
@@ -85,6 +87,39 @@ export function CommentMarkers({
           </button>
         )
       })}
+    </div>
+  )
+}
+
+/** The page's own note on the page itself (top right) – visible while scrolling through the PDF. */
+export function PageNoteFlag({ note, onEdit }: { note: string; onEdit: () => void }) {
+  const [open, setOpen] = useState(false)
+  if (!note.trim()) return null
+  const first =
+    note
+      .replace(/[`*#>_]/g, '')
+      .split('\n')
+      .find((l) => l.trim()) ?? ''
+  return (
+    <div className="pointer-events-none absolute top-2 right-2 z-[4] flex max-w-[45%] flex-col items-end">
+      <button
+        type="button"
+        data-testid="page-note-flag"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="pointer-events-auto flex max-w-full items-center gap-1 rounded-control border border-line bg-[var(--opt-yellow)] px-2 py-1 text-left text-[11.5px] text-[var(--opt-yellow-ink)] shadow-[var(--shadow-pop)]"
+      >
+        <StickyNote size={12} className="shrink-0" aria-hidden />
+        <span className="truncate">{first}</span>
+      </button>
+      {open && (
+        <div className="pointer-events-auto mt-1 max-h-72 w-72 max-w-full overflow-y-auto rounded-control border border-line bg-surface p-2 shadow-[var(--shadow-pop)]">
+          <MarkdownView markdown={note} untrusted className="md text-[12.5px]" />
+          <button type="button" className="mt-1 text-[12px] text-accent hover:underline" onClick={onEdit}>
+            {t('viewer.editPageNote')}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

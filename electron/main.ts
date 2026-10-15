@@ -293,6 +293,8 @@ const ecampus = new Ecampus(userFile(''), path.join(__dirname, 'moodlePreload.cj
 const ecampusProgress = (text: string) => window?.webContents.send('ecampus:progress', text)
 /** When each background check last ran (this app run). */
 const lastRun: Partial<Record<CheckKind | 'keepAlive', number>> = {}
+/** App start: first background round runs shortly after. */
+const started = Date.now()
 
 /** Fetches the results and turns changes into notifications. */
 async function pollEcampus(): Promise<ExamSnapshot> {
@@ -533,6 +535,23 @@ function registerIpc(): void {
   )
   handle('notifications:clear', async () => notifications.clear())
   handle('notifications:test', async () => testNotify())
+  // When each source is checked next (ms timestamps; null = only by hand).
+  handle('sync:schedule', async () => {
+    const { intervals } = parseNotifySettings((await readConfig()).notify)
+    const next = (k: CheckKind) => (intervals[k] ? (lastRun[k] ?? started) + intervals[k] * 60_000 : null)
+    const earliest = (...list: Array<number | null>) => {
+      const set = list.filter((n): n is number => n !== null)
+      return set.length ? Math.max(Date.now(), Math.min(...set)) : null
+    }
+    const moodle = earliest(next('moodle'), next('materials'), next('courseInfo'))
+    const ecampusNext = earliest(next('grades'))
+    return {
+      'check:moodle': moodle,
+      'check:ecampus': ecampusNext,
+      'check:examplan': earliest(next('examPlan')),
+      'check:study': earliest(moodle, ecampusNext),
+    }
+  })
   handle('notifications:openSystemSettings', async () => {
     if (process.platform === 'darwin')
       await shell.openExternal('x-apple.systempreferences:com.apple.Notifications-Settings.extension')

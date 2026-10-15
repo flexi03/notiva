@@ -202,6 +202,8 @@ export interface NotivaBridge {
     onData(callback: (id: number, data: string) => void): () => void
     onExit(callback: (id: number, code: number) => void): () => void
   }
+  /** Next automatic check per source ("check:moodle" …), ms timestamps; null = only by hand. */
+  syncSchedule?(): Promise<Record<string, number | null>>
   /** Menu bar commands (see src/app/commands.ts). */
   onMenu?(callback: (id: string) => void): () => void
   examPlan?: {

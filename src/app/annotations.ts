@@ -18,6 +18,8 @@ const creating = new Map<string, Promise<string>>()
  * Annotations and page notes of a PDF, stored in its notes page (created on the first change).
  * All writes go through the Workspace, so search, links and Git see them like any page.
  */
+const histories = new Map<string, { past: Annotation[][]; future: Annotation[][] }>()
+
 export function useAnnotations(pdfPath: string) {
   const ws = useWorkspace()
   const notesPath = notesPathFor(pdfPath)
@@ -42,13 +44,34 @@ export function useAnnotations(pdfPath: string) {
     return pending
   }, [ws, notesPath, pdfPath])
 
-  const save = useCallback(
+  const write = useCallback(
     async (next: Annotation[]) => {
       const path = await ensurePage()
       await ws.setProperty(path, 'annotations', serializeAnnotations(next))
     },
     [ws, ensurePage],
   )
+  // Undo/redo of highlights, ink, notes, moves (per PDF, this session).
+  const history = histories.get(pdfPath) ?? { past: [], future: [] }
+  histories.set(pdfPath, history)
+  const save = (next: Annotation[]) => {
+    history.past.push(annotations)
+    if (history.past.length > 100) history.past.shift()
+    history.future = []
+    return write(next)
+  }
+  const undo = () => {
+    const previous = history.past.pop()
+    if (!previous) return
+    history.future.push(annotations)
+    void write(previous)
+  }
+  const redo = () => {
+    const next = history.future.pop()
+    if (!next) return
+    history.past.push(annotations)
+    void write(next)
+  }
 
   const add = (a: Annotation) => save([...annotations, a])
   const update = (id: string, patch: Partial<Annotation>) =>
@@ -72,5 +95,7 @@ export function useAnnotations(pdfPath: string) {
     update,
     remove,
     setNote,
+    undo,
+    redo,
   }
 }

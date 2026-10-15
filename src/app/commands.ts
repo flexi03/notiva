@@ -4,6 +4,7 @@ import { useMoodle } from '@/app/moodle'
 import { useApp } from '@/app/store'
 import { setupHint } from '@/app/study'
 import { syncAll } from '@/app/sync'
+import { runUndo } from '@/app/undo'
 import { forgetVault, openFolder } from '@/app/vaults'
 import type { Workspace } from '@/lib/workspace'
 
@@ -34,6 +35,8 @@ export const COMMANDS = [
   'setupCheck',
   'syncAll',
   'semester',
+  'undo',
+  'redo',
 ] as const
 export type CommandId = (typeof COMMANDS)[number]
 
@@ -95,6 +98,10 @@ export function runCommand(
       return app.navigate({ name: 'settings', section: 'study' })
     case 'examPlan':
       return void syncExamPlan(ws).catch(() => undefined)
+    case 'undo':
+      return runUndo(false)
+    case 'redo':
+      return runUndo(true)
     case 'semester':
       return app.navigate({ name: 'semester' })
     case 'syncAll':

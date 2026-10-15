@@ -99,6 +99,7 @@ contextBridge.exposeInMainWorld('notiva', {
       return () => ipcRenderer.removeListener('moodle:polled', listener)
     },
   },
+  syncSchedule: () => invoke<Record<string, number | null>>('sync:schedule'),
   onMenu: (callback: (id: string) => void) => {
     const listener = (_e: unknown, id: string) => callback(id)
     ipcRenderer.on('menu:command', listener)

@@ -15,12 +15,13 @@ import {
   StickyNote,
   Type,
 } from 'lucide-react'
-import { CommentMarkers } from './CommentMarkers'
+import { CommentMarkers, PageNoteFlag } from './CommentMarkers'
 import { SideWeb } from '@/components/terminal/SideWeb'
 import { TerminalDock } from '@/components/terminal/TerminalDock'
 import { ResizeHandle, useStoredWidth } from '@/components/layout/ResizeHandle'
 import { workFolderFor } from '@/lib/codeFolders'
 import { electronBridge } from '@/lib/vault'
+import { registerUndo, runUndo } from '@/app/undo'
 import { useAnnotations } from '@/app/annotations'
 import { useAssistant } from '@/app/assistant'
 import { useApp, useWorkspace } from '@/app/store'
@@ -108,6 +109,29 @@ export function PdfDocumentView({
     const timer = setTimeout(() => viewer.current?.scrollToPage(initialPage), 250)
     return () => clearTimeout(timer)
   }, [initialPage, doc, path])
+
+  // ⌘Z / ⇧⌘Z outside text fields: undo/redo annotations of this PDF.
+  const undoRef = useRef(notes)
+  useEffect(() => {
+    undoRef.current = notes
+  })
+  useEffect(
+    () => registerUndo({ undo: () => undoRef.current.undo(), redo: () => undoRef.current.redo() }),
+    [],
+  )
+  useEffect(() => {
+    // Browser/PWA: no menu bar – listen to the keys here.
+    if (electronBridge()) return
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'z') return
+      const el = document.activeElement as HTMLElement | null
+      if (el?.matches('input, textarea, [contenteditable="true"]')) return
+      e.preventDefault()
+      runUndo(e.shiftKey)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   // Remember where the reader is (per file, this app session).
   useEffect(() => {
@@ -348,6 +372,13 @@ export function PdfDocumentView({
             )}
             overlay={(page, size, scale) => (
               <>
+                <PageNoteFlag
+                  note={notes.note(page)}
+                  onEdit={() => {
+                    setPanel(true)
+                    goTo(page)
+                  }}
+                />
                 <CommentMarkers
                   page={page}
                   size={size}
