@@ -67,6 +67,29 @@ export function annotatedPdfs(ws: Workspace): Array<{ pdf: string; notes: string
     .sort((a, b) => b.mtime - a.mtime)
 }
 
+/**
+ * The script for a session: a lecture file of the module named after the date ("…07.10.2026…",
+ * "2026-10-07", "0710") or – failing that – one saved in the last 7 days.
+ */
+export function scriptFor(
+  ws: Workspace,
+  base: string,
+  module: string,
+  date: Date,
+  now = new Date(),
+): string | undefined {
+  const dir = `${base}/${module.replace(/[\\/:*?"<>|]/g, '-')}/Vorlesung/`
+  const files = ws.assets().filter((f) => f.path.startsWith(dir) && /\.(pdf|pptx?)$/i.test(f.path))
+  const d = String(date.getDate()).padStart(2, '0')
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const y = date.getFullYear()
+  const dated = new RegExp(`${d}[._-]?${m}[._-]?(${y}|${String(y).slice(2)})?(?!\\d)|${y}-?${m}-?${d}`)
+  const byDate = files.find((f) => dated.test(f.path.slice(dir.length)))
+  if (byDate) return byDate.path
+  return files.filter((f) => now.getTime() - f.mtime < 7 * 86_400_000).sort((a, b) => b.mtime - a.mtime)[0]
+    ?.path
+}
+
 /** The next start of a weekly session from `now` (today later counts). */
 export function nextOccurrence(row: Pick<TimetableRow, 'day' | 'start'>, now: Date): Date | undefined {
   const idx = DAYS.indexOf(row.day as (typeof DAYS)[number])

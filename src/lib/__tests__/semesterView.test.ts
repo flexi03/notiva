@@ -25,7 +25,11 @@ describe('Mein Semester', () => {
     const link = ['[[Datenbanksysteme 2]]']
     await ws.createRow('Studium/Prüfungen.md', 'Klausur DBS2', { Modul: link, Datum: '2026-11-23' })
     await ws.createRow('Studium/Prüfungen.md', 'Alte Klausur', { Modul: link, Datum: '2026-02-01' })
-    await ws.createRow('Studium/Aufgaben.md', 'Blatt 3', { Modul: link, Status: 'Offen', Fällig: '2026-10-20' })
+    await ws.createRow('Studium/Aufgaben.md', 'Blatt 3', {
+      Modul: link,
+      Status: 'Offen',
+      Fällig: '2026-10-20',
+    })
     await ws.createRow('Studium/Aufgaben.md', 'Blatt 2', { Modul: link, Status: 'Erledigt' })
     await ws.reload()
     const timetable = [
@@ -76,5 +80,23 @@ describe('Mein Semester', () => {
     expect(nextOccurrence({ day: 'Do', start: '09:00' }, now)?.getDate()).toBe(22)
     expect(nextOccurrence({ day: 'Do', start: '11:00' }, now)?.getDate()).toBe(15)
     expect(nextOccurrence({ day: 'Mo', start: '08:00' }, now)?.getDate()).toBe(19)
+  })
+})
+
+describe('script for a session', () => {
+  it('prefers the file named after the date, else a new one', async () => {
+    const { scriptFor } = await import('../semesterView')
+    const ws = await Workspace.open(new MemoryVault())
+    const dir = 'U/BWL/Vorlesung'
+    await ws.writeFile(`${dir}/07.10.2026 0810_Vorlesung_Lemm.pdf`, new Uint8Array([1]))
+    await ws.writeFile(`${dir}/Kapitel 3.pdf`, new Uint8Array([1]))
+    await ws.reload()
+    const now = new Date(2026, 9, 15)
+    expect(scriptFor(ws, 'U', 'BWL', new Date(2026, 9, 7), now)).toBe(
+      `${dir}/07.10.2026 0810_Vorlesung_Lemm.pdf`,
+    )
+    // No file for that date: the newest one of the last days.
+    expect(scriptFor(ws, 'U', 'BWL', new Date(2026, 9, 14), now)).toMatch(/\.pdf$/)
+    expect(scriptFor(ws, 'U', 'Mathe', new Date(2026, 9, 14), now)).toBeUndefined()
   })
 })
