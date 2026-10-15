@@ -8,7 +8,7 @@ export function ToastHost() {
   return (
     <div
       aria-live="polite"
-      className="no-print pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4"
+      className="no-print pointer-events-none fixed inset-x-0 bottom-4 z-[44] flex justify-center px-4"
     >
       {toast && (
         <div className="pointer-events-auto flex max-w-md items-center gap-3 rounded-panel bg-ink px-4 py-2.5 text-sm text-paper shadow-[var(--shadow-pop)]">

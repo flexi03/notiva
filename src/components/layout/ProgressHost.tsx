@@ -13,7 +13,8 @@ export function ProgressHost() {
   return (
     <div
       aria-live="polite"
-      className={`no-print fixed ${badgeBelow ? 'bottom-20' : 'bottom-4'} left-4 z-50 flex w-[min(22rem,calc(100vw-2rem))] flex-col gap-2`}
+      // Below open dialogs (z-45): a hint must never cover a dialog's buttons.
+      className={`no-print fixed ${badgeBelow ? 'bottom-20' : 'bottom-4'} left-4 z-[44] flex w-[min(22rem,calc(100vw-2rem))] flex-col gap-2`}
     >
       {tasks.map((task) => {
         const percent = task.total ? Math.min(100, Math.round((task.done / task.total) * 100)) : null
