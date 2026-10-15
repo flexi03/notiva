@@ -14,6 +14,8 @@ export interface Session {
   start: string
   end: string
   room?: string
+  /** "Gruppe A" – one of several parallel groups; the user attends only one */
+  group?: string
 }
 
 const DAY_WORDS: Array<[RegExp, Day]> = [
@@ -31,13 +33,28 @@ const TYPES: Array<[RegExp, SessionType]> = [
   [/vorlesung|lecture|\bvl\b/i, 'Vorlesung'],
 ]
 const TIME = /(\d{1,2})[:.](\d{2})\s*(?:uhr\s*)?(?:-|–|—|bis)\s*(\d{1,2})[:.](\d{2})/i
-const ROOM = /\b(?:raum|room|hörsaal|r\.)\s*:?\s*([A-Z0-9][\w.\-/]{1,15})|\b(\d\.[A-Z0-9]\.\d{2,3})\b/i
+// A room has a digit: "Raum der Veranstaltung" is no room, "Hörsaal 04.1.009" and "4.E.001" are.
+const ROOM =
+  /\b(?:raum|room|hörsaal|r\.)\s*:?\s*(?=[\w.\-/]*\d)([A-Z0-9][\w.\-/]{1,15})|\b(\d{1,2}\.[A-Z0-9]\.\d{2,3})\b/i
+// A concrete date ("18.12.", "29.4.26", "2. Juli") – a one-off appointment, not a weekly session …
+const DATE =
+  /\b\d{1,2}\.\s?(?:\d{1,2}\.(?:\d{2,4})?|(?:jan|feb|mär|apr|mai|jun|jul|aug|sep|okt|nov|dez)[a-zä]*)(?!\d)/i
+// … unless it says when the weekly sessions start ("dienstags ab dem 28.10.", "jeweils mittwochs").
+const WEEKLY =
+  /\b(?:ab dem|ab|jeweils|wöchentlich|weekly|every|immer|montags|dienstags|mittwochs|donnerstags|freitags|samstags)\b/i
+const GROUP = /\bgruppe\s+([A-Z0-9]{1,3})\b|\bgroup\s+([A-Z0-9]{1,3})\b/i
 
 const pad = (h: string, m: string) => `${h.padStart(2, '0')}:${m}`
 
 /** Sessions mentioned in a text (one per line/sentence that has a weekday, a time range and a type). */
-export function findSessions(text: string, fallbackType?: SessionType): Session[] {
+export function findSessions(text: string, fallbackType?: SessionType, program?: string): Session[] {
   const out: Session[] = []
+  // "für den Studiengang BMT reserviert" – not for a BMI student.
+  const code = program?.match(/^[A-Za-z]+/)?.[0]?.toUpperCase()
+  const otherProgram = (piece: string) => {
+    const named = /studiengang\s+([A-Z]{2,5})\b/i.exec(piece)?.[1]?.toUpperCase()
+    return Boolean(code && named && named !== code)
+  }
   const pieces = text.split(/\n|(?<=[.;])\s+(?=[A-ZÄÖÜ])/)
   let lastType: SessionType | undefined
   for (const piece of pieces) {
@@ -46,17 +63,21 @@ export function findSessions(text: string, fallbackType?: SessionType): Session[
     const time = TIME.exec(piece)
     const day = DAY_WORDS.find(([re]) => re.test(piece))?.[1]
     if (!time || !day) continue
+    if (DATE.test(piece.replace(TIME, '')) && !WEEKLY.test(piece)) continue
+    if (otherProgram(piece)) continue
     const [, h1, m1, h2, m2] = time
     if (Number(h1) > 23 || Number(h2) > 23) continue
     const room = ROOM.exec(piece)
     const kind = type ?? lastType ?? fallbackType
     if (!kind) continue
+    const group = GROUP.exec(piece)
     const session: Session = {
       type: kind,
       day,
       start: pad(h1!, m1!),
       end: pad(h2!, m2!),
       ...(room ? { room: (room[1] ?? room[2])! } : {}),
+      ...(group ? { group: (group[1] ?? group[2])!.toUpperCase() } : {}),
     }
     if (!out.some((s) => s.type === session.type && s.day === session.day && s.start === session.start))
       out.push(session)
@@ -76,11 +97,13 @@ export interface TimetableRow {
 }
 
 export interface ScheduleChange {
-  kind: 'create' | 'conflict'
+  kind: 'create' | 'conflict' | 'groups'
   module: string
   session: Session
   /** conflict: the user's row that says otherwise */
   row?: TimetableRow
+  /** groups: all parallel groups of this type – the user picks theirs */
+  options?: Session[]
 }
 
 /** New sessions to add and differences to the user's rows (same module and type). */
@@ -91,7 +114,16 @@ export function planTimetable(
 ): ScheduleChange[] {
   const mine = rows.filter((r) => r.module === moduleTitle)
   const changes: ScheduleChange[] = []
-  for (const session of sessions) {
+  const sameType = (r: TimetableRow, type: SessionType) =>
+    (r.type ?? '') === type || (type === 'Praktikum' && r.type === 'Labor')
+  // Parallel groups: nothing to add when the user already has one of them, otherwise ask once.
+  for (const type of new Set(sessions.filter((s) => s.group).map((s) => s.type))) {
+    const options = sessions.filter((s) => s.group && s.type === type)
+    if (mine.some((r) => sameType(r, type))) continue
+    if (options.length === 1) changes.push({ kind: 'create', module: moduleTitle, session: options[0]! })
+    else changes.push({ kind: 'groups', module: moduleTitle, session: options[0]!, options })
+  }
+  for (const session of sessions.filter((s) => !s.group)) {
     const same = mine.filter(
       (r) => (r.type ?? '') === session.type || (session.type === 'Praktikum' && r.type === 'Labor'),
     )

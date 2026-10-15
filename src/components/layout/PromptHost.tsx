@@ -12,7 +12,7 @@ export function PromptHost() {
 
 function PromptDialog() {
   const prompt = useApp((s) => s.prompt)!
-  const [value, setValue] = useState(prompt.initial ?? '')
+  const [value, setValue] = useState(prompt.initial ?? prompt.choices?.[0]?.value ?? '')
   const submit = () => prompt.resolve(prompt.confirm ? 'ok' : value)
   return (
     <Dialog
@@ -37,7 +37,25 @@ function PromptDialog() {
         </>
       }
     >
-      {prompt.confirm ? (
+      {prompt.choices ? (
+        <div role="radiogroup" aria-label={prompt.label ?? prompt.title} className="space-y-1">
+          {prompt.label && <p className="mb-2 text-sm text-ink-2">{prompt.label}</p>}
+          {prompt.choices.map((c) => (
+            <label
+              key={c.value}
+              className="flex items-center gap-2 rounded-control px-2 py-1.5 text-sm hover:bg-hover"
+            >
+              <input
+                type="radio"
+                name="prompt-choice"
+                checked={value === c.value}
+                onChange={() => setValue(c.value)}
+              />
+              {c.label}
+            </label>
+          ))}
+        </div>
+      ) : prompt.confirm ? (
         <p className="text-sm text-ink-2">{prompt.label}</p>
       ) : (
         <form

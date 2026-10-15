@@ -19,6 +19,8 @@ export interface PromptRequest {
   /** confirm-only dialog (no text field) */
   confirm?: boolean
   danger?: boolean
+  /** pick one of these (resolves with the chosen value) */
+  choices?: Array<{ value: string; label: string }>
   resolve: (value: string | null) => void
 }
 

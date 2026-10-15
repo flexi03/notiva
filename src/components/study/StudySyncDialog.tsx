@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { syncTimetable } from '@/app/schedule'
 import { createStudyFolder, previewStudy, setupHint, studySources, type StudySources } from '@/app/study'
 import { withProgress } from '@/app/progress'
 import { useAction, useApp, useWorkspace } from '@/app/store'
@@ -151,6 +152,7 @@ export function StudySyncDialog({ onClose }: { onClose: () => void }) {
                       await ws.save(preview.dashboard, { data: { ...page.data, ...setupData(setup) } })
                     }
                     await preview.plan.apply()
+                    await syncTimetable(ws).catch(() => undefined)
                   },
                   { success: () => t('study.synced', { count }) },
                 ).then(() => navigate({ name: 'page', path: preview.dashboard })),

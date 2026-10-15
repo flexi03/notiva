@@ -65,7 +65,7 @@ export function previewStudy(
     dashboard: dash.path,
     setup: chosen,
     state,
-    plan: planStudySync(ws, dash.folder, state),
+    plan: planStudySync(ws, dash.folder, state, sources.moodle?.info ?? {}),
   }
 }
 
@@ -198,6 +198,9 @@ export async function createStudyFolder(
     if (state && !state.isRepo) await git.init().catch(() => undefined)
   }
   const preview = previewStudy(ws, await studySources())
-  if (preview.ok) await preview.plan.apply()
+  if (preview.ok) {
+    await preview.plan.apply()
+    await syncTimetable(ws).catch(() => undefined)
+  }
   return dashboard
 }
