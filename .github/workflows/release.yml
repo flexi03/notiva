@@ -30,8 +30,16 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build && npm run electron:build && npm run mcp:build
-      - run: npx electron-builder ${{ matrix.target }} --publish always
+      - run: npx electron-builder ${{ matrix.target }} --publish never
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Not signed (no Apple/Windows certificate): don't look for one.
           CSC_IDENTITY_AUTO_DISCOVERY: false
+      - name: Upload to the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "Notiva ${TAG#v}" --notes "Siehe CHANGELOG.md" || true
+          shopt -s nullglob
+          gh release upload "$TAG" release/Notiva-${TAG#v}-*.{dmg,zip,exe,AppImage} --clobber
