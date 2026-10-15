@@ -92,11 +92,13 @@ export class NotificationStore {
 
   async add(incoming: AppNotification[]): Promise<AppNotification[]> {
     if (incoming.length === 0) return []
-    const { list, added } = mergeNotifications(await this.all(), parseNotifications(incoming))
-    if (added.length === 0) return []
+    const parsed = parseNotifications(incoming)
+    const { list, added } = mergeNotifications(await this.all(), parsed)
+    // Check results ("Moodle geprüft") change the list without being news.
+    if (added.length === 0 && !parsed.some((n) => n.kind === 'check')) return []
     this.list = list
     await this.save()
-    this.onAdded(added)
+    if (added.length) this.onAdded(added)
     return added
   }
 

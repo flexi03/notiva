@@ -3,6 +3,7 @@ import { withProgress } from '@/app/progress'
 import { t } from '@/i18n'
 import { examPlanNews, examsForStudy, parsePlanTable, planExamDates, planVersion } from '@/lib/examPlan'
 import { pdfTextItems } from '@/lib/pdfText'
+import { checkResult } from '@/lib/notifications'
 import { electronBridge } from '@/lib/vault'
 import type { Workspace } from '@/lib/workspace'
 
@@ -56,6 +57,17 @@ export function syncExamPlan(ws: Workspace): Promise<number> {
               `${preview.folder}/Prüfungen.md`,
             ),
           )
+        await electronBridge()?.notifications?.add([
+          checkResult(
+            'examplan',
+            'Prüfungsplan geprüft',
+            plan.changes.length
+              ? `${plan.changes.length} Termine eingetragen oder geändert`
+              : 'keine neuen Termine für dich',
+            new Date(),
+            { type: 'page', path: `${preview.folder}/Prüfungen.md` },
+          ),
+        ])
         return plan.changes.length
       },
       { success: (n) => (n ? t('examPlan.updated', { count: n }) : t('examPlan.upToDate')) },

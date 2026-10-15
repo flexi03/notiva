@@ -328,6 +328,8 @@ test('meldet Neuigkeiten aus Moodle im Benachrichtigungscenter', async () => {
   await expect(list).toContainText('Neue Abgabe: Blatt 6')
   await expect(list).toContainText('Neue Unterlage: Vorlesung 2 – Skript')
   await expect(list).toContainText('Mitteilung: Raumänderung: heute H3')
+  // Each check leaves one entry (replaced next time) – read, not counted as news.
+  await expect(list).toContainText('Moodle geprüft')
   // Changed course texts (section summary) – with the new text.
   await expect(list).toContainText('Geändert: Woche 1')
   await expect(list).toContainText('Klausur am 03.02.')

@@ -5,7 +5,16 @@
  */
 import type { MoodleEvent, MoodleSnapshot } from './moodle'
 
-export type NotificationKind = 'deadline' | 'moved' | 'material' | 'updated' | 'notice' | 'grade' | 'reminder'
+export type NotificationKind =
+  | 'deadline'
+  | 'moved'
+  | 'material'
+  | 'updated'
+  | 'notice'
+  | 'grade'
+  | 'reminder'
+  /** Result of a check ("Moodle geprüft – nichts Neues"): one entry per source, replaced each time. */
+  | 'check'
 
 export type NotificationTarget =
   | { type: 'url'; url: string }
@@ -170,9 +179,13 @@ export function mergeNotifications(
   existing: AppNotification[],
   incoming: AppNotification[],
 ): { list: AppNotification[]; added: AppNotification[] } {
-  const known = new Set(existing.map((n) => n.id))
-  const added = incoming.filter((n) => !known.has(n.id) && (known.add(n.id), true))
-  const list = [...added, ...existing]
+  // Check results replace their older entry (same id) – no new news, no banner.
+  const checks = incoming.filter((n) => n.kind === 'check')
+  const replaced = new Set(checks.map((n) => n.id))
+  const rest = existing.filter((n) => !replaced.has(n.id))
+  const known = new Set(rest.map((n) => n.id))
+  const added = incoming.filter((n) => n.kind !== 'check' && !known.has(n.id) && (known.add(n.id), true))
+  const list = [...added, ...checks.map((n) => ({ ...n, read: true })), ...rest]
     .sort((a, b) => b.time.localeCompare(a.time))
     .slice(0, MAX_NOTIFICATIONS)
   return { list, added }
@@ -189,6 +202,7 @@ export function parseNotifications(raw: unknown): AppNotification[] {
     'notice',
     'grade',
     'reminder',
+    'check',
   ]
   const str = (v: unknown, max = 500) => (typeof v === 'string' ? v.slice(0, max) : undefined)
   const out: AppNotification[] = []
@@ -233,4 +247,44 @@ export function parseNotifications(raw: unknown): AppNotification[] {
     })
   }
   return out
+}
+
+/** "Moodle geprüft" entry: when and what came of it (one per source, replaced each time). */
+export function checkResult(
+  source: string,
+  title: string,
+  body: string,
+  now = new Date(),
+  target?: NotificationTarget,
+): AppNotification {
+  return {
+    id: `check:${source}`,
+    kind: 'check',
+    title,
+    body,
+    time: now.toISOString(),
+    read: true,
+    ...(target ? { target } : {}),
+  }
+}
+
+const NEWS_WORDS: Partial<Record<NotificationKind, [string, string]>> = {
+  deadline: ['neuer Termin', 'neue Termine'],
+  moved: ['Änderung', 'Änderungen'],
+  material: ['neue Datei', 'neue Dateien'],
+  updated: ['geänderte Datei', 'geänderte Dateien'],
+  notice: ['Mitteilung', 'Mitteilungen'],
+  grade: ['neue Note', 'neue Noten'],
+  reminder: ['Erinnerung', 'Erinnerungen'],
+}
+
+/** "2 neue Termine · 1 Mitteilung" – or "nichts Neues". */
+export function newsSummary(news: AppNotification[]): string {
+  const counts = new Map<NotificationKind, number>()
+  for (const n of news) if (n.kind !== 'check') counts.set(n.kind, (counts.get(n.kind) ?? 0) + 1)
+  const parts = [...counts].map(([kind, n]) => {
+    const [one, many] = NEWS_WORDS[kind] ?? ['Neuigkeit', 'Neuigkeiten']
+    return `${n} ${n === 1 ? one : many}`
+  })
+  return parts.length ? parts.join(' · ') : 'nichts Neues'
 }

@@ -54,7 +54,13 @@ import {
   type CheckKind,
   type NotifySettings,
 } from './notifier'
-import { deadlineReminders, moodleNews, type AppNotification } from '../src/lib/notifications'
+import {
+  checkResult,
+  deadlineReminders,
+  moodleNews,
+  newsSummary,
+  type AppNotification,
+} from '../src/lib/notifications'
 import { materialCategory, type MoodleSnapshot } from '../src/lib/moodle'
 import { courseInfoNews } from '../src/lib/moodleInfo'
 import { findPlanLinks, type PlanLink } from '../src/lib/examPlan'
@@ -263,7 +269,7 @@ async function pollMoodle(contents = true): Promise<MoodleSnapshot> {
   // The app saves new materials into the vault (its folder logic lives in the renderer).
   window?.webContents.send('moodle:polled')
   const now = new Date()
-  await notifications.add([
+  const news = [
     ...moodleNews(previous, snapshot, { now, locale: LOCALE() }),
     ...courseInfoNews(
       previous?.info,
@@ -281,7 +287,9 @@ async function pollMoodle(contents = true): Promise<MoodleSnapshot> {
       })),
       { now, locale: LOCALE() },
     ),
-  ])
+  ]
+  const added = await notifications.add(news)
+  await notifications.add([checkResult('moodle', 'Moodle geprüft', newsSummary(added), now)])
   return snapshot
 }
 
@@ -301,10 +309,25 @@ async function pollEcampus(): Promise<ExamSnapshot> {
   try {
     const next = await ecampus.fetch(ecampusProgress)
     lastRun.grades = Date.now()
-    await notifications.add(examNews(previous, next))
+    const added = await notifications.add(examNews(previous, next))
+    await notifications.add([
+      checkResult('ecampus', 'eCampus geprüft', newsSummary(added), new Date(), {
+        type: 'route',
+        hash: '#/grades',
+      }),
+    ])
     window?.webContents.send('ecampus:polled')
     return next
   } catch (error) {
+    await notifications.add([
+      checkResult(
+        'ecampus',
+        'eCampus geprüft',
+        error instanceof NeedsLogin ? 'Anmeldung nötig' : `Fehler: ${(error as Error).message}`.slice(0, 200),
+        new Date(),
+        { type: 'route', hash: '#/settings/study' },
+      ),
+    ])
     if (error instanceof NeedsLogin)
       await notifications.add([
         {

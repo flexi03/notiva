@@ -1,4 +1,5 @@
 import { announce, withProgress } from '@/app/progress'
+import { checkResult } from '@/lib/notifications'
 import { useApp } from '@/app/store'
 import { t } from '@/i18n'
 import { moduleResults, type ExamSnapshot } from '@/lib/ecampus'
@@ -71,8 +72,18 @@ let running: Promise<number> | null = null
 export function autoSyncStudy(ws: Workspace): Promise<number> {
   running ??= (async () => {
     const preview = previewStudy(ws, await studySources())
-    if (!preview.ok || preview.plan.changes.length === 0) return 0
+    if (!preview.ok) return 0
     const count = preview.plan.changes.length
+    await electronBridge()?.notifications?.add([
+      checkResult(
+        'study',
+        'Studium abgeglichen',
+        count ? studyChangeNote(preview.plan.changes) || `${count} Änderungen` : 'alles aktuell',
+        new Date(),
+        { type: 'page', path: preview.dashboard },
+      ),
+    ])
+    if (count === 0) return 0
     await withProgress(t('study.syncing'), () => preview.plan.apply(), {
       success: () => t('study.synced', { count }),
       note: () => studyChangeNote(preview.plan.changes),

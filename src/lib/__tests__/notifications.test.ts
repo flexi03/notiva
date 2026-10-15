@@ -1,4 +1,11 @@
-import { deadlineReminders, mergeNotifications, moodleNews, parseNotifications } from '../notifications'
+import {
+  deadlineReminders,
+  mergeNotifications,
+  moodleNews,
+  parseNotifications,
+  checkResult,
+  newsSummary,
+} from '../notifications'
 import type { MoodleSnapshot } from '../moodle'
 
 const now = new Date('2026-10-14T10:00:00Z')
@@ -116,5 +123,21 @@ describe('mergeNotifications', () => {
         'kaputt',
       ]),
     ).toEqual([{ id: 'x', kind: 'notice', title: 'T', time: '2026-10-14T08:00:00Z' }])
+  })
+})
+
+describe('check results', () => {
+  it('replace their older entry, are read and never count as news', () => {
+    const first = mergeNotifications(
+      [],
+      [checkResult('moodle', 'Moodle geprüft', 'nichts Neues', new Date('2026-10-15T08:00:00Z'))],
+    )
+    expect(first.added).toEqual([])
+    const second = mergeNotifications(first.list, [
+      checkResult('moodle', 'Moodle geprüft', '2 neue Termine', new Date('2026-10-15T09:00:00Z')),
+    ])
+    expect(second.list).toHaveLength(1)
+    expect(second.list[0]).toMatchObject({ body: '2 neue Termine', read: true })
+    expect(newsSummary([])).toBe('nichts Neues')
   })
 })

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
+  RefreshCw,
   Bell,
   BellRing,
   CalendarClock,
@@ -30,6 +31,7 @@ const ICONS: Record<NotificationKind, typeof Bell> = {
   updated: FileText,
   notice: MessageSquare,
   grade: GraduationCap,
+  check: RefreshCw,
 }
 
 /** Opens what a notification is about: the Notiva page, the saved file, the course or the Moodle page. */
