@@ -156,7 +156,7 @@ width: wide
 Willkommen in deinem Studium **{{studiengang}}**. Alles hier ist Markdown – Kacheln, Ansichten und Datenbanken kannst du frei anpassen (Block anklicken).
 
 > [!info] Wo steht was?
-> - **Dieses Semester** (unten) – Module, die du gerade belegst, wiederholst oder nachholst. Andere Semester: [[{{name}}/Semester|Semester]] (je Semester eine Seite).
+> - **Belege ich gerade** (unten) – Module mit *Belegung* (Vorlesung, Praktikum, Übung oder nur Prüfung); Notiva schlägt sie vor, du kannst sie selbst setzen. Andere Semester: [[{{name}}/Semester|Semester]] (je Semester eine Seite).
 > - **[[{{name}}/Module|Module]]** – alle Module der Prüfungsordnung mit Status, Versuchen und Note. Die **Modulseite** ist der Ort für alles zu einem Fach: Moodle-Infos, Unterlagen, Mitschriften, Prüfungen und deine Notizen.
 > - **[[{{name}}/Orga|Orga]]** – Prüfungsplan, Fristen, Studieninfos und allgemeine Kurse.
 > - **[[{{name}}/Mitschriften|Mitschriften]]** – Notizen aus Vorlesungen, je Modul verknüpft.
@@ -178,12 +178,12 @@ tiles:
   - { type: link, page: "{{name}}/Semester", description: Überblick je Semester }
 \`\`\`
 
-## Dieses Semester
+## Belege ich gerade
 
 \`\`\`notiva
 type: view
 source: "{{name}}/Module"
-view: Dieses Semester
+view: Aktiv
 \`\`\`
 
 ## Aufgaben

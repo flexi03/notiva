@@ -63,6 +63,7 @@ const STATUS_COLORS: Record<string, string> = {
 export const MODULE_PROPERTIES = `
     - { name: Nr, type: text }
     - { name: Status, type: select, options: [${MODULE_STATUS.map((s) => `{ value: ${s}, color: ${STATUS_COLORS[s]} }`).join(', ')}] }
+    - { name: Belegung, type: multiSelect, options: [{ value: Vorlesung, color: blue }, { value: Praktikum, color: orange }, { value: Übung, color: green }, { value: Prüfung, color: purple }] }
     - { name: Belegt, type: multiSelect }
     - { name: Fachsemester, type: number }
     - { name: ECTS, type: number }
@@ -81,6 +82,7 @@ export const MODULE_PROPERTIES = `
     - { name: Link, type: url }`
 
 export const MODULE_VIEWS = `
+    - { name: Aktiv, type: table, filter: [{ property: Belegung, op: notEmpty }], sort: [{ property: Nr, direction: asc }], properties: [Belegung, Status, Nr, Versuche, Praktikum, Note] }
     - { name: Dieses Semester, type: board, groupBy: Status, filter: [{ property: Belegt, op: contains, value: "@semester" }], properties: [Nr, Note, Versuche, Praktikum] }
     - { name: Nächstes Semester, type: table, filter: [{ property: Belegt, op: contains, value: "@nextSemester" }], sort: [{ property: Nr, direction: asc }], properties: [Status, Nr, Fachsemester, ECTS, Versuche, Praktikum, Angebot] }
     - { name: Studienverlauf, type: list, groupBy: Fachsemester, sort: [{ property: Nr, direction: asc }], properties: [Status, Note, Bestanden im, Versuche] }
@@ -107,7 +109,9 @@ database:
     - { name: Link, type: url }
     - { name: Geändert, type: date }
     - { name: Ordner, type: text }
+    - { name: Aktiv, type: checkbox }
   views:
+    - { name: Aktiv, type: table, filter: [{ property: Aktiv, op: checked }], properties: [Modul, Art, Semester, Geändert, Link] }
     - { name: Alle, type: table, sort: [{ property: Art, direction: asc }], properties: [Modul, Art, Semester, Geändert, Link] }
     - { name: Nach Modul, type: list, groupBy: Modul, properties: [Semester, Geändert] }
 ---
@@ -130,7 +134,8 @@ function moduleDefPatch(def: DatabaseDef): DatabaseDef {
   const views: ViewDef[] = [...def.views]
   for (const v of target.views) if (!views.some((x) => x.name === v.name)) views.unshift(v)
   // The new semester views first.
-  views.sort((a, b) => Number(b.name === 'Dieses Semester') - Number(a.name === 'Dieses Semester'))
+  const first = (v: ViewDef) => (v.name === 'Aktiv' ? 2 : v.name === 'Dieses Semester' ? 1 : 0)
+  views.sort((a, b) => first(b) - first(a))
   return {
     ...def,
     properties,
@@ -182,6 +187,13 @@ function moduleValues(state: StudyState, m: ModuleState): FrontmatterData {
     }
   }
   if (m.courses.length) v.kurse = m.courses.map((c) => c.id)
+  // What one attends now (suggestion; the user's own choice wins, see moduleChanges).
+  v.Belegung =
+    m.status === 'In Vorlesung'
+      ? ['Vorlesung', ...(module.prerequisite && /praktikum/i.test(module.prerequisite) ? ['Praktikum'] : [])]
+      : m.status === 'Wiederholung' || m.status === 'Prüfung angemeldet'
+        ? ['Prüfung']
+        : []
   // The course of this (or the latest) semester as link.
   const course =
     m.courses.find((c) => c.term && termIndex(c.term) === termIndex(state.current)) ??
@@ -194,7 +206,7 @@ function moduleValues(state: StudyState, m: ModuleState): FrontmatterData {
 function moduleChanges(current: FrontmatterData, wanted: FrontmatterData): FrontmatterData {
   const changes: FrontmatterData = {}
   for (const [key, value] of Object.entries(wanted)) {
-    if (key === 'Status') continue
+    if (key === 'Status' || key === 'Belegung') continue
     // Link and ECTS only fill gaps; the user may point to another course.
     if ((key === 'Link' || key === 'Dozent') && current[key]) continue
     if (!same(current[key], value)) changes[key] = value
@@ -206,6 +218,15 @@ function moduleChanges(current: FrontmatterData, wanted: FrontmatterData): Front
   if (!userSet || legacy || wanted.Status === 'Bestanden') {
     if (!same(current.Status, wanted.Status)) changes.Status = wanted.Status!
     if (!same(auto, wanted.Status)) changes.statusAuto = wanted.Status!
+  }
+  // Attendance: Notiva's suggestion until the user changes it (then theirs stays).
+  const belegAuto = current.belegungAuto
+  const userBeleg =
+    current.Belegung !== undefined && belegAuto !== undefined && !same(current.Belegung, belegAuto)
+  if (!userBeleg || wanted.Status === 'Bestanden') {
+    const next = wanted.Status === 'Bestanden' && userBeleg ? [] : wanted.Belegung
+    if (!same(current.Belegung ?? [], next ?? [])) changes.Belegung = next ?? []
+    if (!same(belegAuto, wanted.Belegung)) changes.belegungAuto = wanted.Belegung ?? []
   }
   // Practical/lab prerequisite: Notiva only suggests; once passed it is done.
   const prereq = typeof wanted.Voraussetzung === 'string' && wanted.Voraussetzung
@@ -250,6 +271,31 @@ export function planStudySync(
       detail: 'Neue Eigenschaften und Ansichten',
     })
     steps.push(() => ws.updateDatabase(modulesDb, () => patched))
+  }
+  const cdb = ws.get(coursesDb)?.database
+  if (cdb && !propertyDef(cdb, 'Aktiv')) {
+    changes.push({
+      kind: 'update',
+      what: 'schema',
+      path: coursesDb,
+      title: 'Kurse',
+      detail: 'Eigenschaft und Ansicht „Aktiv“',
+    })
+    steps.push(() =>
+      ws.updateDatabase(coursesDb, (def) => ({
+        ...def,
+        properties: [...def.properties, { name: 'Aktiv', type: 'checkbox' }],
+        views: [
+          {
+            name: 'Aktiv',
+            type: 'table',
+            filter: [{ property: 'Aktiv', op: 'checked' }],
+            properties: ['Modul', 'Art', 'Semester', 'Geändert', 'Link'],
+          },
+          ...def.views,
+        ],
+      })),
+    )
   }
   if (!ws.get(coursesDb)) {
     changes.push({ kind: 'create', what: 'schema', title: 'Kurse', detail: 'Datenbank für Moodle-Kurse' })
@@ -298,7 +344,11 @@ export function planStudySync(
         title: m.module.name,
         detail: `${m.module.nr} · ${m.status}`,
       })
-      const values: FrontmatterData = { ...wanted, statusAuto: wanted.Status! }
+      const values: FrontmatterData = {
+        ...wanted,
+        statusAuto: wanted.Status!,
+        belegungAuto: wanted.Belegung ?? [],
+      }
       const prereq = wanted.Voraussetzung
       values.Praktikum = prereq
         ? m.status === 'Bestanden' || (m.result?.tries ?? 0) > 0
@@ -442,6 +492,18 @@ export function planStudySync(
         ...(c.url ? { Link: c.url } : {}),
         ...(modulePath ? { Modul: [link(ws, modulePath)] } : {}),
         Ordner: `${folder}/Unterlagen/${safeFileName(c.name)}`,
+      }
+      // Active course: its module is attended now (or a general orga course) – unless the user decided.
+      const moduleRow = modulePath ? ws.get(modulePath) : undefined
+      const active =
+        art === 'Orga' ||
+        (Array.isArray(moduleRow?.data.Belegung) && moduleRow!.data.Belegung.length > 0) ||
+        (!!c.term && termIndex(c.term) === termIndex(state.current))
+      const row0 = known.get(c.id)
+      const userActive = row0 && row0.data.aktivAuto !== undefined && row0.data.Aktiv !== row0.data.aktivAuto
+      if (!userActive) {
+        values.Aktiv = active
+        values.aktivAuto = active
       }
       const changed = courseInfo[c.id] ? lastChange(courseInfo[c.id]!) : undefined
       if (changed) values.Geändert = changed.slice(0, 10)
