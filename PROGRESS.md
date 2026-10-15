@@ -103,6 +103,11 @@ Stand der Entwicklung, nach Meilensteinen. ✅ fertig · 🚧 in Arbeit · ⏳ g
   verschiebbar, Antigravity (`agy`) statt Gemini CLI
 - Offen: Moodle-Studydashboard (LTI) nicht angebunden; weitere Studiengänge/POs als Katalog ergänzen
 
+- ✅ Hochschul-Profil `Studium/Hochschule.md`: Moodle, eCampus, Prüfungsplan, Studiengang oder eigene Module pro Uni
+  (Standard HSD, [docs/HOCHSCHULE.md](docs/HOCHSCHULE.md))
+- ✅ Öffentliches Repo vorbereitet: README de/en mit Bildern (`scripts/screenshots.mjs`), Anleitung/Guide,
+  `examples/` (Beispielordner, Profil einer anderen Uni), `.gitignore` für Persönliches
+
 ## Ideen für später ⏳
 
 - Sprechertrennung lokal (z. B. pyannote/sherpa-onnx), Audio-Wiedergabe synchron zum Transkript

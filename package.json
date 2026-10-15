@@ -5,6 +5,14 @@
   "description": "Notiva – freie, lokale Notion-Alternative auf Markdown-Basis: Seiten, Datenbanken, Kacheln, Vorlagen",
   "author": "flexi03",
   "license": "MIT",
+  "homepage": "https://github.com/flexi03/notiva#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/flexi03/notiva.git"
+  },
+  "bugs": {
+    "url": "https://github.com/flexi03/notiva/issues"
+  },
   "type": "module",
   "main": "dist-electron/main.cjs",
   "bin": {

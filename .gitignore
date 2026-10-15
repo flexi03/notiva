@@ -10,3 +10,15 @@ e2e/__screenshots__/*-actual*
 .DS_Store
 *.local
 .env*
+
+# Persönliches und Lokales – nie ins Repository
+# Personal and local files – never commit
+.claude/
+CLAUDE.local.md
+*.log
+.notiva/
+ecampus-debug.json
+*.pem
+*.key
+.vscode/
+.idea/

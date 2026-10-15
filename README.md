@@ -1,91 +1,146 @@
-# Notiva
+# Notiva 📝 – Notizen, Datenbanken und Studium als Markdown-Dateien
 
-**Freie, lokale Notion-Alternative auf Markdown-Basis.** Seiten, Datenbanken mit Tabellen-, Board-, Kachel-,
-Listen- und Kalenderansicht, Dashboards mit Kacheln, Vorlagen – und alles liegt als normale Markdown-Dateien
-in einem Ordner, der dir gehört.
+<p align="center">
+  <img src="docs/images/dashboard.png" alt="Notiva: Studien-Dashboard mit Vorlesungszeit, Notenschnitt, ECTS und nächster Prüfung" width="900">
+</p>
 
-- 📝 **Block-Editor** wie Notion – aber jeder Block ist echtes Markdown (`/`-Befehle, `[[Links]]`, Aufgaben, Callouts, Formeln, Code)
-- 🗂️ **Datenbanken** als Ordner voller Markdown-Dateien – Eigenschaften, Formeln, Relationen, Rollups, Filter, Sortierung, Gruppierung
-- 🧩 **Kacheln & Dashboards** – Kennzahlen, Fortschritt, Countdown, Listen, Links, eingebettete Ansichten
-- 🎓 **Studien-Dashboard** – Semester, Module, Noten (gewichteter Schnitt), ECTS, Prüfungen, Aufgaben, Stundenplan
-- 💻📱 **Überall**: Desktop-App (macOS, Windows, Linux) und installierbare Web-App (auch iPhone/iPad, Android)
-- 🔒 **Privat & sicher**: kein Konto, keine Cloud, keine Telemetrie; alles offline
-- 🤖 **KI, wenn du willst**: Assistent in der App (kostenlos und lokal mit Ollama/LM Studio, oder mit eigenem Schlüssel)
-  und ein **MCP-Server** für Claude Desktop, Claude Code & Co. – beide mit denselben, abgesicherten Werkzeugen
-- 🌿 **Git eingebaut** (Desktop-App): neue und geänderte Seiten, Markierungen pro Zeile, Diff, Commit, Verlauf, Push/Pull
-- 👀 **Vorschau & Minimap**: Karten und Einträge öffnen als Seitenfenster; am Rand Minimap mit Lese- und Aufgabenfortschritt
-- 🎨 **Anpassbar**: Farben, Schrift, Breite, Sprache (DE/EN), eigenes CSS, eigene Vorlagen – und der Quelltext (MIT)
+<p align="center">
+  <b>Wie Notion – nur lokal, frei und in Dateien, die dir gehören.</b><br>
+  Seiten, Datenbanken, Dashboards und ein komplettes Studium mit Moodle, eCampus und Prüfungsplan.<br>
+  Ohne Konto, ohne Cloud, ohne Tracking. Als Desktop-App und als Web-App fürs Handy.
+</p>
 
-## Loslegen
+<p align="center">
+  <a href="LICENSE"><img alt="Lizenz: MIT" src="https://img.shields.io/badge/Lizenz-MIT-2563eb"></a>
+  <img alt="Version 0.1.0" src="https://img.shields.io/badge/Version-0.1.0-16a34a">
+  <img alt="macOS, Windows, Linux, Browser" src="https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Browser-ffffff">
+  <a href="README.en.md"><img alt="English" src="https://img.shields.io/badge/lang-English-lightgrey"></a>
+</p>
+
+---
+
+## Inhalt
+
+- [Worum geht es?](#worum-geht-es)
+- [Was Notiva kann](#was-notiva-kann)
+- [Kurz erklärt: die wichtigsten Begriffe](#kurz-erklärt-die-wichtigsten-begriffe)
+- [Installieren und starten](#installieren-und-starten)
+- [Studium einrichten in 5 Schritten](#studium-einrichten-in-5-schritten)
+- [Ohne eigene Daten ausprobieren](#ohne-eigene-daten-ausprobieren)
+- [Wie die Dateien aussehen](#wie-die-dateien-aussehen)
+- [Deine Daten](#deine-daten)
+- [Häufige Fragen](#häufige-fragen)
+- [Für Entwickler](#für-entwickler)
+
+---
+
+## Worum geht es?
+
+Notion ist praktisch, aber deine Notizen liegen auf fremden Servern, und ohne Internet geht wenig. Notiva macht
+dasselbe mit **normalen Markdown-Dateien in einem Ordner auf deinem Gerät**. Du kannst den Ordner mit iCloud,
+Syncthing oder Git synchronisieren, mit jedem Texteditor öffnen und jederzeit mitnehmen.
+
+Dazu kommt ein **Studien-Modus**: Notiva holt Kurse, Unterlagen und Termine aus Moodle, Noten und Prüfungen aus
+dem eCampus (HISinOne) und den Prüfungsplan der Fakultät. Daraus entstehen Modulseiten, ein Stundenplan und
+„Mein Semester“. Voreingestellt ist die Hochschule Düsseldorf; andere Hochschulen trägst du in einer einzigen Seite
+ein ([docs/HOCHSCHULE.md](docs/HOCHSCHULE.md)).
+
+## Was Notiva kann
+
+<table>
+  <tr>
+    <td width="33%" align="center"><img src="docs/images/datenbank.png" alt="Datenbank mit Tabellenansicht" width="280"></td>
+    <td width="33%" align="center"><img src="docs/images/semester.png" alt="Mein Semester" width="280"></td>
+    <td width="33%" align="center"><img src="docs/images/vorlagen.png" alt="Vorlagen" width="280"></td>
+  </tr>
+  <tr>
+    <td valign="top"><b>Datenbanken</b><br>Tabelle, Board, Kacheln, Liste und Kalender. Eigenschaften, Formeln, Relationen, Filter, Gruppen – jede Zeile ist eine Markdown-Datei.</td>
+    <td valign="top"><b>Mein Semester</b><br>Alle Module, die du gerade belegst: Vorlesungen, neue Dateien, bearbeitete PDFs, Mitschriften und Code.</td>
+    <td valign="top"><b>Vorlagen</b><br>Studien-Dashboard, Vorlesungsnotiz, Lernzettel, Projekte und mehr. Eigene Vorlagen sind normale Seiten.</td>
+  </tr>
+  <tr>
+    <td width="33%" align="center"><img src="docs/images/einstellungen.png" alt="Einstellungen" width="280"></td>
+    <td width="33%" align="center"><img src="docs/images/dunkel.png" alt="Dunkles Design" width="280"></td>
+    <td width="33%" align="center"><img src="docs/images/willkommen.png" alt="Startbildschirm" width="280"></td>
+  </tr>
+  <tr>
+    <td valign="top"><b>Einstellungen</b><br>Moodle, eCampus, Benachrichtigungen, KI, Speicher, Farben, Schrift, Sprache (Deutsch/Englisch).</td>
+    <td valign="top"><b>Hell & Dunkel</b><br>Folgt dem System oder fest einstellbar.</td>
+    <td valign="top"><b>Dein Speicherort</b><br>Ordner auf dem Gerät, privater Browser-Speicher (auch iPhone/iPad) oder eine Demo.</td>
+  </tr>
+</table>
+
+**Außerdem:**
+
+- 📝 **Block-Editor** wie Notion, aber jeder Block ist echtes Markdown: `/`-Befehle, `[[Links]]`, Aufgaben, Callouts,
+  Formeln, Code mit Kopier-Knopf.
+- 🧩 **Dashboards** mit Kacheln: Kennzahlen, Fortschritt, Countdown, Listen, eingebettete Ansichten.
+- 🎓 **Studium**: Module mit Status, Versuchen und Note, gewichteter Notenschnitt, ECTS, Prüfungen, Stundenplan,
+  Anzeige „Jetzt / Als Nächstes“.
+- 📄 **PDF-Ansicht** mit Suche, stufenlosem Zoom, Markierungen, Kommentaren und Seitennotizen.
+- 🎙️ **Vorlesungsmodus**: nimmt auf, schreibt lokal mit Whisper mit und folgt den Folien.
+- 💻 **Code-Ordner** pro Seite mit Editor, Terminal und Git.
+- 🤖 **KI, wenn du willst**: Assistent mit sichtbarem Kontext (Claude Code, Codex, Ollama, eigene Schlüssel) und ein
+  MCP-Server für Claude Desktop & Co. – mit abgesicherten Werkzeugen.
+- 🌿 **Git eingebaut**: Änderungen, Diff, Commit, Verlauf, Push/Pull.
+- 🔔 **Benachrichtigungen** für neue Unterlagen, Fristen, Noten und Ausfälle.
+
+## Kurz erklärt: die wichtigsten Begriffe
+
+| Begriff         | Bedeutung                                                                                                  |
+| --------------- | ---------------------------------------------------------------------------------------------------------- |
+| **Ordner**      | Der Ordner mit deinen Notizen (in anderen Apps „Vault“). Alles in Notiva ist eine Datei darin.             |
+| **Seite**       | Eine Markdown-Datei. Unterseiten liegen in einem gleichnamigen Ordner daneben.                             |
+| **Eigenschaft** | Ein Feld im Kopf einer Seite (Frontmatter), z. B. `Status`, `ECTS` oder `Note`.                            |
+| **Datenbank**   | Eine Seite, deren Unterseiten dieselben Eigenschaften haben. Ansichten zeigen sie als Tabelle, Board usw.  |
+| **Kachel**      | Ein Baustein im Dashboard: Zahl, Fortschritt, Liste oder eine eingebettete Ansicht.                        |
+| **Modul**       | Ein Fach aus der Prüfungsordnung. Seine Seite sammelt Moodle-Kurs, Unterlagen, Mitschriften und Prüfungen. |
+| **Belegung**    | Was du in einem Modul gerade belegst: Vorlesung, Praktikum, Übung oder nur die Prüfung.                    |
+| **Profil**      | `Studium/Hochschule.md` – Adressen und Studiengang deiner Hochschule.                                      |
+
+## Installieren und starten
+
+Voraussetzung: [Node.js](https://nodejs.org) 24 oder neuer.
 
 ```bash
+git clone https://github.com/flexi03/notiva.git
+cd notiva
 npm install
-npm run dev          # Web-App unter http://localhost:5173
 npm run electron     # Desktop-App
+npm run dev          # oder: Web-App unter http://localhost:5173
 ```
 
-Beim ersten Start wählst du, wo deine Notizen liegen:
+Eigene Installationspakete: `npm run dist:mac`, `npm run dist:win` oder `npm run dist:linux` (Ausgabe in `release/`).
+Die Pakete sind nicht signiert; macOS fragt beim ersten Öffnen nach (Rechtsklick → Öffnen).
 
-| Speicher    | Wo                                                              | Plattform                                  |
-| ----------- | --------------------------------------------------------------- | ------------------------------------------ |
-| **Ordner**  | ein normaler Ordner (mit iCloud/Syncthing/Git synchronisierbar) | Desktop-App, Chrome/Edge                   |
-| **Browser** | privater Speicher des Browsers (OPFS)                           | alle modernen Browser, auch Safari auf iOS |
-| **Demo**    | nur im Arbeitsspeicher, mit Studien-Dashboard                   | überall                                    |
+Als Web-App aufs Handy: Seite im Browser öffnen → „Zum Home-Bildschirm“.
 
-Als Web-App installieren: im Browser „Zum Home-Bildschirm“ bzw. „App installieren“.
-Desktop-Pakete bauen: `npm run dist:mac` · `npm run dist:win` · `npm run dist:linux` (Ausgabe in `release/`).
+## Studium einrichten in 5 Schritten
 
-## Studium planen in 3 Schritten
+1. **Ordner wählen.** Beim ersten Start „Ordner wählen“ und einen leeren Ordner anlegen, z. B. `Studium`.
+2. **Studien-Ordner anlegen.** _Vorlagen → Studien-Dashboard → Verwenden_. Studiengang, ECTS-Ziel und Vorlesungszeit
+   eintragen. Notiva legt Module, Semester, Prüfungen, Aufgaben und Stundenplan an.
+3. **Hochschule prüfen.** `Studium/Hochschule.md` öffnen. Für die HSD passt alles; für eine andere Hochschule die
+   Adressen ändern ([Anleitung](docs/HOCHSCHULE.md), Vorlage in [examples/](examples/)).
+4. **Moodle und eCampus verbinden** (Desktop-App). _Einstellungen → Studium_. Die Anmeldung läuft im Fenster deiner
+   Hochschule; Notiva speichert kein Passwort.
+5. **Synchronisieren.** In der Werkzeugleiste auf das Sync-Symbol → „Jetzt alles synchronisieren“. Danach prüft
+   Notiva im Hintergrund selbst und meldet Neues.
 
-1. **Vorlagen → Studien-Dashboard → Verwenden.** Ordnername, Studiengang, ECTS-Ziel und Vorlesungszeit eintragen.
-2. **Module pflegen:** im Dashboard auf _Module_ → _＋ Neu_. ECTS, Semester und nach der Prüfung _Note_ + _Status: Bestanden_ setzen.
-3. **Fertig:** Notenschnitt (nach ECTS gewichtet), ECTS-Fortschritt, nächste Prüfung und fällige Aufgaben rechnen sich selbst.
+Ausführlich, mit KI, Git, Tastenkürzeln und MCP: [docs/ANLEITUNG.md](docs/ANLEITUNG.md).
 
-Vorlesungsnotizen und Lernzettel: _Neue Seite_ → Vorlage _Vorlesungsnotiz_ oder _Lernzettel_.
+## Ohne eigene Daten ausprobieren
 
-## KI nutzen
-
-Rechts in der Werkzeugleiste ✨ oder `⌘/Strg J` – beim ersten Öffnen schlägt Notiva vor, was gefunden wurde.
-
-**Mit einem installierten KI-Programm (Desktop-App, empfohlen):** Ist **Claude Code** installiert, reicht ein Klick
-auf _Claude Code verwenden_. Notiva startet es mit deinem Login (z. B. Opus 5.5 über `opus`) und gibt ihm
-**nur die Notiva-Werkzeuge** – keine Shell, keine Dateien außerhalb des Ordners; Löschen ist dort nicht freigegeben.
-Gespräche werden fortgesetzt (`--resume`). Codex CLI und Google Antigravity (`agy`) werden ebenfalls erkannt (experimentell,
-ohne Notiva-Werkzeuge).
-
-**Direkt über eine API:** Ollama/LM Studio (kostenlos, lokal), OpenRouter, Anthropic, OpenAI-kompatibel –
-_Einstellungen → KI → Direkt über API_. Im Browser muss Ollama Anfragen der Seite erlauben:
-`OLLAMA_ORIGINS=http://localhost:5173 ollama serve`.
-
-**Prompt:** _Prompt anzeigen_ (im Assistenten) oder _Einstellungen → Prompt_: der fest eingebaute Standard, ein
-eigener Prompt mit Platzhaltern (`{{heute}}`, `{{seite}}`, `{{rechte}}`, `{{sprache}}`) und live, was genau
-gesendet wird. Unter jeder Nachricht zeigt _Gesendet_ System-Prompt, Befehl und das antwortende Modell.
-
-Im Editor öffnet `/ki` den Assistenten mit dem aktuellen Absatz als Bezug.
-
-**Per MCP (Claude Desktop, Claude Code, …):** _Einstellungen → MCP-Server_ zeigt die fertige Konfiguration zum
-Kopieren. In der Desktop-App startet die App selbst den Server (kein Node nötig). Ohne Desktop-App:
-
-```bash
-npm run mcp:build
-claude mcp add notiva -- node /pfad/zu/notiva/dist-mcp/notiva-mcp.mjs /pfad/zu/deinem/ordner
-# nur lesen: … notiva-mcp.mjs /pfad/zu/deinem/ordner --read-only
-```
-
-## Git
-
-Liegt dein Ordner in einem Git-Repository (oder _Git einrichten_), zeigt die Desktop-App rechts unter
-_Änderungen_ (`⌘/Strg ⇧ G`) alle neuen, geänderten und gelöschten Seiten mit +/− Zeilen, einen Diff
-(untereinander oder nebeneinander), Commit ausgewählter Dateien, Verwerfen, Verlauf und Push/Pull. Im Editor
-markiert ein farbiger Rand geänderte (blau), neue (grün) und gelöschte (rot) Stellen – wie in VS Code; der
-Seitenbaum zeigt `M`/`U`.
+Auf dem Startbildschirm **„Demo ausprobieren“**. Die Demo hat ein fertiges Studien-Dashboard mit Beispielmodulen,
+Prüfungen und Stundenplan. Nichts davon wird gespeichert.
 
 ## Wie die Dateien aussehen
 
 ```
-Studium.md                  ← Dashboard (Kacheln stehen als YAML-Block im Markdown)
-Studium/Module.md           ← Datenbank: Schema und Ansichten im Kopfbereich
-Studium/Module/Analysis I.md
+Studium.md                      ← Dashboard (Kacheln als YAML-Block im Markdown)
+Studium/Hochschule.md           ← Profil deiner Hochschule
+Studium/Module.md               ← Datenbank: Schema und Ansichten im Kopf
+Studium/Module/Analysis I.md    ← ein Eintrag
 ```
 
 ```markdown
@@ -101,35 +156,47 @@ Semester: ['[[1. Semester]]']
 - Folgen und Reihen
 ```
 
-Alle Details: [docs/FORMAT.md](docs/FORMAT.md).
+Alle Details: [docs/FORMAT.md](docs/FORMAT.md). Ein kleiner Beispielordner liegt in [examples/vault](examples/vault).
 
-## Tastenkürzel
+## Deine Daten
 
-|                        |                                        |
-| ---------------------- | -------------------------------------- |
-| `⌘/Strg K`             | Suchen & Seite öffnen/anlegen          |
-| `⌘/Strg N`             | Neue Seite                             |
-| `⌘/Strg ⇧ D`           | Tagesnotiz                             |
-| `⌘/Strg \`             | Seitenleiste                           |
-| `⌘/Strg J`             | KI-Assistent                           |
-| `⌘/Strg`-Klick         | Eintrag ganz statt als Vorschau öffnen |
-| `/`                    | Befehle im Editor                      |
-| `[[`                   | Seite verlinken                        |
-| `⌘/Strg B · I · E · K` | fett · kursiv · Code · Link            |
-| `⌘/Strg ⇧ H`           | ==Textmarker==                         |
-| `Esc` / `⌘↵`           | Block fertig                           |
+- **Alles bleibt auf deinem Gerät.** Kein Konto, keine Cloud, keine Telemetrie.
+- **Logins** für Moodle und eCampus laufen über die Seiten deiner Hochschule. Notiva hält nur die Sitzung, wie ein
+  Browser.
+- **KI** ist aus, bis du sie einschaltest. Was gesendet wird, zeigt die Kontext-Leiste vor dem Senden.
+- **App-Daten** (Sitzungen, Benachrichtigungen, Terminal-Verläufe) liegen im Profilordner der App, nicht in deinem
+  Notizen-Ordner und nicht in diesem Repository.
 
-## Entwicklung
+Mehr dazu: [docs/SECURITY.md](docs/SECURITY.md).
+
+## Häufige Fragen
+
+**Kann ich meine Notion-Seiten übernehmen?**
+Seiten ja: in Notion als Markdown exportieren und den Ordner in Notiva öffnen. Notion-Datenbanken kommen dabei als
+CSV; die übernimmt Notiva noch nicht automatisch.
+
+**Funktioniert das an meiner Hochschule?**
+Moodle läuft überall. eCampus-Noten setzen HISinOne voraus. Adressen, Prüfungsplan und Studiengang stellst du in
+`Studium/Hochschule.md` ein ([docs/HOCHSCHULE.md](docs/HOCHSCHULE.md)).
+
+**Warum zeigt macOS keine Mitteilungen?**
+Die App ist nicht signiert. Notiva nutzt dann eine kleine Hilfs-App „Notiva“. Erlauben unter
+_Systemeinstellungen → Mitteilungen_; der Test-Knopf in _Einstellungen → Benachrichtigungen_ zeigt das Ergebnis.
+
+**Brauche ich die KI?**
+Nein. Alles funktioniert ohne. Lokal und kostenlos geht es mit Ollama oder LM Studio.
+
+## Für Entwickler
 
 ```bash
 npm run check        # Typen, Lint, Unit-Tests
-npm test             # Vitest (Logik, Sicherheit, Dateisystem)
 npm run test:e2e     # Playwright: Desktop, Tablet, iPhone (WebKit) und Electron
+npm run build && node scripts/screenshots.mjs   # Bilder für dieses README
 ```
 
-Aufbau, Regeln und Konventionen: [AGENT.md](AGENT.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) ·
+Aufbau und Regeln: [AGENT.md](AGENT.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) ·
 [docs/DESIGN.md](docs/DESIGN.md) · [docs/SECURITY.md](docs/SECURITY.md) · Fortschritt: [PROGRESS.md](PROGRESS.md)
 
 ## Lizenz
 
-[MIT](LICENSE) – frei nutzbar, veränderbar und weitergebbar.
+[MIT](LICENSE) © flexi03 – frei nutzbar, veränderbar und weitergebbar.
