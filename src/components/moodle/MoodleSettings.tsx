@@ -1,3 +1,4 @@
+import { currentProfile } from '@/app/university'
 import { useEffect, useState } from 'react'
 import { ipcMessage, moodleAvailable, useMoodle } from '@/app/moodle'
 import { useApp } from '@/app/store'
@@ -13,7 +14,8 @@ export function MoodleSection() {
   const showToast = useApp((s) => s.showToast)
   const autoSave = useApp((s) => s.settings.moodleAutoSave)
   const [mode, setMode] = useState<Mode>('browser')
-  const [site, setSite] = useState('')
+  // Default from the university profile (Studium/Hochschule.md; default: HSD).
+  const [site, setSite] = useState(() => currentProfile(useApp.getState().ws).moodle.site)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [secret, setSecret] = useState('')

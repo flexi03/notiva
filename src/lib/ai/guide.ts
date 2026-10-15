@@ -44,6 +44,11 @@ Semester: "@semester" (aktuelles, z. B. "WiSe 26/27"), "@nextSemester", "@lastSe
 { property: Belegt, op: contains, value: "@semester" } für die Module dieses Semesters.
 sort: [{ property, direction: asc|desc }]
 
+## Hochschule
+Alles Hochschul-Spezifische (Moodle-Adresse, eCampus-Seiten, Prüfungsplan-Seite, Studiengang, eigene Module)
+steht im Frontmatter \`hochschule:\` der Seite „Studium/Hochschule“. Soll Notiva für eine andere Uni passen,
+ändere dort die Werte (Felder siehe Seite) – nichts sonst.
+
 ## Datenbanken
 Eine Seite mit \`database:\` im Frontmatter; Einträge sind Seiten im gleichnamigen Ordner, ihre
 Eigenschaften stehen im Frontmatter. Ändern mit update_database (nur hinzufügen, nichts löschen).

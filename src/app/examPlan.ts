@@ -1,4 +1,5 @@
 import { previewStudy, studySources } from '@/app/study'
+import { currentProfile } from '@/app/university'
 import { withProgress } from '@/app/progress'
 import { t } from '@/i18n'
 import { examPlanNews, examsForStudy, parsePlanTable, planExamDates, planVersion } from '@/lib/examPlan'
@@ -21,7 +22,10 @@ export function syncExamPlan(ws: Workspace): Promise<number> {
     if (!bridge || !preview.ok) throw new Error(t('examPlan.needsSetup'))
     const custom = (ws.get(preview.dashboard)?.data.studium as Record<string, unknown> | undefined)
       ?.pruefungsplan
-    const source = typeof custom === 'string' && custom ? custom : preview.state.program.sources.examPlans
+    const source =
+      typeof custom === 'string' && custom
+        ? custom
+        : (currentProfile(ws).examPlans?.page ?? preview.state.program.sources.examPlans)
     if (!source) throw new Error(t('examPlan.noSource'))
     return withProgress(
       t('examPlan.checking'),

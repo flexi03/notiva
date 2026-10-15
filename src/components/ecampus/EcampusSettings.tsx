@@ -1,20 +1,18 @@
 import { useEffect, useState } from 'react'
 import { ecampusAvailable, useEcampus } from '@/app/ecampus'
 import { useApp } from '@/app/store'
+import { currentProfile } from '@/app/university'
 import { getLanguage, t } from '@/i18n'
 import { Button, Field, TextInput } from '@/components/ui'
-
-const DEFAULT_START =
-  'https://ecampus.hs-duesseldorf.de/qisserver/pages/cs/sys/portal/hisinoneStartPage.faces'
-const DEFAULT_EXAMS =
-  'https://ecampus.hs-duesseldorf.de/qisserver/pages/cs/sys/portal/hisinoneIframePage.faces?id=Pruefungsverwaltung&navigationPosition=hisinoneMeinStudium%2CHSD_Pruefungsverwaltung&recordRequest=true'
 
 /** Settings → eCampus: sign in once, then results are checked in the background. */
 export function EcampusSection() {
   const { status, busy, error, refresh, connect, fetchNow, disconnect } = useEcampus()
   const navigate = useApp((s) => s.navigate)
-  const [startUrl, setStartUrl] = useState(DEFAULT_START)
-  const [examsUrl, setExamsUrl] = useState(DEFAULT_EXAMS)
+  // Addresses from the university profile (Studium/Hochschule.md; default: HSD).
+  const profile = currentProfile(useApp((s) => s.ws))
+  const [startUrl, setStartUrl] = useState(profile.ecampus.startUrl)
+  const [examsUrl, setExamsUrl] = useState(profile.ecampus.examsUrl)
   const [advanced, setAdvanced] = useState(false)
   const desktop = ecampusAvailable()
 

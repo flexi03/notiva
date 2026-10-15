@@ -6,6 +6,8 @@ import { t } from '@/i18n'
 import { moduleResults, type ExamSnapshot } from '@/lib/ecampus'
 import type { MoodleSnapshot } from '@/lib/moodle'
 import { programById } from '@/lib/study/catalog'
+import { programFor, PROFILE_PAGE } from '@/lib/university'
+import { currentProfile } from '@/app/university'
 import { studyState, type StudyState } from '@/lib/study/state'
 import {
   findStudyDashboard,
@@ -49,7 +51,7 @@ export function previewStudy(
   const dash = findStudyDashboard(ws)
   if (!dash) return { ok: false, reason: 'noFolder' }
   const chosen = setup ?? dash.setup
-  const program = programById(chosen?.program)
+  const program = programFor(currentProfile(ws), chosen?.program)
   const start = parseTerm(chosen?.start)
   if (!chosen || !program || !start) return { ok: false, reason: 'noSetup' }
   const state = studyState(program, start, {
@@ -186,6 +188,7 @@ export async function createStudyFolder(
   })
   const sample = new RegExp(`^${folder}/(Semester|Module|Prüfungen|Aufgaben|Stundenplan|Mitschriften)/`)
   await ws.createFiles(files.filter((f) => !sample.test(f.path)))
+  if (!ws.get(`${folder}/Hochschule.md`)) await ws.writeFile(`${folder}/Hochschule.md`, PROFILE_PAGE)
   await ws.reload()
   const dashboard = `${folder}.md`
   await ws.save(dashboard, { data: { ...ws.get(dashboard)!.data, ...setupData(setup) } })

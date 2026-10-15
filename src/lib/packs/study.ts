@@ -1,4 +1,5 @@
 import type { TemplatePack } from '../templates'
+import { PROFILE_PAGE } from '../university'
 import { COURSE_DB, MODULE_PROPERTIES, MODULE_ROW_TEMPLATE, MODULE_VIEWS } from '../study/sync'
 
 /**
@@ -299,6 +300,7 @@ export const studyPack: TemplatePack = {
     { path: '{{name}}/Mitschriften.md', content: NOTES },
     { path: '{{name}}/Kurse.md', content: COURSE_DB('{{name}}') },
     { path: '{{name}}/Orga.md', content: ORGA },
+    { path: '{{name}}/Hochschule.md', content: PROFILE_PAGE },
     { path: '{{name}}/Vorlagen/Vorlesungsnotiz.md', content: LECTURE_TEMPLATE },
     { path: '{{name}}/Vorlagen/Lernzettel.md', content: CHEATSHEET_TEMPLATE },
     row(
