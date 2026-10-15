@@ -108,6 +108,8 @@ export interface NotifySettings {
 }
 
 export interface NotificationBridge {
+  /** Shows a sample system notification (macOS: Mitteilungszentrale). */
+  test?(): Promise<void>
   /** New notifications were added (counts per kind) – for the "what is new" message. */
   onAdded?(callback: (counts: Record<string, number>) => void): () => void
   list(): Promise<AppNotification[]>

@@ -480,6 +480,7 @@ export const de = {
   'news.kind.notice': '{count} Mitteilungen',
   'news.kind.grade': '{count} neue Noten',
   'news.kind.reminder': '{count} Erinnerungen',
+  'notify.test': 'Test-Mitteilung senden',
   'notify.interval': 'In Moodle nachsehen',
   'notify.intervalHint': 'Solange die App läuft, auch nach dem Aufwachen aus dem Ruhezustand.',
   'notify.minutes': 'alle {count} Minuten',

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { t } from '@/i18n'
 import { electronBridge, type CheckKind, type NotifySettings } from '@/lib/vault'
-import { Select, Switch } from '@/components/ui'
+import { Button, Select, Switch } from '@/components/ui'
 import { Row } from '@/screens/settingsLayout'
 
 const CHECKS: CheckKind[] = ['moodle', 'materials', 'courseInfo', 'grades', 'examPlan']
@@ -26,6 +26,11 @@ export function NotificationSettingsSection() {
           label={t('notify.system')}
         />
       </Row>
+      {bridge.test && (
+        <Button size="sm" onClick={() => void bridge.test!().catch(() => undefined)}>
+          {t('notify.test')}
+        </Button>
+      )}
       <p className="text-[13px] text-ink-3">{t('notify.intervalHint')}</p>
       {CHECKS.map((kind) => (
         <Row key={kind} label={t(`notify.check.${kind}`)}>

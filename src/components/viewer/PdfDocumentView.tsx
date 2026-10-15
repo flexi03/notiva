@@ -36,6 +36,9 @@ import { AnnotationLayer, COLOR_VALUES, type Tool } from './AnnotationLayer'
 import { NotesPanel } from './NotesPanel'
 import { PdfViewer, type PdfViewerHandle } from './PdfViewer'
 
+/** Reading position per file (fraction of the scroll height) – back/forward returns to it. */
+const positions = new Map<string, number>()
+
 const ZOOMS = [0.5, 0.67, 0.8, 1, 1.25, 1.5, 2, 3, 4]
 const MIN_ZOOM = 0.4
 const MAX_ZOOM = 4
@@ -89,10 +92,28 @@ export function PdfDocumentView({
   const showToast = useApp((s) => s.showToast)
 
   useEffect(() => {
+    // Back/forward or reopening: the exact old position (as a fraction of the height, zoom-proof).
+    const saved = positions.get(path)
+    if (!initialPage && saved) {
+      const timer = setTimeout(() => {
+        const el = viewer.current?.element()
+        if (el) el.scrollTop = saved * el.scrollHeight
+      }, 250)
+      return () => clearTimeout(timer)
+    }
     if (!initialPage) return
     const timer = setTimeout(() => viewer.current?.scrollToPage(initialPage), 250)
     return () => clearTimeout(timer)
-  }, [initialPage, doc])
+  }, [initialPage, doc, path])
+
+  // Remember where the reader is (per file, this app session).
+  useEffect(() => {
+    const el = viewer.current?.element()
+    if (!el || !doc) return
+    const save = () => el.scrollHeight && positions.set(path, el.scrollTop / el.scrollHeight)
+    el.addEventListener('scroll', save, { passive: true })
+    return () => el.removeEventListener('scroll', save)
+  }, [doc, path])
 
   const goTo = useCallback((page: number) => viewer.current?.scrollToPage(page, true), [])
 

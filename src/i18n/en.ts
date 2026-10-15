@@ -477,6 +477,7 @@ export const en: Record<MessageKey, string> = {
   'news.kind.notice': '{count} messages',
   'news.kind.grade': '{count} new grades',
   'news.kind.reminder': '{count} reminders',
+  'notify.test': 'Send a test notification',
   'notify.interval': 'Check Moodle',
   'notify.intervalHint': 'While the app runs, also after waking from sleep.',
   'notify.minutes': 'every {count} minutes',

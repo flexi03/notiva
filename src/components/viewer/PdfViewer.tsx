@@ -4,6 +4,8 @@ import { pdfjs } from '@/lib/pdfjs'
 
 export interface PdfViewerHandle {
   scrollToPage(page: number, smooth?: boolean): void
+  /** The scrolling element (to remember and restore the position). */
+  element(): HTMLDivElement | null
 }
 
 interface PageSize {
@@ -63,6 +65,7 @@ export const PdfViewer = forwardRef<
   const scale = (Math.max(200, width - 32) / maxWidth) * zoom
 
   useImperativeHandle(ref, () => ({
+    element: () => scroller.current,
     scrollToPage(page, smooth = false) {
       const el = scroller.current?.querySelector<HTMLElement>(`[data-page="${page}"]`)
       el?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' })

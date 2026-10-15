@@ -213,12 +213,18 @@ async function showBanners(added: AppNotification[]): Promise<void> {
   if (!settings.system || !Notification.isSupported() || process.env.NOTIVA_E2E_USERDATA) return
   const banner =
     added.length > 3
-      ? new Notification({ title: 'Notiva', body: `${added.length} Neuigkeiten – z. B. ${added[0]!.title}` })
+      ? new Notification({
+          title: 'Notiva',
+          body: `${added.length} Neuigkeiten – z. B. ${added[0]!.title}`,
+          silent: true,
+        })
       : null
   for (const n of banner ? [] : added) {
+    // Into the system's notification centre (macOS: Mitteilungszentrale) – never with a sound.
     const one = new Notification({
       title: n.course ? `${n.course}: ${n.title}` : n.title,
       ...(n.body ? { body: n.body } : {}),
+      silent: true,
     })
     one.on('click', () => focusNotification(n.id))
     one.show()
@@ -512,6 +518,11 @@ function registerIpc(): void {
     ),
   )
   handle('notifications:clear', async () => notifications.clear())
+  handle('notifications:test', async () => {
+    if (!Notification.isSupported())
+      throw new Error('Mitteilungen werden auf diesem System nicht unterstützt')
+    new Notification({ title: 'Notiva', body: 'So sehen Mitteilungen von Notiva aus.', silent: true }).show()
+  })
   handle('notifications:settings', async () => parseNotifySettings((await readConfig()).notify))
   handle('notifications:setSettings', async (raw: unknown) => {
     const notify = parseNotifySettings(raw)

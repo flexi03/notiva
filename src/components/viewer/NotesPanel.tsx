@@ -274,6 +274,14 @@ function AnnotationItem({
           }}
           className="mt-2 max-h-[40vh] w-full rounded-control border border-line bg-surface px-2 py-1.5 text-[13px] focus:border-accent focus:outline-none"
         />
+      ) : value && a.type === 'highlight' && !active ? (
+        // The full comment is shown at the text in the PDF – here just one line.
+        <p className="mt-0.5 truncate pl-6 text-[12.5px] text-ink-2">
+          {value
+            .replace(/[`*#>_]/g, '')
+            .split('\n')
+            .find(Boolean)}
+        </p>
       ) : value ? (
         <div
           role={editable ? 'button' : undefined}

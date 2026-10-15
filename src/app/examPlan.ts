@@ -42,11 +42,10 @@ export function syncExamPlan(ws: Workspace): Promise<number> {
         )
         await plan.apply()
         const before = await ws.readMeta<{ version?: string }>(META)
-        await ws.writeMeta(META, {
-          version: version ?? file.name,
-          url: file.url,
-          checked: new Date().toISOString(),
-        })
+        // Only written when the plan changed – a mere check leaves Git clean.
+        const meta = { version: version ?? file.name, url: file.url }
+        const known = before as { version?: string; url?: string } | null
+        if (!known || known.version !== meta.version || known.url !== meta.url) await ws.writeMeta(META, meta)
         if (before)
           await electronBridge()?.notifications?.add(
             examPlanNews(
