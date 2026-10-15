@@ -18,6 +18,7 @@ import { AssistantPanel } from '@/components/ai/AssistantPanel'
 import { MoodleImportDialog } from '@/components/moodle/MoodleImport'
 import { SettingsPanel } from './SettingsPanel'
 import { TextContextMenu } from './TextContextMenu'
+import { EventBadge } from './EventBadge'
 import { TrashPanel } from './TrashPanel'
 import { NotificationPanel, openNotification } from '@/components/notifications/NotificationPanel'
 import { taskReminders, useNotifications } from '@/app/notifications'
@@ -212,6 +213,7 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
       <PromptHost />
       <ToastHost />
       <TextContextMenu />
+      <EventBadge />
       <ProgressHost />
     </div>
   )

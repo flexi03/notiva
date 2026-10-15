@@ -32,6 +32,8 @@ export interface Settings {
   moodleAutoSave: boolean
   /** After each eCampus/Moodle check: update modules, semesters and courses of the study folder. */
   studyAutoSync: boolean
+  /** Current/next event (timetable, exams): where it is shown. */
+  eventBadge: 'bottom-left' | 'top-right' | 'off'
   /** Database entries and cards open in a side panel ("peek") or as a full page. */
   openEntries: 'peek' | 'page'
   /** Right edge of a page: minimap with reading progress, progress only, or nothing. */
@@ -55,6 +57,7 @@ export const DEFAULT_SETTINGS: Settings = {
   autosave: true,
   moodleAutoSave: true,
   studyAutoSync: true,
+  eventBadge: 'bottom-left',
   openEntries: 'peek',
   pageRail: 'minimap',
   dailyFolder: 'Tagesnotizen',
@@ -87,6 +90,7 @@ export function parseSettings(raw: unknown): Settings {
     autosave: typeof r.autosave === 'boolean' ? r.autosave : d.autosave,
     moodleAutoSave: typeof r.moodleAutoSave === 'boolean' ? r.moodleAutoSave : d.moodleAutoSave,
     studyAutoSync: typeof r.studyAutoSync === 'boolean' ? r.studyAutoSync : d.studyAutoSync,
+    eventBadge: pick(['bottom-left', 'top-right', 'off'] as const, r.eventBadge, d.eventBadge),
     openEntries: pick(['peek', 'page'] as const, r.openEntries, d.openEntries),
     pageRail: pick(['minimap', 'progress', 'off'] as const, r.pageRail, d.pageRail),
     dailyFolder:

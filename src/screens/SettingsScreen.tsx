@@ -219,6 +219,18 @@ export function SettingsContent({ compact = false }: { compact?: boolean }) {
                   }))}
                 />
               </Row>
+              <Row label={t('settings.eventBadge')}>
+                <Segmented
+                  label={t('settings.eventBadge')}
+                  value={settings.eventBadge}
+                  onChange={set('eventBadge')}
+                  options={[
+                    { value: 'bottom-left', label: t('settings.eventBadge.bottomLeft') },
+                    { value: 'top-right', label: t('settings.eventBadge.topRight') },
+                    { value: 'off', label: t('settings.eventBadge.off') },
+                  ]}
+                />
+              </Row>
               <Row label={t('settings.pageRail')} hint={t('settings.pageRailHint')}>
                 <Segmented
                   label={t('settings.pageRail')}

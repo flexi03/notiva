@@ -1,16 +1,19 @@
 import { CheckCircle2, CircleAlert, Info, X } from 'lucide-react'
 import { useProgress } from '@/app/progress'
+import { useApp } from '@/app/store'
 import { t } from '@/i18n'
 import { Button, cx, IconButton } from '@/components/ui'
 
 /** Running actions with progress bars, then a confirmation – bottom left, above everything. */
 export function ProgressHost() {
   const { tasks, dismiss } = useProgress()
+  // Above the event badge when that sits bottom left.
+  const badgeBelow = useApp((s) => s.settings.eventBadge === 'bottom-left')
   if (tasks.length === 0) return null
   return (
     <div
       aria-live="polite"
-      className="no-print fixed bottom-4 left-4 z-50 flex w-[min(22rem,calc(100vw-2rem))] flex-col gap-2"
+      className={`no-print fixed ${badgeBelow ? 'bottom-20' : 'bottom-4'} left-4 z-50 flex w-[min(22rem,calc(100vw-2rem))] flex-col gap-2`}
     >
       {tasks.map((task) => {
         const percent = task.total ? Math.min(100, Math.round((task.done / task.total) * 100)) : null
