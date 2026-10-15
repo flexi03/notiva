@@ -16,6 +16,12 @@ test.describe('Barrierefreiheit (axe)', () => {
   test('Willkommen', async ({ page }) => {
     await guard(page)
     await page.goto('/')
+    // Contrast is measured on the finished screen, not mid fade-in (slow CI machines).
+    await page.waitForFunction(() =>
+      document
+        .getAnimations()
+        .every((a) => a.playState !== 'running' || a.effect?.getTiming().iterations === Infinity),
+    )
     const result = await new AxeBuilder({ page }).analyze()
     expect(
       result.violations
@@ -31,6 +37,12 @@ test.describe('Barrierefreiheit (axe)', () => {
       .getByRole('button', { name: /Übungsblatt 3 LA/ })
       .click()
     await expect(page.getByRole('dialog')).toBeVisible()
+    // Contrast is measured on the finished screen, not mid fade-in (slow CI machines).
+    await page.waitForFunction(() =>
+      document
+        .getAnimations()
+        .every((a) => a.playState !== 'running' || a.effect?.getTiming().iterations === Infinity),
+    )
     const result = await new AxeBuilder({ page }).include('[role=dialog]').analyze()
     expect(
       result.violations
@@ -44,6 +56,12 @@ test.describe('Barrierefreiheit (axe)', () => {
       await openDemo(page)
       await go(page, url)
       await expect(page.locator('#main')).toBeVisible()
+      // Contrast is measured on the finished screen, not mid fade-in (slow CI machines).
+      await page.waitForFunction(() =>
+        document
+          .getAnimations()
+          .every((a) => a.playState !== 'running' || a.effect?.getTiming().iterations === Infinity),
+      )
       const result = await new AxeBuilder({ page }).exclude('.katex').analyze()
       const serious = result.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
       expect(
