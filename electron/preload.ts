@@ -13,6 +13,16 @@ contextBridge.exposeInMainWorld('notiva', {
   openExternal: (url: string) => invoke<void>('app:openExternal', url),
   openWithSystem: (path: string) => invoke<void>('vault:openWithSystem', path),
   microphone: () => invoke<boolean>('app:microphone'),
+  update: {
+    status: () => invoke('update:status'),
+    check: () => invoke('update:check'),
+    install: () => invoke<void>('update:install'),
+    onStatus(callback: (status: unknown) => void) {
+      const listener = (_e: unknown, s: unknown) => callback(s)
+      ipcRenderer.on('update:status', listener)
+      return () => ipcRenderer.removeListener('update:status', listener)
+    },
+  },
   examPlan: {
     fetch: (url: string) => invoke('examplan:fetch', url),
     onDue: (callback: () => void) => {

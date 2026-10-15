@@ -1,3 +1,4 @@
+import { checkUpdatesNow } from '@/app/update'
 import { syncExamPlan } from '@/app/examPlan'
 import { useEcampus } from '@/app/ecampus'
 import { useMoodle } from '@/app/moodle'
@@ -34,6 +35,7 @@ export const COMMANDS = [
   'syncStudy',
   'examPlan',
   'setupCheck',
+  'checkUpdates',
   'syncAll',
   'semester',
   'undo',
@@ -111,5 +113,7 @@ export function runCommand(
       return void syncAll(ws)
     case 'setupCheck':
       return void setupHint(ws)
+    case 'checkUpdates':
+      return void checkUpdatesNow()
   }
 }

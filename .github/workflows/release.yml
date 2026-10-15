@@ -1,0 +1,37 @@
+name: Release
+
+# A tag like v1.2.3 builds the apps for macOS, Windows and Linux and attaches them to the GitHub
+# release of that tag. Notiva checks these releases and updates itself.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: --mac
+          - os: windows-latest
+            target: --win
+          - os: ubuntu-latest
+            target: --linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build && npm run electron:build && npm run mcp:build
+      - run: npx electron-builder ${{ matrix.target }} --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Not signed (no Apple/Windows certificate): don't look for one.
+          CSC_IDENTITY_AUTO_DISCOVERY: false

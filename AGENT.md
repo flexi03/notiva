@@ -71,3 +71,11 @@ In der Demo liegt alles im Speicher: in Tests mit `go(page, '#/…')` navigieren
 - Beispieldaten ohne echte Personen; Module/Prüfungen sind generisch.
 - Neue Vorlagen-Pakete: `src/lib/packs/`, in `TEMPLATE_PACKS` eintragen, `packs.test.ts` prüft automatisch,
   dass jedes Paket ohne YAML-Fehler installierbar ist.
+
+## Release
+
+1. Version in `package.json` erhöhen (SemVer), Eintrag in `CHANGELOG.md`.
+2. Commit, dann `git tag vX.Y.Z && git push origin main vX.Y.Z`.
+3. `.github/workflows/release.yml` baut macOS (arm64), Windows und Linux und hängt die Dateien an das Release.
+   Die App (`electron/updater.ts`) findet sie über die GitHub-API und aktualisiert sich selbst
+   (Dateinamen `Notiva-<version>-<os>-<arch>.<ext>`, siehe `pickAsset` in `src/lib/update.ts`).

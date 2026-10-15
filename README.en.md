@@ -103,7 +103,14 @@ Property names in the study template are German (`Note`, `Belegung`, `Prüfungen
 
 ## Install and run
 
-Requires [Node.js](https://nodejs.org) 24 or newer.
+**Download:** the latest version from [Releases](https://github.com/flexi03/notiva/releases/latest) – macOS (Apple
+Silicon, `.dmg`), Windows (`.exe`) or Linux (`.AppImage`). The app is unsigned: on a Mac right-click → Open the first
+time, on Windows "More info → Run anyway".
+
+**Updates:** Notiva looks for new versions on start and every 6 hours, tells you and installs them with one click
+("Update now"); manually via _Notiva → Nach Updates suchen …_. What's new: [CHANGELOG.md](CHANGELOG.md).
+
+**From source** (requires [Node.js](https://nodejs.org) 24 or newer):
 
 ```bash
 git clone https://github.com/flexi03/notiva.git

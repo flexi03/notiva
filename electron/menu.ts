@@ -24,6 +24,7 @@ export function buildMenu(getWindow: () => BrowserWindow | null): void {
               { type: 'separator' },
               item('Einstellungen …', 'settings', 'CmdOrCtrl+,'),
               item('Einrichtung prüfen', 'setupCheck'),
+              item('Nach Updates suchen …', 'checkUpdates'),
               { type: 'separator' },
               { role: 'services', label: 'Dienste' },
               { type: 'separator' },

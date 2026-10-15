@@ -100,7 +100,14 @@ ein ([docs/HOCHSCHULE.md](docs/HOCHSCHULE.md)).
 
 ## Installieren und starten
 
-Voraussetzung: [Node.js](https://nodejs.org) 24 oder neuer.
+**Herunterladen:** die neueste Version unter [Releases](https://github.com/flexi03/notiva/releases/latest) –
+macOS (Apple Silicon, `.dmg`), Windows (`.exe`) oder Linux (`.AppImage`). Die App ist nicht signiert: auf dem Mac beim
+ersten Öffnen Rechtsklick → Öffnen, unter Windows „Weitere Informationen → Trotzdem ausführen“.
+
+**Updates:** Notiva sieht beim Start und alle 6 Stunden nach neuen Versionen, meldet sie und installiert sie mit einem
+Klick („Jetzt aktualisieren“); von Hand über _Notiva → Nach Updates suchen …_. Was neu ist: [CHANGELOG.md](CHANGELOG.md).
+
+**Aus dem Quelltext** (Voraussetzung: [Node.js](https://nodejs.org) 24 oder neuer):
 
 ```bash
 git clone https://github.com/flexi03/notiva.git

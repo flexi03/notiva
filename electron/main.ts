@@ -44,6 +44,7 @@ import { clearMoodleSession, openMoodlePage, prepareBrowserSession, ssoLogin } f
 import { WhisperEngine } from './whisper'
 import { buildMenu } from './menu'
 import { systemNotify, testNotify } from './systemNotify'
+import { checkForUpdate, installUpdate, onUpdateStatus, updateStatus } from './updater'
 import { Terminals } from './terminal'
 import { Ecampus, NeedsLogin } from './ecampus'
 import { examNews, type ExamSnapshot } from '../src/lib/ecampus'
@@ -535,6 +536,9 @@ function registerIpc(): void {
   )
   handle('notifications:clear', async () => notifications.clear())
   handle('notifications:test', async () => testNotify())
+  handle('update:status', async () => updateStatus())
+  handle('update:check', async () => checkForUpdate())
+  handle('update:install', async () => installUpdate())
   // When each source is checked next (ms timestamps; null = only by hand).
   handle('sync:schedule', async () => {
     const { intervals } = parseNotifySettings((await readConfig()).notify)
@@ -881,11 +885,34 @@ app.whenReady().then(async () => {
   createWindow()
   // Check Moodle shortly after start, then regularly – and after waking from sleep.
   void schedulePolling(20_000)
+  scheduleUpdateChecks()
   powerMonitor.on('resume', () => void schedulePolling(10_000))
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
+
+/** New version on GitHub: banner once per version, in-app hint every time it is found. */
+function scheduleUpdateChecks(): void {
+  let told = ''
+  onUpdateStatus((s) => {
+    window?.webContents.send('update:status', s)
+    if (s.state === 'available' && told !== s.latest) {
+      told = s.latest
+      systemNotify(
+        'Notiva-Update',
+        `Version ${s.latest} ist da – in Notiva mit einem Klick installieren.`,
+        () => {
+          window?.show()
+          window?.focus()
+        },
+      )
+    }
+  })
+  if (!app.isPackaged) return
+  setTimeout(() => void checkForUpdate(), 30_000)
+  setInterval(() => void checkForUpdate(), 6 * 60 * 60_000)
+}
 
 app.on('will-quit', () => whisper.stop())
 app.on('window-all-closed', () => {

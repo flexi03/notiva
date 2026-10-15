@@ -1,3 +1,4 @@
+import type { UpdateStatus } from '../update'
 import type { MoodleSnapshot } from '../moodle'
 import type { AppNotification } from '../notifications'
 import type { ExamSnapshot } from '../ecampus'
@@ -232,6 +233,13 @@ export interface NotivaBridge {
   aiCli?: CliBridge
   /** Git for the open folder (desktop app only). */
   git?: GitBridge
+  /** Self-update from GitHub releases (desktop app only). */
+  update?: {
+    status(): Promise<UpdateStatus>
+    check(): Promise<UpdateStatus>
+    install(): Promise<void>
+    onStatus(callback: (status: UpdateStatus) => void): () => void
+  }
   /** Notification center storage and system banners (desktop app only). */
   notifications?: NotificationBridge
   /** Moodle courses and deadlines (desktop app only). */

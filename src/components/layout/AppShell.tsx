@@ -35,6 +35,7 @@ import type { NotificationKind } from '@/lib/notifications'
 import { syncExamPlan } from '@/app/examPlan'
 import { syncMaterials } from '@/app/materials'
 import { useEcampus } from '@/app/ecampus'
+import { useUpdateNotices } from '@/app/update'
 
 const saveNow = () => void saveAllNow()
 
@@ -44,6 +45,7 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
   const { sidebarOpen, setSidebar, setSearch, setNewPage, route, rightPanel, leftView } = useApp()
   useGitSync()
   useNotificationSync(ws)
+  useUpdateNotices()
   // Recently opened files (sidebar, module pages).
   useEffect(() => useRecent.getState().load(ws.vault.name), [ws])
   useEffect(() => {

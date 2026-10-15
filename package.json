@@ -32,9 +32,9 @@
     "electron:build": "node scripts/build-electron.mjs",
     "mcp:build": "node scripts/build-mcp.mjs",
     "electron": "npm run build && npm run electron:build && npm run mcp:build && electron .",
-    "dist:mac": "npm run build && npm run electron:build && npm run mcp:build && electron-builder --mac",
-    "dist:win": "npm run build && npm run electron:build && npm run mcp:build && electron-builder --win",
-    "dist:linux": "npm run build && npm run electron:build && npm run mcp:build && electron-builder --linux",
+    "dist:mac": "npm run build && npm run electron:build && npm run mcp:build && electron-builder --mac --publish never",
+    "dist:win": "npm run build && npm run electron:build && npm run mcp:build && electron-builder --win --publish never",
+    "dist:linux": "npm run build && npm run electron:build && npm run mcp:build && electron-builder --linux --publish never",
     "icons": "node scripts/render-icons.mjs"
   },
   "dependencies": {
@@ -119,8 +119,18 @@
     "mac": {
       "category": "public.app-category.productivity",
       "target": [
-        "dmg",
-        "zip"
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64"
+          ]
+        }
       ],
       "extendInfo": {
         "NSMicrophoneUsageDescription": "Notiva nimmt im Vorlesungsmodus auf, um ein Transkript zu erstellen."
@@ -128,12 +138,22 @@
     },
     "win": {
       "target": [
-        "nsis"
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
       ]
     },
     "linux": {
       "target": [
-        "AppImage"
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "category": "Office"
     },
@@ -144,6 +164,20 @@
         "filter": [
           "*.mjs"
         ]
+      }
+    ],
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "runAfterFinish": true
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "flexi03",
+        "repo": "notiva",
+        "releaseType": "release"
       }
     ]
   }
