@@ -1,4 +1,5 @@
 import { ChatHistory } from './ChatHistory'
+import { ContextBar } from './ContextBar'
 import { useChats } from '@/app/chats'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
@@ -193,6 +194,7 @@ export function AssistantPanel() {
             submit()
           }}
         >
+          <ContextBar />
           <div className="flex items-end gap-1.5 rounded-panel border border-line bg-paper px-2.5 py-1.5 focus-within:border-accent">
             <AutoTextArea
               ref={input}
@@ -237,13 +239,21 @@ function ChatMessage({
   sent: SentPrompt | undefined
 }) {
   if (message.role === 'user') {
-    const text = message.parts
-      .filter((p): p is Extract<Part, { type: 'text' }> => p.type === 'text')
+    const texts = message.parts.filter((p): p is Extract<Part, { type: 'text' }> => p.type === 'text')
+    const context = texts.find((p) => p.text.startsWith('<kontext>'))
+    const text = texts
+      .filter((p) => p !== context)
       .map((p) => p.text)
       .join('\n')
     if (!text) return null // tool results are shown with their call
+    const sentWith = context ? [...context.text.matchAll(/^### (.+)$/gm)].map((m) => m[1]!) : []
     return (
       <div className="ml-8 space-y-1">
+        {sentWith.length > 0 && (
+          <p className="text-right text-[11.5px] text-ink-3" title={t('ai.contextSent')}>
+            {t('ai.contextSent')}: {sentWith.join(' · ')}
+          </p>
+        )}
         <p className="rounded-panel bg-sunken px-3 py-2 text-[14.5px] whitespace-pre-wrap">{text}</p>
         {sent && <SentDetails sent={sent} />}
       </div>

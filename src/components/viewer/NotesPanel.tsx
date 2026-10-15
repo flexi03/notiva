@@ -1,7 +1,8 @@
 import { MarkdownView } from '@/components/editor/MarkdownView'
+import { useAssistant } from '@/app/assistant'
 import { ResizeHandle, useStoredWidth } from '@/components/layout/ResizeHandle'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Highlighter, PenLine, StickyNote, Trash2, Type } from 'lucide-react'
+import { Highlighter, Sparkles, PenLine, StickyNote, Trash2, Type } from 'lucide-react'
 import { useApp } from '@/app/store'
 import { t } from '@/i18n'
 import type { Annotation } from '@/lib/annotations'
@@ -251,6 +252,20 @@ function AnnotationItem({
             <span className="line-clamp-2 block text-[12.5px] text-ink-2">„{a.text ?? ''}“</span>
           )}
         </button>
+        <IconButton
+          size="sm"
+          label={t('ai.askAbout')}
+          onClick={() => {
+            // Question prepared in the assistant; the PDF page and the highlights go along.
+            const quote =
+              a.type === 'highlight' ? `„${a.text ?? ''}“` : `„${(a as { text?: string }).text ?? ''}“`
+            useAssistant.getState().setDraft(t('ai.askAboutDraft', { page: a.page, quote }))
+            useApp.getState().openView('assistant')
+          }}
+          className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+        >
+          <Sparkles size={13} />
+        </IconButton>
         <IconButton
           size="sm"
           label={t('viewer.remove')}

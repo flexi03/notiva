@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { buildAiContext } from '@/app/aiContext'
 import { t } from '@/i18n'
 import {
   createProvider,
@@ -160,9 +161,17 @@ export const useAssistant = create<AssistantState>((set, get) => ({
     if (!ws || busy || !text.trim()) return
     const controller = new AbortController()
     const userIndex = get().messages.length
+    // What is open goes along (visible above the input and in the message).
+    const context = await buildAiContext().catch(() => ({ text: '', labels: [] as string[] }))
     const messages: Message[] = [
       ...get().messages,
-      { role: 'user', parts: [{ type: 'text', text: text.trim() }] },
+      {
+        role: 'user',
+        parts: [
+          ...(context.text ? [{ type: 'text' as const, text: context.text }] : []),
+          { type: 'text', text: text.trim() },
+        ],
+      },
     ]
     const system = get().currentPrompt()
     set({
@@ -171,11 +180,21 @@ export const useAssistant = create<AssistantState>((set, get) => ({
       error: null,
       controller,
       draft: '',
-      sent: { ...get().sent, [userIndex]: { system, user: text.trim() } },
+      sent: {
+        ...get().sent,
+        [userIndex]: { system, user: context.text ? `${context.text}\n\n${text.trim()}` : text.trim() },
+      },
     })
     const alive = () => get().controller === controller
     try {
-      if (settings.backend === 'cli') await runCli(text.trim(), system, controller, userIndex, alive)
+      if (settings.backend === 'cli')
+        await runCli(
+          context.text ? `${context.text}\n\n${text.trim()}` : text.trim(),
+          system,
+          controller,
+          userIndex,
+          alive,
+        )
       else
         await runAgent({
           provider: createProvider(settings, httpClient),

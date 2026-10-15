@@ -24,6 +24,7 @@ import { ResizeHandle, useStoredWidth } from '@/components/layout/ResizeHandle'
 import { workFolderFor } from '@/lib/codeFolders'
 import { electronBridge } from '@/lib/vault'
 import { registerUndo, runUndo } from '@/app/undo'
+import { useAiContext } from '@/app/aiContext'
 import { useAnnotations } from '@/app/annotations'
 import { useAssistant } from '@/app/assistant'
 import { useApp, useWorkspace } from '@/app/store'
@@ -134,6 +135,12 @@ export function PdfDocumentView({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
+
+  // The assistant sees which PDF and page is open (context bar).
+  useEffect(() => {
+    useAiContext.getState().setFile({ path, page: current })
+  }, [path, current])
+  useEffect(() => () => useAiContext.getState().setFile(null), [])
 
   // Remember where the reader is (per file, this app session).
   useEffect(() => {
