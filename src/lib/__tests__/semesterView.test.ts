@@ -25,8 +25,10 @@ describe('Mein Semester', () => {
     })
     await ws.reload()
     const list = activeModules(ws, 'Studium')
-    expect(list.map((m) => m.module.path)).toEqual([db])
-    const dbs = list[0]!
+    // The demo pack's own attended modules are in the list too; "Mathe 9" (no Belegung) is not.
+    expect(list.map((m) => m.module.path)).toContain(db)
+    expect(list.map((m) => m.module.path)).not.toContain('Studium/Module/Mathe 9.md')
+    const dbs = list.find((m) => m.module.path === db)!
     expect(dbs.courses[0]!.groups['Vorlesung']).toEqual(['Studium/Unterlagen/DBS2/Vorlesung/vl01.pdf'])
     expect(dbs.courses[0]!.groups['Praktikum & Übung']).toHaveLength(1)
     expect(dbs.recent).toHaveLength(2)

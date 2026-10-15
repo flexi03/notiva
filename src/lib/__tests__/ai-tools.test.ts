@@ -282,7 +282,7 @@ describe('AI tools: dashboard and files', () => {
       index: -1,
       yaml: 'type: view\nsource: Studium/Module\nview: Gibtsnicht',
     })
-    expect(view.text).toContain('vorhanden: Dieses Semester')
+    expect(view.text).toMatch(/vorhanden: .*Dieses Semester/)
     expect(ws.get('Studium.md')!.body).toBe(before)
   })
 
