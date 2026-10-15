@@ -277,3 +277,10 @@
 .code-copy:focus-visible {
   border-color: var(--accent);
 }
+
+/* PDF search hit (text layer) */
+.textLayer .pdf-search-hit {
+  background: color-mix(in srgb, var(--marker, #ffd84d) 70%, transparent);
+  border-radius: 2px;
+  color: transparent;
+}

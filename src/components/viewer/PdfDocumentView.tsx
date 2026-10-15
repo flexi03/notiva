@@ -7,6 +7,7 @@ import {
   NotebookPen,
   PanelRight,
   SquareTerminal,
+  Search,
   Globe,
   PenLine,
   Plus,
@@ -16,6 +17,7 @@ import {
   Type,
 } from 'lucide-react'
 import { CommentMarkers, PageNoteFlag } from './CommentMarkers'
+import { PdfSearch } from './PdfSearch'
 import { SideWeb } from '@/components/terminal/SideWeb'
 import { TerminalDock } from '@/components/terminal/TerminalDock'
 import { ResizeHandle, useStoredWidth } from '@/components/layout/ResizeHandle'
@@ -42,8 +44,8 @@ import { PdfViewer, type PdfViewerHandle } from './PdfViewer'
 /** Reading position per file (fraction of the scroll height) – back/forward returns to it. */
 const positions = new Map<string, number>()
 
-const ZOOMS = [0.5, 0.67, 0.8, 1, 1.25, 1.5, 2, 3, 4]
-const MIN_ZOOM = 0.4
+const ZOOMS = [0.25, 0.33, 0.5, 0.67, 0.8, 1, 1.25, 1.5, 2, 3, 4]
+const MIN_ZOOM = 0.25
 const MAX_ZOOM = 4
 
 export interface SideProps {
@@ -144,6 +146,33 @@ export function PdfDocumentView({
 
   const goTo = useCallback((page: number) => viewer.current?.scrollToPage(page, true), [])
 
+  const [searchOpen, setSearchOpen] = useState(false)
+  // ←/→: previous/next page (↑/↓ keep scrolling); ⌘F: search.
+  const currentRef = useRef(current)
+  useEffect(() => {
+    currentRef.current = current
+  })
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = document.activeElement as HTMLElement | null
+      if (el?.matches('input, textarea, [contenteditable="true"]') || el?.closest('.xterm, .cm-editor'))
+        return
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') {
+        e.preventDefault()
+        setSearchOpen(true)
+        return
+      }
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault()
+        const next = currentRef.current + (e.key === 'ArrowRight' ? 1 : -1)
+        if (next >= 1 && next <= doc.numPages) goTo(next)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [doc, goTo])
+
   const step = (dir: 1 | -1) => {
     setZoom((z) =>
       dir > 0
@@ -167,7 +196,8 @@ export function PdfDocumentView({
       frame = requestAnimationFrame(() => {
         const factor = pending
         pending = 1
-        setZoom((z) => Math.round(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z * factor)) * 20) / 20)
+        // Continuous (trackpad): no fixed steps.
+        setZoom((z) => Math.round(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z * factor)) * 100) / 100)
       })
     }
     const onKey = (e: KeyboardEvent) => {
@@ -343,6 +373,9 @@ export function PdfDocumentView({
           >
             <PanelRight size={15} />
           </IconButton>
+          <IconButton label={t('viewer.search')} onClick={() => setSearchOpen((v) => !v)} active={searchOpen}>
+            <Search size={15} />
+          </IconButton>
           {electronBridge()?.terminal && (
             <IconButton label={t('web.open')} onClick={() => setWeb((v) => !v)} active={web}>
               <Globe size={15} />
@@ -359,6 +392,7 @@ export function PdfDocumentView({
             </IconButton>
           )}
         </div>
+        {searchOpen && <PdfSearch doc={doc} onJump={goTo} onClose={() => setSearchOpen(false)} />}
         <div ref={area} className="relative min-h-0 flex-1" onMouseUp={onMouseUp}>
           <PdfViewer
             ref={viewer}

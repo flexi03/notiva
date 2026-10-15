@@ -101,7 +101,8 @@ export const PdfViewer = forwardRef<
       tabIndex={0}
       className={className ?? 'h-full overflow-auto bg-sunken'}
     >
-      <div className="flex flex-col items-center gap-4 px-4 py-4">
+      {/* w-max: zoomed in wider than the window, the left edge stays reachable. */}
+      <div className="flex w-max min-w-full flex-col items-center gap-4 px-4 py-4">
         {sizes?.map((size, i) => (
           <PdfPage key={i} doc={doc} number={i + 1} size={size} scale={scale} root={scroller}>
             {overlay?.(i + 1, { width: size.width * scale, height: size.height * scale }, scale)}
