@@ -30,7 +30,7 @@ export class LiveRecorder {
       )
     if (!navigator.mediaDevices?.getUserMedia) throw new Error('Dieser Browser kann nicht aufnehmen.')
     this.stream = await navigator.mediaDevices.getUserMedia({
-      audio: { channelCount: 1, echoCancellation: false, noiseSuppression: true, autoGainControl: true },
+      audio: { channelCount: 1, echoCancellation: false, noiseSuppression: false, autoGainControl: true },
     })
     this.context = new AudioContext({ sampleRate: SAMPLE_RATE })
     await this.context.audioWorklet.addModule(workletUrl)

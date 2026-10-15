@@ -3,7 +3,7 @@ import { useApp } from '@/app/store'
 import { getLanguage } from '@/i18n'
 import { toIsoDate } from '@/lib/dates'
 import type { Chunk } from '@/lib/lecture/audio'
-import { encodeWav } from '@/lib/lecture/audio'
+import { encodeWav, normalize } from '@/lib/lecture/audio'
 import { buildSlideIndex, followSlide, type FollowState, type SlideIndex } from '@/lib/lecture/slideMatch'
 import {
   DEFAULT_TRANSCRIBE,
@@ -148,7 +148,11 @@ export const useLecture = create<LectureState>((set, get) => {
       const last = get().entries.at(-1)?.text ?? ''
       const slideText = (slideTexts[follow.page - 1] ?? '').slice(0, 400)
       try {
-        const response = await sendChunk(settings, encodeWav(chunk.samples), `${slideText}\n${last}`)
+        const response = await sendChunk(
+          settings,
+          encodeWav(normalize(chunk.samples)),
+          `${slideText}\n${last}`,
+        )
         if (response.status !== 200)
           throw new Error(describeTranscribeError(response.status, response.body, settings))
         const segments = parseTranscription(JSON.parse(response.body), chunk.start, chunk.end)

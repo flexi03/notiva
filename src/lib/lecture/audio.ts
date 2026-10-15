@@ -59,7 +59,9 @@ export class Chunker {
 
   constructor(
     private readonly onChunk: (chunk: Chunk) => void,
-    private readonly options = { min: 15, max: 30, silence: 0.012, sampleRate: SAMPLE_RATE },
+    // Shorter parts: the live transcript comes sooner. Quiet rooms: low silence threshold,
+    // and the level is lifted before transcribing (see normalize).
+    private readonly options = { min: 8, max: 20, silence: 0.004, sampleRate: SAMPLE_RATE },
   ) {}
 
   /** Feed ~100 ms frames. Returns the frame's level (0…1) for a meter. */
@@ -103,4 +105,18 @@ export class Chunker {
   skip(seconds: number): void {
     this.started += seconds
   }
+}
+
+/**
+ * Brings quiet speech (lecturer far from the microphone) to a level speech recognition handles
+ * well: gain towards a target loudness (max. 30×), soft limiter against clipping.
+ */
+export function normalize(samples: Float32Array, target = 0.08, maxGain = 30): Float32Array {
+  const level = rms(samples)
+  if (level <= 0) return samples
+  const gain = Math.min(maxGain, Math.max(1, target / level))
+  if (gain === 1) return samples
+  const out = new Float32Array(samples.length)
+  for (let i = 0; i < samples.length; i++) out[i] = Math.tanh(samples[i]! * gain)
+  return out
 }

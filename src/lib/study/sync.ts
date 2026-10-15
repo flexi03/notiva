@@ -188,8 +188,10 @@ function moduleValues(state: StudyState, m: ModuleState): FrontmatterData {
   }
   if (m.courses.length) v.kurse = m.courses.map((c) => c.id)
   // What one attends now (suggestion; the user's own choice wins, see moduleChanges).
+  // Missing modules taught this semester count as attended (catching up, e.g. DBS 2).
+  const caughtUp = m.status === 'Fehlt' && (!module.offered || module.offered === state.current.season)
   v.Belegung =
-    m.status === 'In Vorlesung'
+    m.status === 'In Vorlesung' || caughtUp
       ? ['Vorlesung', ...(module.prerequisite && /praktikum/i.test(module.prerequisite) ? ['Praktikum'] : [])]
       : m.status === 'Wiederholung' || m.status === 'Prüfung angemeldet'
         ? ['Prüfung']

@@ -95,16 +95,21 @@ export function followSlide(
     const page = i + 1
     const d = page - state.page
     const bonus = d === 0 ? 0.06 : d === 1 ? 0.04 : d === 2 ? 0.015 : 0
-    return s + bonus
+    // Far jumps are rare in a lecture: the further away, the less likely.
+    const penalty = Math.abs(d) > 3 ? Math.min(0.1, (Math.abs(d) - 3) * 0.01) : 0
+    return s + bonus - penalty
   })
   let best = 0
   for (let i = 1; i < weighted.length; i++) if (weighted[i]! > weighted[best]!) best = i
   const page = best + 1
   const score = scores[best] ?? 0
   if (score < 0.08 || page === state.page) return { page: state.page, candidate: null, score }
-  const near = page - state.page === 1
+  const distance = page - state.page
   const lead = weighted[best]! - (weighted[state.page - 1] ?? 0)
-  if (near && lead > 0.03) return { page, candidate: null, score }
-  if (state.candidate === page && lead > 0.05) return { page, candidate: null, score }
+  if (distance === 1 && lead > 0.03) return { page, candidate: null, score }
+  // Back or further than three pages: clearly better and confirmed by the next part.
+  const far = distance < 0 || distance > 3
+  if (state.candidate === page && lead > (far ? 0.12 : 0.05) && (!far || score >= 0.2))
+    return { page, candidate: null, score }
   return { page: state.page, candidate: page, score }
 }
