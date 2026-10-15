@@ -15,6 +15,10 @@ export interface InfoBlock {
   /** ISO date-time of the last change (if Moodle tells). */
   modified?: string
   url?: string
+  /** Forum posts: the forum's name ("Ankündigungen", "Fragen zum Praktikum"). */
+  forum?: string
+  /** A post about a cancelled / moved lecture or room change. */
+  important?: boolean
 }
 
 export interface CourseInfo {
@@ -161,19 +165,26 @@ export function courseInfoOf(
       ...(modified ? { modified } : {}),
     })
   }
-  const discussions =
-    isObject(raw.discussions) && Array.isArray(raw.discussions.discussions) ? raw.discussions.discussions : []
-  for (const d of discussions.filter(isObject).slice(0, 15)) {
-    const text = htmlToMarkdown(str(d.message)).slice(0, 10_000)
-    const subject = htmlToMarkdown(str(d.subject || d.name))
-    if (!subject) continue
-    const modified = time(d.timemodified ?? d.created)
-    info.announcements.push({
-      id: `news:${str(d.discussion) || str(d.id)}`,
-      title: subject,
-      text,
-      ...(modified ? { modified } : {}),
-    })
+  // Forum posts: one list (old shape) or one list per forum ({ forum, data }).
+  const forumLists: Array<{ forum?: string; data: unknown }> = Array.isArray(raw.discussions)
+    ? raw.discussions.filter(isObject).map((d) => ({ forum: str(d.forum), data: d.data }))
+    : [{ data: raw.discussions }]
+  for (const { forum, data } of forumLists) {
+    const discussions = isObject(data) && Array.isArray(data.discussions) ? data.discussions : []
+    for (const d of discussions.filter(isObject).slice(0, 15)) {
+      const text = htmlToMarkdown(str(d.message)).slice(0, 10_000)
+      const subject = htmlToMarkdown(str(d.subject || d.name))
+      if (!subject) continue
+      const modified = time(d.timemodified ?? d.created)
+      info.announcements.push({
+        id: `news:${str(d.discussion) || str(d.id)}`,
+        title: subject,
+        text,
+        ...(modified ? { modified } : {}),
+        ...(forum ? { forum } : {}),
+        ...(isImportantPost(`${subject} ${text}`) ? { important: true } : {}),
+      })
+    }
   }
   return info
 }
@@ -184,6 +195,13 @@ const blocks = (info: CourseInfo) => [
   ...info.sections,
   ...info.pages,
 ]
+
+/** Cancelled or moved lectures, room changes – posts that need attention. */
+export function isImportantPost(text: string): boolean {
+  return /f(ä|ae)llt\b[^.!?\n]{0,40}\baus\b|findet\b[^.!?\n]{0,40}\bnicht\s+statt|entf(ä|ae)llt|abgesagt|ausfall|verschoben|verlegt|raum(ä|ae)nderung|anderer raum|statt(dessen)?\s+in|online statt|nur online|cancel+ed|postponed|moved to/i.test(
+    text,
+  )
+}
 
 /** Latest change date of a course (from Moodle's dates). */
 export function lastChange(info: CourseInfo): string | undefined {
@@ -207,9 +225,18 @@ export function courseInfoMarkdown(info: CourseInfo, previousBody = '', locale =
   ]
   if (info.summary) out.push('## Beschreibung', info.summary.text)
   if (info.announcements.length) {
-    out.push('## Ankündigungen')
-    for (const a of info.announcements)
-      out.push(`### ${a.title}${a.modified ? ` (${date(a.modified)})` : ''}`, a.text || '–')
+    out.push('## Forum')
+    const forums = [...new Set(info.announcements.map((a) => a.forum ?? 'Ankündigungen'))]
+    // Forum names as sub-headings – unless it is just the announcements.
+    const named = forums.length > 1 || forums[0] !== 'Ankündigungen'
+    for (const forum of forums) {
+      if (named) out.push(`### ${forum}`)
+      for (const a of info.announcements.filter((x) => (x.forum ?? 'Ankündigungen') === forum))
+        out.push(
+          `${named ? '####' : '###'} ${a.important ? '⚠️ ' : ''}${a.title}${a.modified ? ` (${date(a.modified)})` : ''}`,
+          a.text || '–',
+        )
+    }
   }
   if (info.sections.length) {
     out.push('## Abschnitte')
@@ -252,11 +279,24 @@ export function courseInfoNews(
     for (const b of blocks(info)) {
       const prev = old.get(b.id)
       if (prev && prev.text === b.text && prev.title === b.title) continue
+      // A forum read for the first time: only recent posts are news.
+      if (
+        !prev &&
+        b.id.startsWith('news:') &&
+        b.modified &&
+        now.getTime() - Date.parse(b.modified) > 14 * 86_400_000
+      )
+        continue
       const isNews = b.id.startsWith('news:')
+      const important = isNews && (b.important || isImportantPost(`${b.title} ${b.text}`))
       news.push({
         id: `info:${id}:${b.id}:${b.text.length}:${b.modified ?? ''}`,
-        kind: 'notice',
-        title: isNews ? b.title : prev ? `Geändert: ${b.title}` : `Neu: ${b.title}`,
+        kind: important ? 'moved' : 'notice',
+        title: isNews
+          ? `${important ? (/f(ä|ae)llt|entf|abgesagt|ausfall|cancel/i.test(`${b.title} ${b.text}`) ? 'Ausfall: ' : 'Wichtig: ') : ''}${b.forum && !/ankündig|nachricht|news/i.test(b.forum) ? `${b.forum}: ` : ''}${b.title}`
+          : prev
+            ? `Geändert: ${b.title}`
+            : `Neu: ${b.title}`,
         body: excerpt(b.text),
         course: courseName(id),
         time: b.modified ?? now.toISOString(),

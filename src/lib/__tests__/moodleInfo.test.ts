@@ -115,3 +115,53 @@ describe('Moodle course texts', () => {
     expect(snap.info?.['course:7']?.summary?.text).toBe('Hallo')
   })
 })
+
+describe('forum posts', () => {
+  it('reads every forum and reports cancelled lectures first-class', () => {
+    const now = new Date('2026-10-15T08:00:00Z')
+    const sec = (iso: string) => Date.parse(iso) / 1000
+    const forums = (posts: Array<{ id: number; subject: string; message: string; at: string }>) => [
+      { forum: 'Ankündigungen', data: { discussions: [] } },
+      {
+        forum: 'Fragen zum Praktikum',
+        data: {
+          discussions: posts.map((p) => ({
+            discussion: p.id,
+            subject: p.subject,
+            message: p.message,
+            timemodified: sec(p.at),
+          })),
+        },
+      },
+    ]
+    const before = {
+      'course:7': courseInfoOf('course:7', {
+        contents: CONTENTS,
+        discussions: forums([{ id: 1, subject: 'Alte Frage', message: 'x', at: '2026-01-01' }]),
+      }),
+    }
+    const after = {
+      'course:7': courseInfoOf('course:7', {
+        contents: CONTENTS,
+        discussions: forums([
+          { id: 1, subject: 'Alte Frage', message: 'x', at: '2026-01-01' },
+          {
+            id: 2,
+            subject: 'Vorlesung am Dienstag',
+            message: '<p>Die Vorlesung fällt leider aus.</p>',
+            at: '2026-10-14',
+          },
+          { id: 3, subject: 'Uralt', message: 'y', at: '2025-01-01' },
+        ]),
+      }),
+    }
+    expect(after['course:7'].announcements.find((a) => a.id === 'news:2')).toMatchObject({
+      forum: 'Fragen zum Praktikum',
+      important: true,
+    })
+    const news = courseInfoNews(before, after, () => 'DBS 2', now)
+    expect(news.map((n) => n.title)).toEqual(['Ausfall: Fragen zum Praktikum: Vorlesung am Dienstag'])
+    expect(news[0]!.kind).toBe('moved')
+    expect(courseInfoMarkdown(after['course:7'])).toContain('### Fragen zum Praktikum')
+  })
+})

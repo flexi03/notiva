@@ -284,22 +284,33 @@ export class MoodleClient {
     const discussions: Record<string, unknown> = {}
     await Promise.all(
       ids.map(async (id) => {
-        const forum = modulesOf(contents[id]).find(
-          (m) => m.modname === 'forum' && /ankündig|nachricht|news|announce/i.test(String(m.name ?? '')),
+        // All forums of the course (announcements first) – cancelled lectures are posted there.
+        const forums = modulesOf(contents[id])
+          .filter((m) => m.modname === 'forum' && m.instance)
+          .sort(
+            (a, b) =>
+              Number(/ankündig|nachricht|news|announce/i.test(String(b.name ?? ''))) -
+              Number(/ankündig|nachricht|news|announce/i.test(String(a.name ?? ''))),
+          )
+          .slice(0, 5)
+        const lists = await Promise.all(
+          forums.map(async (forum) => {
+            const forumid = Number(forum.instance)
+            const data = await this.call(site, secret, 'mod_forum_get_forum_discussions', {
+              forumid,
+              page: 0,
+              perpage: 10,
+            }).catch(() =>
+              this.call(site, secret, 'mod_forum_get_forum_discussions_paginated', {
+                forumid,
+                page: 0,
+                perpage: 10,
+              }).catch(() => null),
+            )
+            return { forum: String(forum.name ?? 'Forum'), data }
+          }),
         )
-        if (!forum?.instance) return
-        const forumid = Number(forum.instance)
-        discussions[id] = await this.call(site, secret, 'mod_forum_get_forum_discussions', {
-          forumid,
-          page: 0,
-          perpage: 10,
-        }).catch(() =>
-          this.call(site, secret, 'mod_forum_get_forum_discussions_paginated', {
-            forumid,
-            page: 0,
-            perpage: 10,
-          }).catch(() => null),
-        )
+        if (lists.length) discussions[id] = lists
       }),
     )
     const snapshot = snapshotFromWebService(
