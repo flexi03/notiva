@@ -7,6 +7,7 @@ import {
   NotebookPen,
   PanelRight,
   SquareTerminal,
+  Globe,
   PenLine,
   Plus,
   ScanLine,
@@ -15,6 +16,7 @@ import {
   Type,
 } from 'lucide-react'
 import { CommentMarkers } from './CommentMarkers'
+import { SideWeb } from '@/components/terminal/SideWeb'
 import { TerminalDock } from '@/components/terminal/TerminalDock'
 import { ResizeHandle, useStoredWidth } from '@/components/layout/ResizeHandle'
 import { workFolderFor } from '@/lib/codeFolders'
@@ -86,6 +88,7 @@ export function PdfDocumentView({
   const [panel, setPanel] = useState(() => typeof window === 'undefined' || window.innerWidth >= 1100)
   // Terminal below the PDF – in the module's code folder (lab PDFs), else next to the file.
   const [terminal, setTerminal] = useState(false)
+  const [web, setWeb] = useState(false)
   const [terminalHeight, setTerminalHeight] = useStoredWidth('pdf-terminal', 260, 120, 900)
   const ws = useWorkspace()
   const work = workFolderFor(ws, path)
@@ -317,6 +320,11 @@ export function PdfDocumentView({
             <PanelRight size={15} />
           </IconButton>
           {electronBridge()?.terminal && (
+            <IconButton label={t('web.open')} onClick={() => setWeb((v) => !v)} active={web}>
+              <Globe size={15} />
+            </IconButton>
+          )}
+          {electronBridge()?.terminal && (
             <IconButton
               label={t('terminal.toggle')}
               title={`${t('terminal.toggle')} – ${work.folder || t('terminal.vaultRoot')}`}
@@ -424,6 +432,7 @@ export function PdfDocumentView({
           </div>
         )}
       </div>
+      {web && <SideWeb storageKey={path} onClose={() => setWeb(false)} />}
       {panel && (
         <NotesPanel
           page={current}

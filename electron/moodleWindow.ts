@@ -3,6 +3,7 @@
  * "in the app". All of them share one persistent session (`persist:moodle`) so the university
  * login stays valid – fully separated from Notiva's own window, without preload or Node, sandboxed.
  */
+import { keepSessionCookies } from './keepSession'
 import { BrowserWindow, session, shell, type Session } from 'electron'
 import path from 'node:path'
 import { launchUrl, newPassport, parseSsoAnswer, SSO_SCHEME } from './moodleSso'
@@ -13,11 +14,18 @@ const LOGIN_TIMEOUT = 15 * 60_000
 let prepared: Session | null = null
 let pendingAnswer: ((url: string) => void) | null = null
 
+/** Prepares the shared browser session (also used by web pages next to files). */
+export function prepareBrowserSession(): void {
+  moodleSession()
+}
+
 /** Moodle's session: no permissions (camera, notifications …), answers of the sign-in caught. */
 function moodleSession(): Session {
   if (prepared) return prepared
   const ses = session.fromPartition(PARTITION)
   ses.setPermissionRequestHandler((_wc, _permission, callback) => callback(false))
+  // The Microsoft/university sign-in stays (also for web pages next to files and terminals).
+  keepSessionCookies(ses)
   // Some identity providers block "embedded" browsers: present as plain Chrome.
   ses.setUserAgent(ses.getUserAgent().replace(/\s(Electron|notiva)\/\S+/gi, ''))
   ses.protocol.handle(SSO_SCHEME, (request) => {

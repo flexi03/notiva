@@ -7,6 +7,7 @@
 import { BrowserWindow, session, type Session, type WebContents } from 'electron'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
+import { keepSessionCookies } from './keepSession'
 import {
   extractTables,
   pageState,
@@ -131,30 +132,7 @@ export class Ecampus {
     ses.setUserAgent(ses.getUserAgent().replace(/\s(Electron|notiva)\/\S+/gi, ''))
     // Session cookies (eCampus, identity provider) would end with the app: keep them like
     // "stay signed in" so the background check still works after a restart. Only this profile.
-    ses.cookies.on('changed', (_event, cookie, cause, removed) => {
-      // Server cookies arrive as "inserted" (Electron ≥ 40) or "explicit"; ours are no session cookies.
-      if (
-        removed ||
-        !/^(explicit|inserted|overwrite)/.test(cause) ||
-        cookie.session === false ||
-        !cookie.domain
-      )
-        return
-      const host = cookie.domain.replace(/^\./, '')
-      void ses.cookies
-        .set({
-          url: `${cookie.secure ? 'https' : 'http'}://${host}${cookie.path ?? '/'}`,
-          name: cookie.name,
-          value: cookie.value,
-          ...(cookie.hostOnly ? {} : { domain: cookie.domain }),
-          path: cookie.path ?? '/',
-          secure: cookie.secure ?? false,
-          httpOnly: cookie.httpOnly ?? false,
-          ...(cookie.sameSite ? { sameSite: cookie.sameSite } : {}),
-          expirationDate: Date.now() / 1000 + KEEP_DAYS * 86_400,
-        })
-        .catch(() => undefined)
-    })
+    keepSessionCookies(ses, KEEP_DAYS)
     this.ses = ses
     return ses
   }

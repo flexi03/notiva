@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, ExternalLink, RotateCw, X } from 'lucide-react'
-import { useMoodle } from '@/app/moodle'
 import { t } from '@/i18n'
 import { electronBridge } from '@/lib/vault'
 import { IconButton } from '@/components/ui'
@@ -28,14 +27,6 @@ export function WebPane({
 }) {
   const ref = useRef<WebviewElement | null>(null)
   const [address, setAddress] = useState(url)
-  const site = useMoodle((s) => s.status?.site)
-  const moodle = (() => {
-    try {
-      return !!site && new URL(url).origin === new URL(site).origin
-    } catch {
-      return false
-    }
-  })()
   useEffect(() => {
     const view = ref.current
     if (!view) return
@@ -96,7 +87,7 @@ export function WebPane({
       <webview
         ref={ref as never}
         src={url}
-        partition={moodle ? 'persist:moodle' : 'persist:web'}
+        partition="persist:moodle"
         className="min-h-0 flex-1"
         data-testid="webpane"
       />

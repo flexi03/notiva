@@ -40,7 +40,7 @@ import {
   statusOf,
   type MoodleConfig,
 } from './moodle'
-import { clearMoodleSession, openMoodlePage, ssoLogin } from './moodleWindow'
+import { clearMoodleSession, openMoodlePage, prepareBrowserSession, ssoLogin } from './moodleWindow'
 import { WhisperEngine } from './whisper'
 import { buildMenu } from './menu'
 import { systemNotify, testNotify } from './systemNotify'
@@ -791,7 +791,8 @@ function createWindow(): void {
     prefs.sandbox = true
     prefs.webSecurity = true
     if (params.src && !/^https?:\/\//i.test(params.src)) return event.preventDefault()
-    if (params.partition !== 'persist:moodle') params.partition = 'persist:web'
+    // One browser session with the Moodle / Microsoft sign-in for all embedded pages.
+    params.partition = 'persist:moodle'
   })
   window.webContents.on('did-attach-webview', (_event, contents) => {
     // Links that want a new window open in the same pane.
@@ -833,6 +834,7 @@ function createWindow(): void {
 app.whenReady().then(async () => {
   if (secondInstance) return
   buildMenu(() => window)
+  prepareBrowserSession()
   await loadShellPath()
   // Only Notiva's own window may use the microphone (lecture mode) – audio only, nothing else.
   const ownAudio = (
