@@ -222,6 +222,27 @@ export interface NotivaBridge {
   }
   /** Local speech to text with whisper.cpp (desktop). */
   whisper?: WhisperBridge
+  /** Small local language model (llama.cpp) for quick summaries – desktop app only. */
+  localModel?: {
+    status(): Promise<{
+      server: string | null
+      models: Array<{ id: string; label: string; size: number; downloaded: boolean }>
+      running: string | null
+    }>
+    install(): Promise<'installed' | 'started'>
+    download(id: string): Promise<void>
+    remove(id: string): Promise<void>
+    complete(
+      id: string,
+      system: string,
+      prompt: string,
+      maxTokens?: number,
+      examples?: Array<[string, string]>,
+    ): Promise<string>
+    onProgress(
+      callback: (event: { kind: string; text?: string; done?: number; total?: number }) => void,
+    ): () => void
+  }
   /** Asks the OS for microphone access (macOS); true if granted. */
   microphone?(): Promise<boolean>
   /** Sends one audio chunk to a transcription API (main process). */

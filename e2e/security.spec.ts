@@ -88,7 +88,7 @@ test.describe('Sicherheit', () => {
 
   test('eigenes CSS kann nichts nachladen', async ({ page }) => {
     await openDemo(page)
-    await go(page, '/#/settings')
+    await go(page, '/#/settings/vault')
     const css = page.getByPlaceholder('.md h1 { letter-spacing: -0.02em; }')
     await css.fill(
       "@import 'https://evil.example/x.css'; body { background: url(https://evil.example/t.png) }",

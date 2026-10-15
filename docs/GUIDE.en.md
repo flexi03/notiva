@@ -17,7 +17,12 @@ Everything beyond the [README](../README.en.md). Deutsch: [ANLEITUNG.md](ANLEITU
 - **Belegung** (what you take) is suggested from Moodle and the term's offer; set it yourself on the module page.
   Modules you take appear in _My semester_.
 - **Materials** from Moodle go to `Unterlagen/<course>/Vorlesung`, `Praktikum & Übung` or `Sonstiges`.
-- **Timetable**: sessions are read from the course pages. If they differ from your own entries, Notiva asks.
+- **Everything hangs on the module**: its page shows materials, Moodle info, exams, tasks and notes. There are no
+  separate course pages. Overview in the app: _Help → How Notiva works_.
+- **My semester**: one coloured card per module you take – next session, exam, open tasks, newest script, new
+  materials, "Work on the lab".
+- **Timetable** (sidebar): week view in module colours. "Suggest times from Moodle" reads the course texts and asks
+  for each session whether to add it. If they differ from your own entries, Notiva asks.
 - **Exam schedule**: the faculty's newest PDF is read into _Prüfungen_.
 - **Background checks**: every source has its own interval (_Settings → Notifications_).
 
@@ -56,6 +61,25 @@ npm run mcp:build
 claude mcp add notiva -- node /path/to/notiva/dist-mcp/notiva-mcp.mjs /path/to/your/folder
 # read only: … notiva-mcp.mjs /path/to/your/folder --read-only
 ```
+
+## Local mini model
+
+For quick summaries without internet or account: _Settings → AI → Local mini model_. Notiva uses
+[llama.cpp](https://github.com/ggml-org/llama.cpp) (button "Install llama.cpp": Homebrew or winget) and a small
+Qwen 2.5 model (recommended 1.5 B, ~1.1 GB; small 0.5 B, ~0.5 GB), downloaded once with a progress bar and checked
+by checksum. In the Git panel ✨ then suggests a commit message. The model only listens on `127.0.0.1` and stops
+after 5 idle minutes.
+
+## Sign-in (Microsoft)
+
+eCampus and Moodle sign in through your university. Choose **Yes** at "Stay signed in?" – then Notiva renews the
+sign-in in the background and one sign-in serves both eCampus and Moodle. If it still expires, a notification with
+**"Sign in again"** opens the sign-in window directly.
+
+## Error messages
+
+When something fails, Notiva names the reason in plain words and offers a button to fix it ("Install Git", "Sign in
+again", "Try again"). The technical message stays visible below – helpful for an issue on GitHub.
 
 ## Git
 

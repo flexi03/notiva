@@ -256,7 +256,7 @@ export function spawnTied(command: string, args: string[]): ChildProcess {
   return spawn('/bin/sh', ['-c', script, command, ...args], { stdio: ['pipe', 'ignore', 'pipe'] })
 }
 
-function freePort(): Promise<number> {
+export function freePort(): Promise<number> {
   return new Promise((resolve, reject) => {
     const server = createServer()
     server.once('error', reject)

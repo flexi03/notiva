@@ -51,7 +51,7 @@ test.describe('Vorschau (Peek)', () => {
   })
 
   test('Einstellung „Als ganze Seite“ schaltet die Vorschau ab', async ({ page }) => {
-    await go(page, '/#/settings')
+    await go(page, '/#/settings/editor')
     await page
       .getByRole('radiogroup', { name: 'Einträge und Karten öffnen' })
       .getByRole('radio', { name: 'Als ganze Seite' })

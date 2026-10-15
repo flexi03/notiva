@@ -1,3 +1,4 @@
+import { commitSummary, localModelAvailable } from '@/app/localModel'
 import { explain } from '@/app/fixes'
 import { withProgress } from '@/app/progress'
 import { useEffect, useMemo, useState } from 'react'
@@ -10,6 +11,7 @@ import {
   GitBranch,
   GitCommitHorizontal,
   RefreshCw,
+  Sparkles,
   Undo2,
 } from 'lucide-react'
 import { gitAvailable, useGit } from '@/app/git'
@@ -226,6 +228,26 @@ export function GitPanel() {
                 >
                   {t('git.commit', { count: selected.length })}
                 </Button>
+                {localModelAvailable() && selected.length > 0 && (
+                  <IconButton
+                    label={t('localModel.suggest')}
+                    onClick={() =>
+                      void commitSummary(
+                        selected.map((c) => ({
+                          path: c.path,
+                          status: c.status,
+                          added: stats.get(c.path)?.added,
+                          removed: stats.get(c.path)?.removed,
+                        })),
+                      ).then(
+                        (text) => text && setCustom(text),
+                        (e: unknown) => void import('@/app/fixes').then((m) => m.reportError(e)),
+                      )
+                    }
+                  >
+                    <Sparkles size={15} />
+                  </IconButton>
+                )}
                 {custom !== null && (
                   <Button variant="ghost" onClick={() => setCustom(null)} title={t('git.autoMessageHint')}>
                     {t('git.autoMessage')}

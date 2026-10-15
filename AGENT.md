@@ -72,6 +72,12 @@ In der Demo liegt alles im Speicher: in Tests mit `go(page, '#/…')` navigieren
 - Neue Vorlagen-Pakete: `src/lib/packs/`, in `TEMPLATE_PACKS` eintragen, `packs.test.ts` prüft automatisch,
   dass jedes Paket ohne YAML-Fehler installierbar ist.
 
+## Doku aktuell halten
+
+Jede Änderung, die Nutzer sehen, aktualisiert im selben Commit: `README.md` + `README.en.md`, `docs/ANLEITUNG.md` +
+`docs/GUIDE.en.md`, den Hilfe-Bildschirm (`src/screens/HelpScreen.tsx`) und `CHANGELOG.md`. Nach einem Release
+sofort die Patch-Version in `package.json` erhöhen.
+
 ## Release
 
 1. Version in `package.json` erhöhen (SemVer), Eintrag in `CHANGELOG.md`.

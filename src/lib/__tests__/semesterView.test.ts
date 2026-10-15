@@ -100,3 +100,15 @@ describe('script for a session', () => {
     expect(scriptFor(ws, 'U', 'Mathe', new Date(2026, 9, 14), now)).toBeUndefined()
   })
 })
+
+describe('module colours', () => {
+  it('gives attended modules distinct colours and keeps an own one', async () => {
+    const { moduleColors } = await import('../semesterView')
+    const page = (path: string, data: Record<string, unknown>) =>
+      ({ path, title: path, data }) as unknown as Parameters<typeof moduleColors>[0][number]
+    const list = Array.from({ length: 7 }, (_, i) => page(`m${i}`, { Nr: `BMI ${i}` }))
+    const colors = moduleColors([...list, page('own', { Farbe: 'blue' })])
+    expect(colors.get('own')).toBe('blue')
+    expect(new Set([...colors.entries()].filter(([k]) => k !== 'own').map(([, c]) => c)).size).toBe(7)
+  })
+})

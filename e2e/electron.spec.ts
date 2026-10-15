@@ -45,6 +45,7 @@ test('Renderer ist abgeschottet (kein Node, nur die Notiva-Brücke)', async () =
       'examPlan',
       'git',
       'lastFolder',
+      'localModel',
       'mcpInfo',
       'microphone',
       'moodle',

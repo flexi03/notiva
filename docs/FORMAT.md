@@ -95,9 +95,11 @@ type: related
 ```
 ````
 
-`type: related` zeigt alle Seiten, die auf diese Seite verweisen, nach Datenbank gruppiert (auf
-Modulseiten: Kurse, Mitschriften, Prüfungen, Aufgaben). Hat ein verweisender Eintrag `Ordner: <Pfad>`,
-werden die Dateien darin mit aufgelistet (Unterlagen aus Moodle).
+`type: related` zeigt auf einer Modulseite alles zum Modul: die Unterlagen aus `Unterlagen/<Modul>`
+(Vorlesung, Praktikum & Übung, Sonstiges), die Moodle-Infos der Kurse aus `kurse:` (Beschreibung,
+Ankündigungen, Ausfälle – aus dem letzten Abruf, nichts wird kopiert) und alle Seiten, die auf das Modul
+verweisen (Mitschriften, Prüfungen, Aufgaben, Stundenplan). `type: moodle-courses` listet Moodle-Kurse, die zu
+keinem Modul gehören (auf der Orga-Seite).
 
 Filterwerte können relativ sein: `today`, `today+7` (Datum) sowie `@semester`, `@nextSemester`,
 `@lastSemester` (Semester als Text, z. B. `WiSe 26/27`).
@@ -119,17 +121,26 @@ studium:
   beginn: WiSe 24/25 # erstes Semester
 ```
 
-Dann gleicht Notiva den Ordner mit PO, eCampus und Moodle ab („Studium aktualisieren“, nach jedem Abruf
-automatisch). Einträge werden über Schlüssel wiedergefunden, die Notiva setzt:
+Dann gleicht Notiva den Ordner mit PO, eCampus und Moodle ab: „Studium aktualisieren“ zeigt eine Vorschau,
+geschrieben wird erst nach deiner Bestätigung; nach Abrufen im Hintergrund erscheint nur ein Vorschlag. Module
+werden erst angelegt, wenn Moodle oder eCampus Daten geliefert haben. Einträge werden über Schlüssel
+wiedergefunden, die Notiva setzt:
 
-| Datenbank | Schlüssel           | Notiva schreibt                                                                                                                                                                                                                              |
-| --------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Module    | `modul: BMI 01`     | Nr, Status (+ `statusAuto`), Belegt (Semester), Fachsemester, ECTS, Note, Versuche, Verlauf, Bestanden im, Art, Bereich, Prüfungsform, Voraussetzung, Angebot, Lehrform, `pruefung`, `kurse` (Moodle-IDs); Praktikum und Link nur, wenn leer |
-| Semester  | `fachsemester: 5`   | Zeitraum, Status, Beginn, Ende, ECTS Plan, ECTS erreicht                                                                                                                                                                                     |
-| Kurse     | `moodle: course:42` | Art (Modul/Orga/Sonstiges), Modul, Semester, Link, Ordner                                                                                                                                                                                    |
+| Datenbank | Schlüssel         | Notiva schreibt                                                                                                                                                                                                                              |
+| --------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Module    | `modul: BMI 01`   | Nr, Status (+ `statusAuto`), Belegt (Semester), Fachsemester, ECTS, Note, Versuche, Verlauf, Bestanden im, Art, Bereich, Prüfungsform, Voraussetzung, Angebot, Lehrform, `pruefung`, `kurse` (Moodle-IDs); Praktikum und Link nur, wenn leer |
+| Semester  | `fachsemester: 5` | Zeitraum, Status, Beginn, Ende, ECTS Plan, ECTS erreicht                                                                                                                                                                                     |
 
 Einen Status, den du selbst gesetzt hast, überschreibt Notiva erst, wenn sich die Fakten ändern
-(z. B. bestanden). Text, Notizen und eigene Eigenschaften bleiben unberührt.
+(z. B. bestanden). Text, Notizen und eigene Eigenschaften bleiben unberührt. `Farbe` (blue, green, …) färbt das
+Modul in Mein Semester, Stundenplan und der Termin-Anzeige.
+
+**Unterlagen** aus Moodle liegen unter `Unterlagen/<Modul>/<Vorlesung | Praktikum & Übung | Sonstiges>/`, Kurse
+ohne Modul unter `Unterlagen/Orga/<Kurs>/`. Welche Moodle-Datei wo liegt, merkt sich `.notiva/moodle-files.json`.
+
+**Ältere Ordner (bis 0.1.3)** hatten eine Datenbank `Kurse`. „Studium aktualisieren“ bietet die Umstellung an:
+Unterlagen wandern in die Modulordner, eigene Notizen von Kursseiten werden an die Modulseite angehängt, die
+Datenbank kommt in den Papierkorb.
 
 ## Vorlagen
 

@@ -66,7 +66,7 @@ assistant ([Another university?](#another-university)).
     <td width="33%" align="center"><img src="docs/images/pdf.png" alt="PDF with highlights and notes" width="280"></td>
   </tr>
   <tr>
-    <td valign="top"><b>My semester</b><br>Every module you take now: lectures, new files, annotated PDFs, notes and code.</td>
+    <td valign="top"><b>My semester</b><br>A coloured card per module you take: next session, exam, open tasks, newest script, new materials.</td>
     <td valign="top"><b>Labs</b><br>A code folder per module with editor, terminal and Git – one click from "My semester".</td>
     <td valign="top"><b>Annotate slides</b><br>Highlight, comment, draw, page notes – the PDF itself stays unchanged.</td>
   </tr>
@@ -86,7 +86,9 @@ assistant ([Another university?](#another-university)).
 
 - 📝 **Markdown editor** like Notion: `/` commands, `[[links]]`, tasks, callouts, math, code with a copy button.
 - 🎓 **Studies**: modules with status, attempts and grade, ECTS-weighted average, exams, timetable, a "now / next" badge.
+- 🗓️ **Timetable** as a week view in module colours – times from Moodle are suggested, never entered silently.
 - 🎙️ **Lecture mode**: records, transcribes locally with Whisper and follows the slides.
+- 🧠 **Local mini model** (llama.cpp + Qwen) for quick summaries like commit messages – offline.
 - 🤖 **AI assistant** with visible context (Claude Code, Codex, Ollama, your own keys) and an MCP server.
 - 🔔 **Notifications** for new materials, deadlines, grades and cancelled lectures.
 - 🌿 **Built-in Git**: changes, diff, commit, history, push/pull.
@@ -197,7 +199,8 @@ Installers: `npm run dist:mac`, `npm run dist:win` or `npm run dist:linux` (outp
 **No Moodle or eCampus?** Then _Module_ stays empty at first – add your courses there with "+ New" (name, ECTS,
 semester, _Belegung_) or list them in `Hochschule.md`. The _Module_ page explains both.
 
-In depth – AI, Git, shortcuts, MCP: [docs/GUIDE.en.md](docs/GUIDE.en.md).
+In depth – AI, Git, shortcuts, MCP: [docs/GUIDE.en.md](docs/GUIDE.en.md). In the app, _Help → How Notiva works_
+shows how everything fits together and where to find what.
 
 ## Another university?
 

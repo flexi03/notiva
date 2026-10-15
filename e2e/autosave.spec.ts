@@ -7,7 +7,7 @@ test.describe('Automatisch speichern', () => {
 
   test('ist an – ausgeschaltet wartet die App auf ⌘S', async ({ page }) => {
     await openDemo(page)
-    await go(page, '#/settings')
+    await go(page, '#/settings/editor')
     const toggle = page.getByRole('switch', { name: 'Automatisch speichern' })
     await expect(toggle).toHaveAttribute('aria-checked', 'true')
     await toggle.click()
@@ -24,7 +24,7 @@ test.describe('Automatisch speichern', () => {
     await expect(unsaved).toHaveCount(0)
 
     // Switching it back on writes right away again.
-    await go(page, '#/settings')
+    await go(page, '#/settings/editor')
     await page.getByRole('switch', { name: 'Automatisch speichern' }).click()
     await expect(page.getByRole('switch', { name: 'Automatisch speichern' })).toHaveAttribute(
       'aria-checked',

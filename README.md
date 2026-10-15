@@ -65,7 +65,7 @@ das den KI-Assistenten machen ([Andere Hochschule?](#andere-hochschule)).
     <td width="33%" align="center"><img src="docs/images/pdf.png" alt="PDF mit Markierungen und Notizen" width="280"></td>
   </tr>
   <tr>
-    <td valign="top"><b>Mein Semester</b><br>Alle Module, die du gerade belegst: Vorlesungen, neue Dateien, bearbeitete PDFs, Mitschriften und Code.</td>
+    <td valign="top"><b>Mein Semester</b><br>Eine farbige Karte je belegtem Modul: nächster Termin, Prüfung, offene Aufgaben, neuestes Skript, neue Unterlagen.</td>
     <td valign="top"><b>Praktika</b><br>Code-Ordner pro Modul mit Editor, Terminal und Git – ein Klick aus „Mein Semester“.</td>
     <td valign="top"><b>Skripte anmerken</b><br>Markieren, kommentieren, zeichnen, Seitennotizen – das PDF bleibt unverändert.</td>
   </tr>
@@ -86,7 +86,9 @@ das den KI-Assistenten machen ([Andere Hochschule?](#andere-hochschule)).
 - 📝 **Markdown-Editor** wie Notion: `/`-Befehle, `[[Links]]`, Aufgaben, Callouts, Formeln, Code mit Kopier-Knopf.
 - 🎓 **Studium**: Module mit Status, Versuchen und Note, gewichteter Notenschnitt, ECTS, Prüfungen, Stundenplan,
   Anzeige „Jetzt / Als Nächstes“.
+- 🗓️ **Stundenplan** als Wochenansicht in Modulfarben – Zeiten aus Moodle werden vorgeschlagen, nicht still eingetragen.
 - 🎙️ **Vorlesungsmodus**: nimmt auf, schreibt lokal mit Whisper mit und folgt den Folien.
+- 🧠 **Lokales Mini-Modell** (llama.cpp + Qwen) für schnelle Zusammenfassungen wie Commit-Nachrichten – offline.
 - 🤖 **KI-Assistent** mit sichtbarem Kontext (Claude Code, Codex, Ollama, eigene Schlüssel) und MCP-Server.
 - 🔔 **Benachrichtigungen** für neue Unterlagen, Fristen, Noten und Ausfälle.
 - 🌿 **Git eingebaut**: Änderungen, Diff, Commit, Verlauf, Push/Pull.
@@ -130,13 +132,13 @@ Terminal und Editor gibt es in der Desktop-App.
 
 Notiva verbindet, was du im Studium sonst einzeln öffnest:
 
-| Quelle           | Was Notiva daraus macht                                                       |
-| ---------------- | ----------------------------------------------------------------------------- |
-| **Moodle**       | Kurse, Unterlagen (automatisch einsortiert), Termine, Ankündigungen, Ausfälle |
-| **eCampus**      | Noten, Versuche, bestandene Module, Prüfungsanmeldungen                       |
-| **Prüfungsplan** | deine Prüfungstermine (letzte 30 Tage und Zukunft) in _Prüfungen_             |
-| **Kurstexte**    | Vorlesungs-, Übungs- und Praktikumszeiten im Stundenplan                      |
-| **KI-Assistent** | fasst zusammen, beantwortet Fragen zum Skript, richtet andere Hochschulen ein |
+| Quelle           | Was Notiva daraus macht                                                             |
+| ---------------- | ----------------------------------------------------------------------------------- |
+| **Moodle**       | Unterlagen je Modul einsortiert, Moodle-Infos auf der Modulseite, Termine, Ausfälle |
+| **eCampus**      | Noten, Versuche, bestandene Module, Prüfungsanmeldungen                             |
+| **Prüfungsplan** | deine Prüfungstermine (letzte 30 Tage und Zukunft) in _Prüfungen_                   |
+| **Kurstexte**    | Vorlesungs-, Übungs- und Praktikumszeiten als Vorschlag für den Stundenplan         |
+| **KI-Assistent** | fasst zusammen, beantwortet Fragen zum Skript, richtet andere Hochschulen ein       |
 
 Die KI ist aus, bis du sie einschaltest – und zeigt vor dem Senden, was sie mitbekommt.
 
@@ -197,7 +199,8 @@ Eigene Installationspakete: `npm run dist:mac`, `npm run dist:win` oder `npm run
 **Ohne Moodle oder eCampus?** Dann bleibt _Module_ zunächst leer – leg deine Fächer dort mit „+ Neu“ an (Name, ECTS,
 Fachsemester, _Belegung_) oder trag sie als Liste in `Hochschule.md` ein. Die Seite _Module_ erklärt beide Wege.
 
-Ausführlich, mit KI, Git, Tastenkürzeln und MCP: [docs/ANLEITUNG.md](docs/ANLEITUNG.md).
+Ausführlich, mit KI, Git, Tastenkürzeln und MCP: [docs/ANLEITUNG.md](docs/ANLEITUNG.md). In der App zeigt
+_Hilfe → So funktioniert Notiva_, wie alles zusammenhängt und wo du was findest.
 
 ## Andere Hochschule?
 

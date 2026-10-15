@@ -3,6 +3,22 @@
 Alle Versionen mit Downloads: [GitHub Releases](https://github.com/flexi03/notiva/releases).
 Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und installiert sie auf Wunsch selbst.
 
+## 0.1.4 – noch nicht veröffentlicht
+
+- **Module statt Kurse:** keine Kurse-Datenbank mehr. Die Modulseite zeigt Unterlagen (`Unterlagen/<Modul>`),
+  Moodle-Infos (Beschreibung, Ankündigungen, Ausfälle) und alles Verknüpfte. Ältere Ordner werden nach Rückfrage
+  umgestellt (#1).
+- **Unterlagen** landen zuverlässiger in Vorlesung bzw. Praktikum & Übung (#2).
+- **Mein Semester:** farbige Modulkarten nebeneinander mit nächstem Termin, Prüfung, Aufgaben, neuestem Skript (#3).
+- **Stundenplan** als Wochenansicht in der Seitenleiste (#4).
+- **Vorschlagen statt still ändern:** Stundenplan-Zeiten und Studium-Abgleich als Vorschläge zum Abhaken (#5).
+- **Anmeldung:** „Neu anmelden“ direkt aus der Benachrichtigung, eine Microsoft-Anmeldung für eCampus und Moodle (#6).
+- **„Als Nächstes“** öffnet per Klick das Skript des Tages oder das Modul (#7).
+- **Lokales Mini-Modell** (llama.cpp + Qwen) für Commit-Nachrichten, mit Download-Fortschritt (#8).
+- **Hilfe:** „So funktioniert Notiva“ in der App, Doku aktualisiert (#9).
+- **Auswahl** in Seiten- und Werkzeugleiste als Fläche statt Strich (#10).
+- **Einstellungen** neu gegliedert, mit Beschreibung je Bereich und „Über Notiva“ (#11).
+
 ## 0.1.3 – 2026-10-15
 
 - **macOS: „Notiva.app ist beschädigt“ behoben.** Die App wird jetzt beim Bauen als Ganzes (ad hoc) signiert. Beim

@@ -44,6 +44,7 @@ import { clearMoodleSession, openMoodlePage, prepareBrowserSession, ssoLogin } f
 import { WhisperEngine } from './whisper'
 import { buildMenu } from './menu'
 import { systemNotify, testNotify } from './systemNotify'
+import { LocalModel } from './localModel'
 import { checkForUpdate, installUpdate, onUpdateStatus, updateStatus } from './updater'
 import { Terminals } from './terminal'
 import { Ecampus, NeedsLogin } from './ecampus'
@@ -339,6 +340,9 @@ async function pollEcampus(): Promise<ExamSnapshot> {
 
 /** Local speech to text (whisper.cpp) – models live in the app profile. */
 const whisper = new WhisperEngine(userFile('whisper-models'), (url, init) => net.fetch(url, init))
+/** Small local language model for quick summaries (llama.cpp) – models in the app profile. */
+const localModel = new LocalModel(userFile('local-models'), (url, init) => net.fetch(url, init))
+const localModelProgress = (event: object) => window?.webContents.send('localModel:progress', event)
 const whisperProgress = (event: object) => window?.webContents.send('whisper:progress', event)
 
 /**
@@ -757,6 +761,32 @@ function registerIpc(): void {
   })
   handle('ecampus:snapshot', async () => ecampus.snapshot())
   handle('ecampus:disconnect', async () => ecampus.disconnect())
+  handle('localModel:status', async () => localModel.status())
+  handle('localModel:install', async () => localModel.install(localModelProgress))
+  handle('localModel:download', async (id: unknown) => localModel.download(String(id), localModelProgress))
+  handle('localModel:remove', async (id: unknown) => localModel.remove(String(id)))
+  handle(
+    'localModel:complete',
+    async (id: unknown, system: unknown, prompt: unknown, max: unknown, ex: unknown) => {
+      if (typeof system !== 'string' || typeof prompt !== 'string') throw new Error('Ungültige Anfrage')
+      const examples = Array.isArray(ex)
+        ? ex
+            .filter(
+              (e): e is [string, string] =>
+                Array.isArray(e) && typeof e[0] === 'string' && typeof e[1] === 'string',
+            )
+            .slice(0, 6)
+        : []
+      return localModel.complete(
+        String(id),
+        system.slice(0, 4000),
+        prompt.slice(0, 12_000),
+        Math.min(Number(max) || 200, 600),
+        localModelProgress,
+        examples,
+      )
+    },
+  )
   handle('whisper:status', async () => whisper.status())
   handle('whisper:install', async () => whisper.install(whisperProgress))
   handle('whisper:download', async (id: unknown) => whisper.download(String(id), whisperProgress))
@@ -953,7 +983,10 @@ function scheduleUpdateChecks(): void {
   setInterval(() => void checkForUpdate(), 60 * 60_000)
 }
 
-app.on('will-quit', () => whisper.stop())
+app.on('will-quit', () => {
+  whisper.stop()
+  localModel.stop()
+})
 app.on('window-all-closed', () => {
   whisper.stop()
   for (const child of cliRuns.values()) child.kill()

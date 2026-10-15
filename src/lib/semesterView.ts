@@ -54,6 +54,33 @@ export function moduleColor(module: Page): Color {
   return PALETTE[hash % PALETTE.length]!
 }
 
+/**
+ * Colours for several modules at once (e.g. all attended ones): own "Farbe" first, the others get
+ * their usual colour unless another module has it already – then the next free one.
+ */
+export function moduleColors(modules: Page[]): Map<string, Color> {
+  const out = new Map<string, Color>()
+  const used = new Set<Color>()
+  const sorted = [...modules].sort((a, b) =>
+    String(a.data.Nr ?? a.title).localeCompare(String(b.data.Nr ?? b.title), 'de', { numeric: true }),
+  )
+  for (const m of sorted)
+    if (typeof m.data.Farbe === 'string' && (COLORS as readonly string[]).includes(m.data.Farbe)) {
+      out.set(m.path, m.data.Farbe as Color)
+      used.add(m.data.Farbe as Color)
+    }
+  for (const m of sorted) {
+    if (out.has(m.path)) continue
+    const wanted = moduleColor(m)
+    const start = PALETTE.indexOf(wanted)
+    const free = PALETTE.map((_, i) => PALETTE[(start + i) % PALETTE.length]!).find((c) => !used.has(c))
+    const color = free ?? wanted
+    out.set(m.path, color)
+    used.add(color)
+  }
+  return out
+}
+
 /** PDFs that have a notes page next to them ("X (Notizen).md" with pdf: X.pdf). */
 export function annotatedPdfs(ws: Workspace): Array<{ pdf: string; notes: string; mtime: number }> {
   return ws
@@ -185,6 +212,9 @@ export function activeModules(
       courses: courseIdsOf(row.data),
     })
   }
+  // Distinct colours for the attended modules.
+  const colors = moduleColors(out.map((m) => m.module))
+  for (const m of out) m.color = colors.get(m.module.path) ?? m.color
   // Soonest session first – the card you need next is on top.
   return out.sort(
     (a, b) =>

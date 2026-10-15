@@ -48,6 +48,25 @@ contextBridge.exposeInMainWorld('notiva', {
       return () => ipcRenderer.removeListener('ecampus:polled', listener)
     },
   },
+  localModel: {
+    status: () => invoke('localModel:status'),
+    install: () => invoke<'installed' | 'started'>('localModel:install'),
+    download: (id: string) => invoke<void>('localModel:download', id),
+    remove: (id: string) => invoke<void>('localModel:remove', id),
+    complete: (
+      id: string,
+      system: string,
+      prompt: string,
+      maxTokens?: number,
+      examples?: Array<[string, string]>,
+    ) => invoke<string>('localModel:complete', id, system, prompt, maxTokens, examples),
+    onProgress(callback: (event: { kind: string; text?: string; done?: number; total?: number }) => void) {
+      const listener = (_e: unknown, event: { kind: string; text?: string; done?: number; total?: number }) =>
+        callback(event)
+      ipcRenderer.on('localModel:progress', listener)
+      return () => ipcRenderer.removeListener('localModel:progress', listener)
+    },
+  },
   whisper: {
     status: () => invoke('whisper:status'),
     install: () => invoke<void>('whisper:install'),

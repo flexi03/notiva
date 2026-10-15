@@ -85,6 +85,12 @@ const RULES: Array<{ test: RegExp; de: string; en: string; fix?: FixKind }> = [
     fix: 'aiSettings',
   },
   {
+    test: /llama\.cpp ist nicht installiert|lokale Modell ist noch nicht geladen|llama-server/i,
+    de: 'Das lokale Mini-Modell ist noch nicht eingerichtet – llama.cpp installieren und ein Modell laden.',
+    en: 'The local mini model is not set up yet – install llama.cpp and download a model.',
+    fix: 'aiSettings',
+  },
+  {
     test: /UNErrorDomain|Notifications? (are )?not allowed|Mitteilungen.*(blockiert|abgelehnt)/i,
     de: 'Das System blockiert Mitteilungen von Notiva – in den Mitteilungseinstellungen erlauben.',
     en: 'The system blocks notifications from Notiva – allow them in the notification settings.',

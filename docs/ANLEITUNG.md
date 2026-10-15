@@ -1,6 +1,7 @@
 # Anleitung
 
-Alles, was über den Einstieg im [README](../README.md) hinausgeht. English: [GUIDE.en.md](GUIDE.en.md).
+Alles, was über den Einstieg im [README](../README.md) hinausgeht. Die gleiche Übersicht gibt es in der App unter
+_Hilfe → So funktioniert Notiva_ (bitte beides gemeinsam aktuell halten). English: [GUIDE.en.md](GUIDE.en.md).
 
 ## Speicherorte
 
@@ -17,7 +18,12 @@ Alles, was über den Einstieg im [README](../README.md) hinausgeht. English: [GU
 - **Belegung** schlägt Notiva aus Moodle und dem Semesterangebot vor; du kannst sie auf der Modulseite selbst setzen.
   Belegte Module erscheinen in _Mein Semester_.
 - **Unterlagen** aus Moodle landen in `Unterlagen/<Kurs>/Vorlesung`, `Praktikum & Übung` oder `Sonstiges`.
-- **Stundenplan**: Termine aus den Kursseiten werden übernommen. Weicht etwas von deinen eigenen Einträgen ab, fragt
+- **Alles hängt am Modul**: Die Modulseite zeigt Unterlagen, Moodle-Infos, Prüfungen, Aufgaben und Mitschriften.
+  Eigene Kursseiten gibt es nicht mehr. Überblick in der App: _Hilfe → So funktioniert Notiva_.
+- **Mein Semester**: eine farbige Karte je belegtem Modul – nächster Termin, Prüfung, offene Aufgaben, neuestes
+  Skript, neue Unterlagen, „Praktikum bearbeiten“.
+- **Stundenplan** (Seitenleiste): Wochenansicht in Modulfarben. „Zeiten aus Moodle vorschlagen“ liest die Kurstexte
+  und fragt pro Termin, ob er übernommen werden soll. Weicht etwas von deinen eigenen Einträgen ab, fragt
   Notiva nach.
 - **Prüfungsplan**: die neueste PDF der Fakultät wird gelesen und in _Prüfungen_ eingetragen.
 - **Hintergrund-Abrufe**: jede Quelle hat ein eigenes Intervall (_Einstellungen → Benachrichtigungen_).
@@ -67,6 +73,27 @@ npm run mcp:build
 claude mcp add notiva -- node /pfad/zu/notiva/dist-mcp/notiva-mcp.mjs /pfad/zu/deinem/ordner
 # nur lesen: … notiva-mcp.mjs /pfad/zu/deinem/ordner --read-only
 ```
+
+## Lokales Mini-Modell
+
+Für schnelle Zusammenfassungen ohne Internet und ohne Konto: _Einstellungen → KI → Lokales Mini-Modell_.
+Notiva nutzt dafür [llama.cpp](https://github.com/ggml-org/llama.cpp) (Knopf „llama.cpp installieren“: Homebrew
+bzw. winget) und ein kleines Qwen-2.5-Modell (empfohlen 1,5 B, ~1,1 GB; klein 0,5 B, ~0,5 GB), das beim ersten Mal
+mit Fortschrittsbalken geladen und per Prüfsumme kontrolliert wird. Im Git-Panel schlägt ✨ dann eine
+Commit-Nachricht vor. Das Modell läuft nur auf `127.0.0.1` und beendet sich nach 5 Minuten ohne Anfrage.
+
+## Anmeldung (Microsoft)
+
+eCampus und Moodle melden sich über deine Hochschule an. Bei „Angemeldet bleiben?“ **Ja** wählen – dann erneuert
+Notiva die Anmeldung im Hintergrund selbst, und eine Anmeldung gilt für eCampus und Moodle. Läuft sie trotzdem ab
+(Microsoft verlangt z. B. nach einiger Zeit wieder Passwort oder Bestätigung), kommt eine Benachrichtigung mit
+**„Neu anmelden“**, die das Anmeldefenster direkt öffnet.
+
+## Fehlermeldungen
+
+Klappt etwas nicht, nennt Notiva den Grund in klaren Worten und bietet einen Knopf zum Beheben an (z. B. „Git
+installieren“, „Neu anmelden“, „Noch einmal“). Die technische Meldung steht klein darunter – hilfreich für ein
+Issue auf GitHub.
 
 ## Git
 

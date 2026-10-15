@@ -4,7 +4,7 @@ import { suggestTimetable, timetableRows } from '@/app/schedule'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { getLanguage, t } from '@/i18n'
 import { DAYS } from '@/lib/schedule'
-import { moduleColor } from '@/lib/semesterView'
+import { moduleColor, moduleColors } from '@/lib/semesterView'
 import { findStudyDashboard } from '@/lib/study/sync'
 import { Button, EmptyState, IconButton } from '@/components/ui'
 import { Topbar } from '@/components/layout/Topbar'
@@ -53,6 +53,12 @@ export function TimetableScreen() {
   if (!dash) return <EmptyState title={t('timetable.noStudy')} />
   const modules = ws.get(`${dash.folder}/Module.md`)?.database ? ws.rows(`${dash.folder}/Module.md`) : []
   const moduleByTitle = new Map(modules.map((m) => [m.title, ws.get(m.path)!]))
+  // The same colours as in "Mein Semester" (attended modules get distinct ones).
+  const colors = moduleColors(
+    modules
+      .filter((m) => Array.isArray(m.data.Belegung) && m.data.Belegung.length)
+      .map((m) => ws.get(m.path)!),
+  )
   const blocks: Block[] = []
   for (const r of timetableRows(ws, dash.folder)) {
     const day = DAYS.indexOf(r.day as (typeof DAYS)[number])
@@ -65,7 +71,7 @@ export function TimetableScreen() {
       day,
       start: minutes(r.start),
       end: r.end ? minutes(r.end) : minutes(r.start) + 90,
-      color: module ? moduleColor(module) : 'gray',
+      color: module ? (colors.get(module.path) ?? moduleColor(module)) : 'gray',
       path: module?.path ?? r.path,
     })
   }
