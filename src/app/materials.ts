@@ -53,10 +53,14 @@ export function courseFolder(
 ): string {
   const dash = findStudyDashboard(ws)
   const rows = dash && ws.get(`${dash.folder}/Module.md`) ? ws.rows(`${dash.folder}/Module.md`) : []
+  const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim()
   return materialFolderFor(
     materialFolder(ws),
     course,
-    moduleOfCourse(rows, course.id)?.title ?? moduleNames[course.id],
+    moduleOfCourse(rows, course.id)?.title ??
+      moduleNames[course.id] ??
+      // Not linked yet: a module of the same name.
+      rows.find((r) => norm(r.title) === norm(course.name))?.title,
   )
 }
 

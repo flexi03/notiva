@@ -7,7 +7,7 @@
 import { BrowserWindow, session, type Session, type WebContents } from 'electron'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
-import { keepSessionCookies } from './keepSession'
+import { keepSessionCookies, shareMicrosoftCookies } from './keepSession'
 import {
   extractTables,
   pageState,
@@ -54,6 +54,18 @@ const MS_CONTINUE = `(() => {
   const tiles = Array.from(document.querySelectorAll('#tilesHolder [role="button"], .tile-container [role="button"]')).filter((t) => !/anderes konto|another account|use another/i.test(t.innerText))
   if (tiles.length === 1 && !document.querySelector('input[type=password]')) { tiles[0].click(); return true }
   return false
+})()`
+/** What a Microsoft page wants (for the log): password, second factor, account choice … */
+const MS_STATE = `(() => {
+  const t = document.body ? document.body.innerText : ''
+  return {
+    password: !!document.querySelector('input[type=password]'),
+    username: !!document.querySelector('input[type=email], input[name=loginfmt]'),
+    mfa: /genehmigen|approve|authenticator|code eingeben|enter code|überprüfen sie ihre identität|verify your identity/i.test(t),
+    pickAccount: /konto auswählen|pick an account/i.test(t),
+    staySignedIn: /angemeldet bleiben|stay signed in/i.test(t),
+    error: (document.querySelector('#service_exception_message, .error, #passwordError') || {}).textContent || '',
+  }
 })()`
 const SSO_SCAN = `(() => { const a = Array.from(document.querySelectorAll('a[href]')).find((x) => /identityprovider|shibboleth|saml|\\/sso/i.test(x.getAttribute('href') || '') && /anmelden|login/i.test(x.textContent || '')); return a ? a.href : null })()`
 const SCAN = `(() => { const extract = ${extractTables.toString()}; return (${pageState.toString()})(document, extract) })()`
@@ -238,6 +250,8 @@ export class Ecampus {
       tables: found.tables,
     }
     await fs.writeFile(this.snapshotFile, JSON.stringify(snapshot), { mode: 0o600 })
+    // The Microsoft sign-in also serves Moodle.
+    await shareMicrosoftCookies(this.session(), session.fromPartition('persist:moodle')).catch(() => 0)
     return snapshot
   }
 
@@ -297,7 +311,9 @@ export class Ecampus {
       win.on('closed', () => {
         if (!finished) reject(new Error('eCampus-Anmeldung abgebrochen'))
       })
-      onProgress('Bitte im eCampus-Fenster anmelden')
+      onProgress(
+        'Bitte im eCampus-Fenster anmelden – bei „Angemeldet bleiben?“ Ja wählen, dann hält die Anmeldung länger',
+      )
       void win.loadURL(config.startUrl)
     })
   }
@@ -317,6 +333,8 @@ export class Ecampus {
       if (signedOut(states)) {
         // Signed out on the eCampus – the identity provider may still know us (no input needed).
         onProgress('Anmeldung wird erneuert')
+        // A newer Microsoft sign-in from Moodle helps, too.
+        await shareMicrosoftCookies(session.fromPartition('persist:moodle'), this.session()).catch(() => 0)
         if (!(await this.silentLogin(wc, config))) throw new NeedsLogin()
         await wc.loadURL(config.examsUrl).catch(() => undefined)
         await this.settle(wc)
@@ -372,15 +390,20 @@ export class Ecampus {
       if (!clicked) break
     }
     const states = await this.scan(wc)
-    await this.log('silent', states)
-    return !(states.some((s) => s.loginPage) && !states.some((s) => s.loggedIn))
+    // Still at Microsoft: note what it asks for – the reason why a new sign-in is needed.
+    const microsoft = /login\.microsoftonline\.com|login\.live\.com/i.test(wc.getURL())
+      ? ((await wc.mainFrame.executeJavaScript(MS_STATE).catch(() => null)) as Record<string, unknown> | null)
+      : null
+    await this.log('silent', states, microsoft ?? undefined)
+    return !microsoft && !(states.some((s) => s.loginPage) && !states.some((s) => s.loggedIn))
   }
 
   /** What the last check saw (addresses and login state only) – helps to find out why it failed. */
-  private async log(step: string, states: PageState[]): Promise<void> {
+  private async log(step: string, states: PageState[], microsoft?: Record<string, unknown>): Promise<void> {
     const entry = {
       time: new Date().toISOString(),
       step,
+      ...(microsoft ? { microsoft } : {}),
       frames: states.map((s) => ({
         url: s.url.replace(/([?&](asi|code|state|session|token)[^&#]*)/gi, ''),
         loggedIn: s.loggedIn,

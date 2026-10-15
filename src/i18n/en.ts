@@ -537,6 +537,7 @@ export const en: Record<MessageKey, string> = {
   'notify.open.grades': 'View grades',
   'notify.open.file': 'Open file',
   'notify.open.course': 'Go to course',
+  'notify.open.relogin': 'Sign in again',
   'notify.open.moodle': 'Open in Moodle',
   'news.title': 'New since the last check',
   'news.show': 'Show',

@@ -22,8 +22,10 @@ export type NotificationTarget =
   | { type: 'material'; id: string; courseId: string }
   /** A place in Notiva ("#/grades", "#/settings/study"). */
   | { type: 'route'; hash: string }
-  /** A Moodle course: its Notiva course page (Studium/Kurse) or the course in the app. */
+  /** A Moodle course: its module page or the course in the app. */
   | { type: 'course'; courseId: string }
+  /** The sign-in expired: one click opens the sign-in window again. */
+  | { type: 'relogin'; service: 'ecampus' | 'moodle' }
 
 export interface AppNotification {
   /** Stable – the same news never shows twice. */

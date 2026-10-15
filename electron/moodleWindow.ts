@@ -3,7 +3,7 @@
  * "in the app". All of them share one persistent session (`persist:moodle`) so the university
  * login stays valid – fully separated from Notiva's own window, without preload or Node, sandboxed.
  */
-import { keepSessionCookies } from './keepSession'
+import { keepSessionCookies, shareMicrosoftCookies } from './keepSession'
 import { BrowserWindow, session, shell, type Session } from 'electron'
 import path from 'node:path'
 import { launchUrl, newPassport, parseSsoAnswer, SSO_SCHEME } from './moodleSso'
@@ -80,7 +80,11 @@ export function ssoLogin(parent: BrowserWindow | null, site: string): Promise<{ 
       clearTimeout(timer)
       if (!win.isDestroyed()) win.close()
       if (error) reject(error)
-      else resolve({ token: token! })
+      else {
+        // The Microsoft sign-in also serves eCampus.
+        void shareMicrosoftCookies(session.fromPartition(PARTITION), session.fromPartition('persist:ecampus'))
+        resolve({ token: token! })
+      }
     }
     const check = (url: string) => {
       if (!url.startsWith(`${SSO_SCHEME}://`)) return false

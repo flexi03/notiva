@@ -8,10 +8,13 @@ import type { FrontmatterData } from '../frontmatter'
 
 export const ORGA_FOLDER = 'Orga'
 
-/** The course ids a module page stands for. */
+/** The course ids a module page stands for (`kurse:`; a page from the Moodle import: `moodle:`). */
 export function courseIdsOf(data: FrontmatterData): string[] {
   const raw = data.kurse
-  return Array.isArray(raw) ? raw.filter((v): v is string => typeof v === 'string') : []
+  const list = Array.isArray(raw) ? raw.filter((v): v is string => typeof v === 'string') : []
+  if (typeof data.moodle === 'string' && data.moodle.startsWith('course:') && !list.includes(data.moodle))
+    list.push(data.moodle)
+  return list
 }
 
 /** The module (page) a Moodle course belongs to. */

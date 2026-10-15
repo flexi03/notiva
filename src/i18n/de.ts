@@ -540,6 +540,7 @@ export const de = {
   'notify.open.grades': 'Noten ansehen',
   'notify.open.file': 'Datei öffnen',
   'notify.open.course': 'Zum Kurs',
+  'notify.open.relogin': 'Neu anmelden',
   'notify.open.moodle': 'In Moodle öffnen',
   'news.title': 'Neu seit dem letzten Abruf',
   'news.show': 'Ansehen',

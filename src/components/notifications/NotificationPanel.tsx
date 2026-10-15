@@ -1,3 +1,4 @@
+import { relogin } from '@/app/relogin'
 import { courseIdsOf } from '@/lib/study/modules'
 import { useEffect, useState } from 'react'
 import {
@@ -45,6 +46,7 @@ export async function openNotification(n: AppNotification, ws: Workspace): Promi
   if (page) return app.openEntry(page.path)
   const target = n.target
   if (!target) return
+  if (target.type === 'relogin') return void relogin(target.service).catch(() => undefined)
   if (target.type === 'page') return ws.get(target.path) ? app.openEntry(target.path) : undefined
   if (target.type === 'route') return app.navigate(parseRoute(target.hash))
   if (target.type === 'material') {
@@ -86,6 +88,7 @@ function actionLabel(n: AppNotification): string {
   if (target.type === 'material') return t('notify.open.file')
   if (target.type === 'course') return t('notify.open.course')
   if (target.type === 'url') return t('notify.open.moodle')
+  if (target.type === 'relogin') return t('notify.open.relogin')
   return t('notify.open.default')
 }
 

@@ -328,9 +328,9 @@ async function pollEcampus(): Promise<ExamSnapshot> {
           id: `ecampus-login:${new Date().toISOString().slice(0, 10)}`,
           kind: 'notice',
           title: 'eCampus: bitte neu anmelden',
-          body: 'Die Anmeldung ist abgelaufen – Einstellungen → Studium → eCampus → Anmelden.',
+          body: 'Microsoft hat die Anmeldung beendet (z. B. nach einiger Zeit oder ohne „Angemeldet bleiben“). Ein Klick öffnet das Anmeldefenster.',
           time: new Date().toISOString(),
-          target: { type: 'route', hash: '#/settings/study' },
+          target: { type: 'relogin', service: 'ecampus' },
         },
       ])
     throw error
@@ -354,7 +354,35 @@ async function schedulePolling(delay = 60_000): Promise<void> {
       (due.includes('moodle') || due.includes('materials') || due.includes('courseInfo')) &&
       (await loadMoodle())
     )
-      await pollMoodle(due.includes('materials') || due.includes('courseInfo')).catch(() => undefined)
+      await pollMoodle(due.includes('materials') || due.includes('courseInfo')).catch(
+        async (error: Error) => {
+          const expired = /abgelaufen|invalidtoken|neu verbinden/i.test(error.message)
+          await notifications.add([
+            checkResult(
+              'moodle',
+              'Moodle geprüft',
+              expired ? 'Anmeldung nötig' : `Fehler: ${error.message}`.slice(0, 200),
+              new Date(),
+              {
+                type: 'route',
+                hash: '#/settings/study',
+              },
+            ),
+            ...(expired
+              ? [
+                  {
+                    id: `moodle-login:${new Date().toISOString().slice(0, 10)}`,
+                    kind: 'notice' as const,
+                    title: 'Moodle: bitte neu anmelden',
+                    body: 'Die Moodle-Anmeldung ist abgelaufen. Ein Klick öffnet das Anmeldefenster.',
+                    time: new Date().toISOString(),
+                    target: { type: 'relogin' as const, service: 'moodle' as const },
+                  },
+                ]
+              : []),
+          ])
+        },
+      )
     if (due.includes('grades') && (await ecampus.config())) {
       lastRun.grades = Date.now()
       await pollEcampus().catch(() => undefined)
