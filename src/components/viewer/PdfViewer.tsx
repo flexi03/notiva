@@ -6,6 +6,8 @@ export interface PdfViewerHandle {
   scrollToPage(page: number, smooth?: boolean): void
   /** The scrolling element (to remember and restore the position). */
   element(): HTMLDivElement | null
+  /** the element holding all pages (for a quick CSS zoom while pinching) */
+  content(): HTMLDivElement | null
 }
 
 interface PageSize {
@@ -66,6 +68,7 @@ export const PdfViewer = forwardRef<
 
   useImperativeHandle(ref, () => ({
     element: () => scroller.current,
+    content: () => (scroller.current?.firstElementChild as HTMLDivElement | null) ?? null,
     scrollToPage(page, smooth = false) {
       const el = scroller.current?.querySelector<HTMLElement>(`[data-page="${page}"]`)
       el?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' })
@@ -154,16 +157,25 @@ function PdfPage({
       if (cancelled || !canvas.current || !text.current) return
       const viewport = page.getViewport({ scale })
       const ratio = Math.min(window.devicePixelRatio || 1, 3)
-      const c = canvas.current
-      c.width = Math.floor(viewport.width * ratio)
-      c.height = Math.floor(viewport.height * ratio)
+      // Draw off-screen and swap when done: while zooming, the old image stays (stretched) instead
+      // of a blank page.
+      const off = document.createElement('canvas')
+      off.width = Math.floor(viewport.width * ratio)
+      off.height = Math.floor(viewport.height * ratio)
       task = page.render({
-        canvas: c,
+        canvas: off,
         viewport,
         transform: ratio !== 1 ? [ratio, 0, 0, ratio, 0, 0] : undefined,
       })
-      await task.promise.catch(() => undefined)
-      if (cancelled || !text.current) return
+      const ok = await task.promise.then(
+        () => true,
+        () => false,
+      )
+      if (cancelled || !ok || !canvas.current || !text.current) return
+      const c = canvas.current
+      c.width = off.width
+      c.height = off.height
+      c.getContext('2d')?.drawImage(off, 0, 0)
       text.current.replaceChildren()
       const layer = new lib.TextLayer({
         textContentSource: page.streamTextContent(),

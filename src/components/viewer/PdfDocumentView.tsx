@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import {
   Eraser,
   MessageSquarePlus,
@@ -154,7 +155,7 @@ export function PdfDocumentView({
   const goTo = useCallback((page: number) => viewer.current?.scrollToPage(page, true), [])
 
   const [searchOpen, setSearchOpen] = useState(false)
-  // ←/→: previous/next page (↑/↓ keep scrolling); ⌘F: search.
+  // ←/→: previous/next page, ↑/↓: scroll; ⌘F: search.
   const currentRef = useRef(current)
   useEffect(() => {
     currentRef.current = current
@@ -170,18 +171,66 @@ export function PdfDocumentView({
         return
       }
       if (e.metaKey || e.ctrlKey || e.altKey) return
+      // ←/→ jump without animation (fast paging), ↑/↓ scroll – also when the focus is elsewhere.
       if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
         e.preventDefault()
         const next = currentRef.current + (e.key === 'ArrowRight' ? 1 : -1)
-        if (next >= 1 && next <= doc.numPages) goTo(next)
+        if (next >= 1 && next <= doc.numPages) viewer.current?.scrollToPage(next, false)
+      } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        if (el?.closest('button, select, [role="slider"], [role="listbox"]')) return
+        e.preventDefault()
+        viewer.current?.element()?.scrollBy({ top: e.key === 'ArrowDown' ? 80 : -80, behavior: 'instant' })
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [doc, goTo])
 
+  // Zoom keeps the point under the mouse (buttons/keys: the middle) where it is.
+  const zoomRef = useRef(zoom)
+  const anchor = useRef<{ page: number; fx: number; fy: number; mx: number; my: number } | null>(null)
+  const captureAnchor = (clientX?: number, clientY?: number) => {
+    const el = viewer.current?.element()
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    const x = clientX ?? r.left + el.clientWidth / 2
+    const y = clientY ?? r.top + el.clientHeight / 2
+    for (const p of el.querySelectorAll<HTMLElement>('[data-page]')) {
+      const b = p.getBoundingClientRect()
+      if (y < b.top - 16 || y > b.bottom + 16) continue
+      anchor.current = {
+        page: Number(p.dataset.page),
+        fx: (x - b.left) / b.width,
+        fy: (y - b.top) / b.height,
+        mx: x - r.left,
+        my: y - r.top,
+      }
+      return
+    }
+  }
+  const zoomTo = (next: number, clientX?: number, clientY?: number) => {
+    const z = Math.round(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, next)) * 100) / 100
+    if (z === zoomRef.current) return
+    captureAnchor(clientX, clientY)
+    zoomRef.current = z
+    setZoom(z)
+  }
+  useLayoutEffect(() => {
+    zoomRef.current = zoom
+    const a = anchor.current
+    anchor.current = null
+    const el = viewer.current?.element()
+    const p = a && el?.querySelector<HTMLElement>(`[data-page="${a.page}"]`)
+    if (!a || !el || !p) return
+    const r = el.getBoundingClientRect()
+    const b = p.getBoundingClientRect()
+    el.scrollLeft += b.left + a.fx * b.width - r.left - a.mx
+    el.scrollTop += b.top + a.fy * b.height - r.top - a.my
+  }, [zoom])
+
   const step = (dir: 1 | -1) => {
-    setZoom((z) =>
+    const z = zoomRef.current
+    zoomTo(
       dir > 0
         ? (ZOOMS.find((x) => x > z + 0.001) ?? MAX_ZOOM)
         : ([...ZOOMS].reverse().find((x) => x < z - 0.001) ?? MIN_ZOOM),
@@ -189,36 +238,62 @@ export function PdfDocumentView({
   }
 
   // Pinch (trackpad), ⌘/Strg + Mausrad and ⌘/Strg + Plus/Minus/0 zoom the PDF, not the app.
+  // While pinching only a CSS scale around the mouse (smooth, nothing redrawn); when the gesture
+  // pauses the pages are drawn at the new size and the point under the mouse stays put.
   const area = useRef<HTMLDivElement>(null)
+  const zoomToRef = useRef(zoomTo)
+  const stepRef = useRef(step)
+  useEffect(() => {
+    zoomToRef.current = zoomTo
+    stepRef.current = step
+  })
   useEffect(() => {
     const el = area.current
     if (!el) return
-    let pending = 1
-    let frame = 0
+    let live: { factor: number; x: number; y: number } | null = null
+    let timer = 0
+    const content = () => viewer.current?.content()
+    const commit = () => {
+      if (!live) return
+      const { factor, x, y } = live
+      live = null
+      const c = content()
+      if (c) {
+        c.style.transform = ''
+        c.style.transformOrigin = ''
+        c.style.willChange = ''
+      }
+      flushSync(() => zoomToRef.current(zoomRef.current * factor, x, y))
+    }
     const onWheel = (e: WheelEvent) => {
       if (!e.ctrlKey && !e.metaKey) return
       e.preventDefault()
-      pending *= Math.exp(-e.deltaY * 0.01)
-      cancelAnimationFrame(frame)
-      frame = requestAnimationFrame(() => {
-        const factor = pending
-        pending = 1
-        // Continuous (trackpad): no fixed steps.
-        setZoom((z) => Math.round(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z * factor)) * 100) / 100)
-      })
+      const c = content()
+      if (!c) return
+      if (!live) {
+        const b = c.getBoundingClientRect()
+        live = { factor: 1, x: e.clientX, y: e.clientY }
+        c.style.transformOrigin = `${e.clientX - b.left}px ${e.clientY - b.top}px`
+        c.style.willChange = 'transform'
+      }
+      const z = zoomRef.current
+      live.factor = Math.min(MAX_ZOOM / z, Math.max(MIN_ZOOM / z, live.factor * Math.exp(-e.deltaY * 0.01)))
+      c.style.transform = `scale(${live.factor})`
+      clearTimeout(timer)
+      timer = window.setTimeout(commit, 160)
     }
     const onKey = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey) || e.altKey) return
-      if (e.key === '+' || e.key === '=') setZoom((z) => ZOOMS.find((x) => x > z + 0.001) ?? MAX_ZOOM)
-      else if (e.key === '-') setZoom((z) => [...ZOOMS].reverse().find((x) => x < z - 0.001) ?? MIN_ZOOM)
-      else if (e.key === '0') setZoom(1)
+      if (e.key === '+' || e.key === '=') stepRef.current(1)
+      else if (e.key === '-') stepRef.current(-1)
+      else if (e.key === '0') zoomToRef.current(1)
       else return
       e.preventDefault()
     }
     el.addEventListener('wheel', onWheel, { passive: false })
     window.addEventListener('keydown', onKey)
     return () => {
-      cancelAnimationFrame(frame)
+      clearTimeout(timer)
       el.removeEventListener('wheel', onWheel)
       window.removeEventListener('keydown', onKey)
     }
@@ -369,7 +444,7 @@ export function PdfDocumentView({
           <IconButton label={t('file.zoomIn')} onClick={() => step(1)} disabled={zoom >= MAX_ZOOM}>
             <Plus size={15} />
           </IconButton>
-          <IconButton label={t('file.fitWidth')} onClick={() => setZoom(1)} active={zoom === 1}>
+          <IconButton label={t('file.fitWidth')} onClick={() => zoomTo(1)} active={zoom === 1}>
             <ScanLine size={15} />
           </IconButton>
           <IconButton
