@@ -484,6 +484,12 @@ export const en: Record<MessageKey, string> = {
   'news.kind.grade': '{count} new grades',
   'news.kind.reminder': '{count} reminders',
   'notify.test': 'Send a test notification',
+  'notify.openSystem': 'Open macOS notification settings',
+  'notify.testResult.shown':
+    'macOS accepted the notification. If you do not see it, check Do Not Disturb/Focus.',
+  'notify.testResult.refused':
+    'macOS refused the notification. Open the notification settings and allow “Electron” (development build) or “Notiva” – Notiva sent one via “Script Editor” instead.',
+  'notify.testResult.unsupported': 'This system does not support notifications.',
   'notify.interval': 'Check Moodle',
   'notify.intervalHint': 'While the app runs, also after waking from sleep.',
   'notify.minutes': 'every {count} minutes',
@@ -678,6 +684,7 @@ export const en: Record<MessageKey, string> = {
   'examPlan.upToDate': 'Exam plan checked – no new dates for you',
   'examPlan.needsSetup': 'Set up “Update studies” first (degree and first semester).',
   'examPlan.noSource': 'No exam plan page known for this degree.',
+  'settings.openFull': 'Open full screen',
   'settings.tab.general': 'General',
   'settings.tab.study': 'Studies',
   'settings.tab.checks': 'Notifications',

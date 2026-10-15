@@ -43,7 +43,7 @@ import {
 import { clearMoodleSession, openMoodlePage, ssoLogin } from './moodleWindow'
 import { WhisperEngine } from './whisper'
 import { buildMenu } from './menu'
-import { systemNotify } from './systemNotify'
+import { systemNotify, testNotify } from './systemNotify'
 import { Terminals } from './terminal'
 import { Ecampus, NeedsLogin } from './ecampus'
 import { examNews, type ExamSnapshot } from '../src/lib/ecampus'
@@ -532,8 +532,10 @@ function registerIpc(): void {
     ),
   )
   handle('notifications:clear', async () => notifications.clear())
-  handle('notifications:test', async () => {
-    systemNotify('Notiva', 'So sehen Mitteilungen von Notiva aus.')
+  handle('notifications:test', async () => testNotify())
+  handle('notifications:openSystemSettings', async () => {
+    if (process.platform === 'darwin')
+      await shell.openExternal('x-apple.systempreferences:com.apple.Notifications-Settings.extension')
   })
   handle('notifications:settings', async () => parseNotifySettings((await readConfig()).notify))
   handle('notifications:setSettings', async (raw: unknown) => {

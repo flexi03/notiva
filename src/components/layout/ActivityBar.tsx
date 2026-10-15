@@ -90,9 +90,11 @@ function ViewItem({ view, side }: { view: ViewId; side: Side }) {
   const active = useApp((s) =>
     isPlace(view)
       ? s.route.name === view
-      : side === 'left'
-        ? s.sidebarOpen && s.leftView === view
-        : s.rightPanel === view,
+      : view === 'settings' && s.route.name === 'settings'
+        ? true
+        : side === 'left'
+          ? s.sidebarOpen && s.leftView === view
+          : s.rightPanel === view,
   )
   const toggle = useApp((s) => s.toggleView)
   const setDragging = useApp((s) => s.setDraggingView)

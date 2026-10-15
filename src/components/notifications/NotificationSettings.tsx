@@ -10,6 +10,7 @@ const CHECKS: CheckKind[] = ['moodle', 'materials', 'courseInfo', 'grades', 'exa
 export function NotificationSettingsSection() {
   const bridge = electronBridge()?.notifications
   const [settings, setSettings] = useState<NotifySettings | null>(null)
+  const [test, setTest] = useState<string | null>(null)
   useEffect(() => {
     void bridge?.settings().then(setSettings)
   }, [bridge])
@@ -27,9 +28,23 @@ export function NotificationSettingsSection() {
         />
       </Row>
       {bridge.test && (
-        <Button size="sm" onClick={() => void bridge.test!().catch(() => undefined)}>
-          {t('notify.test')}
-        </Button>
+        <div className="space-y-2">
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" onClick={() => void bridge.test!().then(setTest, () => setTest('unsupported'))}>
+              {t('notify.test')}
+            </Button>
+            {bridge.openSystemSettings && (
+              <Button size="sm" onClick={() => void bridge.openSystemSettings!()}>
+                {t('notify.openSystem')}
+              </Button>
+            )}
+          </div>
+          {test && (
+            <p role="status" className={test === 'shown' ? 'text-sm text-accent' : 'text-sm text-danger'}>
+              {t(`notify.testResult.${test as 'shown' | 'refused' | 'unsupported'}`)}
+            </p>
+          )}
+        </div>
       )}
       <p className="text-[13px] text-ink-3">{t('notify.intervalHint')}</p>
       {CHECKS.map((kind) => (

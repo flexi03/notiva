@@ -72,7 +72,7 @@ interface AppState {
 export type ViewId = 'assistant' | 'git' | 'notifications' | 'trash' | 'settings'
 export type Side = 'left' | 'right'
 export const VIEWS: ViewId[] = ['assistant', 'git', 'notifications', 'trash', 'settings']
-export const isPlace = (view: ViewId): view is 'trash' | 'settings' => view === 'trash' || view === 'settings'
+export const isPlace = (view: ViewId): view is 'trash' => view === 'trash'
 
 const LAYOUT_KEY = 'notiva.layout'
 const DEFAULT_SIDES: Record<ViewId, Side> = {

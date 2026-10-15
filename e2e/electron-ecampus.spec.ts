@@ -166,6 +166,16 @@ test.beforeAll(async () => {
   await window.getByRole('tab', { name: 'Studium' }).click()
 })
 
+/** Settings open as side panel – closed again once set up. */
+async function closeSettings() {
+  const panel = window.getByRole('complementary', { name: 'Einstellungen' })
+  if (await panel.isVisible())
+    await window
+      .getByRole('navigation', { name: 'Werkzeugleiste rechts' })
+      .getByRole('button', { name: 'Einstellungen' })
+      .click()
+}
+
 test.afterAll(async () => {
   await app?.close()
   ecampus?.server.close()
@@ -200,6 +210,7 @@ test('meldet sich an und findet die Leistungsübersicht selbst', async () => {
 
 test('zeigt Noten, Schnitt und ECTS und übernimmt sie in die Module', async () => {
   await section().getByRole('button', { name: 'Leistungen ansehen' }).click()
+  await closeSettings()
   const table = window.getByRole('table', { name: 'Leistungen' })
   await expect(table).toContainText('Lineare Algebra')
   await expect(table).toContainText('1,3')
@@ -238,6 +249,7 @@ test('zeigt Noten, Schnitt und ECTS und übernimmt sie in die Module', async () 
 })
 
 test('holt den Prüfungsplan und trägt die eigenen Termine ein', async () => {
+  await closeSettings()
   const dash = path.join(folder, 'Studium.md')
   writeFileSync(
     dash,
@@ -277,6 +289,7 @@ test('holt den Prüfungsplan und trägt die eigenen Termine ein', async () => {
 })
 
 test('prüft im Hintergrund mit neuer Sitzung und meldet neue Noten', async () => {
+  await closeSettings()
   fake.results = QIS_RESULTS_HTML.replace('<td></td><td>angemeldet</td>', '<td>2,0</td><td>bestanden</td>')
   await window.getByRole('button', { name: 'Aktualisieren', exact: true }).click()
   await expect(window.getByRole('table', { name: 'Leistungen' })).toContainText('2,0')
@@ -289,6 +302,7 @@ test('prüft im Hintergrund mit neuer Sitzung und meldet neue Noten', async () =
 })
 
 test('erneuert eine abgelaufene eCampus-Sitzung selbst über die Hochschul-Anmeldung', async () => {
+  await closeSettings()
   fake.sessions.clear()
   fake.log.length = 0
   await window.getByRole('button', { name: 'Aktualisieren', exact: true }).click()
@@ -301,6 +315,7 @@ test('erneuert eine abgelaufene eCampus-Sitzung selbst über die Hochschul-Anmel
 })
 
 test('sagt Bescheid, wenn die Anmeldung abgelaufen ist', async () => {
+  await closeSettings()
   fake.sessions.clear()
   fake.idp.clear()
   await window.getByRole('button', { name: 'Aktualisieren', exact: true }).click()

@@ -51,7 +51,15 @@ function Swatches<T extends string>({
 const TABS = ['general', 'study', 'checks', 'ai', 'vault'] as const
 type Tab = (typeof TABS)[number]
 
+/** Settings as a full screen. */
 export function SettingsScreen() {
+  return <SettingsContent />
+}
+
+/**
+ * The settings themselves – full screen or compact in a side panel (tabs wrap, narrower padding).
+ */
+export function SettingsContent({ compact = false }: { compact?: boolean }) {
   const ws = useWorkspace()
   const { settings, updateSettings } = useApp()
   const route = useApp((s) => s.route)
@@ -87,9 +95,9 @@ export function SettingsScreen() {
 
   return (
     <>
-      <Topbar title={t('settings.title')} />
-      <div className="mx-auto max-w-[46rem] px-4 py-10 sm:px-10">
-        <h1 className="mb-6 text-[2rem] font-bold">{t('settings.title')}</h1>
+      {!compact && <Topbar title={t('settings.title')} />}
+      <div className={compact ? 'px-3 py-3' : 'mx-auto max-w-[46rem] px-4 py-10 sm:px-10'}>
+        {!compact && <h1 className="mb-6 text-[2rem] font-bold">{t('settings.title')}</h1>}
 
         <div
           role="tablist"

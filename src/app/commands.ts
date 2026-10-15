@@ -43,7 +43,8 @@ export function runCommand(
   const app = useApp.getState()
   switch (id as CommandId) {
     case 'settings':
-      return app.navigate({ name: 'settings' })
+      // ⌘, : settings as side panel (full screen from there).
+      return app.route.name === 'settings' ? undefined : app.toggleView('settings')
     case 'newPage':
       return app.setNewPage({ folder: '' })
     case 'search':

@@ -127,7 +127,8 @@ contextBridge.exposeInMainWorld('notiva', {
     },
   },
   notifications: {
-    test: () => invoke<void>('notifications:test'),
+    test: () => invoke<string>('notifications:test'),
+    openSystemSettings: () => invoke<void>('notifications:openSystemSettings'),
     onAdded: (callback: (counts: Record<string, number>) => void) => {
       const listener = (_e: unknown, counts: Record<string, number>) => callback(counts)
       ipcRenderer.on('notifications:added', listener)

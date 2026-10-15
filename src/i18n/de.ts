@@ -487,6 +487,12 @@ export const de = {
   'news.kind.grade': '{count} neue Noten',
   'news.kind.reminder': '{count} Erinnerungen',
   'notify.test': 'Test-Mitteilung senden',
+  'notify.openSystem': 'Mitteilungseinstellungen von macOS öffnen',
+  'notify.testResult.shown':
+    'macOS hat die Mitteilung angenommen. Siehst du sie nicht, prüfe „Nicht stören“/Fokus.',
+  'notify.testResult.refused':
+    'macOS hat die Mitteilung abgelehnt. Öffne die Mitteilungseinstellungen und erlaube dort „Electron“ (Entwicklungsversion) bzw. „Notiva“ – Notiva hat ersatzweise eine Mitteilung über „Skripteditor“ geschickt.',
+  'notify.testResult.unsupported': 'Dieses System unterstützt keine Mitteilungen.',
   'notify.interval': 'In Moodle nachsehen',
   'notify.intervalHint': 'Solange die App läuft, auch nach dem Aufwachen aus dem Ruhezustand.',
   'notify.minutes': 'alle {count} Minuten',
@@ -683,6 +689,7 @@ export const de = {
   'examPlan.upToDate': 'Prüfungsplan geprüft – keine neuen Termine für dich',
   'examPlan.needsSetup': 'Erst „Studium aktualisieren“ einrichten (Studiengang und erstes Semester).',
   'examPlan.noSource': 'Für diesen Studiengang ist keine Prüfungsplan-Seite bekannt.',
+  'settings.openFull': 'Ganz öffnen',
   'settings.tab.general': 'Allgemein',
   'settings.tab.study': 'Studium',
   'settings.tab.checks': 'Benachrichtigungen',

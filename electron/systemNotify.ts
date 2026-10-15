@@ -43,3 +43,30 @@ export function systemNotify(title: string, body: string, onClick?: () => void):
   })
   n.show()
 }
+
+/** Test: did macOS take the notification? "shown", "refused" (then AppleScript was used) or "unsupported". */
+export function testNotify(): Promise<'shown' | 'refused' | 'unsupported'> {
+  if (!Notification.isSupported()) return Promise.resolve('unsupported')
+  return new Promise((resolve) => {
+    const n = new Notification({
+      title: 'Notiva',
+      body: 'So sehen Mitteilungen von Notiva aus.',
+      silent: true,
+    })
+    shown.add(n)
+    const timer = setTimeout(() => resolve('shown'), 3000)
+    n.on('show', () => {
+      clearTimeout(timer)
+      nativeRefused = false
+      resolve('shown')
+    })
+    n.on('failed', () => {
+      clearTimeout(timer)
+      shown.delete(n)
+      nativeRefused = true
+      if (process.platform === 'darwin') viaAppleScript('Notiva', 'So sehen Mitteilungen von Notiva aus.')
+      resolve('refused')
+    })
+    n.show()
+  })
+}

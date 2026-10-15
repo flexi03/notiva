@@ -16,6 +16,7 @@ import { DiffSheet } from '@/components/git/DiffView'
 import { ActivityBar } from './ActivityBar'
 import { AssistantPanel } from '@/components/ai/AssistantPanel'
 import { MoodleImportDialog } from '@/components/moodle/MoodleImport'
+import { SettingsPanel } from './SettingsPanel'
 import { NotificationPanel, openNotification } from '@/components/notifications/NotificationPanel'
 import { taskReminders, useNotifications } from '@/app/notifications'
 import type { Workspace } from '@/lib/workspace'
@@ -179,6 +180,8 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
               <GitPanel />
             ) : leftView === 'notifications' ? (
               <NotificationPanel />
+            ) : leftView === 'settings' ? (
+              <SettingsPanel />
             ) : (
               <Sidebar />
             )}
@@ -194,6 +197,7 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
         {rightPanel === 'assistant' && <AssistantPanel />}
         {rightPanel === 'git' && <GitPanel />}
         {rightPanel === 'notifications' && <NotificationPanel />}
+        {rightPanel === 'settings' && <SettingsPanel />}
       </ErrorBoundary>
       <ActivityBar side="right" />
       <DiffSheet />

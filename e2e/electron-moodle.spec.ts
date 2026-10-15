@@ -207,6 +207,16 @@ test.beforeAll(async () => {
   await window.getByRole('tab', { name: 'Studium' }).click()
 })
 
+/** Settings open as side panel – closed again once set up. */
+async function closeSettings() {
+  const panel = window.getByRole('complementary', { name: 'Einstellungen' })
+  if (await panel.isVisible())
+    await window
+      .getByRole('navigation', { name: 'Werkzeugleiste rechts' })
+      .getByRole('button', { name: 'Einstellungen' })
+      .click()
+}
+
 test.afterAll(async () => {
   await app?.close()
   moodle?.server.close()
@@ -317,6 +327,7 @@ test('zeigt die Kurse und öffnet sie in der App', async () => {
 })
 
 test('meldet Neuigkeiten aus Moodle im Benachrichtigungscenter', async () => {
+  await closeSettings()
   news.on = true
   await window.getByRole('button', { name: 'Aktualisieren' }).click()
   const bar = window.getByRole('navigation', { name: 'Werkzeugleiste rechts' })
@@ -344,6 +355,7 @@ test('meldet Neuigkeiten aus Moodle im Benachrichtigungscenter', async () => {
 })
 
 test('speichert neue Skripte automatisch – mit Fortschritt und Bestätigung', async () => {
+  await closeSettings()
   // The fetches above already saved the course's PDFs into the vault.
   const saved = path.join(folder, 'Studium/Unterlagen/Lineare Algebra/Vorlesung/vl01.pdf')
   await expect.poll(() => existsSync(saved)).toBe(true)
