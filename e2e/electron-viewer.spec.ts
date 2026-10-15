@@ -201,3 +201,42 @@ test('wählt Zeichnungen mit dem Zeiger aus, verschiebt und löscht sie', async 
   await window.keyboard.press('Delete')
   await expect.poll(notes).not.toContain('type: ink')
 })
+
+test('öffnet neben dem Terminal eine Webseite (abgeschottet)', async () => {
+  const { createServer } = await import('node:http')
+  const server = createServer((_req, res) => {
+    res.setHeader('content-type', 'text/html; charset=utf-8')
+    res.end(
+      '<h1>Aufgaben P01</h1><p>SELECT * FROM kunde;</p><script>document.title = typeof require</script>',
+    )
+  })
+  await new Promise<void>((r) => server.listen(0, '127.0.0.1', () => r()))
+  const url = `http://127.0.0.1:${(server.address() as { port: number }).port}/p01`
+  await window.getByRole('button', { name: 'Terminal', exact: true }).click()
+  await window.getByRole('button', { name: 'Webseite daneben' }).first().click()
+  const dialog = window.getByRole('dialog')
+  await dialog.getByRole('textbox').fill(url)
+  await dialog.getByRole('button', { name: 'Webseite daneben' }).click()
+  const web = window.getByTestId('webpane')
+  await expect(web).toBeVisible()
+  // The page loads in its own process, without Node.
+  await expect
+    .poll(
+      () =>
+        web.evaluate((el) => {
+          try {
+            return (el as unknown as { getTitle(): string }).getTitle()
+          } catch {
+            return null
+          }
+        }),
+      { timeout: 15_000 },
+    )
+    .toBe('undefined')
+  await expect(window.getByRole('textbox', { name: 'Adresse' })).toHaveValue(url)
+  await window.getByRole('button', { name: 'Webseite schließen' }).click()
+  await expect(web).toHaveCount(0)
+  for (const close of await window.getByRole('button', { name: 'Terminal beenden' }).all())
+    await close.click().catch(() => undefined)
+  server.close()
+})

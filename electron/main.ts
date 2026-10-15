@@ -775,7 +775,33 @@ function createWindow(): void {
       webSecurity: true,
       spellcheck: true,
       devTools: !app.isPackaged,
+      // Web pages next to the terminal (e.g. a lab's task page) – locked down below.
+      webviewTag: true,
     },
+  })
+  // Embedded web pages: no preload, no Node, sandboxed, own session (Moodle links: the Moodle
+  // session with the university login); only http(s).
+  window.webContents.on('will-attach-webview', (event, prefs, params) => {
+    delete prefs.preload
+    prefs.nodeIntegration = false
+    prefs.nodeIntegrationInSubFrames = false
+    prefs.contextIsolation = true
+    prefs.sandbox = true
+    prefs.webSecurity = true
+    if (params.src && !/^https?:\/\//i.test(params.src)) return event.preventDefault()
+    if (params.partition !== 'persist:moodle') params.partition = 'persist:web'
+  })
+  window.webContents.on('did-attach-webview', (_event, contents) => {
+    // Links that want a new window open in the same pane.
+    contents.setWindowOpenHandler(({ url }) => {
+      if (/^https?:/i.test(url)) void contents.loadURL(url)
+      return { action: 'deny' }
+    })
+    contents.session.setPermissionRequestHandler((_wc, _p, callback) => callback(false))
+    // Only web pages – no file:, app: or other schemes.
+    contents.on('will-navigate', (e, url) => {
+      if (!/^https?:/i.test(url)) e.preventDefault()
+    })
   })
   window.webContents.setWindowOpenHandler(({ url }) => {
     if (/^(https?:|mailto:)/i.test(url)) void shell.openExternal(url)
@@ -784,7 +810,6 @@ function createWindow(): void {
   window.webContents.on('will-navigate', (event, url) => {
     if (!url.startsWith('app://notiva/')) event.preventDefault()
   })
-  window.webContents.on('will-attach-webview', (event) => event.preventDefault())
   // Autosave off and unsaved changes: the page asks to stay – let the user decide.
   window.webContents.on('will-prevent-unload', (event) => {
     const choice = dialog.showMessageBoxSync(window!, {
@@ -843,5 +868,8 @@ app.on('window-all-closed', () => {
 
 // Hardening: no other process may create webContents with relaxed settings.
 app.on('web-contents-created', (_event, contents) => {
-  contents.on('will-attach-webview', (event) => event.preventDefault())
+  // Embedded pages only in the Notiva window (locked down there) – nowhere else, never nested.
+  contents.on('will-attach-webview', (event) => {
+    if (contents !== window?.webContents) event.preventDefault()
+  })
 })
