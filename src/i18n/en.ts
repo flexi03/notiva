@@ -505,6 +505,7 @@ export const en: Record<MessageKey, string> = {
   'viewer.clickToEdit': 'Click to edit',
   'viewer.marks': 'Highlights ({count})',
   'viewer.marksList': 'Highlights without comment',
+  'viewer.removeSelected': 'Delete selection',
   'viewer.notes': 'Document notes',
   'viewer.pageNote': 'Note on page {page}',
   'viewer.pageNoteLabel': 'Note on the current page',

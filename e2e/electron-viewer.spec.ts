@@ -168,3 +168,25 @@ test('öffnet unter dem PDF ein Terminal und führt Befehle aus', async () => {
   await window.getByRole('region', { name: 'Terminal' }).getByRole('button', { name: 'Schließen' }).click()
   await expect(term).toHaveCount(0)
 })
+
+test('wählt Zeichnungen mit dem Zeiger aus, verschiebt und löscht sie', async () => {
+  await window.getByRole('radio', { name: 'Stift' }).click()
+  const page1 = (await window.locator('[data-page="1"]').boundingBox())!
+  const at = (fx: number, fy: number) => [page1.x + page1.width * fx, page1.y + page1.height * fy] as const
+  await window.mouse.move(...at(0.2, 0.5))
+  await window.mouse.down()
+  await window.mouse.move(...at(0.45, 0.5), { steps: 8 })
+  await window.mouse.up()
+  await expect.poll(notes).toContain('type: ink')
+  const before = notes()
+  await window.getByRole('radio', { name: 'Text auswählen und markieren' }).click()
+  // Click on the stroke: selected (frame + delete button), then drag it down.
+  await window.mouse.move(...at(0.3, 0.5))
+  await window.mouse.down()
+  await window.mouse.move(...at(0.3, 0.6), { steps: 6 })
+  await window.mouse.up()
+  await expect(window.getByRole('button', { name: 'Auswahl löschen' })).toBeVisible()
+  await expect.poll(notes).not.toBe(before)
+  await window.keyboard.press('Delete')
+  await expect.poll(notes).not.toContain('type: ink')
+})

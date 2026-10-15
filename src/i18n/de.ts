@@ -508,6 +508,7 @@ export const de = {
   'viewer.clickToEdit': 'Klicken zum Bearbeiten',
   'viewer.marks': 'Markierungen ({count})',
   'viewer.marksList': 'Markierungen ohne Kommentar',
+  'viewer.removeSelected': 'Auswahl löschen',
   'viewer.notes': 'Notizen zum Dokument',
   'viewer.pageNote': 'Notiz zu Seite {page}',
   'viewer.pageNoteLabel': 'Notiz zur aktuellen Seite',
