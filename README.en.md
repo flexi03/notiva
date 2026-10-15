@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-2563eb"></a>
-  <img alt="Version 0.1.2" src="https://img.shields.io/badge/Version-0.1.2-16a34a">
+  <img alt="Version 0.1.3" src="https://img.shields.io/badge/Version-0.1.3-16a34a">
   <img alt="macOS, Windows, Linux" src="https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux-ffffff">
 </p>
 
@@ -157,8 +157,14 @@ Property names in the study template are German (`Note`, `Belegung`, `Prüfungen
 ## Install and run
 
 **Download:** the latest version from [Releases](https://github.com/flexi03/notiva/releases/latest) – macOS (Apple
-Silicon, `.dmg`), Windows (`.exe`) or Linux (`.AppImage`). The app is unsigned: on a Mac right-click → Open the first
-time, on Windows "More info → Run anyway".
+Silicon, `.dmg`), Windows (`.exe`) or Linux (`.AppImage`).
+
+Notiva is free and therefore not registered with Apple or Microsoft. The first start asks for confirmation:
+
+- **macOS:** drag Notiva to Applications and open it. If it says "Apple could not verify …": _System Settings →
+  Privacy & Security_ → at the bottom **"Open Anyway"**. If macOS says "damaged" (versions up to 0.1.2), run
+  `xattr -dr com.apple.quarantine /Applications/Notiva.app` once in Terminal.
+- **Windows:** "Windows protected your PC" → **"More info" → "Run anyway"**.
 
 **Updates:** Notiva looks for new versions on start and every hour, tells you and installs them with one click
 ("Update now"); manually via _Notiva → Nach Updates suchen …_. What's new: [CHANGELOG.md](CHANGELOG.md).
@@ -173,8 +179,7 @@ npm run electron     # desktop app
 npm run dev          # or in the browser (without terminal, Git and sign-ins)
 ```
 
-Installers: `npm run dist:mac`, `npm run dist:win` or `npm run dist:linux` (output in `release/`). They are unsigned;
-on macOS right-click → Open the first time.
+Installers: `npm run dist:mac`, `npm run dist:win` or `npm run dist:linux` (output in `release/`).
 
 ## Set up your studies in 5 steps
 

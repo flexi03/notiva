@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="Lizenz: MIT" src="https://img.shields.io/badge/Lizenz-MIT-2563eb"></a>
-  <img alt="Version 0.1.2" src="https://img.shields.io/badge/Version-0.1.2-16a34a">
+  <img alt="Version 0.1.3" src="https://img.shields.io/badge/Version-0.1.3-16a34a">
   <img alt="macOS, Windows, Linux" src="https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux-ffffff">
 </p>
 
@@ -156,8 +156,14 @@ Die KI ist aus, bis du sie einschaltest – und zeigt vor dem Senden, was sie mi
 ## Installieren und starten
 
 **Herunterladen:** die neueste Version unter [Releases](https://github.com/flexi03/notiva/releases/latest) –
-macOS (Apple Silicon, `.dmg`), Windows (`.exe`) oder Linux (`.AppImage`). Die App ist nicht signiert: auf dem Mac beim
-ersten Öffnen Rechtsklick → Öffnen, unter Windows „Weitere Informationen → Trotzdem ausführen“.
+macOS (Apple Silicon, `.dmg`), Windows (`.exe`) oder Linux (`.AppImage`).
+
+Notiva ist kostenlos und deshalb nicht bei Apple oder Microsoft registriert. Beim ersten Start fragt das System nach:
+
+- **macOS:** Notiva in „Programme“ ziehen und öffnen. Kommt „Apple konnte nicht überprüfen …“: _Systemeinstellungen →
+  Datenschutz & Sicherheit_ → ganz unten **„Dennoch öffnen“**. Meldet macOS „beschädigt“ (Versionen bis 0.1.2), im
+  Terminal einmal `xattr -dr com.apple.quarantine /Applications/Notiva.app` ausführen.
+- **Windows:** „Der Computer wurde durch Windows geschützt“ → **„Weitere Informationen“ → „Trotzdem ausführen“**.
 
 **Updates:** Notiva sieht beim Start und jede Stunde nach neuen Versionen, meldet sie und installiert sie mit einem
 Klick („Jetzt aktualisieren“); von Hand über _Notiva → Nach Updates suchen …_. Was neu ist: [CHANGELOG.md](CHANGELOG.md).
@@ -173,7 +179,6 @@ npm run dev          # oder im Browser (ohne Terminal, Git und Anmeldungen)
 ```
 
 Eigene Installationspakete: `npm run dist:mac`, `npm run dist:win` oder `npm run dist:linux` (Ausgabe in `release/`).
-Die Pakete sind nicht signiert; macOS fragt beim ersten Öffnen nach (Rechtsklick → Öffnen).
 
 ## Studium einrichten in 5 Schritten
 
@@ -255,7 +260,7 @@ Moodle läuft überall. eCampus-Noten setzen HISinOne voraus. Adressen, Prüfung
 `Studium/Hochschule.md` ein ([docs/HOCHSCHULE.md](docs/HOCHSCHULE.md)) – siehe [Andere Hochschule?](#andere-hochschule).
 
 **Warum zeigt macOS keine Mitteilungen?**
-Die App ist nicht signiert. Notiva nutzt dann eine kleine Hilfs-App „Notiva“. Erlauben unter
+Die App ist nicht bei Apple registriert. Notiva nutzt dann eine kleine Hilfs-App „Notiva“. Erlauben unter
 _Systemeinstellungen → Mitteilungen_; der Test-Knopf in _Einstellungen → Benachrichtigungen_ zeigt das Ergebnis.
 
 **Brauche ich die KI?**

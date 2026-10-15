@@ -3,6 +3,13 @@
 Alle Versionen mit Downloads: [GitHub Releases](https://github.com/flexi03/notiva/releases).
 Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und installiert sie auf Wunsch selbst.
 
+## 0.1.3 – 2026-10-15
+
+- **macOS: „Notiva.app ist beschädigt“ behoben.** Die App wird jetzt beim Bauen als Ganzes (ad hoc) signiert. Beim
+  ersten Start fragt macOS nur noch „Apple konnte nicht überprüfen …“ → _Systemeinstellungen → Datenschutz &
+  Sicherheit → Dennoch öffnen_.
+- README: Installationshinweise für macOS und Windows.
+
 ## 0.1.2 – 2026-10-15
 
 - **Fehlermeldungen mit Grund und Ein-Klick-Fix:** bekannte Fehler (Git fehlt, Git-Name/E-Mail fehlen, kein

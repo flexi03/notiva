@@ -39,9 +39,8 @@ jobs:
       - run: npm ci
       - run: npm run build && npm run electron:build && npm run mcp:build
       - run: npx electron-builder ${{ matrix.target }} --publish never
-        env:
-          # Not signed (no Apple/Windows certificate): don't look for one.
-          CSC_IDENTITY_AUTO_DISCOVERY: false
+        # No Apple/Windows certificate: macOS gets an ad-hoc signature (package.json, mac.identity "-")
+        # – without it macOS calls the downloaded app "damaged".
       - name: Upload to the release
         shell: bash
         env:
