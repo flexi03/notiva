@@ -21,6 +21,8 @@ export interface PromptRequest {
   danger?: boolean
   /** pick one of these (resolves with the chosen value) */
   choices?: Array<{ value: string; label: string }>
+  /** tick several (resolves with a JSON array of the ticked values) */
+  checklist?: Array<{ value: string; label: string; detail?: string; checked?: boolean }>
   resolve: (value: string | null) => void
 }
 
@@ -33,6 +35,9 @@ interface AppState {
   newPageOpen: { folder: string } | null
   /** Page shown in the side panel over the current screen. */
   peek: string | null
+  /** The study sync preview ("Studium aktualisieren"), opened from anywhere. */
+  studyDialog: boolean
+  setStudyDialog(open: boolean): void
   /** Which side each view (assistant, changes) lives on – movable like in VS Code, saved per device. */
   viewSides: Record<ViewId, Side>
   /** View shown in the left side bar instead of the page tree (null = pages). */
@@ -119,6 +124,8 @@ export const useApp = create<AppState>((set, get) => ({
   searchOpen: false,
   newPageOpen: null,
   peek: null,
+  studyDialog: false,
+  setStudyDialog: (studyDialog) => set({ studyDialog }),
   viewSides: loadViewSides(),
   leftView: null,
   rightPanel: null,

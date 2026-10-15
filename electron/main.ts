@@ -577,7 +577,8 @@ function registerIpc(): void {
     if (external === true) await shell.openExternal(url.toString())
     else openMoodlePage(window, url.toString())
   })
-  // Saves a course material from the last fetch into the vault: <folder>/<course>/<file>.
+  // Saves a course material from the last fetch into the vault: <folder>/<category>/<file> – the
+  // app chooses the folder (the module's, see src/lib/study/modules.ts).
   handle('moodle:download', async (id: unknown, folder: unknown) => {
     const config = await loadMoodle()
     if (!config) throw new Error('Moodle ist nicht verbunden')
@@ -585,15 +586,9 @@ function registerIpc(): void {
     const material = snapshot.materials?.find((m) => m.id === id)
     if (!material) throw new Error('Unterlage nicht gefunden – bitte Moodle aktualisieren')
     if (typeof folder !== 'string' || folder.length > 300) throw new Error('Ungültiger Ordner')
-    const course = snapshot.courses.find((c) => c.id === material.courseId)?.name ?? 'Kurs'
     const { bytes, filename } = await downloadMaterial((url, init) => net.fetch(url, init), config, material)
-    // Unterlagen/<Kurs>/<Vorlesung | Praktikum & Übung | Sonstiges>/<Datei>
-    const target = [
-      folder.replace(/^\/+|\/+$/g, ''),
-      safeFileName(course),
-      materialCategory(material),
-      filename,
-    ]
+    // Unterlagen/<Modul>/<Vorlesung | Praktikum & Übung | Sonstiges>/<Datei>
+    const target = [folder.replace(/^\/+|\/+$/g, ''), materialCategory(material), filename]
       .filter(Boolean)
       .join('/')
     await requireVault().write(target, bytes)

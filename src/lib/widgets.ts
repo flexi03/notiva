@@ -71,6 +71,8 @@ export type WidgetSpec =
   | { type: 'related' }
   /** PDFs with own highlights/notes, newest first. */
   | { type: 'annotated' }
+  /** Moodle courses that belong to no module (orientation, faculty news …), from the last fetch. */
+  | { type: 'moodle-courses' }
 
 export interface WidgetParseResult {
   widget: WidgetSpec | null
@@ -186,6 +188,7 @@ export function parseWidget(source: string): WidgetParseResult {
   }
   if (data.type === 'related') return { widget: { type: 'related' } }
   if (data.type === 'annotated') return { widget: { type: 'annotated' } }
+  if (data.type === 'moodle-courses') return { widget: { type: 'moodle-courses' } }
   return { widget: null, error: `Unbekannter Widget-Typ: ${String(data.type)}` }
 }
 

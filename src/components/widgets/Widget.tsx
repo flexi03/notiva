@@ -5,6 +5,7 @@ import { t } from '@/i18n'
 import { parseWidget, widgetSource } from '@/lib/widgets'
 import { DatabaseView } from '@/components/database/DatabaseView'
 import { Annotated } from './Annotated'
+import { MoodleCourses } from './MoodleCourses'
 import { Related } from './Related'
 import { Tiles } from './Tiles'
 
@@ -16,6 +17,7 @@ export function Widget({ source, from }: { source: string; from: string }) {
   if (widget.type === 'tiles') return <Tiles spec={widget} from={from} />
   if (widget.type === 'related') return <Related from={from} />
   if (widget.type === 'annotated') return <Annotated />
+  if (widget.type === 'moodle-courses') return <MoodleCourses />
   const db = ws.findDatabase(widget.source, from)
   if (!db) return <WidgetError message={t('db.notFound', { name: widget.source })} />
   return (

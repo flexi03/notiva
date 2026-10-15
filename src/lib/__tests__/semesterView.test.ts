@@ -1,38 +1,80 @@
 import { MemoryVault } from '../vault'
 import { Workspace } from '../workspace'
-import { activeModules, annotatedPdfs } from '../semesterView'
+import { activeModules, annotatedPdfs, moduleColor, nextOccurrence } from '../semesterView'
 import { installPack, studyPack } from '../packs'
 
 describe('Mein Semester', () => {
-  it('lists attended modules with their files, new files and annotated PDFs', async () => {
+  it('shows each attended module with next session, exam, tasks, newest script and own notes', async () => {
+    const now = new Date(2026, 9, 15, 10, 0) // Thursday
     const ws = await Workspace.open(new MemoryVault())
-    await installPack(ws, studyPack, {}, '', new Date(2026, 9, 15))
+    await installPack(ws, studyPack, {}, '', now)
     const db = await ws.createRow('Studium/Module.md', 'Datenbanksysteme 2', {
       Belegung: ['Vorlesung', 'Praktikum'],
+      Note: 2.3,
     })
     await ws.createRow('Studium/Module.md', 'Mathe 9', { Belegung: [] })
-    await ws.createRow('Studium/Kurse.md', 'DBS2', {
-      moodle: 'course:1',
-      Ordner: 'Studium/Unterlagen/DBS2',
-      Modul: ['[[Datenbanksysteme 2]]'],
-    })
-    await ws.writeFile('Studium/Unterlagen/DBS2/Vorlesung/vl01.pdf', new Uint8Array([1]))
-    await ws.writeFile('Studium/Unterlagen/DBS2/Praktikum & Übung/P01.pdf', new Uint8Array([1]))
+    const dir = 'Studium/Unterlagen/Datenbanksysteme 2'
+    await ws.writeFile(`${dir}/Vorlesung/DBS2-01.pdf`, new Uint8Array([1]))
+    await ws.writeFile(`${dir}/Vorlesung/DBS2-02.pdf`, new Uint8Array([1]))
+    await ws.writeFile(`${dir}/Praktikum & Übung/P01.pdf`, new Uint8Array([1]))
     await ws.createPage({
-      folder: 'Studium/Unterlagen/DBS2/Vorlesung',
-      title: 'vl01 (Notizen)',
-      data: { pdf: 'vl01.pdf' },
+      folder: `${dir}/Vorlesung`,
+      title: 'DBS2-01 (Notizen)',
+      data: { pdf: 'DBS2-01.pdf' },
     })
+    const link = ['[[Datenbanksysteme 2]]']
+    await ws.createRow('Studium/Prüfungen.md', 'Klausur DBS2', { Modul: link, Datum: '2026-11-23' })
+    await ws.createRow('Studium/Prüfungen.md', 'Alte Klausur', { Modul: link, Datum: '2026-02-01' })
+    await ws.createRow('Studium/Aufgaben.md', 'Blatt 3', { Modul: link, Status: 'Offen', Fällig: '2026-10-20' })
+    await ws.createRow('Studium/Aufgaben.md', 'Blatt 2', { Modul: link, Status: 'Erledigt' })
     await ws.reload()
-    const list = activeModules(ws, 'Studium')
-    // The demo pack's own attended modules are in the list too; "Mathe 9" (no Belegung) is not.
+    const timetable = [
+      {
+        path: 'x.md',
+        title: 'DBS2 – Vorlesung',
+        module: 'Datenbanksysteme 2',
+        day: 'Di',
+        start: '12:00',
+        end: '13:30',
+        type: 'Vorlesung',
+      },
+      {
+        path: 'y.md',
+        title: 'DBS2 – Praktikum',
+        module: 'Datenbanksysteme 2',
+        day: 'Fr',
+        start: '08:15',
+        type: 'Praktikum',
+      },
+    ]
+    const list = activeModules(ws, 'Studium', 'Studium/Unterlagen', timetable, now)
     expect(list.map((m) => m.module.path)).toContain(db)
     expect(list.map((m) => m.module.path)).not.toContain('Studium/Module/Mathe 9.md')
-    const dbs = list.find((m) => m.module.path === db)!
-    expect(dbs.courses[0]!.groups['Vorlesung']).toEqual(['Studium/Unterlagen/DBS2/Vorlesung/vl01.pdf'])
-    expect(dbs.courses[0]!.groups['Praktikum & Übung']).toHaveLength(1)
-    expect(dbs.recent).toHaveLength(2)
-    expect(dbs.annotated.map((a) => a.pdf)).toEqual(['Studium/Unterlagen/DBS2/Vorlesung/vl01.pdf'])
+    const m = list.find((x) => x.module.path === db)!
+    // Vorlesung: two PDFs and the notes page next to them.
+    expect(m.counts['Praktikum & Übung']).toBe(1)
+    expect(m.latestLecture).toBe(`${dir}/Vorlesung/DBS2-02.pdf`)
+    // Friday's lab comes before next Tuesday's lecture.
+    expect(m.nextSession).toMatchObject({ type: 'Praktikum', day: 'Fr', start: '08:15' })
+    expect(m.nextExam?.date).toBe('2026-11-23')
+    expect(m.openTasks.map((t) => t.title)).toEqual(['Blatt 3'])
+    expect(m.annotated.map((a) => a.pdf)).toEqual([`${dir}/Vorlesung/DBS2-01.pdf`])
     expect(annotatedPdfs(ws)).toHaveLength(1)
+    // The module with the soonest session comes first.
+    expect(list[0]!.module.path).toBe(db)
+  })
+
+  it('gives each module a stable colour unless it has its own', () => {
+    const page = (data: Record<string, unknown>) =>
+      ({ title: 'X', data }) as unknown as Parameters<typeof moduleColor>[0]
+    expect(moduleColor(page({ Nr: 'BMI 02' }))).toBe(moduleColor(page({ Nr: 'BMI 02' })))
+    expect(moduleColor(page({ Nr: 'BMI 02', Farbe: 'pink' }))).toBe('pink')
+  })
+
+  it('finds the next start of a weekly session', () => {
+    const now = new Date(2026, 9, 15, 10, 0) // Thursday 10:00
+    expect(nextOccurrence({ day: 'Do', start: '09:00' }, now)?.getDate()).toBe(22)
+    expect(nextOccurrence({ day: 'Do', start: '11:00' }, now)?.getDate()).toBe(15)
+    expect(nextOccurrence({ day: 'Mo', start: '08:00' }, now)?.getDate()).toBe(19)
   })
 })

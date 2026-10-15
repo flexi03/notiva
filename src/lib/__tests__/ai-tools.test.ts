@@ -94,8 +94,8 @@ describe('AI tools: reading', () => {
     const { call } = await setup()
     expect((await call('read_page', { page: 'Gibt es nicht' })).text).toMatch(/nicht gefunden.*search_pages/)
     expect(
-      (await call('query_database', { database: 'Module', filter: [{ property: 'Farbe', op: 'eq' }] })).text,
-    ).toMatch(/Unbekannte Eigenschaft „Farbe“. Vorhanden: .*ECTS/)
+      (await call('query_database', { database: 'Module', filter: [{ property: 'Lieblingsessen', op: 'eq' }] })).text,
+    ).toMatch(/Unbekannte Eigenschaft „Lieblingsessen“. Vorhanden: .*ECTS/)
     expect((await call('query_database', { database: 'Willkommen' })).ok).toBe(false)
   })
 })
@@ -271,12 +271,12 @@ describe('AI tools: dashboard and files', () => {
     const bad = await call('update_widget', {
       page: 'Studium',
       index: -1,
-      yaml: 'type: tiles\ntiles:\n  - { type: stat, source: Studium/Gibtsnicht }\n  - { type: chart }\n  - { type: stat, source: Studium/Module, property: Farbe }',
+      yaml: 'type: tiles\ntiles:\n  - { type: stat, source: Studium/Gibtsnicht }\n  - { type: chart }\n  - { type: stat, source: Studium/Module, property: Lieblingsessen }',
     })
     expect(bad.ok).toBe(false)
     expect(bad.text).toContain('Gibtsnicht')
     expect(bad.text).toContain('unbekanntem')
-    expect(bad.text).toContain('Farbe')
+    expect(bad.text).toContain('Lieblingsessen')
     const view = await call('update_widget', {
       page: 'Studium',
       index: -1,

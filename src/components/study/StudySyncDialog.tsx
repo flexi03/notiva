@@ -41,7 +41,7 @@ export function StudySyncDialog({ onClose }: { onClose: () => void }) {
   const changes = preview?.ok ? preview.plan.changes : []
   const creating = Boolean(preview && !preview.ok && preview.reason === 'noFolder')
   const own = chosen?.program === OWN_PROGRAM
-  const groups = (['schema', 'module', 'semester', 'course'] as const)
+  const groups = (['migrate', 'schema', 'module', 'semester', 'course'] as const)
     .map((what) => ({ what, items: changes.filter((c) => c.what === what) }))
     .filter((g) => g.items.length)
 

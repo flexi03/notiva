@@ -1,30 +1,58 @@
 /**
- * "Mein Semester": the modules the user attends now (property Belegung), each with its Moodle
- * courses, files (lecture / lab / other), new files, PDFs with own notes, notes and code folders.
- * Pure – reads the workspace.
+ * "Mein Semester": one card per module the user attends now (property Belegung) – what matters this
+ * week instead of every file: next session, next exam, open tasks, grade and attempts, the newest
+ * lecture script and new materials, notes and annotated PDFs, the lab folder. Pure – reads the
+ * workspace.
  */
+import { COLORS, type Color } from './database'
 import { joinPath } from './path'
+import { DAYS, type TimetableRow } from './schedule'
+import { courseIdsOf } from './study/modules'
 import type { Page, Workspace } from './workspace'
-
-export interface CourseFiles {
-  course: Page
-  folder: string
-  groups: Record<string, string[]>
-}
 
 export interface ActiveModule {
   module: Page
   belegung: string[]
-  courses: CourseFiles[]
-  /** Files saved in the last days (newest first). */
+  color: Color
+  /** "Unterlagen/<Modul>" */
+  folder: string
+  /** Files per category (Vorlesung, Praktikum & Übung, Sonstiges). */
+  counts: Record<string, number>
+  /** The newest lecture file (by name: "Kapitel 07" after "Kapitel 06"). */
+  latestLecture?: string
+  /** Files saved in the last days (newest first, at most 3). */
   recent: Array<{ path: string; mtime: number }>
-  /** PDFs with own highlights/notes (path of the PDF, notes page). */
+  recentCount: number
   annotated: Array<{ pdf: string; notes: string }>
   notes: Page[]
   code: Page[]
+  nextSession?: {
+    title: string
+    day: string
+    start: string
+    end?: string
+    room?: string
+    type?: string
+    at: Date
+  }
+  nextExam?: { page: Page; date: string }
+  openTasks: Page[]
+  courses: string[]
 }
 
 const CATEGORIES = ['Vorlesung', 'Praktikum & Übung', 'Sonstiges']
+/** Colours for modules without "Farbe": stable per module, no gray/brown (too dull for cards). */
+const PALETTE: Color[] = ['blue', 'green', 'purple', 'orange', 'pink', 'yellow', 'red']
+
+/** The module's colour: its "Farbe" property, else one derived from its number/name. */
+export function moduleColor(module: Page): Color {
+  const own = module.data.Farbe
+  if (typeof own === 'string' && (COLORS as readonly string[]).includes(own)) return own as Color
+  const key = String(module.data.Nr ?? module.title)
+  let hash = 0
+  for (const ch of key) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0
+  return PALETTE[hash % PALETTE.length]!
+}
 
 /** PDFs that have a notes page next to them ("X (Notizen).md" with pdf: X.pdf). */
 export function annotatedPdfs(ws: Workspace): Array<{ pdf: string; notes: string; mtime: number }> {
@@ -39,53 +67,111 @@ export function annotatedPdfs(ws: Workspace): Array<{ pdf: string; notes: string
     .sort((a, b) => b.mtime - a.mtime)
 }
 
-export function activeModules(ws: Workspace, folder: string, now = Date.now(), days = 14): ActiveModule[] {
+/** The next start of a weekly session from `now` (today later counts). */
+export function nextOccurrence(row: Pick<TimetableRow, 'day' | 'start'>, now: Date): Date | undefined {
+  const idx = DAYS.indexOf(row.day as (typeof DAYS)[number])
+  if (idx < 0 || !row.start) return undefined
+  const [h, m] = row.start.split(':').map(Number)
+  for (let offset = 0; offset < 8; offset++) {
+    const d = new Date(now)
+    d.setDate(now.getDate() + offset)
+    if ((d.getDay() + 6) % 7 !== idx) continue
+    d.setHours(h ?? 0, m ?? 0, 0, 0)
+    if (d > now) return d
+  }
+  return undefined
+}
+
+const linksTo = (page: { path: string }, module: Page, ws: Workspace) =>
+  ws.backlinks(module.path).some((p) => p.path === page.path)
+
+export function activeModules(
+  ws: Workspace,
+  folder: string,
+  materials: string,
+  timetable: TimetableRow[] = [],
+  now = new Date(),
+  days = 14,
+): ActiveModule[] {
   const modulesDb = `${folder}/Module.md`
   if (!ws.get(modulesDb)?.database) return []
   const assets = ws.assets()
   const annotated = annotatedPdfs(ws)
+  const today = now.toISOString().slice(0, 10)
+  const rowsOf = (db: string) => (ws.get(`${folder}/${db}.md`)?.database ? ws.rows(`${folder}/${db}.md`) : [])
+  const exams = rowsOf('Prüfungen')
+  const tasks = rowsOf('Aufgaben')
   const out: ActiveModule[] = []
   for (const row of ws.rows(modulesDb)) {
     const belegung = Array.isArray(row.data.Belegung) ? row.data.Belegung.map(String) : []
     if (!belegung.length) continue
     const module = ws.get(row.path)!
-    const linking = ws.backlinks(row.path)
-    const courses: CourseFiles[] = linking
-      .filter((p) => typeof p.data.Ordner === 'string' && p.data.moodle)
-      .map((course) => {
-        const dir = String(course.data.Ordner)
-        const groups: Record<string, string[]> = {}
-        for (const f of assets) {
-          if (!f.path.startsWith(`${dir}/`)) continue
-          const head = f.path.slice(dir.length + 1).split('/')[0]!
-          const group = CATEGORIES.includes(head) ? head : 'Sonstiges'
-          ;(groups[group] ??= []).push(f.path)
-        }
-        return { course, folder: dir, groups }
-      })
-    const folders = courses.map((c) => `${c.folder}/`)
-    const inModule = (path: string) => folders.some((f) => path.startsWith(f))
+    const dir = `${materials}/${row.title.replace(/[\\/:*?"<>|]/g, '-')}`
+    const files = assets.filter((f) => f.path.startsWith(`${dir}/`))
+    const counts: Record<string, number> = {}
+    for (const f of files) {
+      const head = f.path.slice(dir.length + 1).split('/')[0]!
+      const group = CATEGORIES.includes(head) ? head : 'Sonstiges'
+      counts[group] = (counts[group] ?? 0) + 1
+    }
+    const lectures = files
+      .filter((f) => f.path.startsWith(`${dir}/Vorlesung/`) && /\.(pdf|pptx?)$/i.test(f.path))
+      .sort((a, b) => b.path.localeCompare(a.path, 'de', { numeric: true }))
+    const recent = files
+      .filter((f) => now.getTime() - f.mtime < days * 86_400_000)
+      .sort((a, b) => b.mtime - a.mtime)
+    const sessions = timetable
+      .filter((s) => s.module === row.title)
+      .map((s) => ({ s, at: nextOccurrence(s, now) }))
+      .filter((x): x is { s: TimetableRow; at: Date } => !!x.at)
+      .sort((a, b) => a.at.getTime() - b.at.getTime())
+    const exam = exams
+      .filter((e) => typeof e.data.Datum === 'string' && e.data.Datum >= today && linksTo(e, module, ws))
+      .sort((a, b) => String(a.data.Datum).localeCompare(String(b.data.Datum)))[0]
+    const next = sessions[0]
     out.push({
       module,
       belegung,
-      courses,
-      recent: assets
-        .filter((f) => inModule(f.path) && now - f.mtime < days * 86_400_000)
-        .sort((a, b) => b.mtime - a.mtime)
-        .slice(0, 12)
-        .map((f) => ({ path: f.path, mtime: f.mtime })),
-      annotated: annotated.filter((a) => inModule(a.pdf)),
-      notes: linking.filter(
-        (p) => !p.data.moodle && !p.data.pruefungsplan && p.path.includes('/Mitschriften/'),
-      ),
+      color: moduleColor(module),
+      folder: dir,
+      counts,
+      ...(lectures[0] ? { latestLecture: lectures[0].path } : {}),
+      recent: recent.slice(0, 3).map((f) => ({ path: f.path, mtime: f.mtime })),
+      recentCount: recent.length,
+      annotated: annotated.filter((a) => a.pdf.startsWith(`${dir}/`)),
+      notes: ws.backlinks(row.path).filter((p) => p.path.includes('/Mitschriften/')),
       code: ws.all().filter((p) => p.data.code === true && p.path.startsWith(`${row.path.slice(0, -3)}/`)),
+      ...(next
+        ? {
+            nextSession: {
+              title: next.s.title,
+              day: next.s.day!,
+              start: next.s.start!,
+              ...(next.s.end ? { end: next.s.end } : {}),
+              ...(next.s.room ? { room: next.s.room } : {}),
+              ...(next.s.type ? { type: next.s.type } : {}),
+              at: next.at,
+            },
+          }
+        : {}),
+      ...(exam ? { nextExam: { page: ws.get(exam.path)!, date: String(exam.data.Datum) } } : {}),
+      openTasks: tasks
+        .filter((t) => t.data.Status !== 'Erledigt' && linksTo(t, module, ws))
+        .map((t) => ws.get(t.path)!)
+        .sort((a, b) => String(a.data.Fällig ?? '9').localeCompare(String(b.data.Fällig ?? '9'))),
+      courses: courseIdsOf(row.data),
     })
   }
-  return out.sort((a, b) =>
-    String(a.module.data.Nr ?? a.module.title).localeCompare(
-      String(b.module.data.Nr ?? b.module.title),
-      'de',
-      { numeric: true },
-    ),
+  // Soonest session first – the card you need next is on top.
+  return out.sort(
+    (a, b) =>
+      (a.nextSession?.at.getTime() ?? Infinity) - (b.nextSession?.at.getTime() ?? Infinity) ||
+      String(a.module.data.Nr ?? a.module.title).localeCompare(
+        String(b.module.data.Nr ?? b.module.title),
+        'de',
+        {
+          numeric: true,
+        },
+      ),
   )
 }

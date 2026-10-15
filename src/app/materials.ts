@@ -1,6 +1,8 @@
 import { withProgress } from '@/app/progress'
 import { t } from '@/i18n'
 import { importTargets, type MoodleMaterial, type MoodleSnapshot } from '@/lib/moodle'
+import { materialFolderFor, moduleOfCourse } from '@/lib/study/modules'
+import { findStudyDashboard } from '@/lib/study/sync'
 import { electronBridge } from '@/lib/vault'
 import type { Workspace } from '@/lib/workspace'
 
@@ -39,9 +41,34 @@ export function materialFolder(ws: Workspace): string {
   return target?.folder ? `${target.folder}/Unterlagen` : 'Unterlagen'
 }
 
+/**
+ * Where a course's files go: "Unterlagen/<Modul>" when a module page lists the course (`kurse:`),
+ * else "Unterlagen/Orga/<Kurs>". `moduleNames` (course id → module name from the study plan) helps
+ * before the module pages exist.
+ */
+export function courseFolder(
+  ws: Workspace,
+  course: { id: string; name: string },
+  moduleNames: Record<string, string> = {},
+): string {
+  const dash = findStudyDashboard(ws)
+  const rows = dash && ws.get(`${dash.folder}/Module.md`) ? ws.rows(`${dash.folder}/Module.md`) : []
+  return materialFolderFor(
+    materialFolder(ws),
+    course,
+    moduleOfCourse(rows, course.id)?.title ?? moduleNames[course.id],
+  )
+}
+
 /** Saves a material into the vault (main process downloads it) and remembers where. */
-export async function saveMaterial(ws: Workspace, material: MoodleMaterial): Promise<string> {
-  const { path } = await electronBridge()!.moodle!.download(material.id, materialFolder(ws))
+export async function saveMaterial(
+  ws: Workspace,
+  material: MoodleMaterial,
+  course: { id: string; name: string } = { id: material.courseId, name: 'Kurs' },
+  moduleNames: Record<string, string> = {},
+): Promise<string> {
+  const folder = courseFolder(ws, course, moduleNames)
+  const { path } = await electronBridge()!.moodle!.download(material.id, folder)
   await ws.reload()
   const entries = await loadEntries(ws)
   await ws.writeMeta(META, {
@@ -72,6 +99,7 @@ export function syncMaterials(ws: Workspace, snapshot: MoodleSnapshot): Promise<
     const todo = await missingMaterials(ws, snapshot)
     if (todo.length === 0) return 0
     const course = (id: string) => snapshot.courses.find((c) => c.id === id)?.name ?? ''
+    const moduleNames = await moduleNamesOf(ws, snapshot)
     return withProgress(
       t('materials.saving'),
       async (task) => {
@@ -80,7 +108,7 @@ export function syncMaterials(ws: Workspace, snapshot: MoodleSnapshot): Promise<
         for (const [i, m] of todo.entries()) {
           task.update(i, todo.length, `${course(m.courseId)} · ${m.filename ?? m.title}`)
           try {
-            await saveMaterial(ws, m)
+            await saveMaterial(ws, m, { id: m.courseId, name: course(m.courseId) || 'Kurs' }, moduleNames)
             saved++
           } catch {
             failed.push(m.filename ?? m.title)
@@ -95,6 +123,14 @@ export function syncMaterials(ws: Workspace, snapshot: MoodleSnapshot): Promise<
     )
   })().finally(() => (running = null))
   return running
+}
+
+/** Course id → module name from the study plan (before the module pages exist). */
+async function moduleNamesOf(ws: Workspace, snapshot: MoodleSnapshot): Promise<Record<string, string>> {
+  const { previewStudy } = await import('@/app/study')
+  const preview = previewStudy(ws, { moodle: snapshot, exams: null })
+  if (!preview.ok) return {}
+  return Object.fromEntries(preview.state.modules.flatMap((m) => m.courses.map((c) => [c.id, m.module.name])))
 }
 
 export const isPdf = (path: string) => /\.pdf$/i.test(path)

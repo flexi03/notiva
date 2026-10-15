@@ -1,3 +1,4 @@
+import { courseIdsOf } from '@/lib/study/modules'
 import { useEffect, useMemo } from 'react'
 import { AppWindow, ExternalLink, GraduationCap, RefreshCw } from 'lucide-react'
 import { moodleAvailable, useMoodle } from '@/app/moodle'
@@ -24,6 +25,8 @@ export function MoodleScreen() {
     const map = new Map<string, string>()
     for (const page of ws.all())
       if (typeof page.data.moodle === 'string') map.set(page.data.moodle, page.path)
+      // Study folder: a module page lists its courses of all terms.
+      else for (const id of courseIdsOf(page.data)) map.set(id, page.path)
     return map
     // ws.version: re-index after imports.
     // eslint-disable-next-line react-hooks/exhaustive-deps

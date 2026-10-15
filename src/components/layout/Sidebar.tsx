@@ -4,6 +4,8 @@ import {
   CalendarDays,
   Code2,
   FileText,
+  CalendarClock,
+  CircleHelp,
   GraduationCap,
   LayoutTemplate,
   LogOut,
@@ -124,20 +126,28 @@ export function Sidebar() {
           active={route.name === 'templates'}
           onClick={() => navigate({ name: 'templates' })}
         />
-        {moodleAvailable() && (
-          <NavButton
-            icon={<GraduationCap size={15} />}
-            label={t('nav.moodle')}
-            active={route.name === 'moodle'}
-            onClick={() => navigate({ name: 'moodle' })}
-          />
-        )}
         {findStudyDashboard(ws) && (
           <NavButton
             icon={<BookOpenCheck size={15} />}
             label={t('nav.semester')}
             active={route.name === 'semester'}
             onClick={() => navigate({ name: 'semester' })}
+          />
+        )}
+        {findStudyDashboard(ws) && (
+          <NavButton
+            icon={<CalendarClock size={15} />}
+            label={t('nav.timetable')}
+            active={route.name === 'timetable'}
+            onClick={() => navigate({ name: 'timetable' })}
+          />
+        )}
+        {moodleAvailable() && (
+          <NavButton
+            icon={<GraduationCap size={15} />}
+            label={t('nav.moodle')}
+            active={route.name === 'moodle'}
+            onClick={() => navigate({ name: 'moodle' })}
           />
         )}
         {moodleAvailable() && (
@@ -148,6 +158,12 @@ export function Sidebar() {
             onClick={() => navigate({ name: 'grades' })}
           />
         )}
+        <NavButton
+          icon={<CircleHelp size={15} />}
+          label={t('nav.help')}
+          active={route.name === 'help'}
+          onClick={() => navigate({ name: 'help' })}
+        />
       </div>
 
       <div className="mt-1 min-h-0 flex-1 overflow-y-auto px-2 pb-2">

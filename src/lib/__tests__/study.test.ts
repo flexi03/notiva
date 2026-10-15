@@ -2,7 +2,6 @@ import { installPack, studyPack } from '../packs'
 import { MemoryVault } from '../vault'
 import { Workspace } from '../workspace'
 import { moduleResults, type ExamRecord } from '../ecampus'
-import { courseInfoOf } from '../moodleInfo'
 import { HSD_BMI_2018 } from '../study/catalog'
 import { isOrgaCourse, matchExam, matchModuleName, nameScore } from '../study/match'
 import { studyState } from '../study/state'
@@ -190,7 +189,7 @@ describe('study folder sync', () => {
     expect(readStudySetup({ studium: { programm: 'x', beginn: 'kein Semester' } })).toBeNull()
   })
 
-  it('creates all modules, semesters and courses and is idempotent', async () => {
+  it('creates all modules and semesters (no course pages) and is idempotent', async () => {
     const ws = await setup()
     const plan = planStudySync(ws, 'Studium', state())
     expect(plan.changes.filter((c) => c.what === 'module' && c.kind === 'create').length).toBeGreaterThan(30)
@@ -215,13 +214,8 @@ describe('study folder sync', () => {
     const sem5 = ws.rows('Studium/Semester.md').find((r) => r.data.fachsemester === 5)!
     expect(sem5.data).toMatchObject({ Zeitraum: 'WiSe 26/27', Status: 'Aktiv', 'ECTS Plan': 30 })
     expect(ws.get(sem5.path)!.body).toContain('value: "WiSe 26/27"')
-    const courses = ws.rows('Studium/Kurse.md')
-    expect(courses.find((c) => c.data.moodle === 'course:2')!.data).toMatchObject({
-      Art: 'Modul',
-      Semester: 'WiSe 25/26',
-      Modul: ['[[Software Engineering]]'],
-    })
-    expect(courses.find((c) => c.data.moodle === 'course:4')!.data.Art).toBe('Orga')
+    // No course pages: the module is the centre (its courses are in `kurse`).
+    expect(ws.get('Studium/Kurse.md')).toBeUndefined()
     // Second run: nothing left to do.
     expect(planStudySync(ws, 'Studium', state()).changes).toEqual([])
   })
@@ -237,15 +231,41 @@ describe('study folder sync', () => {
     expect(ws.rows('Studium/Semester.md').some((r) => r.data.fachsemester === 10)).toBe(true)
   })
 
-  it('writes the Moodle texts into the course page', async () => {
+  it('moves a former Kurse database into the modules – files, own notes – after asking', async () => {
     const ws = await setup()
-    const info = { 'course:3': courseInfoOf('course:3', { course: { summary: '<p>Klausur am 03.02.</p>' } }) }
-    const plan = planStudySync(ws, 'Studium', state(), info)
+    await planStudySync(ws, 'Studium', state()).apply()
+    // Notiva < 0.1.4: a course page with its folder and own notes.
+    await ws.writeFile(
+      'Studium/Kurse.md',
+      '---\ndatabase:\n  properties:\n    - { name: Ordner, type: text }\n---\n',
+    )
+    await ws.reload()
+    await ws.createRow('Studium/Kurse.md', 'BMI 13 SE WiSe 25', {
+      moodle: 'course:2',
+      Ordner: 'Studium/Unterlagen/BMI 13 SE WiSe 25',
+    })
+    const course = ws.rows('Studium/Kurse.md')[0]!
+    await ws.save(course.path, { body: 'Aus Moodle …\n\n## Meine Notizen\n\nKlausur: Kapitel 3 lernen\n' })
+    await ws.writeFile('Studium/Unterlagen/BMI 13 SE WiSe 25/Vorlesung/SE-01.pdf', new Uint8Array([1]))
+    await ws.writeMeta('moodle-files.json', { m1: { path: 'Studium/Unterlagen/BMI 13 SE WiSe 25/Vorlesung/SE-01.pdf' } })
+
+    const plan = planStudySync(ws, 'Studium', state())
+    const migrate = plan.changes.filter((c) => c.what === 'migrate')
+    expect(migrate.map((c) => c.title)).toEqual(['BMI 13 SE WiSe 25', 'Kurse'])
+    expect(migrate[0]!.detail).toContain('Software Engineering')
+    // Nothing happens before the user confirms.
+    expect(ws.has('Studium/Unterlagen/BMI 13 SE WiSe 25/Vorlesung/SE-01.pdf')).toBe(true)
     await plan.apply()
-    const page = ws.rows('Studium/Kurse.md').find((r) => r.data.moodle === 'course:3')!
-    expect(page.body).toContain('Klausur am 03.02.')
-    expect(page.body).toContain('## Meine Notizen')
-    expect(planStudySync(ws, 'Studium', state(), info).changes).toEqual([])
+
+    expect(ws.has('Studium/Unterlagen/Software Engineering/Vorlesung/SE-01.pdf')).toBe(true)
+    expect(await ws.readMeta('moodle-files.json')).toEqual({
+      m1: { path: 'Studium/Unterlagen/Software Engineering/Vorlesung/SE-01.pdf' },
+    })
+    const se = ws.rows('Studium/Module.md').find((r) => r.data.modul === 'BMI 13')!
+    expect(ws.get(se.path)!.body).toContain('## Notizen aus „BMI 13 SE WiSe 25“')
+    expect(ws.get(se.path)!.body).toContain('Kapitel 3 lernen')
+    expect(ws.get('Studium/Kurse.md')).toBeUndefined()
+    expect(planStudySync(ws, 'Studium', state()).changes).toEqual([])
   })
 
   it('adopts existing pages and keeps a status the user chose', async () => {

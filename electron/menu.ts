@@ -111,6 +111,15 @@ export function buildMenu(getWindow: () => BrowserWindow | null): void {
       ],
     },
     { role: 'windowMenu', label: 'Fenster' },
+    {
+      label: 'Hilfe',
+      role: 'help',
+      submenu: [
+        item('So funktioniert Notiva', 'help'),
+        item('Stundenplan', 'timetable'),
+        item('Nach Updates suchen …', 'checkUpdates'),
+      ],
+    },
   ]
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }

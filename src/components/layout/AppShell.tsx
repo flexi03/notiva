@@ -20,6 +20,7 @@ import { SettingsPanel } from './SettingsPanel'
 import { TextContextMenu } from './TextContextMenu'
 import { EventBadge } from './EventBadge'
 import { ShelfPanel } from './ShelfPanel'
+import { StudySyncDialog } from '@/components/study/StudySyncDialog'
 import { NotificationPanel, openNotification } from '@/components/notifications/NotificationPanel'
 import { taskReminders, useNotifications } from '@/app/notifications'
 import type { Workspace } from '@/lib/workspace'
@@ -210,6 +211,7 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
       <ActivityBar side="right" />
       <DiffSheet />
       <MoodleImportDialog />
+      <StudyDialogHost />
       {overlays}
       <PeekHost />
       <PromptHost />
@@ -258,4 +260,10 @@ function useNotificationSync(ws: Workspace): void {
       clearInterval(timer)
     }
   }, [ws])
+}
+
+/** The study sync preview, opened from a hint ("3 Änderungen im Studium – Ansehen"). */
+function StudyDialogHost() {
+  const open = useApp((s) => s.studyDialog)
+  return open ? <StudySyncDialog onClose={() => useApp.getState().setStudyDialog(false)} /> : null
 }

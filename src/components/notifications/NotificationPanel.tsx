@@ -1,3 +1,4 @@
+import { courseIdsOf } from '@/lib/study/modules'
 import { useEffect, useState } from 'react'
 import {
   RefreshCw,
@@ -51,7 +52,10 @@ export async function openNotification(n: AppNotification, ws: Workspace): Promi
     return app.navigate(saved ? { name: 'file', path: saved } : { name: 'moodle', course: target.courseId })
   }
   if (target.type === 'course') {
-    const coursePage = ws.all().find((p) => p.data.moodle === target.courseId)
+    // The module page that lists the course (older vaults: a page with `moodle:`).
+    const coursePage = ws
+      .all()
+      .find((p) => courseIdsOf(p.data).includes(target.courseId) || p.data.moodle === target.courseId)
     return coursePage
       ? app.openEntry(coursePage.path)
       : app.navigate({ name: 'moodle', course: target.courseId })

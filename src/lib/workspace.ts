@@ -768,6 +768,26 @@ export class Workspace {
     })
   }
 
+  /** Moves files (pages or not) – one reload at the end. Existing targets are never overwritten. */
+  moveFiles(moves: Array<{ from: string; to: string }>): Promise<Array<{ from: string; to: string }>> {
+    return this.run(async () => {
+      await this.flushPending()
+      const done: Array<{ from: string; to: string }> = []
+      const taken = new Set(this.files.map((f) => f.path))
+      for (const { from, to } of moves) {
+        if (!taken.has(from) || from === to) continue
+        let target = to
+        for (let i = 2; taken.has(target); i++) target = to.replace(/(\.[^./]+)?$/, ` ${i}$1`)
+        await this.vault.rename(from, target)
+        taken.delete(from)
+        taken.add(target)
+        done.push({ from, to: target })
+      }
+      await this.reload()
+      return done
+    })
+  }
+
   /** Deletes a non-Markdown file (pages go to the trash instead). */
   removeFile(path: string): Promise<void> {
     return this.run(async () => {

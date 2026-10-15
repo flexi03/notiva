@@ -1,6 +1,6 @@
 import type { TemplatePack } from '../templates'
 import { PROFILE_PAGE } from '../university'
-import { COURSE_DB, MODULE_PROPERTIES, MODULE_ROW_TEMPLATE, MODULE_VIEWS } from '../study/sync'
+import { MODULE_PROPERTIES, MODULE_ROW_TEMPLATE, MODULE_VIEWS } from '../study/sync'
 
 /**
  * Study planner: dashboard + semesters, modules, exams, tasks, timetable, notes and templates.
@@ -144,11 +144,10 @@ Alles, was nicht zu einem einzelnen Modul gehört: Prüfungsplan, Fristen, Studi
 
 ## Allgemeine Kurse aus Moodle
 
+Kurse, die zu keinem Modul gehören (Einführung, Fachschaft, Infos). Die Kurse deiner Module stehen auf den Modulseiten.
+
 \`\`\`notiva
-type: view
-source: "{{name}}/Kurse"
-view: Alle
-filter: [{ property: Art, op: neq, value: Modul }]
+type: moodle-courses
 \`\`\`
 
 ## Wichtige Links
@@ -303,7 +302,6 @@ export const studyPack: TemplatePack = {
     { path: '{{name}}/Aufgaben.md', content: TASKS },
     { path: '{{name}}/Stundenplan.md', content: TIMETABLE },
     { path: '{{name}}/Mitschriften.md', content: NOTES },
-    { path: '{{name}}/Kurse.md', content: COURSE_DB('{{name}}') },
     { path: '{{name}}/Orga.md', content: ORGA },
     { path: '{{name}}/Hochschule.md', content: PROFILE_PAGE },
     { path: '{{name}}/Vorlagen/Vorlesungsnotiz.md', content: LECTURE_TEMPLATE },

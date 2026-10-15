@@ -67,7 +67,7 @@ export function CourseScreen({ courseId }: { courseId: string }) {
   /** Opens the saved copy – downloading it first if needed. PDFs open in Notiva's viewer. */
   const openMaterial = (m: MoodleMaterial) =>
     withBusy(m.id, async () => {
-      const path = map[m.id] ?? (await saveMaterial(ws, m))
+      const path = map[m.id] ?? (await saveMaterial(ws, m, { id: m.courseId, name: course?.name ?? 'Kurs' }))
       reloadMap()
       if (isPdf(path) || /\.(png|jpe?g|gif|webp|txt|md|csv)$/i.test(path)) navigate({ name: 'file', path })
       else await electronBridge()?.openWithSystem?.(path)
@@ -81,7 +81,7 @@ export function CourseScreen({ courseId }: { courseId: string }) {
         async (task) => {
           for (const [i, m] of todo.entries()) {
             task.update(i, todo.length, m.filename ?? m.title)
-            await saveMaterial(ws, m)
+            await saveMaterial(ws, m, { id: m.courseId, name: course?.name ?? 'Kurs' })
           }
           return todo.length
         },

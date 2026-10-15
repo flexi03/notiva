@@ -13,11 +13,15 @@ export function PromptHost() {
 function PromptDialog() {
   const prompt = useApp((s) => s.prompt)!
   const [value, setValue] = useState(prompt.initial ?? prompt.choices?.[0]?.value ?? '')
-  const submit = () => prompt.resolve(prompt.confirm ? 'ok' : value)
+  const [ticked, setTicked] = useState(
+    () => new Set((prompt.checklist ?? []).filter((c) => c.checked).map((c) => c.value)),
+  )
+  const submit = () =>
+    prompt.resolve(prompt.checklist ? JSON.stringify([...ticked]) : prompt.confirm ? 'ok' : value)
   return (
     <Dialog
       open
-      size="sm"
+      size={prompt.checklist ? 'md' : 'sm'}
       title={prompt.title}
       closeLabel={t('common.close')}
       onClose={() => prompt.resolve(null)}
@@ -29,7 +33,7 @@ function PromptDialog() {
           <Button
             variant={prompt.danger ? 'danger' : 'primary'}
             onClick={submit}
-            disabled={!prompt.confirm && !value.trim()}
+            disabled={prompt.checklist ? ticked.size === 0 : !prompt.confirm && !value.trim()}
             data-autofocus={prompt.confirm ? true : undefined}
           >
             {prompt.confirmLabel}
@@ -37,7 +41,36 @@ function PromptDialog() {
         </>
       }
     >
-      {prompt.choices ? (
+      {prompt.checklist ? (
+        <div className="space-y-1">
+          {prompt.label && <p className="mb-2 text-sm text-ink-2">{prompt.label}</p>}
+          <ul className="max-h-[50vh] space-y-0.5 overflow-y-auto">
+            {prompt.checklist.map((c) => (
+              <li key={c.value}>
+                <label className="flex items-start gap-2 rounded-control px-2 py-1.5 text-sm hover:bg-hover">
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={ticked.has(c.value)}
+                    onChange={(e) =>
+                      setTicked((s) => {
+                        const next = new Set(s)
+                        if (e.target.checked) next.add(c.value)
+                        else next.delete(c.value)
+                        return next
+                      })
+                    }
+                  />
+                  <span>
+                    {c.label}
+                    {c.detail && <span className="block text-[12.5px] text-ink-3">{c.detail}</span>}
+                  </span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : prompt.choices ? (
         <div role="radiogroup" aria-label={prompt.label ?? prompt.title} className="space-y-1">
           {prompt.label && <p className="mb-2 text-sm text-ink-2">{prompt.label}</p>}
           {prompt.choices.map((c) => (

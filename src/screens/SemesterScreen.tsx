@@ -1,72 +1,75 @@
-import { BookOpen, Code2, FileText, NotebookPen, Sparkles, SquareTerminal } from 'lucide-react'
+import type { ReactNode } from 'react'
+import {
+  CalendarClock,
+  CheckSquare,
+  ExternalLink,
+  FileText,
+  GraduationCap,
+  Highlighter,
+  NotebookPen,
+  Plus,
+  Sparkles,
+  SquareTerminal,
+} from 'lucide-react'
 import { createCodeFolder } from '@/components/code/CodeFolder'
-import { useState } from 'react'
+import { materialFolder } from '@/app/materials'
+import { timetableRows } from '@/app/schedule'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { getLanguage, t } from '@/i18n'
-import { activeModules } from '@/lib/semesterView'
+import { toIsoDate } from '@/lib/dates'
+import { activeModules, type ActiveModule } from '@/lib/semesterView'
 import { findStudyDashboard } from '@/lib/study/sync'
-import { Button, Chip, cx, EmptyState, Switch } from '@/components/ui'
+import { Button, Chip, EmptyState } from '@/components/ui'
 import { Topbar } from '@/components/layout/Topbar'
 
-const name = (path: string) => path.split('/').pop()!
+const fileName = (path: string) => path.split('/').pop()!
+
+/** "heute 09:00", "morgen 14:00", "Mi 10:00" */
+function when(at: Date, now: Date, locale: string): string {
+  const days = Math.round(
+    (new Date(at).setHours(0, 0, 0, 0) - new Date(now).setHours(0, 0, 0, 0)) / 86_400_000,
+  )
+  const time = at.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
+  if (days === 0) return `${t('semester.today')} ${time}`
+  if (days === 1) return `${t('semester.tomorrow')} ${time}`
+  return `${at.toLocaleDateString(locale, { weekday: 'short' })} ${time}`
+}
+
+const inDays = (date: string, now: Date) =>
+  Math.round((Date.parse(`${date}T00:00:00`) - new Date(now).setHours(0, 0, 0, 0)) / 86_400_000)
 
 /**
- * "Mein Semester": only the modules attended now – each with its courses, new files, lecture and
- * lab files, PDFs with own notes, notes and code folders.
+ * "Mein Semester": one coloured card per module attended now – next session, exam, open tasks,
+ * the newest script, new files, notes and the lab, side by side as space allows. Files live on the
+ * module page; here is what matters this week.
  */
 export function SemesterScreen() {
   const ws = useWorkspace()
-  const { navigate, openEntry } = useApp()
-  const run = useAction()
+  const { navigate } = useApp()
   const dash = findStudyDashboard(ws)
-  const [showInactive, setShowInactive] = useState(() => {
-    try {
-      return localStorage.getItem('notiva:semester-inactive') === '1'
-    } catch {
-      return false
-    }
-  })
-  const modules = dash ? activeModules(ws, dash.folder) : []
-  const locale = getLanguage() === 'de' ? 'de-DE' : 'en-US'
-  const fileButton = (path: string, extra?: string) => (
-    <li key={path}>
-      <button
-        type="button"
-        className="flex w-full min-w-0 items-center gap-1.5 rounded-control px-1 py-0.5 text-left text-[13px] hover:bg-hover"
-        onClick={() => navigate({ name: 'file', path })}
-        title={path}
-      >
-        <FileText size={13} className="shrink-0 text-ink-3" />
-        <span className="min-w-0 flex-1 truncate">{name(path)}</span>
-        {extra && <span className="shrink-0 text-[11.5px] text-ink-3">{extra}</span>}
-      </button>
-    </li>
-  )
-  const allNew = modules
-    .flatMap((m) => m.recent.map((r) => ({ ...r, module: m.module.title })))
-    .sort((a, b) => b.mtime - a.mtime)
-    .slice(0, 15)
+  const now = new Date()
+  const modules = dash
+    ? activeModules(ws, dash.folder, materialFolder(ws), timetableRows(ws, dash.folder), now)
+    : []
 
   return (
     <>
       <Topbar title={t('semester.title')} />
-      <div className="mx-auto max-w-[var(--content-width)] px-4 py-8 sm:px-10">
-        <h1 className="mb-1 text-[2rem] font-bold">{t('semester.title')}</h1>
-        <p className="mb-2 text-[13px] text-ink-3">{t('semester.hint')}</p>
-        <div className="mb-6">
-          <Switch
-            checked={showInactive}
-            label={t('semester.showInactive')}
-            onChange={(v) => {
-              setShowInactive(v)
-              try {
-                localStorage.setItem('notiva:semester-inactive', v ? '1' : '0')
-              } catch {
-                /* private mode */
-              }
-            }}
-          />
-          <span className="ml-2 text-[13px] text-ink-2">{t('semester.showInactive')}</span>
+      <div className="mx-auto max-w-[96rem] px-4 py-8 sm:px-8">
+        <div className="mb-6 flex flex-wrap items-end gap-3">
+          <div className="min-w-0 flex-1">
+            <h1 className="mb-1 text-[2rem] font-bold">{t('semester.title')}</h1>
+            <p className="text-[13px] text-ink-3">{t('semester.hint')}</p>
+          </div>
+          {dash && (
+            <Button
+              size="sm"
+              icon={<CalendarClock size={14} />}
+              onClick={() => navigate({ name: 'timetable' })}
+            >
+              {t('nav.timetable')}
+            </Button>
+          )}
         </div>
         {modules.length === 0 ? (
           <EmptyState
@@ -83,166 +86,239 @@ export function SemesterScreen() {
             }
           />
         ) : (
-          <div className="space-y-6">
-            {allNew.length > 0 && (
-              <section aria-label={t('semester.new')} className="rounded-panel border border-line p-3">
-                <h2 className="mb-1 flex items-center gap-1.5 text-sm font-semibold">
-                  <Sparkles size={14} className="text-accent" /> {t('semester.new')}
-                </h2>
-                <ul>
-                  {allNew.map((f) =>
-                    fileButton(f.path, `${f.module} · ${new Date(f.mtime).toLocaleDateString(locale)}`),
-                  )}
-                </ul>
-              </section>
-            )}
+          <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,22rem),1fr))]">
             {modules.map((m) => (
-              <section
-                key={m.module.path}
-                aria-label={m.module.title}
-                className="rounded-panel border border-line p-3"
-              >
-                <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    className="text-left text-lg font-bold hover:underline"
-                    onClick={() => navigate({ name: 'page', path: m.module.path })}
-                  >
-                    {m.module.title}
-                  </button>
-                  {m.belegung.map((b) => (
-                    <Chip key={b}>{b}</Chip>
-                  ))}
-                  {typeof m.module.data.Status === 'string' && (
-                    <span className="text-[12.5px] text-ink-3">{m.module.data.Status}</span>
-                  )}
-                  {/* Labs: one click to the module's code folder – editor, terminal, task links. */}
-                  {(m.code.length > 0 || m.belegung.some((b) => b === 'Praktikum' || b === 'Übung')) && (
-                    <Button
-                      size="sm"
-                      className="ml-auto"
-                      icon={<SquareTerminal size={14} />}
-                      onClick={async () =>
-                        navigate({
-                          name: 'page',
-                          path: m.code[0]?.path ?? (await createCodeFolder(ws, m.module.path, 'Praktikum')),
-                        })
-                      }
-                    >
-                      {t('semester.lab')}
-                    </Button>
-                  )}
-                </div>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="min-w-0 space-y-1.5 md:col-span-2">
-                    {m.courses
-                      .filter((c) => showInactive || c.course.data.Aktiv !== false)
-                      .sort(
-                        (a, b) => Number(b.course.data.Aktiv === true) - Number(a.course.data.Aktiv === true),
-                      )
-                      .map((c) => {
-                        const active = c.course.data.Aktiv === true
-                        return (
-                          <details
-                            key={c.course.path}
-                            open={active}
-                            className={cx(
-                              'rounded-control border-l-4 px-2 py-1',
-                              active
-                                ? 'border-accent bg-[color-mix(in_srgb,var(--accent)_7%,transparent)]'
-                                : 'border-line opacity-75',
-                            )}
-                          >
-                            <summary className="flex cursor-pointer items-center gap-2 text-[13px] font-semibold text-ink-2">
-                              <BookOpen size={13} className={active ? 'text-accent' : ''} />
-                              <span className="min-w-0 flex-1 truncate">{c.course.title}</span>
-                              {typeof c.course.data.Semester === 'string' && (
-                                <span className="text-[11.5px] font-normal text-ink-3">
-                                  {c.course.data.Semester}
-                                </span>
-                              )}
-                              <span onClick={(e) => e.stopPropagation()} className="flex items-center">
-                                <Switch
-                                  checked={active}
-                                  label={t('semester.courseActive')}
-                                  onChange={(v) => void run(() => ws.setProperty(c.course.path, 'Aktiv', v))}
-                                />
-                              </span>
-                            </summary>
-                            <div className="mt-1 ml-5">
-                              <button
-                                type="button"
-                                className="mb-1 text-[12px] text-accent hover:underline"
-                                onClick={(e) => openEntry(c.course.path, e)}
-                              >
-                                {t('semester.courseInfo')}
-                              </button>
-                              {Object.keys(c.groups).length === 0 && (
-                                <p className="text-[12.5px] text-ink-3">{t('semester.noFiles')}</p>
-                              )}
-                              {['Vorlesung', 'Praktikum & Übung', 'Sonstiges']
-                                .filter((g) => c.groups[g]?.length)
-                                .map((g) => (
-                                  <details key={g} open={g !== 'Sonstiges'} className="mb-1">
-                                    <summary className="cursor-pointer text-[12.5px] text-ink-2">
-                                      {g} ({c.groups[g]!.length})
-                                    </summary>
-                                    <ul className="ml-2">
-                                      {c.groups[g]!.slice(0, 60).map((f) => fileButton(f))}
-                                    </ul>
-                                  </details>
-                                ))}
-                            </div>
-                          </details>
-                        )
-                      })}
-                  </div>
-                  <div className="min-w-0 space-y-2">
-                    {m.annotated.length > 0 && (
-                      <div>
-                        <h3 className="mb-0.5 text-[12.5px] font-semibold text-ink-2">
-                          {t('semester.annotated')}
-                        </h3>
-                        <ul>{m.annotated.map((a) => fileButton(a.pdf))}</ul>
-                      </div>
-                    )}
-                    {m.notes.length > 0 && (
-                      <div>
-                        <h3 className="mb-0.5 text-[12.5px] font-semibold text-ink-2">
-                          {t('semester.notes')}
-                        </h3>
-                        <ul>
-                          {m.notes.map((n) => (
-                            <li key={n.path}>
-                              <button
-                                type="button"
-                                className="flex items-center gap-1.5 text-[13px] hover:underline"
-                                onClick={(e) => openEntry(n.path, e)}
-                              >
-                                <NotebookPen size={13} className="text-ink-3" /> {n.title}
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {m.code.map((c) => (
-                      <button
-                        key={c.path}
-                        type="button"
-                        className="flex items-center gap-1.5 text-[13px] hover:underline"
-                        onClick={() => navigate({ name: 'page', path: c.path })}
-                      >
-                        <Code2 size={13} className="text-ink-3" /> {c.title}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </section>
+              <ModuleCard key={m.module.path} m={m} now={now} />
             ))}
           </div>
         )}
       </div>
     </>
+  )
+}
+
+function ModuleCard({ m, now }: { m: ActiveModule; now: Date }) {
+  const ws = useWorkspace()
+  const { navigate, openEntry } = useApp()
+  const run = useAction()
+  const locale = getLanguage() === 'de' ? 'de-DE' : 'en-US'
+  const status = typeof m.module.data.Status === 'string' ? m.module.data.Status : ''
+  const grade = typeof m.module.data.Note === 'number' ? m.module.data.Note : undefined
+  const tries = typeof m.module.data.Versuche === 'number' ? m.module.data.Versuche : 0
+  const lab = m.code.length > 0 || m.belegung.some((b) => b === 'Praktikum' || b === 'Übung')
+  const notesDb = ws.findDatabase('Mitschriften', m.module.path)
+  const examDays = m.nextExam ? inDays(m.nextExam.date, now) : undefined
+
+  const newNote = () =>
+    run(async () => {
+      const path = await ws.createRow(notesDb!.path, `${m.module.title} – ${toIsoDate(now)}`, {
+        Modul: [`[[${ws.linkText(m.module.path)}]]`],
+        Datum: toIsoDate(now),
+        Art: 'Vorlesung',
+      })
+      navigate({ name: 'page', path })
+    })
+
+  return (
+    <section
+      aria-label={m.module.title}
+      className="flex flex-col overflow-hidden rounded-panel border border-line bg-surface"
+      style={{ borderTop: `4px solid var(--opt-${m.color}-ink)` }}
+      data-color={m.color}
+    >
+      <header className="px-3 pt-2.5 pb-2" style={{ background: `var(--opt-${m.color})` }}>
+        <div className="flex items-start gap-2">
+          <button
+            type="button"
+            className="min-w-0 flex-1 text-left text-[1.05rem] leading-snug font-bold hover:underline"
+            style={{ color: `var(--opt-${m.color}-ink)` }}
+            onClick={() => navigate({ name: 'page', path: m.module.path })}
+          >
+            {m.module.title}
+          </button>
+          {grade !== undefined && (
+            <span className="shrink-0 rounded-full bg-surface px-2 text-[12.5px] font-semibold tabular-nums">
+              {grade.toLocaleString(locale, { minimumFractionDigits: 1 })}
+            </span>
+          )}
+        </div>
+        <div className="mt-1 flex flex-wrap items-center gap-1">
+          {m.belegung.map((b) => (
+            <Chip key={b}>{b}</Chip>
+          ))}
+          {status && <span className="text-[12px] text-ink-2">{status}</span>}
+          {tries > 1 && (
+            <span className="text-[12px] text-ink-2">· {t('semester.tries', { count: tries })}</span>
+          )}
+        </div>
+      </header>
+
+      <ul className="flex-1 space-y-1.5 px-3 py-2.5 text-[13px]">
+        <Info icon={<CalendarClock size={14} />} label={t('semester.next')}>
+          {m.nextSession ? (
+            <button
+              type="button"
+              className="text-left hover:underline"
+              onClick={() => navigate({ name: 'timetable' })}
+            >
+              <span className="font-medium">{when(m.nextSession.at, now, locale)}</span>
+              {m.nextSession.end && `–${m.nextSession.end}`}
+              {m.nextSession.type && ` · ${m.nextSession.type}`}
+              {m.nextSession.room && <span className="text-ink-3"> · {m.nextSession.room}</span>}
+            </button>
+          ) : (
+            <span className="text-ink-3">{t('semester.noSession')}</span>
+          )}
+        </Info>
+        {m.nextExam && (
+          <Info icon={<GraduationCap size={14} />} label={t('semester.exam')}>
+            <button
+              type="button"
+              className="text-left hover:underline"
+              onClick={(e) => openEntry(m.nextExam!.page.path, e)}
+            >
+              {new Date(`${m.nextExam.date}T00:00:00`).toLocaleDateString(locale, {
+                day: '2-digit',
+                month: '2-digit',
+              })}
+              <span
+                className={
+                  examDays !== undefined && examDays <= 14 ? ' font-semibold text-danger' : ' text-ink-3'
+                }
+              >
+                {' '}
+                · {t('semester.inDays', { count: examDays ?? 0 })}
+              </span>
+            </button>
+          </Info>
+        )}
+        {m.openTasks.length > 0 && (
+          <Info icon={<CheckSquare size={14} />} label={t('semester.tasks')}>
+            <button
+              type="button"
+              className="text-left hover:underline"
+              onClick={(e) => openEntry(m.openTasks[0]!.path, e)}
+            >
+              {m.openTasks[0]!.title}
+              {typeof m.openTasks[0]!.data.Fällig === 'string' && (
+                <span className="text-ink-3">
+                  {' '}
+                  ·{' '}
+                  {new Date(`${m.openTasks[0]!.data.Fällig}T00:00:00`).toLocaleDateString(locale, {
+                    day: '2-digit',
+                    month: '2-digit',
+                  })}
+                </span>
+              )}
+              {m.openTasks.length > 1 && <span className="text-ink-3"> +{m.openTasks.length - 1}</span>}
+            </button>
+          </Info>
+        )}
+        {m.latestLecture && (
+          <Info icon={<FileText size={14} />} label={t('semester.script')}>
+            <button
+              type="button"
+              className="min-w-0 truncate text-left hover:underline"
+              title={m.latestLecture}
+              onClick={() => navigate({ name: 'file', path: m.latestLecture! })}
+            >
+              {fileName(m.latestLecture)}
+            </button>
+          </Info>
+        )}
+        {m.recentCount > 0 && (
+          <Info
+            icon={<Sparkles size={14} className="text-accent" />}
+            label={t('semester.newFiles', { count: m.recentCount })}
+          >
+            <span className="flex min-w-0 flex-col">
+              {m.recent.map((f) => (
+                <button
+                  key={f.path}
+                  type="button"
+                  className="truncate text-left hover:underline"
+                  title={f.path}
+                  onClick={() => navigate({ name: 'file', path: f.path })}
+                >
+                  {fileName(f.path)}
+                </button>
+              ))}
+            </span>
+          </Info>
+        )}
+        {(m.notes.length > 0 || m.annotated.length > 0) && (
+          <Info icon={<NotebookPen size={14} />} label={t('semester.yours')}>
+            <span className="text-ink-2">
+              {m.notes.length > 0 && (
+                <button
+                  type="button"
+                  className="hover:underline"
+                  onClick={(e) => openEntry(m.notes[0]!.path, e)}
+                >
+                  {t('semester.notesCount', { count: m.notes.length })}
+                </button>
+              )}
+              {m.notes.length > 0 && m.annotated.length > 0 && ' · '}
+              {m.annotated.length > 0 && (
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 hover:underline"
+                  onClick={() => navigate({ name: 'file', path: m.annotated[0]!.pdf })}
+                >
+                  <Highlighter size={12} /> {t('semester.annotatedCount', { count: m.annotated.length })}
+                </button>
+              )}
+            </span>
+          </Info>
+        )}
+      </ul>
+
+      <footer className="flex flex-wrap gap-1.5 border-t border-line px-3 py-2">
+        {lab && (
+          <Button
+            size="sm"
+            variant="primary"
+            icon={<SquareTerminal size={14} />}
+            onClick={() =>
+              void run(async () =>
+                navigate({
+                  name: 'page',
+                  path: m.code[0]?.path ?? (await createCodeFolder(ws, m.module.path, 'Praktikum')),
+                }),
+              )
+            }
+          >
+            {t('semester.lab')}
+          </Button>
+        )}
+        {notesDb && (
+          <Button size="sm" icon={<Plus size={13} />} onClick={() => void newNote()}>
+            {t('semester.newNote')}
+          </Button>
+        )}
+        {m.courses.length > 0 && (
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={<ExternalLink size={13} />}
+            onClick={() => navigate({ name: 'moodle', course: m.courses[m.courses.length - 1]! })}
+          >
+            Moodle
+          </Button>
+        )}
+      </footer>
+    </section>
+  )
+}
+
+function Info({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
+  return (
+    <li className="flex items-start gap-2">
+      <span className="mt-0.5 shrink-0 text-ink-3" aria-hidden>
+        {icon}
+      </span>
+      <span className="sr-only">{label}: </span>
+      <span className="min-w-0 flex-1">{children}</span>
+    </li>
   )
 }

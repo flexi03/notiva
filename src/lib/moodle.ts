@@ -524,7 +524,8 @@ export function planMoodleImport(
   /** Module page per Moodle course id and per (short) name – for linking tasks. */
   const modules = new Map<string, string>()
 
-  // A study folder set up with a PO: modules come from the PO, courses go to "Kurse" (study sync).
+  // A study folder set up with a PO: modules come from the PO; their Moodle courses are listed in
+  // the module page (`kurse:`, study sync).
   const studyManaged = !!ws.get(`${target.folder}.md`)?.data.studium
   const byCourse = new Map<string, string>()
   if (target.modules)

@@ -36,6 +36,8 @@ export const COMMANDS = [
   'examPlan',
   'setupCheck',
   'checkUpdates',
+  'help',
+  'timetable',
   'syncAll',
   'semester',
   'undo',
@@ -115,5 +117,9 @@ export function runCommand(
       return void setupHint(ws)
     case 'checkUpdates':
       return void checkUpdatesNow()
+    case 'help':
+      return app.navigate({ name: 'help' })
+    case 'timetable':
+      return app.navigate({ name: 'timetable' })
   }
 }

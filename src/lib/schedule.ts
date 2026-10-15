@@ -139,6 +139,11 @@ export interface CalendarEvent {
   start: Date
   end: Date
   room?: string
+  /** Module title (timetable rows) – the badge and the timetable link to it. */
+  module?: string
+  /** The page behind the event (timetable row or exam). */
+  path?: string
+  type?: string
 }
 
 const toDate = (base: Date, hhmm: string) => {
@@ -159,7 +164,15 @@ export function upcomingEvents(rows: TimetableRow[], dated: CalendarEvent[], now
       if (r.day !== code || !r.start) continue
       const start = toDate(day, r.start)
       const end = r.end ? toDate(day, r.end) : new Date(start.getTime() + 90 * 60_000)
-      out.push({ title: r.title, start, end, ...(r.room ? { room: r.room } : {}) })
+      out.push({
+        title: r.title,
+        start,
+        end,
+        path: r.path,
+        ...(r.room ? { room: r.room } : {}),
+        ...(r.module ? { module: r.module } : {}),
+        ...(r.type ? { type: r.type } : {}),
+      })
     }
   }
   out.push(...dated)

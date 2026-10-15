@@ -12,6 +12,8 @@ export type Route =
   | { name: 'moodle'; course?: string }
   | { name: 'grades' }
   | { name: 'semester' }
+  | { name: 'timetable' }
+  | { name: 'help' }
   | { name: 'file'; path: string; page?: number }
 
 function decode(part: string): string | null {
@@ -42,6 +44,8 @@ export function parseRoute(hash: string): Route {
     case 'templates':
     case 'grades':
     case 'semester':
+    case 'timetable':
+    case 'help':
       return { name: head }
     case 'moodle':
       return rest && /^course:\d+$/.test(rest) ? { name: 'moodle', course: rest } : { name: 'moodle' }

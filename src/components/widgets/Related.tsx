@@ -1,7 +1,10 @@
-import { Code2, ExternalLink, FileText, Plus } from 'lucide-react'
+import { AlertTriangle, Code2, ExternalLink, FileText, Plus } from 'lucide-react'
 import { createCodeFolder } from '@/components/code/CodeFolder'
 import { useRecent } from '@/app/recent'
+import { useMoodle } from '@/app/moodle'
+import { materialFolder } from '@/app/materials'
 import { MATERIAL_CATEGORIES } from '@/lib/moodle'
+import { courseIdsOf, materialFolderFor } from '@/lib/study/modules'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import { toIsoDate } from '@/lib/dates'
@@ -9,11 +12,12 @@ import type { Page } from '@/lib/workspace'
 import { Button } from '@/components/ui'
 
 /** Databases shown first on a module page, in this order. */
-const ORDER = ['Kurse', 'Mitschriften', 'Prüfungen', 'Aufgaben', 'Stundenplan']
+const ORDER = ['Mitschriften', 'Prüfungen', 'Aufgaben', 'Stundenplan']
 
 /**
- * "Alles zu diesem Modul": pages that link here, grouped by their database; Moodle courses with
- * their saved materials. A module page thus collects courses, notes, exams and tasks by itself.
+ * "Alles zu diesem Modul": its materials ("Unterlagen/<Modul>"), what Moodle says about its courses
+ * (description, news, cancellations – from the last fetch) and the pages that link here (notes,
+ * exams, tasks, timetable). The module is the centre; there are no course pages.
  */
 export function Related({ from }: { from: string }) {
   const ws = useWorkspace()
@@ -41,6 +45,10 @@ export function Related({ from }: { from: string }) {
           .sort((a, b) => a.path.localeCompare(b.path, 'de', { numeric: true }))
       : []
 
+  const courses = courseIdsOf(page.data)
+  const moduleFolder = materialFolderFor(materialFolder(ws), { name: page.title }, page.title)
+  const moduleFiles = files(moduleFolder)
+
   const newNote = () =>
     run(async () => {
       const path = await ws.createRow(notesDb!.path, `${page.title} – ${toIsoDate(new Date())}`, {
@@ -53,7 +61,16 @@ export function Related({ from }: { from: string }) {
 
   return (
     <div className="related space-y-4 rounded-panel border border-line p-3" data-interactive>
-      {sorted.length === 0 && <p className="text-sm text-ink-3">{t('related.empty')}</p>}
+      {moduleFiles.length > 0 && (
+        <section aria-label={t('related.files')}>
+          <h3 className="mb-1 text-[12.5px] font-semibold text-ink-2">{t('related.files')}</h3>
+          <CourseFiles folder={moduleFolder} files={moduleFiles.map((f) => f.path)} />
+        </section>
+      )}
+      {courses.length > 0 && <ModuleMoodle courses={courses} />}
+      {sorted.length === 0 && moduleFiles.length === 0 && courses.length === 0 && (
+        <p className="text-sm text-ink-3">{t('related.empty')}</p>
+      )}
       {sorted.map(([name, pages]) => (
         <section key={name} aria-label={name}>
           <h3 className="mb-1 text-[12.5px] font-semibold text-ink-2">{name}</h3>
@@ -66,7 +83,6 @@ export function Related({ from }: { from: string }) {
                   ) || a.title.localeCompare(b.title),
               )
               .map((p) => {
-                const list = files(p.data.Ordner)
                 const link =
                   typeof p.data.Link === 'string' && /^https?:/.test(p.data.Link) ? p.data.Link : null
                 const meta = [p.data.Semester, p.data.Datum, p.data.Fällig, p.data.Status].filter(
@@ -94,9 +110,6 @@ export function Related({ from }: { from: string }) {
                         </a>
                       )}
                     </div>
-                    {list.length > 0 && (
-                      <CourseFiles folder={String(p.data.Ordner)} files={list.map((f) => f.path)} />
-                    )}
                   </li>
                 )
               })}
@@ -132,7 +145,80 @@ export function Related({ from }: { from: string }) {
 }
 
 /**
- * Files of a course: recently opened first, then by kind (lecture, lab & exercises, other) – the
+ * What Moodle says about the module's courses (newest term first): link, cancellations and news,
+ * the description – from the last fetch, nothing is copied into the vault.
+ */
+function ModuleMoodle({ courses }: { courses: string[] }) {
+  const snapshot = useMoodle((s) => s.snapshot)
+  const navigate = useApp((s) => s.navigate)
+  if (!snapshot) return null
+  const known = courses
+    .map((id) => snapshot.courses.find((c) => c.id === id))
+    .filter((c): c is NonNullable<typeof c> => !!c)
+    .reverse()
+  if (!known.length) return null
+  return (
+    <section aria-label={t('related.moodle')}>
+      <h3 className="mb-1 text-[12.5px] font-semibold text-ink-2">{t('related.moodle')}</h3>
+      <ul className="space-y-2">
+        {known.map((c, i) => {
+          const info = snapshot.info?.[c.id]
+          const news = (info?.announcements ?? []).slice(0, 3)
+          return (
+            <li key={c.id}>
+              <div className="flex flex-wrap items-center gap-x-2">
+                <button
+                  type="button"
+                  className="text-left text-sm font-medium hover:underline"
+                  onClick={() => navigate({ name: 'moodle', course: c.id })}
+                >
+                  {c.name}
+                </button>
+                {c.url && (
+                  <a
+                    href={c.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-0.5 text-[12px] text-accent hover:underline"
+                  >
+                    {t('related.openMoodle')} <ExternalLink size={11} />
+                  </a>
+                )}
+              </div>
+              {news.map((n) => (
+                <p key={n.id} className="ml-3 flex gap-1 text-[12.5px] text-ink-2">
+                  {n.important && <AlertTriangle size={12} className="mt-0.5 shrink-0 text-danger" />}
+                  <span>
+                    <span className="font-medium">{n.title}</span>
+                    {n.modified && (
+                      <span className="text-ink-3">
+                        {' '}
+                        · {new Date(n.modified).toLocaleDateString('de-DE')}
+                      </span>
+                    )}
+                  </span>
+                </p>
+              ))}
+              {info?.summary?.text && (
+                <details className="ml-3" open={i === 0 && !news.length}>
+                  <summary className="cursor-pointer text-[12.5px] text-ink-3">
+                    {t('related.description')}
+                  </summary>
+                  <p className="text-[12.5px] whitespace-pre-line text-ink-2">
+                    {info.summary.text.slice(0, 1200)}
+                  </p>
+                </details>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
+}
+
+/**
+ * Files of a module: recently opened first, then by kind (lecture, lab & exercises, other) – the
  * folders Notiva saves Moodle files into. Each group can be collapsed.
  */
 function CourseFiles({ folder, files }: { folder: string; files: string[] }) {

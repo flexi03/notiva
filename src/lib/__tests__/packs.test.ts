@@ -52,11 +52,10 @@ describe('template packs', () => {
 })
 
 describe('study dashboard works end to end', () => {
-  it('creates seven linked databases', async () => {
+  it('creates six linked databases (no course database – modules are the centre)', async () => {
     const { ws } = await installed()
     expect(ws.databases().map((d) => d.title)).toEqual([
       'Aufgaben',
-      'Kurse',
       'Mitschriften',
       'Module',
       'Prüfungen',

@@ -7,8 +7,7 @@
  */
 import { parseDatabaseDef, propertyDef, type DatabaseDef, type PropertyDef, type ViewDef } from '../database'
 import type { FrontmatterData, FrontmatterValue } from '../frontmatter'
-import { safeFileName } from '../moodle'
-import { courseInfoMarkdown, lastChange, type CourseInfo } from '../moodleInfo'
+import { materialFolderFor } from './modules'
 import type { Workspace } from '../workspace'
 import { parse } from 'yaml'
 import { planModules } from './catalog'
@@ -79,7 +78,8 @@ export const MODULE_PROPERTIES = `
     - { name: Angebot, type: select, options: [{ value: WiSe, color: blue }, { value: SoSe, color: yellow }] }
     - { name: Lehrform, type: text }
     - { name: Dozent, type: text }
-    - { name: Link, type: url }`
+    - { name: Link, type: url }
+    - { name: Farbe, type: select, options: [{ value: blue, color: blue }, { value: green, color: green }, { value: purple, color: purple }, { value: orange, color: orange }, { value: pink, color: pink }, { value: yellow, color: yellow }, { value: red, color: red }, { value: gray, color: gray }] }`
 
 export const MODULE_VIEWS = `
     - { name: Aktiv, type: table, filter: [{ property: Belegung, op: notEmpty }], sort: [{ property: Nr, direction: asc }], properties: [Belegung, Status, Nr, Versuche, Praktikum, Note] }
@@ -97,25 +97,6 @@ type: related
 ## Meine Notizen
 
 -
-`
-
-export const COURSE_DB = (folder: string) => `---
-icon: 🏫
-database:
-  properties:
-    - { name: Modul, type: relation, database: "${folder}/Module.md" }
-    - { name: Art, type: select, options: [{ value: Modul, color: blue }, { value: Orga, color: purple }, { value: Sonstiges, color: gray }] }
-    - { name: Semester, type: text }
-    - { name: Link, type: url }
-    - { name: Geändert, type: date }
-    - { name: Ordner, type: text }
-    - { name: Aktiv, type: checkbox }
-  views:
-    - { name: Aktiv, type: table, filter: [{ property: Aktiv, op: checked }], properties: [Modul, Art, Semester, Geändert, Link] }
-    - { name: Alle, type: table, sort: [{ property: Art, direction: asc }], properties: [Modul, Art, Semester, Geändert, Link] }
-    - { name: Nach Modul, type: list, groupBy: Modul, properties: [Semester, Geändert] }
----
-Deine Moodle-Kurse. Notiva speichert Beschreibung und Abschnitte jedes Kurses hier und meldet, wenn sich etwas ändert. Eigene Notizen gehören auf die Modulseite.
 `
 
 function moduleDefPatch(def: DatabaseDef): DatabaseDef {
@@ -148,7 +129,7 @@ function moduleDefPatch(def: DatabaseDef): DatabaseDef {
 
 export interface StudyChange {
   kind: 'create' | 'update'
-  what: 'module' | 'semester' | 'course' | 'schema'
+  what: 'module' | 'semester' | 'course' | 'schema' | 'migrate'
   path?: string
   title: string
   /** Short description for the preview ("Status: Fehlt → Wiederholung"). */
@@ -157,8 +138,6 @@ export interface StudyChange {
 
 const same = (a: FrontmatterValue | undefined, b: FrontmatterValue | undefined) =>
   JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
-
-const link = (ws: Workspace, path: string) => `[[${ws.linkText(path)}]]`
 
 function moduleValues(state: StudyState, m: ModuleState): FrontmatterData {
   const { module, result } = m
@@ -246,14 +225,9 @@ export interface StudyPlan {
 
 /**
  * Compares the vault with the study state. `apply` writes it (pages first, so links resolve).
- * `folder` is the study folder ("Studium"), its databases are Module, Semester and Kurse.
+ * `folder` is the study folder ("Studium"), its databases are Module and Semester.
  */
-export function planStudySync(
-  ws: Workspace,
-  folder: string,
-  state: StudyState,
-  courseInfo: Record<string, CourseInfo> = {},
-): StudyPlan {
+export function planStudySync(ws: Workspace, folder: string, state: StudyState): StudyPlan {
   const changes: StudyChange[] = []
   const steps: Array<() => Promise<string | void>> = []
   const modulesDb = `${folder}/Module.md`
@@ -274,36 +248,6 @@ export function planStudySync(
     })
     steps.push(() => ws.updateDatabase(modulesDb, () => patched))
   }
-  const cdb = ws.get(coursesDb)?.database
-  if (cdb && !propertyDef(cdb, 'Aktiv')) {
-    changes.push({
-      kind: 'update',
-      what: 'schema',
-      path: coursesDb,
-      title: 'Kurse',
-      detail: 'Eigenschaft und Ansicht „Aktiv“',
-    })
-    steps.push(() =>
-      ws.updateDatabase(coursesDb, (def) => ({
-        ...def,
-        properties: [...def.properties, { name: 'Aktiv', type: 'checkbox' }],
-        views: [
-          {
-            name: 'Aktiv',
-            type: 'table',
-            filter: [{ property: 'Aktiv', op: 'checked' }],
-            properties: ['Modul', 'Art', 'Semester', 'Geändert', 'Link'],
-          },
-          ...def.views,
-        ],
-      })),
-    )
-  }
-  if (!ws.get(coursesDb)) {
-    changes.push({ kind: 'create', what: 'schema', title: 'Kurse', detail: 'Datenbank für Moodle-Kurse' })
-    steps.push(() => ws.writeFile(coursesDb, COURSE_DB(folder)).then(() => ws.reload()))
-  }
-
   // Modules
   const rows = ws.rows(modulesDb)
   const used = new Set<string>()
@@ -457,75 +401,73 @@ export function planStudySync(
       )
   }
 
-  // Moodle courses
-  const courseRows = () => (ws.get(coursesDb) ? ws.rows(coursesDb) : [])
-  const allCourses = [
-    ...state.modules.flatMap((m) => m.courses.map((c) => ({ c, m, art: 'Modul' }))),
-    ...state.orga.map((c) => ({ c, m: undefined, art: 'Orga' })),
-    ...state.other.map((c) => ({ c, m: undefined, art: 'Sonstiges' })),
-  ]
-  const existing = new Map(courseRows().map((r) => [String(r.data.moodle), r]))
-  const bodyFor = (id: string, previous: string) =>
-    courseInfo[id] ? courseInfoMarkdown(courseInfo[id], previous) : null
-  for (const { c, m } of allCourses) {
-    const row = existing.get(c.id)
-    if (!row)
-      changes.push({ kind: 'create', what: 'course', title: c.name, detail: m ? m.module.name : 'Orga' })
-    else {
-      const body = bodyFor(c.id, row.body)
-      if (body !== null && body !== row.body)
-        changes.push({
-          kind: 'update',
-          what: 'course',
-          path: row.path,
-          title: row.title,
-          detail: 'Infos aus Moodle',
-        })
+  // Former "Kurse" database (Notiva < 0.1.4): everything moves to the modules – after asking.
+  // Materials go to "Unterlagen/<Modul>", own notes of a course page are appended to its module
+  // page, the database goes to the trash (restorable). Moodle infos now show on the module page.
+  const legacy = ws.get(coursesDb)
+  if (legacy?.database) {
+    const base = `${folder}/Unterlagen`
+    const courseRows = ws.rows(coursesDb)
+    const moduleTitle = (row: (typeof courseRows)[number]) => {
+      const id = String(row.data.moodle ?? '')
+      const m = state.modules.find((x) => x.courses.some((c) => c.id === id))
+      const path = m ? (pathOf.get(m.module.nr) ?? moduleRow(m)?.path) : undefined
+      return path ? (ws.get(path)?.title ?? m?.module.name) : m?.module.name
     }
-  }
-  steps.push(async () => {
-    const known = new Map(courseRows().map((r) => [String(r.data.moodle), r]))
-    for (const { c, m, art } of allCourses) {
-      const modulePath = m ? pathOf.get(m.module.nr) : undefined
-      const values: FrontmatterData = {
-        moodle: c.id,
-        Art: art,
-        ...(c.term ? { Semester: termLabel(c.term) } : {}),
-        ...(c.url ? { Link: c.url } : {}),
-        ...(modulePath ? { Modul: [link(ws, modulePath)] } : {}),
-        Ordner: `${folder}/Unterlagen/${safeFileName(c.name)}`,
+    const moves: Array<{ from: string; to: string }> = []
+    const notes: Array<{ module: string; course: string; text: string }> = []
+    for (const row of courseRows) {
+      const title = moduleTitle(row)
+      const from = typeof row.data.Ordner === 'string' ? row.data.Ordner : ''
+      const to = materialFolderFor(base, { name: row.title }, title)
+      const files =
+        from && from !== to
+          ? [...ws.all().map((p) => p.path), ...ws.assets().map((f) => f.path)]
+              .filter((f) => f.startsWith(`${from}/`))
+              .map((path) => ({ path }))
+          : []
+      for (const f of files) moves.push({ from: f.path, to: `${to}${f.path.slice(from.length)}` })
+      const own = ownNotes(row.body)
+      if (own && title) notes.push({ module: title, course: row.title, text: own })
+      changes.push({
+        kind: 'update',
+        what: 'migrate',
+        path: row.path,
+        title: row.title,
+        detail: `→ ${to.slice(base.length + 1)}${files.length ? ` · ${files.length} Dateien` : ''}${own ? ' · Notizen' : ''}`,
+      })
+    }
+    changes.push({
+      kind: 'update',
+      what: 'migrate',
+      path: coursesDb,
+      title: 'Kurse',
+      detail: 'Datenbank in den Papierkorb – Moodle-Infos stehen jetzt auf den Modulseiten',
+    })
+    steps.push(async () => {
+      const done = await ws.moveFiles(moves)
+      const renamed = new Map(done.map((m) => [m.from, m.to]))
+      const map = await ws.readMeta<Record<string, unknown>>('moodle-files.json')
+      if (map) {
+        const next: Record<string, unknown> = {}
+        for (const [id, v] of Object.entries(map)) {
+          const path = typeof v === 'string' ? v : (v as { path?: string })?.path
+          const to = path ? renamed.get(path) : undefined
+          next[id] = to ? (typeof v === 'string' ? to : { ...(v as object), path: to }) : v
+        }
+        await ws.writeMeta('moodle-files.json', next)
       }
-      // Active course: its module is attended now (or a general orga course) – unless the user decided.
-      const moduleRow = modulePath ? ws.get(modulePath) : undefined
-      const active =
-        art === 'Orga' ||
-        (Array.isArray(moduleRow?.data.Belegung) && moduleRow!.data.Belegung.length > 0) ||
-        (!!c.term && termIndex(c.term) === termIndex(state.current))
-      const row0 = known.get(c.id)
-      const userActive = row0 && row0.data.aktivAuto !== undefined && row0.data.Aktiv !== row0.data.aktivAuto
-      if (!userActive) {
-        values.Aktiv = active
-        values.aktivAuto = active
-      }
-      const changed = courseInfo[c.id] ? lastChange(courseInfo[c.id]!) : undefined
-      if (changed) values.Geändert = changed.slice(0, 10)
-      const row = known.get(c.id)
-      if (row) {
-        const diff: FrontmatterData = {}
-        for (const [k, v] of Object.entries(values)) if (!same(row.data[k], v)) diff[k] = v
-        const body = bodyFor(c.id, row.body)
-        if (Object.keys(diff).length || (body !== null && body !== row.body))
-          await ws.save(row.path, {
-            data: { ...row.data, ...diff },
-            ...(body !== null ? { body } : {}),
+      const rows = ws.rows(modulesDb)
+      for (const n of notes) {
+        const page = rows.find((r) => r.title === n.module)
+        if (page)
+          await ws.save(page.path, {
+            body: `${page.body.trimEnd()}\n\n## Notizen aus „${n.course}“\n\n${n.text}\n`,
           })
-      } else {
-        const path = await ws.createRow(coursesDb, c.name, values)
-        const body = bodyFor(c.id, '')
-        if (body !== null) await ws.save(path, { body })
       }
-    }
-  })
+      await ws.trash(coursesDb)
+    })
+  }
 
   return {
     changes,
@@ -538,6 +480,13 @@ export function planStudySync(
       return touched
     },
   }
+}
+
+/** What the user wrote on a former course page (below "## Meine Notizen"), if anything. */
+function ownNotes(body: string): string {
+  const i = body.indexOf('## Meine Notizen')
+  const text = i >= 0 ? body.slice(i + '## Meine Notizen'.length).trim() : ''
+  return /[\p{L}\p{N}]/u.test(text.replace(/^[-*]\s*$/gm, '')) ? text : ''
 }
 
 /** Overview page of one semester: its modules, exams and tasks. */

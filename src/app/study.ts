@@ -1,4 +1,4 @@
-import { announce, withProgress } from '@/app/progress'
+import { announce } from '@/app/progress'
 import { checkResult } from '@/lib/notifications'
 import { syncTimetable } from '@/app/schedule'
 import { useApp } from '@/app/store'
@@ -65,13 +65,16 @@ export function previewStudy(
     dashboard: dash.path,
     setup: chosen,
     state,
-    plan: planStudySync(ws, dash.folder, state, sources.moodle?.info ?? {}),
+    plan: planStudySync(ws, dash.folder, state),
   }
 }
 
 let running: Promise<number> | null = null
 
-/** Quiet sync after a check (only when the study folder is set up) – with progress and result. */
+/**
+ * After a background check: what would change in the study folder – suggested, not written. A hint
+ * (and a quiet entry in the notifications) opens the preview where the user decides.
+ */
 export function autoSyncStudy(ws: Workspace): Promise<number> {
   running ??= (async () => {
     const preview = previewStudy(ws, await studySources())
@@ -86,18 +89,14 @@ export function autoSyncStudy(ws: Workspace): Promise<number> {
         { type: 'page', path: preview.dashboard },
       ),
     ])
-    if (count === 0) {
-      await syncTimetable(ws).catch(() => undefined)
-      return 0
-    }
-    await withProgress(t('study.syncing'), () => preview.plan.apply(), {
-      success: () => t('study.synced', { count }),
-      note: () => studyChangeNote(preview.plan.changes),
-      action: () => ({
-        label: t('study.openDashboard'),
-        run: () => useApp.getState().navigate({ name: 'page', path: preview.dashboard }),
-      }),
-    })
+    if (count > 0)
+      announce(t('study.suggested', { count }), {
+        state: 'info',
+        sticky: true,
+        key: 'study-suggestions',
+        note: studyChangeNote(preview.plan.changes) || t('study.suggestedNote'),
+        action: { label: t('study.review'), run: () => useApp.getState().setStudyDialog(true) },
+      })
     await syncTimetable(ws).catch(() => undefined)
     return count
   })().finally(() => (running = null))
