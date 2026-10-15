@@ -1099,6 +1099,7 @@ export const de = {
 
   'git.whatIsGit':
     'Git speichert Versionen deiner Notizen und Praktika – du siehst, was sich geändert hat, und kannst zu GitHub hochladen. Notiva nutzt dafür das Git-Programm auf deinem Computer.',
+  'git.writingCommit': 'Commit wird geschrieben …',
   'git.title': 'Änderungen',
   'git.toggle': 'Änderungen (Git) (⌘⇧G)',
   'git.desktopOnly': 'Git gibt es in der Desktop-App',

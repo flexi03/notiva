@@ -544,7 +544,9 @@ function registerIpc(): void {
   })
   handle('git:show', async (rev: unknown, p: unknown) => (await requireRepo()).show(String(rev), p as string))
   handle('git:commit', async (message: unknown, paths: unknown) =>
-    (await requireRepo()).commit(message, paths),
+    (await requireRepo()).commit(message, paths, (done, total, file) =>
+      window?.webContents.send('git:progress', { done, total, file }),
+    ),
   )
   handle('git:discard', async (paths: unknown) => (await requireRepo()).discard(paths))
   handle('git:log', async (limit: unknown, p: unknown) =>

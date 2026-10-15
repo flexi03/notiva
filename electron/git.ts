@@ -186,13 +186,25 @@ export class GitRepo {
     return result.code === 0 ? result.stdout : null
   }
 
-  async commit(message: unknown, paths: unknown): Promise<string> {
+  async commit(
+    message: unknown,
+    paths: unknown,
+    onProgress: (done: number, total: number, file?: string) => void = () => undefined,
+  ): Promise<string> {
     if (typeof message !== 'string' || !message.trim()) throw new GitError('Commit-Nachricht fehlt')
     if (message.length > 50_000) throw new GitError('Commit-Nachricht ist zu lang (max. 50.000 Zeichen)')
     const files = await this.checked(paths)
     return this.writing(async () => {
       // Many large files (e.g. lecture PDFs) take a while – never kill git halfway (stale lock).
-      await run(this.vault.root, ['add', '-A', '--', ...files.map(spec)], { timeout: WRITE_TIMEOUT })
+      // Added in batches, so the app can show "12 of 40 files" and the remaining time.
+      const batch = 15
+      for (let i = 0; i < files.length; i += batch) {
+        onProgress(i, files.length, files[i])
+        await run(this.vault.root, ['add', '-A', '--', ...files.slice(i, i + batch).map(spec)], {
+          timeout: WRITE_TIMEOUT,
+        })
+      }
+      onProgress(files.length, files.length)
       await run(this.vault.root, ['commit', '-m', message.trim(), '--', ...files.map(spec)], {
         timeout: WRITE_TIMEOUT,
       })

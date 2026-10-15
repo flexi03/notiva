@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/lib/vault', () => ({ electronBridge: () => null }))
-const { describeChange, firstLine } = await import('@/app/localModel')
+const { commitScope, commitType, describeChange, firstLine } = await import('@/app/localModel')
 
 describe('local model helpers', () => {
   it('describes changes in words, not paths', () => {
@@ -21,5 +21,22 @@ describe('local model helpers', () => {
     )
     expect(long.length).toBeLessThanOrEqual(72)
     expect(long).toBe('Mitschrift zu Graphen ergänzt, Abfrage-Datei für Datenbanken erstellt')
+  })
+
+  it('picks a Conventional Commits type and the module as scope', () => {
+    const notes = { path: 'Studium/Mitschriften/DBS2 – Normalformen.md', status: 'M', added: 18, removed: 2 }
+    const lab = { path: 'Studium/Module/Datenbanksysteme 2/Praktikum 3/abfragen.sql', status: '?', added: 1 }
+    expect(commitType([notes])).toBe('docs')
+    expect(commitType([notes, lab])).toBe('feat')
+    expect(
+      commitType([
+        { path: 'a.md', status: 'D' },
+        { path: 'b.pdf', status: 'D' },
+      ]),
+    ).toBe('chore')
+    expect(commitScope([notes])).toBe('mitschriften')
+    expect(
+      commitScope([lab, { ...lab, path: 'Studium/Module/Datenbanksysteme 2/Praktikum 3/schema.sql' }]),
+    ).toBe('praktikum-3')
   })
 })

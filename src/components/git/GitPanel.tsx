@@ -1,7 +1,8 @@
+import { electronBridge } from '@/lib/vault'
 import { commitSummary, localModelAvailable } from '@/app/localModel'
 import { explain } from '@/app/fixes'
 import { withProgress } from '@/app/progress'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
@@ -52,24 +53,36 @@ export function StatusLetter({ status }: { status: GitStatus }) {
   )
 }
 
-/** +/− line counts per changed file (only text files). */
-function useStats(changes: GitChange[]): Map<string, DiffStats> {
+type FileStats = DiffStats & { excerpt: string[] }
+
+/** +/− line counts per changed text file, plus a few changed lines (for the commit summary). */
+function useStats(changes: GitChange[]): Map<string, FileStats> {
   const ws = useWorkspace()
   const head = useGit((s) => s.state?.head)
-  const [stats, setStats] = useState(new Map<string, DiffStats>())
+  const [stats, setStats] = useState(new Map<string, FileStats>())
   useEffect(() => {
     let cancelled = false
     void (async () => {
-      const next = new Map<string, DiffStats>()
+      const next = new Map<string, FileStats>()
       for (const change of changes.slice(0, 200)) {
-        if (!/\.(md|txt|json|css|ya?ml|csv)$/i.test(change.path)) continue
+        if (
+          !/\.(md|txt|json|css|ya?ml|csv|py|java|sql|js|ts|tsx|jsx|html?|c|cpp|h|kt|swift|sh|r|m|xml)$/i.test(
+            change.path,
+          )
+        )
+          continue
         const [old, now] = await Promise.all([
           change.status === 'untracked' || change.status === 'added'
             ? ''
             : useGit.getState().headText(change.from ?? change.path),
           change.status === 'deleted' ? '' : ws.vault.read(change.path).catch(() => ''),
         ])
-        next.set(change.path, diffStats(diffLines(old ?? '', now)))
+        const lines = diffLines(old ?? '', now)
+        const excerpt = lines
+          .filter((l) => l.type !== 'same' && l.text.trim())
+          .slice(0, 10)
+          .map((l) => `${l.type === 'add' ? '+' : '-'} ${l.text.trim().slice(0, 120)}`)
+        next.set(change.path, { ...diffStats(lines), excerpt })
       }
       if (!cancelled) setStats(next)
     })()
@@ -117,18 +130,64 @@ export function GitPanel() {
   )
   const message = custom ?? auto
 
+  // The local model summarises automatically when there are changes (once per set of changes).
+  const [summarizing, setSummarizing] = useState(false)
+  const signature = selected.map((c) => `${c.path}:${stats.get(c.path)?.added ?? ''}`).join('|')
+  const lastSummary = useRef('')
+  const summarize = async (manual = false) => {
+    if (summarizing || !selected.length) return
+    lastSummary.current = signature
+    setSummarizing(true)
+    try {
+      const text = await commitSummary(
+        selected.map((c) => ({
+          path: c.path,
+          status: c.status,
+          added: stats.get(c.path)?.added,
+          removed: stats.get(c.path)?.removed,
+          excerpt: stats.get(c.path)?.excerpt,
+        })),
+      )
+      if (text) setCustom(text)
+    } catch (e) {
+      if (manual) void import('@/app/fixes').then((m) => m.reportError(e))
+    } finally {
+      setSummarizing(false)
+    }
+  }
+  useEffect(() => {
+    if (!localModelAvailable() || custom !== null || !selected.length || summarizing) return
+    if (lastSummary.current === signature) return
+    // Wait until the line counts are there (they carry the changed lines).
+    const timer = setTimeout(() => void summarize(), 800)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signature, custom])
+
   const commit = async () => {
     // Hundreds of files (lecture PDFs) take a while: visible progress bottom left.
+    // "x of y files" and the remaining time while git adds them in batches.
     const hash = await withProgress(
       t('git.committing', { count: selected.length }),
-      () =>
-        act((git) =>
-          git.commit(
-            message,
-            selected.map((c) => c.path),
-          ),
-        ),
-      { success: (h) => (h ? t('git.committed', { hash: h.slice(0, 7) }) : t('git.commitFailed')) },
+      async (task) => {
+        const off = electronBridge()?.git?.onProgress?.((e) =>
+          task.update(e.done, e.total, e.done >= e.total ? t('git.writingCommit') : e.file?.split('/').pop()),
+        )
+        try {
+          return await act((git) =>
+            git.commit(
+              message,
+              selected.map((c) => c.path),
+            ),
+          )
+        } finally {
+          off?.()
+        }
+      },
+      {
+        total: selected.length,
+        success: (h) => (h ? t('git.committed', { hash: h.slice(0, 7) }) : t('git.commitFailed')),
+      },
     )
     if (hash) setCustom(null)
   }
@@ -231,21 +290,10 @@ export function GitPanel() {
                 {localModelAvailable() && selected.length > 0 && (
                   <IconButton
                     label={t('localModel.suggest')}
-                    onClick={() =>
-                      void commitSummary(
-                        selected.map((c) => ({
-                          path: c.path,
-                          status: c.status,
-                          added: stats.get(c.path)?.added,
-                          removed: stats.get(c.path)?.removed,
-                        })),
-                      ).then(
-                        (text) => text && setCustom(text),
-                        (e: unknown) => void import('@/app/fixes').then((m) => m.reportError(e)),
-                      )
-                    }
+                    disabled={summarizing}
+                    onClick={() => void summarize(true)}
                   >
-                    <Sparkles size={15} />
+                    <Sparkles size={15} className={summarizing ? 'animate-pulse' : undefined} />
                   </IconButton>
                 )}
                 {custom !== null && (

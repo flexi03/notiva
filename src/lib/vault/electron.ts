@@ -36,6 +36,8 @@ export interface GitBridge {
   init(): Promise<GitState>
   push(): Promise<string>
   pull(): Promise<string>
+  /** Progress of a commit (files added so far). */
+  onProgress?(callback: (event: { done: number; total: number; file?: string }) => void): () => void
   /** One-click fix: install Git (Windows: winget, macOS: command line tools, else the download page). */
   install?(): Promise<'installing' | 'opened'>
   /** One-click fix: name and email for commits (global git config). */

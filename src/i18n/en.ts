@@ -1089,6 +1089,7 @@ export const en: Record<MessageKey, string> = {
 
   'git.whatIsGit':
     'Git keeps versions of your notes and labs – you see what changed and can upload to GitHub. Notiva uses the Git program on your computer for it.',
+  'git.writingCommit': 'Writing the commit …',
   'git.title': 'Changes',
   'git.toggle': 'Changes (Git) (⌘⇧G)',
   'git.desktopOnly': 'Git is available in the desktop app',

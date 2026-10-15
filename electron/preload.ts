@@ -192,6 +192,11 @@ contextBridge.exposeInMainWorld('notiva', {
     push: () => invoke<string>('git:push'),
     pull: () => invoke<string>('git:pull'),
     install: () => invoke<'installing' | 'opened'>('git:install'),
+    onProgress(callback: (event: { done: number; total: number; file?: string }) => void) {
+      const listener = (_e: unknown, event: { done: number; total: number; file?: string }) => callback(event)
+      ipcRenderer.on('git:progress', listener)
+      return () => ipcRenderer.removeListener('git:progress', listener)
+    },
     setIdentity: (name: string, email: string) => invoke<void>('git:setIdentity', name, email),
   },
   restart: () => invoke<void>('app:restart'),
