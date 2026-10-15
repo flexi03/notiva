@@ -87,7 +87,7 @@ function TreeItem({
       <div
         className={cx(
           'group relative flex h-8 items-center gap-1 rounded-control pr-1 text-[14px] text-ink-2 hover:bg-hover',
-          active && 'bg-hover font-semibold text-ink',
+          active && 'bg-[color-mix(in_srgb,var(--accent)_13%,transparent)] font-semibold text-ink',
           dropTarget && 'ring-2 ring-accent',
         )}
         style={{ paddingLeft: 4 + depth * 14 }}
@@ -102,9 +102,6 @@ function TreeItem({
         onDragLeave={() => setDropTarget(false)}
         onDrop={onDrop}
       >
-        {active && (
-          <span aria-hidden className="absolute top-1.5 bottom-1.5 left-0 w-[3px] rounded-full bg-marker" />
-        )}
         <IconButton
           size="sm"
           label={isOpen ? t('tree.collapse') : t('tree.expand')}

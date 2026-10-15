@@ -47,7 +47,7 @@ function NavButton({
       aria-current={active ? 'page' : undefined}
       className={cx(
         'flex h-8 w-full items-center gap-2.5 rounded-control px-2 text-left text-[14px] text-ink-2 hover:bg-hover hover:text-ink',
-        active && 'bg-hover font-semibold text-ink',
+        active && 'bg-[color-mix(in_srgb,var(--accent)_13%,transparent)] font-semibold text-ink',
       )}
     >
       <span className="flex size-4 items-center justify-center">{icon}</span>

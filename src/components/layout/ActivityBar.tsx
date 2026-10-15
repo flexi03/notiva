@@ -131,7 +131,7 @@ function BarButton({
   label,
   title,
   active,
-  side,
+  side: _side,
   badge = 0,
   children,
   ...rest
@@ -152,13 +152,9 @@ function BarButton({
       {...rest}
       className={cx(
         'relative flex size-9 items-center justify-center rounded-control text-ink-2 transition-colors hover:bg-hover hover:text-ink',
+        // Selected: a tinted tile in the accent colour (no thin edge line).
         active &&
-          cx(
-            'bg-surface text-accent',
-            side === 'left'
-              ? 'shadow-[inset_2px_0_0_var(--accent)]'
-              : 'shadow-[inset_-2px_0_0_var(--accent)]',
-          ),
+          'bg-[color-mix(in_srgb,var(--accent)_16%,transparent)] text-accent ring-1 ring-[color-mix(in_srgb,var(--accent)_35%,transparent)] hover:bg-[color-mix(in_srgb,var(--accent)_22%,transparent)] hover:text-accent',
       )}
     >
       {children}
