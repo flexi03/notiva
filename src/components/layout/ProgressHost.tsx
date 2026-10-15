@@ -48,7 +48,8 @@ export function ProgressHost() {
                     className="mt-2"
                     onClick={() => {
                       task.action!.run()
-                      dismiss(task.id)
+                      // Following the hint is not "never show again".
+                      useProgress.setState((st) => ({ tasks: st.tasks.filter((x) => x.id !== task.id) }))
                     }}
                   >
                     {task.action.label}

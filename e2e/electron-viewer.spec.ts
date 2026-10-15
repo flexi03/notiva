@@ -149,6 +149,7 @@ test('schreibt Text direkt auf die Seite, verschiebt und ändert ihn', async () 
 })
 
 test('öffnet unter dem PDF ein Terminal und führt Befehle aus', async () => {
+  test.setTimeout(90_000)
   await window.getByRole('button', { name: 'Terminal', exact: true }).click()
   const term = window.getByTestId('terminal')
   await expect(term).toBeVisible()
@@ -165,8 +166,18 @@ test('öffnet unter dem PDF ein Terminal und führt Befehle aus', async () => {
   const [r, g, b] = (await bg()).match(/\d+/g)!.map(Number)
   expect(r! + g! + b!).toBeLessThan(200)
   await window.evaluate(() => (document.documentElement.dataset.theme = 'light'))
-  await window.getByRole('region', { name: 'Terminal' }).getByRole('button', { name: 'Schließen' }).click()
+  // Hiding and showing again: same shell, output still there.
+  await window.getByRole('button', { name: 'Terminal', exact: true }).click()
   await expect(term).toHaveCount(0)
+  await window.getByRole('button', { name: 'Terminal', exact: true }).click()
+  await expect(window.getByTestId('terminal')).toContainText('notiva-42')
+  // Two side by side.
+  await window.getByRole('button', { name: 'Teilen (daneben)' }).click()
+  await expect(window.getByTestId('terminal')).toHaveCount(2)
+  await window.getByRole('button', { name: 'Terminal beenden' }).first().click()
+  await expect(window.getByTestId('terminal')).toHaveCount(1)
+  await window.getByRole('button', { name: 'Terminal beenden' }).click()
+  await expect(window.getByTestId('terminal')).toHaveCount(0)
 })
 
 test('wählt Zeichnungen mit dem Zeiger aus, verschiebt und löscht sie', async () => {

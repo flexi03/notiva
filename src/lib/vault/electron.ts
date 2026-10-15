@@ -190,7 +190,10 @@ export interface NotivaBridge {
   }
   /** Built-in terminal: a shell in a vault folder. */
   terminal?: {
-    start(folder: string, cols: number, rows: number): Promise<number>
+    /** Opens (or re-attaches) the session `key`; `replay` is its output so far. */
+    start(key: string, folder: string, cols: number, rows: number): Promise<{ id: number; replay: string }>
+    /** Forgets the saved output of a session. */
+    clear(key: string): Promise<void>
     write(id: number, data: string): Promise<void>
     resize(id: number, cols: number, rows: number): Promise<void>
     stop(id: number): Promise<void>

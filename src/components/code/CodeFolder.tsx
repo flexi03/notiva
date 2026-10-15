@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Code2, FolderOpen, GitBranch, SquareTerminal } from 'lucide-react'
-import { TerminalPanel } from '@/components/terminal/TerminalPanel'
+import { TerminalDock } from '@/components/terminal/TerminalDock'
 import { useGit } from '@/app/git'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
@@ -57,8 +57,8 @@ export function CodeFolder({ page }: { page: Page }) {
         <p className="text-sm">{t('code.desktopOnly')}</p>
       )}
       {terminal && bridge && (
-        <div className="h-80 overflow-hidden rounded-control border border-line">
-          <TerminalPanel
+        <div className="h-96 overflow-hidden rounded-control border border-line">
+          <TerminalDock
             folder={folder}
             onClose={() => setTerminal(false)}
             onSave={(text) =>

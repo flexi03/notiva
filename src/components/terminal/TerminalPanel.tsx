@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Code2, NotebookPen, RotateCcw, X } from 'lucide-react'
+import { Code2, Eraser, NotebookPen, RotateCcw, X } from 'lucide-react'
 import { Terminal, type ITheme } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
@@ -66,11 +66,17 @@ export function terminalTheme(): ITheme {
  * block ("Auswahl in Notizen"), e.g. the commands and results of a lab next to its PDF.
  */
 export function TerminalPanel({
+  sessionKey,
   folder,
   onSave,
   onClose,
+  actions,
 }: {
+  /** Same key = same shell (keeps running when the view changes, output kept until cleared). */
+  sessionKey: string
   folder: string
+  /** Extra buttons in the header (split, new below …). */
+  actions?: React.ReactNode
   /** Text selected in the terminal → notes. */
   onSave?: (text: string) => void
   onClose?: () => void
@@ -78,6 +84,7 @@ export function TerminalPanel({
   const bridge = electronBridge()
   const host = useRef<HTMLDivElement>(null)
   const term = useRef<Terminal | null>(null)
+  const session = useRef<number | null>(null)
   const [run, setRun] = useState(0)
   const [ended, setEnded] = useState(false)
 
@@ -101,9 +108,11 @@ export function TerminalPanel({
     const offData = api.onData((tid, data) => tid === id && terminal.write(data))
     const offExit = api.onExit((tid) => tid === id && setEnded(true))
     const input = terminal.onData((data) => id !== null && void api.write(id, data))
-    void api.start(folder, terminal.cols, terminal.rows).then((started) => {
-      if (disposed) void api.stop(started)
-      else id = started
+    void api.start(sessionKey, folder, terminal.cols, terminal.rows).then((started) => {
+      if (disposed) return
+      id = started.id
+      session.current = started.id
+      if (started.replay) terminal.write(started.replay)
     })
     // Follow the light/dark switch of the app.
     const themeWatch = new MutationObserver(() => (terminal.options.theme = terminalTheme()))
@@ -124,20 +133,31 @@ export function TerminalPanel({
       offData()
       offExit()
       input.dispose()
-      if (id !== null) void api.stop(id)
+      // Leaving the view: the shell keeps running and is picked up again.
       terminal.dispose()
       term.current = null
     }
-  }, [bridge, folder, run])
+  }, [bridge, folder, run, sessionKey])
 
   if (!bridge?.terminal) return <p className="p-3 text-sm text-ink-3">{t('terminal.desktopOnly')}</p>
   return (
     <section aria-label={t('terminal.title')} className="flex h-full min-h-0 flex-col bg-sunken">
-      <header className="flex h-8 shrink-0 items-center gap-1 border-b border-line px-2 text-[12.5px] text-ink-2">
-        <span className="min-w-0 flex-1 truncate font-code" title={folder || '/'}>
+      <header className="flex min-h-8 shrink-0 flex-wrap items-center gap-x-1 border-b border-line px-2 text-[12.5px] text-ink-2">
+        <span className="min-w-16 flex-1 truncate font-code" title={folder || '/'}>
           {t('terminal.title')} · {folder || t('terminal.vaultRoot')}
           {ended && ` · ${t('terminal.ended')}`}
         </span>
+        {actions}
+        <IconButton
+          size="sm"
+          label={t('terminal.clear')}
+          onClick={() => {
+            term.current?.clear()
+            void bridge.terminal!.clear(sessionKey)
+          }}
+        >
+          <Eraser size={14} />
+        </IconButton>
         {onSave && (
           <IconButton
             size="sm"
@@ -168,7 +188,15 @@ export function TerminalPanel({
           <RotateCcw size={14} />
         </IconButton>
         {onClose && (
-          <IconButton size="sm" label={t('common.close')} onClick={onClose}>
+          <IconButton
+            size="sm"
+            label={t('terminal.close')}
+            onClick={() => {
+              // Closing ends the shell; the output stays saved until it is cleared.
+              if (session.current !== null) void bridge.terminal!.stop(session.current)
+              onClose()
+            }}
+          >
             <X size={14} />
           </IconButton>
         )}

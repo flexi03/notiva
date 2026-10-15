@@ -116,8 +116,29 @@ export async function setupHint(ws: Workspace): Promise<void> {
   if (!bridge) return
   const app = useApp.getState()
   const dash = findStudyDashboard(ws)
-  const hint = (message: string, note: string, label: string, run: () => void) =>
-    announce(message, { state: 'info', note, sticky: true, key: 'setup', action: { label, run } })
+  // A hint closed with × does not come back for this folder.
+  const flag = (message: string) => `notiva:hint-closed:${ws.vault.name}:${message}`
+  const hint = (message: string, note: string, label: string, run: () => void) => {
+    try {
+      if (localStorage.getItem(flag(message))) return
+    } catch {
+      /* private mode */
+    }
+    announce(message, {
+      state: 'info',
+      note,
+      sticky: true,
+      key: 'setup',
+      action: { label, run },
+      onDismiss: () => {
+        try {
+          localStorage.setItem(flag(message), '1')
+        } catch {
+          /* private mode */
+        }
+      },
+    })
+  }
   if (!dash)
     return void hint(t('setup.folder'), t('setup.folderNote'), t('setup.start'), () =>
       app.navigate({ name: 'settings', section: 'study' }),

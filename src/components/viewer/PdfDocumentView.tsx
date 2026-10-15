@@ -15,7 +15,7 @@ import {
   Type,
 } from 'lucide-react'
 import { CommentMarkers } from './CommentMarkers'
-import { TerminalPanel } from '@/components/terminal/TerminalPanel'
+import { TerminalDock } from '@/components/terminal/TerminalDock'
 import { ResizeHandle, useStoredWidth } from '@/components/layout/ResizeHandle'
 import { workFolderFor } from '@/lib/codeFolders'
 import { electronBridge } from '@/lib/vault'
@@ -411,7 +411,7 @@ export function PdfDocumentView({
               label={t('terminal.title')}
               reset={260}
             />
-            <TerminalPanel
+            <TerminalDock
               folder={work.folder}
               onClose={() => setTerminal(false)}
               onSave={(text) => {

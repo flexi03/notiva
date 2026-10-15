@@ -294,7 +294,10 @@ async function pollMoodle(contents = true): Promise<MoodleSnapshot> {
 }
 
 let pollTimer: ReturnType<typeof setTimeout> | null = null
-const terminals = new Terminals((channel, ...args) => window?.webContents.send(channel, ...args))
+const terminals = new Terminals(
+  (channel, ...args) => window?.webContents.send(channel, ...args),
+  userFile('terminals'),
+)
 app.on('before-quit', () => terminals.stopAll())
 
 /** eCampus exam results (HISinOne) – own login session, results snapshot in the profile. */
@@ -630,10 +633,15 @@ function registerIpc(): void {
     if (error) throw new Error(error)
   })
   // Built-in terminal (PDF view, code folders): a shell in a folder of the vault.
-  handle('term:start', async (folder: unknown, cols: unknown, rows: unknown) => {
+  handle('term:start', async (key: unknown, folder: unknown, cols: unknown, rows: unknown) => {
+    if (typeof key !== 'string' || key.length > 600) throw new Error('Ungültiges Terminal')
     const cwd = await requireVault().resolve(typeof folder === 'string' ? folder : '')
     await fs.mkdir(cwd, { recursive: true })
-    return terminals.start(cwd, Number(cols) || 80, Number(rows) || 24)
+    // The key is per vault: the same folder in another vault is another terminal.
+    return terminals.start(`${requireVault().root}::${key}`, cwd, Number(cols) || 80, Number(rows) || 24)
+  })
+  handle('term:clear', async (key: unknown) => {
+    if (typeof key === 'string') await terminals.clear(`${requireVault().root}::${key}`)
   })
   handle('term:write', async (id: unknown, data: unknown) => {
     if (typeof id === 'number' && typeof data === 'string' && data.length < 100_000) terminals.write(id, data)

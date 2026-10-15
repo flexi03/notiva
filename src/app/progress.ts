@@ -19,6 +19,8 @@ export interface ProgressTask {
   sticky?: boolean
   /** Same key replaces the older entry (e.g. one setup hint). */
   key?: string
+  /** Called when the user closes it (e.g. to not show a hint again). */
+  onDismiss?: () => void
 }
 
 interface ProgressState {
@@ -30,7 +32,11 @@ let counter = 0
 
 export const useProgress = create<ProgressState>((set) => ({
   tasks: [],
-  dismiss: (id) => set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) })),
+  dismiss: (id) =>
+    set((s) => {
+      s.tasks.find((t) => t.id === id)?.onDismiss?.()
+      return { tasks: s.tasks.filter((t) => t.id !== id) }
+    }),
 }))
 
 export interface TaskHandle {
@@ -101,7 +107,9 @@ export async function withProgress<T>(
  */
 export function announce(
   message: string,
-  options: Pick<ProgressTask, 'note' | 'action' | 'sticky' | 'key'> & { state?: 'done' | 'info' } = {},
+  options: Pick<ProgressTask, 'note' | 'action' | 'sticky' | 'key' | 'onDismiss'> & {
+    state?: 'done' | 'info'
+  } = {},
 ): number {
   const id = ++counter
   const { state = 'done', ...rest } = options

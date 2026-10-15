@@ -109,7 +109,9 @@ contextBridge.exposeInMainWorld('notiva', {
     open: (folder: string, how: 'editor' | 'finder' | 'terminal') => invoke<void>('code:open', folder, how),
   },
   terminal: {
-    start: (folder: string, cols: number, rows: number) => invoke<number>('term:start', folder, cols, rows),
+    start: (key: string, folder: string, cols: number, rows: number) =>
+      invoke<{ id: number; replay: string }>('term:start', key, folder, cols, rows),
+    clear: (key: string) => invoke<void>('term:clear', key),
     write: (id: number, data: string) => invoke<void>('term:write', id, data),
     resize: (id: number, cols: number, rows: number) => invoke<void>('term:resize', id, cols, rows),
     stop: (id: number) => invoke<void>('term:stop', id),
