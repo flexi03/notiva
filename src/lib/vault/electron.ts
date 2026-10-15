@@ -191,12 +191,19 @@ export interface NotivaBridge {
     rename(from: string, to: string): Promise<void>
   }
   openExternal(url: string): Promise<void>
+  /** An https page in a Notiva window with the university sign-in (shared with Moodle). */
+  openInWindow?(url: string): Promise<void>
   /** eCampus exam results (desktop). */
   ecampus?: EcampusBridge
   /** Code folders in the vault: create (.gitignore), open in editor/Finder/Terminal. */
   code?: {
     init(folder: string): Promise<void>
     open(folder: string, how: 'editor' | 'finder' | 'terminal'): Promise<void>
+    /** git clone of a lab repository into the vault folder `target` (with progress in percent). */
+    clone?(url: string, target: string): Promise<void>
+    /** The same in the Terminal app, where git can ask for a login (Mac). */
+    cloneInTerminal?(url: string, target: string): Promise<void>
+    onCloneProgress?(callback: (percent: number) => void): () => void
   }
   /** Built-in terminal: a shell in a vault folder. */
   terminal?: {

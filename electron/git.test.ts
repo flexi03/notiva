@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readFileSync, existsSync, utimesSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { GitRepo } from './git'
+import { cloneProgress, GitRepo } from './git'
 import { FsVault } from './vaultFs'
 
 beforeAll(() => {
@@ -113,5 +113,14 @@ describe('GitRepo', () => {
     const repo = await GitRepo.init(vault)
     expect(await vault.read('.gitignore')).toContain('.notiva/trash/')
     expect((await repo.state()).changes).toEqual([{ path: '.gitignore', status: 'untracked' }])
+  })
+})
+
+describe('clone progress', () => {
+  it('maps the phases of git clone to one percentage', () => {
+    expect(cloneProgress('remote: Counting objects: 100% (10/10), done.')).toBe(5)
+    expect(cloneProgress('Receiving objects:  40% (4/10)')).toBe(35)
+    expect(cloneProgress('Resolving deltas: 100% (3/3), done.')).toBe(95)
+    expect(cloneProgress("Cloning into 'x'...")).toBeNull()
   })
 })

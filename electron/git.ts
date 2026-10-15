@@ -362,3 +362,77 @@ export async function setGitIdentity(cwd: string, name: string, email: string): 
   await run(cwd, ['config', '--global', 'user.name', name])
   await run(cwd, ['config', '--global', 'user.email', email])
 }
+
+/** git clone's progress lines ("Receiving objects:  45% (90/200)") → overall percent. */
+export function cloneProgress(line: string): number | null {
+  const m = /(Counting|Compressing|Receiving|Resolving|Updating files)[^:]*:\s+(\d+)%/.exec(line)
+  if (!m) return null
+  const p = Number(m[2])
+  // Receiving takes most of the time, deltas and checkout follow.
+  if (m[1] === 'Counting' || m[1] === 'Compressing') return Math.round(p * 0.05)
+  if (m[1] === 'Receiving') return 5 + Math.round(p * 0.75)
+  if (m[1] === 'Resolving') return 80 + Math.round(p * 0.15)
+  return 95 + Math.round(p * 0.05)
+}
+
+/**
+ * "Repository ins Praktikum holen": git clone into `target` (must not exist yet) with progress.
+ * No password prompt (it would hang) – a stored credential helper (keychain) is used, otherwise
+ * the error says that a login is needed.
+ */
+export async function cloneRepo(
+  url: string,
+  target: string,
+  onProgress: (percent: number) => void,
+): Promise<void> {
+  if (!/^https:\/\/[^\s/]+\/\S+$/.test(url)) throw new GitError('Nur https-Adressen können geholt werden')
+  if (await fs.stat(target).catch(() => null))
+    throw new GitError(`Ordner gibt es schon: ${path.basename(target)}`)
+  await fs.mkdir(path.dirname(target), { recursive: true })
+  const { spawn } = await import('node:child_process')
+  await new Promise<void>((resolve, reject) => {
+    const child = spawn(process.env.NOTIVA_E2E_GIT ?? 'git', ['clone', '--progress', '--', url, target], {
+      env: { ...process.env, GIT_TERMINAL_PROMPT: '0', LC_ALL: 'C' },
+      windowsHide: true,
+    })
+    let err = ''
+    const timer = setTimeout(() => child.kill(), WRITE_TIMEOUT)
+    child.stderr.on('data', (chunk: Buffer) => {
+      const text = chunk.toString()
+      err = (err + text).slice(-4000)
+      for (const line of text.split(/[\r\n]/)) {
+        const p = cloneProgress(line)
+        if (p !== null) onProgress(p)
+      }
+    })
+    child.once('error', (e) => {
+      clearTimeout(timer)
+      reject((e as NodeJS.ErrnoException).code === 'ENOENT' ? new GitError('Git ist nicht installiert.') : e)
+    })
+    child.once('close', (code) => {
+      clearTimeout(timer)
+      if (code === 0) return resolve()
+      const last = err
+        .split(/[\r\n]/)
+        .filter((l) => /fatal|error|denied|not found|could not/i.test(l))
+        .join('\n')
+      reject(new GitError((last || err).trim().slice(0, 800) || `git clone fehlgeschlagen (${code})`))
+    })
+  })
+}
+
+/** Quoted for a POSIX shell. */
+const sh = (s: string) => `'${s.replace(/'/g, `'\\''`)}'`
+
+/**
+ * When the server wants a login (2FA, token): the clone in the Terminal app, where git can ask
+ * for user name and token – the keychain remembers them for the next time.
+ */
+export async function cloneInTerminal(url: string, target: string): Promise<void> {
+  if (process.platform !== 'darwin') throw new GitError('Das gibt es bisher nur auf dem Mac')
+  await fs.mkdir(path.dirname(target), { recursive: true })
+  const command = `cd ${sh(path.dirname(target))} && git clone ${sh(url)} ${sh(path.basename(target))}`
+  const script = `tell application "Terminal" to do script "${command.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+  const { spawn } = await import('node:child_process')
+  spawn('osascript', ['-e', script, '-e', 'tell application "Terminal" to activate']).unref()
+}

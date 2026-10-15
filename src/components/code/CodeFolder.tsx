@@ -1,5 +1,17 @@
 import { useState } from 'react'
-import { Code2, FileCode2, FilePlus, FolderOpen, GitBranch, Globe, Link2, SquareTerminal } from 'lucide-react'
+import {
+  Code2,
+  ExternalLink,
+  FileCode2,
+  FilePlus,
+  FolderOpen,
+  GitBranch,
+  Globe,
+  Link2,
+  SquareTerminal,
+} from 'lucide-react'
+import { cloneIntoLab } from '@/app/clone'
+import { repoUrl } from '@/lib/gitUrl'
 import { useDockRequests } from '@/app/dock'
 import { useMoodle } from '@/app/moodle'
 import { TerminalDock } from '@/components/terminal/TerminalDock'
@@ -8,7 +20,7 @@ import { useAction, useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import type { Page } from '@/lib/workspace'
 import { electronBridge } from '@/lib/vault'
-import { Button } from '@/components/ui'
+import { Button, IconButton } from '@/components/ui'
 
 /** Folder of a code page: the page "Praktikum.md" owns "Praktikum/" next to it. */
 export const codeFolder = (page: Page) => page.path.slice(0, -3)
@@ -165,6 +177,23 @@ export function CodeFolder({ page }: { page: Page }) {
                   {l.title}
                 </button>
                 {!l.own && <span className="shrink-0 text-[11.5px] text-ink-3">{t('code.moodleLinks')}</span>}
+                <IconButton
+                  size="sm"
+                  label={t('course.openBrowser')}
+                  onClick={() => void electronBridge()?.openExternal(l.url)}
+                >
+                  <ExternalLink size={12} />
+                </IconButton>
+                {repoUrl(l.url) && bridge?.clone && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    icon={<GitBranch size={13} />}
+                    onClick={() => void run(() => cloneIntoLab(ws, l.url, folder))}
+                  >
+                    {t('clone.button')}
+                  </Button>
+                )}
               </li>
             ))}
           </ul>

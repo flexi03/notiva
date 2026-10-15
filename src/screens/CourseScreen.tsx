@@ -5,6 +5,7 @@ import {
   Download,
   ExternalLink,
   FileText,
+  GitBranch,
   Globe,
   Link as LinkIcon,
   NotebookText,
@@ -12,6 +13,10 @@ import {
 } from 'lucide-react'
 import { ipcMessage, useMoodle } from '@/app/moodle'
 import { withProgress } from '@/app/progress'
+import { cloneIntoLab, labFolderOf } from '@/app/clone'
+import { createCodeFolder } from '@/components/code/CodeFolder'
+import { repoUrl } from '@/lib/gitUrl'
+import { courseIdsOf } from '@/lib/study/modules'
 import { isPdf, loadMaterialMap, saveMaterial, type MaterialMap } from '@/app/materials'
 import { useApp, useWorkspace } from '@/app/store'
 import { getLanguage, t } from '@/i18n'
@@ -71,6 +76,23 @@ export function CourseScreen({ courseId }: { courseId: string }) {
       reloadMap()
       if (isPdf(path) || /\.(png|jpe?g|gif|webp|txt|md|csv)$/i.test(path)) navigate({ name: 'file', path })
       else await electronBridge()?.openWithSystem?.(path)
+    })
+
+  // Links (e.g. ProjectBase): the system browser by default (sign-in with 2FA works there).
+  const openLink = (m: MoodleMaterial) => void electronBridge()?.openExternal(m.url)
+  const openInApp = (m: MoodleMaterial) =>
+    void electronBridge()
+      ?.openInWindow?.(m.url)
+      .catch((e: unknown) => showToast(ipcMessage(e)))
+  const cloneRepo = (m: MoodleMaterial) =>
+    withBusy(m.id, async () => {
+      const module = ws.all().find((p) => courseIdsOf(p.data).includes(courseId))
+      if (!module) return showToast(t('clone.noLab'))
+      // No lab folder yet: "Praktikum" below the module (code: true).
+      const lab =
+        labFolderOf(ws, module.path) ?? (await createCodeFolder(ws, module.path, 'Praktikum')).slice(0, -3)
+      const target = await cloneIntoLab(ws, m.url, lab)
+      if (target) navigate({ name: 'page', path: `${lab}.md` })
     })
 
   const downloadAll = () =>
@@ -169,7 +191,34 @@ export function CourseScreen({ courseId }: { courseId: string }) {
                             .join(' · ')}
                         </p>
                       </div>
-                      {m.kind === 'page' ? (
+                      {m.kind === 'url' && repoUrl(m.url) && electronBridge()?.code?.clone && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          icon={<GitBranch size={14} />}
+                          disabled={busy.has(m.id)}
+                          onClick={() => void cloneRepo(m)}
+                        >
+                          {t('clone.button')}
+                        </Button>
+                      )}
+                      {m.kind === 'url' ? (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            icon={<ExternalLink size={14} />}
+                            onClick={() => openLink(m)}
+                          >
+                            {t('course.openBrowser')}
+                          </Button>
+                          {electronBridge()?.openInWindow && (
+                            <IconButton label={t('course.openInApp')} onClick={() => openInApp(m)}>
+                              <AppWindow size={15} />
+                            </IconButton>
+                          )}
+                        </>
+                      ) : m.kind === 'page' ? (
                         <Button size="sm" variant="ghost" onClick={() => void open(m.url, false)}>
                           {t('course.openPage')}
                         </Button>
@@ -191,7 +240,7 @@ export function CourseScreen({ courseId }: { courseId: string }) {
                       <IconButton
                         label={t('course.openSource', { name: m.title })}
                         onClick={() =>
-                          void (m.kind === 'url'
+                          void (m.kind === 'url' && !m.activityUrl
                             ? electronBridge()?.openExternal(m.url)
                             : open(m.activityUrl ?? m.url, false))
                         }

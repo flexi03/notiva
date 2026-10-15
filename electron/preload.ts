@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('notiva', {
   pickFolder: () => invoke<string | null>('app:pickFolder'),
   lastFolder: () => invoke<string | null>('app:lastFolder'),
   openExternal: (url: string) => invoke<void>('app:openExternal', url),
+  openInWindow: (url: string) => invoke<void>('app:openInWindow', url),
   openWithSystem: (path: string) => invoke<void>('vault:openWithSystem', path),
   microphone: () => invoke<boolean>('app:microphone'),
   update: {
@@ -138,6 +139,13 @@ contextBridge.exposeInMainWorld('notiva', {
   code: {
     init: (folder: string) => invoke<void>('code:init', folder),
     open: (folder: string, how: 'editor' | 'finder' | 'terminal') => invoke<void>('code:open', folder, how),
+    clone: (url: string, target: string) => invoke<void>('code:clone', url, target),
+    cloneInTerminal: (url: string, target: string) => invoke<void>('code:cloneInTerminal', url, target),
+    onCloneProgress: (callback: (percent: number) => void) => {
+      const listener = (_e: unknown, percent: number) => callback(percent)
+      ipcRenderer.on('code:cloneProgress', listener)
+      return () => ipcRenderer.removeListener('code:cloneProgress', listener)
+    },
   },
   terminal: {
     start: (key: string, folder: string, cols: number, rows: number) =>

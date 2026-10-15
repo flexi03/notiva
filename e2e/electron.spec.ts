@@ -53,6 +53,7 @@ test('Renderer ist abgeschottet (kein Node, nur die Notiva-Brücke)', async () =
       'onMenu',
       'onVaultChange',
       'openExternal',
+      'openInWindow',
       'openWithSystem',
       'pickFolder',
       'platform',

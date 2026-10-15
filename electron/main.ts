@@ -26,7 +26,7 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { FsVault } from './vaultFs'
 import { parseAiRequest } from './aiRequest'
-import { GitRepo, installGit, setGitIdentity, type GitState } from './git'
+import { cloneInTerminal, cloneRepo, GitRepo, installGit, setGitIdentity, type GitState } from './git'
 import { loadShellPath, which } from './shellPath'
 import { cliArgs, detectClis, parseCliRequest, startCli, type CliInfo, type McpLaunch } from './aiCli'
 import { spawn, type ChildProcess } from 'node:child_process'
@@ -674,6 +674,18 @@ function registerIpc(): void {
     const ignore = path.join(absolute, '.gitignore')
     if (!(await fs.stat(ignore).catch(() => null))) await fs.writeFile(ignore, CODE_GITIGNORE)
   })
+  // "Repository ins Praktikum holen": only https, only into a new folder inside the vault.
+  handle('code:clone', async (url: unknown, p: unknown) => {
+    const absolute = await requireVault().resolve(p as string)
+    await cloneRepo(String(url), absolute, (percent) =>
+      window?.webContents.send('code:cloneProgress', percent),
+    )
+  })
+  handle('code:cloneInTerminal', async (url: unknown, p: unknown) => {
+    const target = String(url)
+    if (!/^https:\/\/[^\s/]+\/\S+$/.test(target)) throw new Error('Nur https-Adressen können geholt werden')
+    await cloneInTerminal(target, await requireVault().resolve(p as string))
+  })
   handle('code:open', async (p: unknown, how: unknown) => {
     const absolute = await requireVault().resolve(p as string)
     await fs.mkdir(absolute, { recursive: true })
@@ -844,6 +856,12 @@ function registerIpc(): void {
   })
   handle('app:openExternal', async (url: unknown) => {
     if (typeof url === 'string' && /^(https?:|mailto:)/i.test(url)) await shell.openExternal(url)
+  })
+  // A web page (e.g. ProjectBase linked in Moodle) in a sandboxed Notiva window that shares the
+  // university sign-in with Moodle – the alternative to the system browser.
+  handle('app:openInWindow', async (url: unknown) => {
+    if (typeof url !== 'string' || !/^https:\/\//i.test(url)) throw new Error('Nur https-Seiten')
+    openMoodlePage(window, checkUrl(url).toString())
   })
   // One-click fixes (see src/lib/errors.ts).
   handle('git:install', async () => installGit((url) => shell.openExternal(url)))

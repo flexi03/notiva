@@ -125,7 +125,28 @@ function fakeMoodle(): Promise<{ server: Server; url: string; calls: string[] }>
                     ],
                   },
                 ]
-              : [],
+              : body.get('courseid') === '43' && revised.on
+                ? [
+                    {
+                      id: 2,
+                      name: 'Praktikum',
+                      modules: [
+                        {
+                          id: 90,
+                          name: 'Praktikumsaufgaben (ProjectBase)',
+                          modname: 'url',
+                          url: `${base}/mod/url/view.php?id=90`,
+                          contents: [
+                            {
+                              type: 'url',
+                              fileurl: 'https://projectbase.example.org/bs/praktikum-1/-/tree/main',
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ]
+                : [],
           )
         if (fn === 'message_popup_get_popup_notifications')
           return send({
@@ -425,4 +446,12 @@ test('legt eine neue Version daneben, vergleicht sie und ersetzt nach Wahl', asy
   await expect.poll(next).toBeFalsy()
   expect(readFileSync(path.join(dir, 'vl01.pdf')).toString('latin1')).toContain('Klausurhinweis')
   await expect(window.getByText('Keine neuen Versionen')).toBeVisible()
+
+  // A link to a Git project: in the browser (sign-in with 2FA works there) or into the lab.
+  await window.getByRole('button', { name: 'Moodle', exact: true }).click()
+  await window.getByRole('button', { name: 'Unterlagen (1)' }).click()
+  const row = window.getByRole('listitem').filter({ hasText: 'Praktikumsaufgaben (ProjectBase)' })
+  await expect(row.getByRole('button', { name: 'Im Browser öffnen' })).toBeVisible()
+  await expect(row.getByRole('button', { name: 'In der App öffnen' })).toBeVisible()
+  await expect(row.getByRole('button', { name: 'Repository ins Praktikum holen' })).toBeVisible()
 })
