@@ -1,8 +1,11 @@
 import { courseIdsOf } from '@/lib/study/modules'
 import { useEffect, useMemo } from 'react'
-import { AppWindow, ExternalLink, GraduationCap, RefreshCw } from 'lucide-react'
+import { AppWindow, ExternalLink, FileDiff, FolderSync, GraduationCap, RefreshCw } from 'lucide-react'
+import { pendingVersions } from '@/app/materials'
+import { reindexMaterials } from '@/app/reindex'
+import { usePendingVersions } from '@/app/versionsStore'
 import { moodleAvailable, useMoodle } from '@/app/moodle'
-import { useApp, useWorkspace } from '@/app/store'
+import { useAction, useApp, useWorkspace } from '@/app/store'
 import { getLanguage, t } from '@/i18n'
 import type { MoodleCourse, MoodleEvent } from '@/lib/moodle'
 import { Button, EmptyState, IconButton, Spinner } from '@/components/ui'
@@ -15,6 +18,11 @@ export function MoodleScreen() {
   const navigate = useApp((s) => s.navigate)
   const openPage = useApp((s) => s.openPage)
   const connected = !!status?.connected
+  const run = useAction()
+  const versions = usePendingVersions((s) => s.count)
+  useEffect(() => {
+    void pendingVersions(ws).then((l) => usePendingVersions.setState({ count: l.length }))
+  }, [ws])
 
   useEffect(() => {
     if (connected && !useMoodle.getState().snapshot) void load()
@@ -152,6 +160,19 @@ export function MoodleScreen() {
                 onClick={() => void fetchNow()}
               >
                 {t('moodle.screen.refresh')}
+              </Button>
+              {versions > 0 && (
+                <Button icon={<FileDiff size={15} />} onClick={() => navigate({ name: 'versions' })}>
+                  {t('versions.button', { count: versions })}
+                </Button>
+              )}
+              <Button
+                icon={<FolderSync size={15} />}
+                disabled={loading}
+                title={t('reindex.hint')}
+                onClick={() => void run(() => reindexMaterials(ws))}
+              >
+                {t('reindex.button')}
               </Button>
               <Button variant="primary" onClick={() => setImportOpen(true)}>
                 {t('moodle.screen.import')}

@@ -98,7 +98,8 @@ export interface MoodleBridge {
   /** Opens a page of the connected Moodle in an app window (with the login) or the browser. */
   open(url: string, external: boolean): Promise<void>
   /** Saves a material of the last fetch into the vault (below `folder`); returns its path. */
-  download(id: string, folder: string): Promise<{ path: string }>
+  /** `as`: another file name (a newer version next to the current one) */
+  download(id: string, folder: string, as?: string): Promise<{ path: string }>
   /** Steps of a running fetch (courses, materials per course). */
   onProgress(callback: (event: { done: number; total: number; text: string }) => void): () => void
   /** A fetch finished (also the regular background check). */

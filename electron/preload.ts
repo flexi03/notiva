@@ -116,7 +116,8 @@ contextBridge.exposeInMainWorld('notiva', {
     fetch: () => invoke('moodle:fetch'),
     snapshot: () => invoke('moodle:snapshot'),
     open: (url: string, external: boolean) => invoke<void>('moodle:open', url, external),
-    download: (id: string, folder: string) => invoke<{ path: string }>('moodle:download', id, folder),
+    download: (id: string, folder: string, as?: string) =>
+      invoke<{ path: string }>('moodle:download', id, folder, as),
     onProgress(callback: (event: { done: number; total: number; text: string }) => void) {
       const listener = (_e: unknown, event: { done: number; total: number; text: string }) => callback(event)
       ipcRenderer.on('moodle:progress', listener)

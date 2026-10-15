@@ -15,10 +15,13 @@ import { studyPack } from '../src/lib/packs/study'
 import { expandPack } from '../src/lib/templates'
 import { ssoAnswer } from '../electron/moodleSso'
 import { MODULHANDBUCH_PDF } from '../src/test/fixtures/pdf'
+import { tablePdf } from './fixtures/tablePdf'
 
 const TOKEN = 'tok1234567890abcdef'
 /** Switched on later: Moodle then has a new assignment, a new script and a forum message. */
 const news = { on: false }
+/** Switched on later: the lecturer uploads a new version of vl01.pdf. */
+const revised = { on: false }
 const day = 86_400
 const now = Math.floor(Date.now() / 1000)
 
@@ -51,6 +54,8 @@ function fakeMoodle(): Promise<{ server: Server; url: string; calls: string[] }>
           return res.end('<html>Login</html>')
         }
         res.setHeader('content-type', 'application/pdf')
+        if (revised.on && url.pathname.endsWith('/vl01.pdf'))
+          return res.end(tablePdf([{ x: 72, y: 700, text: 'Neue Fassung mit Klausurhinweis' }]))
         return res.end(Buffer.from(MODULHANDBUCH_PDF))
       }
       if (req.url === '/sso') {
@@ -96,7 +101,7 @@ function fakeMoodle(): Promise<{ server: Server; url: string; calls: string[] }>
                             type: 'file',
                             filename: 'vl01.pdf',
                             fileurl: `${base}/webservice/pluginfile.php/1/vl01.pdf`,
-                            timemodified: now - 10 * day,
+                            timemodified: revised.on ? now - 30 : now - 10 * day,
                           },
                         ],
                       },
@@ -396,4 +401,28 @@ test('schlägt neue Skripte vor und speichert sie nach Bestätigung – mit Fort
   await row.getByRole('button', { name: 'Öffnen', exact: true }).click()
   await expect(window.getByTestId('pdf-pages')).toHaveText('/ 1')
   await expect(window.locator('.textLayer')).toContainText('Modulhandbuch Informatik')
+})
+
+test('legt eine neue Version daneben, vergleicht sie und ersetzt nach Wahl', async () => {
+  test.setTimeout(90_000)
+  revised.on = true
+  const dir = path.join(folder, 'Studium/Unterlagen/Lineare Algebra/Vorlesung')
+  const before = readFileSync(path.join(dir, 'vl01.pdf'))
+  await window.getByRole('button', { name: 'Moodle', exact: true }).click()
+  await window.getByRole('button', { name: 'Unterlagen neu einlesen' }).click()
+  const dialog = window.getByRole('dialog', { name: /Änderung\(en\) an den Unterlagen/ })
+  await expect(dialog).toContainText('Neue Version: vl01.pdf')
+  await dialog.getByRole('button', { name: 'Ausführen' }).click()
+  // Next to the current file – that one is unchanged.
+  const next = () => readdirSync(dir).find((f) => /^vl01 \(neu \d{4}-\d\d-\d\d\)\.pdf$/.test(f))
+  await expect.poll(next).toBeTruthy()
+  expect(readFileSync(path.join(dir, 'vl01.pdf')).equals(before)).toBe(true)
+
+  await window.getByRole('button', { name: '1 neue Version(en)' }).click()
+  await expect(window.getByRole('heading', { name: 'Neue Versionen', level: 1 })).toBeVisible()
+  await expect(window.getByTestId('version-summary')).toContainText('1 neu, 1 entfernt')
+  await window.getByRole('button', { name: 'Alte ersetzen' }).click()
+  await expect.poll(next).toBeFalsy()
+  expect(readFileSync(path.join(dir, 'vl01.pdf')).toString('latin1')).toContain('Klausurhinweis')
+  await expect(window.getByText('Keine neuen Versionen')).toBeVisible()
 })

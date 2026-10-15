@@ -634,14 +634,18 @@ function registerIpc(): void {
   })
   // Saves a course material from the last fetch into the vault: <folder>/<category>/<file> – the
   // app chooses the folder (the module's, see src/lib/study/modules.ts).
-  handle('moodle:download', async (id: unknown, folder: unknown) => {
+  handle('moodle:download', async (id: unknown, folder: unknown, as: unknown) => {
     const config = await loadMoodle()
     if (!config) throw new Error('Moodle ist nicht verbunden')
     const snapshot = JSON.parse(await fs.readFile(MOODLE_SNAPSHOT(), 'utf8')) as MoodleSnapshot
     const material = snapshot.materials?.find((m) => m.id === id)
     if (!material) throw new Error('Unterlage nicht gefunden – bitte Moodle aktualisieren')
     if (typeof folder !== 'string' || folder.length > 300) throw new Error('Ungültiger Ordner')
-    const { bytes, filename } = await downloadMaterial((url, init) => net.fetch(url, init), config, material)
+    const downloaded = await downloadMaterial((url, init) => net.fetch(url, init), config, material)
+    const { bytes } = downloaded
+    // A newer version goes next to the current one under its own name ("Skript (neu …).pdf").
+    const filename =
+      typeof as === 'string' && as.trim() ? safeFileName(as.slice(0, 200)) : downloaded.filename
     // Unterlagen/<Modul>/<Vorlesung | Praktikum & Übung | Sonstiges>/<Datei>
     const target = [folder.replace(/^\/+|\/+$/g, ''), materialCategory(material), filename]
       .filter(Boolean)

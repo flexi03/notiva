@@ -1,6 +1,7 @@
 import { SemesterScreen } from './screens/SemesterScreen'
 import { TimetableScreen } from './screens/TimetableScreen'
 import { HelpScreen } from './screens/HelpScreen'
+import { VersionsScreen } from './screens/VersionsScreen'
 import { GradesScreen } from '@/screens/GradesScreen'
 import { CourseScreen } from '@/screens/CourseScreen'
 import { FileScreen } from '@/screens/FileScreen'
@@ -87,6 +88,8 @@ export function App() {
         <TimetableScreen />
       ) : route.name === 'help' ? (
         <HelpScreen />
+      ) : route.name === 'versions' ? (
+        <VersionsScreen />
       ) : route.name === 'file' ? (
         <FileScreen key={route.path} path={route.path} {...(route.page ? { page: route.page } : {})} />
       ) : (
