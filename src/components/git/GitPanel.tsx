@@ -150,6 +150,7 @@ export function GitPanel() {
           selected.map((c) => ({
             path: c.path,
             status: c.status,
+            ...(c.from ? { from: c.from } : {}),
             added: stats.get(c.path)?.added,
             removed: stats.get(c.path)?.removed,
             excerpt: stats.get(c.path)?.excerpt,

@@ -1,4 +1,5 @@
 import { withAi } from '@/app/aiActivity'
+import { changeKind, groupChanges } from '@/lib/commitGroups'
 import { withProgress } from '@/app/progress'
 import { getLanguage, t } from '@/i18n'
 import { electronBridge } from '@/lib/vault'
@@ -89,9 +90,9 @@ export function describeChange(
     c.added || c.removed ? ` (+${c.added ?? 0} −${c.removed ?? 0} ${de ? 'Zeilen' : 'lines'})` : ''
   const kind = md ? (de ? 'Seite' : 'page') : de ? 'Datei' : 'file'
   const inWhere = where ? (de ? ` in „${where}“` : ` in “${where}”`) : ''
-  if (/^[A?U]/.test(c.status))
+  if (changeKind(c.status) === 'new')
     return de ? `neue ${kind} „${name}“${inWhere}` : `new ${kind} “${name}”${inWhere}`
-  if (/^D/.test(c.status))
+  if (changeKind(c.status) === 'deleted')
     return de ? `${kind} „${name}“${inWhere} gelöscht` : `${kind} “${name}”${inWhere} deleted`
   return de ? `${kind} „${name}“${inWhere} bearbeitet${lines}` : `${kind} “${name}”${inWhere} edited${lines}`
 }
@@ -113,6 +114,8 @@ export function firstLine(text: string): string {
 export interface CommitChange {
   path: string
   status: string
+  /** renames: the previous path */
+  from?: string
   added?: number
   removed?: number
   /** Changed lines ("+ …" / "- …"), a few of them – what the model reads. */
@@ -120,10 +123,13 @@ export interface CommitChange {
 }
 
 /** Commit type from the kind of change (Conventional Commits). */
-export function commitType(changes: CommitChange[]): string {
-  if (changes.some((c) => /^[A?U]/.test(c.status) && !c.path.endsWith('.md'))) return 'feat'
+export function commitType(all: CommitChange[]): string {
+  const changes = all.filter((c) => !c.path.startsWith('.notiva/'))
+  if (!changes.length) return 'chore'
+  if (changes.some((c) => changeKind(c.status) === 'new' && !c.path.endsWith('.md'))) return 'feat'
   if (changes.every((c) => c.path.endsWith('.md'))) return 'docs'
-  if (changes.every((c) => /^D/.test(c.status))) return 'chore'
+  if (changes.every((c) => changeKind(c.status) === 'deleted' || changeKind(c.status) === 'renamed'))
+    return 'chore'
   return changes.some((c) => !c.path.endsWith('.md')) ? 'fix' : 'docs'
 }
 
@@ -179,32 +185,56 @@ export async function commitSummary(changes: CommitChange[]): Promise<string> {
           'Started sheet 2 with a recursive Fibonacci function',
         ],
       ]
-  // The biggest changes first; the rest only counted.
-  const ranked = [...changes].sort(
-    (a, b) => (b.added ?? 0) + (b.removed ?? 0) - ((a.added ?? 0) + (a.removed ?? 0)),
-  )
-  const shown = ranked.slice(0, 8)
+  // Moves, files per folder and Notiva's data are named here; only text changes go to the model.
+  const { bullets: grouped, texts } = groupChanges(changes, de)
+  const shown = texts.slice(0, 6)
+  const ask = (prompt: string, max: number, ex: Array<[string, string]>, sys = system) =>
+    withAi(t('localModel.commit'), () => bridge.complete(id, sys, prompt, max, ex))
   return withProgress(
     t('localModel.commit'),
     async (task) => {
       const bullets: string[] = []
       for (const [i, c] of shown.entries()) {
-        task.update(i, shown.length, c.path.split('/').pop())
+        task.update(i, shown.length + 1, c.path.split('/').pop())
         const head = describeChange(c, de)
-        const text = c.excerpt?.length
-          ? await bridge.complete(id, system, `${head}:\n${c.excerpt.slice(0, 12).join('\n')}`, 40, examples)
-          : head
+        const text = await ask(`${head}:\n${c.excerpt!.slice(0, 12).join('\n')}`, 40, examples)
         bullets.push(firstLine(text) || head)
       }
-      task.update(shown.length, shown.length)
-      const rest = ranked.length - shown.length
-      if (rest > 0) bullets.push(de ? `und ${rest} weitere Dateien` : `and ${rest} more files`)
-      const more =
-        shown.length > 1 ? (de ? ` (+${shown.length - 1} weitere)` : ` (+${shown.length - 1} more)`) : ''
-      const subject = firstLine(`${bullets[0] ?? ''}`).slice(0, 60 - more.length) + more
-      const scope = commitScope(changes)
-      return `${commitType(changes)}${scope ? `(${scope})` : ''}: ${subject}\n\n${bullets.map((b) => `- ${b}`).join('\n')}`
+      if (texts.length > shown.length)
+        bullets.push(
+          de
+            ? `${texts.length - shown.length} weitere Seiten bearbeitet`
+            : `${texts.length - shown.length} more pages edited`,
+        )
+      bullets.push(...grouped)
+      // One subject line over everything – by the model, else the first point.
+      task.update(shown.length, shown.length + 1, t('localModel.subject'))
+      const subjectSystem = de
+        ? 'Fasse die Änderungen in EINER kurzen deutschen Betreffzeile zusammen (höchstens 8 Wörter, ohne Punkt). Erfinde nichts dazu.'
+        : 'Summarise the changes in ONE short English subject line (at most 8 words, no full stop). Invent nothing.'
+      const subjectExamples: Array<[string, string]> = de
+        ? [
+            [
+              '- 17 Dateien in „Unterlagen / DBS 2“ nach „Vorlesung“ einsortiert\n- Notiva-Daten aktualisiert',
+              'DBS-2-Unterlagen nach Vorlesung einsortiert',
+            ],
+          ]
+        : [
+            [
+              '- 17 files in “Unterlagen / DBS 2” sorted into “Vorlesung”\n- Updated Notiva data',
+              'Sorted DBS 2 materials into lectures',
+            ],
+          ]
+      const list = bullets.map((b) => `- ${b}`).join('\n')
+      const subject =
+        bullets.length > 1
+          ? firstLine(await ask(list, 30, subjectExamples, subjectSystem).catch(() => '')) ||
+            firstLine(bullets[0]!)
+          : firstLine(bullets[0] ?? '')
+      task.update(shown.length + 1, shown.length + 1)
+      const scope = commitScope(changes.filter((c) => !c.path.startsWith('.notiva/')))
+      return `${commitType(changes)}${scope ? `(${scope})` : ''}: ${subject}\n\n${list}`
     },
-    { total: shown.length },
+    { total: shown.length + 1 },
   )
 }
