@@ -44,6 +44,10 @@ _Hilfe → So funktioniert Notiva_ (bitte beides gemeinsam aktuell halten). Engl
   - _Links aus Moodle_ zeigt Git-Projekte mit „Repository ins Praktikum holen“.
 - **Als Nächstes** in der Statusleiste öffnet das Modul. „Für diesen Termin“ zeigt dort die wahrscheinlichsten
   Dateien.
+- **Heute** (Seitenleiste) öffnet die Tagesnotiz mit der Tagesübersicht: Vorlesungen, Prüfungen, Praktika,
+  fällige und überfällige Aufgaben, Moodle-Fristen – ein Klick öffnet den Eintrag bzw. das Modul.
+- **Private Repositories** (z. B. ProjectBase): Beim ersten Holen fragt Notiva nach einem Zugangstoken (Recht
+  `read_repository`) und speichert ihn verschlüsselt pro Server.
 - **Prüfungsplan**: die neueste PDF der Fakultät wird gelesen und in _Prüfungen_ eingetragen.
 - **Hintergrund-Abrufe**: jede Quelle hat ein eigenes Intervall (_Einstellungen → Benachrichtigungen_).
 

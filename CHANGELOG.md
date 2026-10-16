@@ -50,6 +50,10 @@ Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und inst
 - **Git:** Das lokale Modell schreibt die Commit-Nachricht, solange zeigt das Feld eine Ladeanimation. Die
   Vorlage ist nur noch Rückfallebene, mit Hinweis.
 - **KI-Leuchtband** am unteren Fensterrand, solange eine KI arbeitet.
+- **Heute:** Tagesübersicht auf jeder Tagesnotiz – Vorlesungen, Prüfungen, Praktika, fällige und überfällige
+  Aufgaben, Moodle-Fristen in zeitlicher Reihenfolge.
+- **Private Git-Projekte** mit Zugangstoken (verschlüsselt im Schlüsselbund, pro Server); Snippets werden über
+  ihre Git-Adresse geholt.
 - **Erinnerungen** pro Aufgabe („2 Std. vorher“, „Keine“); Datumsfelder können eine Uhrzeit haben.
 - **PDF:** Der Seitenabstand bleibt beim Zoomen gleich, Zoomen ist flüssiger, ←/→ blättern genau eine Seite.
 - Behoben: „PDFWorker.create – the worker is being destroyed“ beim Öffnen mancher PDFs.
