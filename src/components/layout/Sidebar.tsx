@@ -26,7 +26,7 @@ import { LAB_DATE } from '@/lib/labPlan'
 import { findStudyDashboard } from '@/lib/study/sync'
 import { useApp, useWorkspace } from '@/app/store'
 import { usePageActions } from '@/app/hooks/usePageActions'
-import { forgetVault } from '@/app/vaults'
+import { forgetVault, SCREENSHOT_MODE } from '@/app/vaults'
 import { t } from '@/i18n'
 import { cx, IconButton, Kbd, SectionLabel } from '@/components/ui'
 import { PageTree } from './PageTree'
@@ -144,7 +144,11 @@ export function Sidebar() {
         <div className="min-w-0 flex-1">
           <div className="truncate text-[14px] font-bold">{ws.vault.name}</div>
           <div className="truncate text-xs text-ink-3">
-            {ws.vault.kind === 'memory' ? t('nav.demoBadge') : t(`kind.${ws.vault.kind}`)}
+            {ws.vault.kind === 'memory'
+              ? SCREENSHOT_MODE
+                ? t('kind.directory')
+                : t('nav.demoBadge')
+              : t(`kind.${ws.vault.kind}`)}
           </div>
         </div>
         <IconButton

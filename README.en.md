@@ -88,6 +88,9 @@ assistant ([Another university?](#another-university)).
 - 🎓 **Studies**: modules with status, attempts and grade, ECTS-weighted average, exams, timetable, a "now / next" badge.
 - 🗓️ **Timetable** as a week view in module colours – times from Moodle and slides are suggested with their source,
   never entered silently.
+- 📚 **Materials per module:** the current course up front (lecture, lab & exercise, other), older terms in the
+  archive. Notes on a PDF sit right below it in the sidebar.
+- 📅 **Today:** the day's lectures, exams, labs, due tasks and Moodle deadlines in one overview.
 - 📄 **New script versions** go next to your file and are compared page by page – you decide.
 - 🎙️ **Lecture mode**: records, transcribes locally with Whisper and follows the slides.
 - 🧠 **Local mini model** (llama.cpp + Qwen) for quick summaries like commit messages – offline.
@@ -107,7 +110,12 @@ assistant ([Another university?](#another-university)).
 Work on lab assignments right next to your notes – no switching between editor, terminal, Moodle and PDF:
 
 - **One click:** in _My semester_ every module with a lab or exercise has a **"Work on the lab"** button. Notiva
-  creates a code folder for the module (with `.gitignore`) and opens it.
+  creates a lab folder for the module (with `.gitignore`) and opens it.
+- **One working folder, one page per session:** all repositories and your own files live together in the lab
+  folder – the terminal starts there, files from earlier sessions are at hand without changing paths. The pages
+  P01, P02 … show each session's date, preparation, assignment and preparation sheet and its repository.
+- **Get a repository from Moodle:** next to Git links (e.g. ProjectBase/GitLab) there is **"Get repository into the
+  lab"** – Notiva suggests the matching session and clones with progress.
 - **Editor and terminal:** edit files (Python, Java, SQL, JS, HTML, …) with syntax highlighting, a real terminal in
   the folder below – two side by side if you like. History is kept.
 - **Assignment beside it:** the assignment PDF with a terminal below, the course's Moodle pages and links as a web
@@ -146,16 +154,18 @@ The AI is off until you turn it on – and shows what it will see before anythin
 
 ## Key terms
 
-| Term         | Meaning                                                                                             |
-| ------------ | --------------------------------------------------------------------------------------------------- |
-| **Folder**   | The folder with your notes (a "vault" elsewhere). Everything in Notiva is a file in it.             |
-| **Page**     | A Markdown file. Sub-pages live in a folder of the same name next to it.                            |
-| **Property** | A field in a page's header (frontmatter), e.g. `Status`, `ECTS` or `Note` (grade).                  |
-| **Database** | A page whose sub-pages share properties. Views show them as a table, board and so on.               |
-| **Tile**     | A building block on a dashboard: a number, progress, a list or an embedded view.                    |
-| **Module**   | A course from the examination regulations. Its page gathers Moodle course, materials, notes, exams. |
-| **Belegung** | What you take in a module right now: lecture, lab, exercise or only the exam.                       |
-| **Profile**  | `Studium/Hochschule.md` – your university's addresses and study programme.                          |
+| Term           | Meaning                                                                                             |
+| -------------- | --------------------------------------------------------------------------------------------------- |
+| **Folder**     | The folder with your notes (a "vault" elsewhere). Everything in Notiva is a file in it.             |
+| **Page**       | A Markdown file. Sub-pages live in a folder of the same name next to it.                            |
+| **Property**   | A field in a page's header (frontmatter), e.g. `Status`, `ECTS` or `Note` (grade).                  |
+| **Database**   | A page whose sub-pages share properties. Views show them as a table, board and so on.               |
+| **Tile**       | A building block on a dashboard: a number, progress, a list or an embedded view.                    |
+| **Module**     | A course from the examination regulations. Its page gathers Moodle course, materials, notes, exams. |
+| **Belegung**   | What you take in a module right now: lecture, lab, exercise or only the exam.                       |
+| **Archiv**     | A module's materials from older terms (`Unterlagen/<Modul>/Archiv/<term>`), greyed out.             |
+| **P01, P02 …** | A lab session's page: date, preparation, sheets, repository.                                        |
+| **Profile**    | `Studium/Hochschule.md` – your university's addresses and study programme.                          |
 
 Property names in the study template are German (`Note`, `Belegung`, `Prüfungen` …); you can rename them freely.
 
@@ -276,8 +286,11 @@ No. Everything works without it. Free and local: Ollama or LM Studio.
 ```bash
 npm run check        # types, lint, unit tests
 npm run test:e2e     # Playwright: browser and desktop app (Electron)
-npm run build && node scripts/screenshots.mjs   # images for this README
+npm run screenshots  # images for this README (own build without "demo" labels)
 ```
+
+Acceptance flows (lecture, lab, each tested; German): [docs/ABLAEUFE.md](docs/ABLAEUFE.md) ·
+signing the macOS app: [docs/SIGNIEREN.md](docs/SIGNIEREN.md)
 
 Structure and rules (German): [AGENT.md](AGENT.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) ·
 [docs/DESIGN.md](docs/DESIGN.md) · [docs/SECURITY.md](docs/SECURITY.md) · progress: [PROGRESS.md](PROGRESS.md)

@@ -1,6 +1,6 @@
 {
   "name": "notiva",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "private": true,
   "description": "Notiva – freie, lokale Notion-Alternative auf Markdown-Basis: Seiten, Datenbanken, Kacheln, Vorlagen",
   "author": "flexi03",
@@ -28,6 +28,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "screenshots": "node scripts/screenshots.mjs && npm run build && npm run electron:build && node scripts/screenshots-desktop.mjs",
     "check": "npm run typecheck && npm run lint && npm test",
     "electron:build": "node scripts/build-electron.mjs",
     "mcp:build": "node scripts/build-mcp.mjs",
@@ -135,8 +136,9 @@
       "extendInfo": {
         "NSMicrophoneUsageDescription": "Notiva nimmt im Vorlesungsmodus auf, um ein Transkript zu erstellen."
       },
-      "identity": "-",
-      "hardenedRuntime": false
+      "hardenedRuntime": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
     },
     "win": {
       "target": [

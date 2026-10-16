@@ -38,9 +38,34 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build && npm run electron:build && npm run mcp:build
-      - run: npx electron-builder ${{ matrix.target }} --publish never
-        # No Apple/Windows certificate: macOS gets an ad-hoc signature (package.json, mac.identity "-")
-        # – without it macOS calls the downloaded app "damaged".
+      # macOS: signed with the Developer ID and notarized when the secrets are set (see
+      # docs/SIGNIEREN.md); otherwise an ad-hoc signature – without one macOS calls the download "damaged".
+      - name: Build the apps
+        shell: bash
+        env:
+          MAC_CERTIFICATE: ${{ secrets.MAC_CERTIFICATE }}
+          MAC_CERTIFICATE_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: |
+          extra=()
+          if [ "$RUNNER_OS" = macOS ]; then
+            if [ -n "$MAC_CERTIFICATE" ]; then
+              export CSC_LINK="$MAC_CERTIFICATE" CSC_KEY_PASSWORD="$MAC_CERTIFICATE_PASSWORD"
+              if [ -n "$APPLE_API_KEY_P8" ]; then
+                printf '%s' "$APPLE_API_KEY_P8" > "$RUNNER_TEMP/notary.p8"
+                export APPLE_API_KEY="$RUNNER_TEMP/notary.p8"
+              else
+                echo "::warning::Signiert, aber nicht notarisiert: APPLE_API_KEY fehlt."
+                extra+=(-c.mac.notarize=false)
+              fi
+            else
+              echo "::warning::Kein Apple-Zertifikat (MAC_CERTIFICATE): nur Ad-hoc-Signatur."
+              extra+=(-c.mac.identity=- -c.mac.hardenedRuntime=false -c.mac.notarize=false)
+            fi
+          fi
+          npx electron-builder ${{ matrix.target }} --publish never "${extra[@]}"
       - name: Upload to the release
         shell: bash
         env:

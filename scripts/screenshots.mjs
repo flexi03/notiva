@@ -1,6 +1,7 @@
-// Screenshots for the README from the demo vault: `npm run build && node scripts/screenshots.mjs`.
-// Starts `vite preview`, freezes the clock and writes PNGs to docs/images/.
-import { spawn } from 'node:child_process'
+// Screenshots for the README from the demo vault: `node scripts/screenshots.mjs`.
+// Builds the app in the screenshot mode (the demo without "Demo" labels, see SCREENSHOT_MODE) into
+// dist-screenshots/, starts `vite preview` on it, freezes the clock and writes PNGs to docs/images/.
+import { execFileSync, spawn } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { chromium } from '@playwright/test'
 
@@ -16,7 +17,11 @@ const SHOTS = [
   ['hell', '/#/p/Studium.md', 'light'],
 ]
 
-const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'ignore' })
+const DIST = 'dist-screenshots'
+execFileSync('npx', ['vite', 'build', '--mode', 'screenshots', '--outDir', DIST], { stdio: 'inherit' })
+const server = spawn('npx', ['vite', 'preview', '--outDir', DIST, '--port', String(PORT), '--strictPort'], {
+  stdio: 'ignore',
+})
 try {
   for (let i = 0; i < 50; i++) {
     if (

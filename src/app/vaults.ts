@@ -131,9 +131,15 @@ export async function openBrowserVault(): Promise<Workspace> {
   return finish(await openOpfsVault(), 'opfs')
 }
 
+/**
+ * Only in the build for the README pictures (`vite build --mode screenshots`): the demo looks like a
+ * real folder – no "Demo" label. Normal builds drop this (the mode is fixed at build time).
+ */
+export const SCREENSHOT_MODE = import.meta.env.MODE === 'screenshots'
+
 /** In-memory vault with the study pack installed – for trying Notiva out. */
 export async function openDemo(): Promise<Workspace> {
-  const ws = await Workspace.open(new MemoryVault('Demo'))
+  const ws = await Workspace.open(new MemoryVault(SCREENSHOT_MODE ? 'Studium' : 'Demo'))
   await ws.createPage({ title: 'Willkommen', body: WELCOME_PAGE })
   await installPack(ws, studyPack, { studiengang: 'Informatik (B.Sc.)' })
   return ws

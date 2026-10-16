@@ -88,6 +88,9 @@ das den KI-Assistenten machen ([Andere Hochschule?](#andere-hochschule)).
   Anzeige „Jetzt / Als Nächstes“.
 - 🗓️ **Stundenplan** als Wochenansicht in Modulfarben – Zeiten aus Moodle und Folien werden mit Quelle vorgeschlagen,
   nicht still eingetragen.
+- 📚 **Unterlagen je Modul:** der aktuelle Kurs vorne (Vorlesung, Praktikum & Übung, Sonstiges), ältere Semester im
+  Archiv. Notizen zu einem PDF hängen in der Seitenleiste darunter.
+- 📅 **Heute:** Vorlesungen, Prüfungen, Praktika, fällige Aufgaben und Moodle-Fristen des Tages in einer Übersicht.
 - 📄 **Neue Skript-Versionen** kommen neben deine Datei und werden Seite für Seite verglichen – du entscheidest.
 - 🎙️ **Vorlesungsmodus**: nimmt auf, schreibt lokal mit Whisper mit und folgt den Folien.
 - 🧠 **Lokales Mini-Modell** (llama.cpp + Qwen) für schnelle Zusammenfassungen wie Commit-Nachrichten – offline.
@@ -108,7 +111,12 @@ Praktikumsaufgaben bearbeitest du direkt neben deinen Notizen – ohne zwischen 
 wechseln:
 
 - **Ein Klick:** In _Mein Semester_ hat jedes Modul mit Praktikum oder Übung den Knopf **„Praktikum bearbeiten“**.
-  Notiva legt einen Code-Ordner zum Modul an (mit `.gitignore`) und öffnet ihn.
+  Notiva legt einen Praktikumsordner zum Modul an (mit `.gitignore`) und öffnet ihn.
+- **Ein Arbeitsordner, eine Seite je Termin:** Alle Repositories und eigenen Dateien liegen zusammen im
+  Praktikumsordner – das Terminal startet dort, Dateien aus früheren Terminen sind ohne Pfadwechsel da. Die Seiten
+  P01, P02 … zeigen je Termin Datum, Vorbereitung, Aufgaben- und Vorbereitungsblatt und das zugehörige Repository.
+- **Repository aus Moodle holen:** Neben Git-Links (z. B. ProjectBase/GitLab) steht **„Repository ins Praktikum
+  holen“** – Notiva schlägt den passenden Termin vor und klont mit Fortschritt.
 - **Editor und Terminal:** Dateien (Python, Java, SQL, JS, HTML, …) mit Syntaxhervorhebung bearbeiten, darunter ein
   echtes Terminal im Ordner – auch zwei nebeneinander. Verläufe bleiben erhalten.
 - **Aufgabe daneben:** das Aufgabenblatt als PDF mit Terminal darunter, Moodle-Seiten und Links des Kurses als
@@ -156,6 +164,8 @@ Die KI ist aus, bis du sie einschaltest – und zeigt vor dem Senden, was sie mi
 | **Kachel**      | Ein Baustein im Dashboard: Zahl, Fortschritt, Liste oder eine eingebettete Ansicht.                        |
 | **Modul**       | Ein Fach aus der Prüfungsordnung. Seine Seite sammelt Moodle-Kurs, Unterlagen, Mitschriften und Prüfungen. |
 | **Belegung**    | Was du in einem Modul gerade belegst: Vorlesung, Praktikum, Übung oder nur die Prüfung.                    |
+| **Archiv**      | Unterlagen älterer Semester eines Moduls (`Unterlagen/<Modul>/Archiv/<Semester>`), ausgegraut.             |
+| **P01, P02 …**  | Die Seite eines Praktikumstermins: Datum, Vorbereitung, Blätter, Repository.                               |
 | **Profil**      | `Studium/Hochschule.md` – Adressen und Studiengang deiner Hochschule.                                      |
 
 ## Installieren und starten
@@ -277,8 +287,11 @@ Nein. Alles funktioniert ohne. Lokal und kostenlos geht es mit Ollama oder LM St
 ```bash
 npm run check        # Typen, Lint, Unit-Tests
 npm run test:e2e     # Playwright: Browser und Desktop-App (Electron)
-npm run build && node scripts/screenshots.mjs   # Bilder für dieses README
+npm run screenshots  # Bilder für dieses README (eigener Build ohne „Demo“-Hinweise)
 ```
+
+Abläufe zur Abnahme (Vorlesung, Praktikum, jeweils getestet): [docs/ABLAEUFE.md](docs/ABLAEUFE.md) ·
+macOS-App signieren: [docs/SIGNIEREN.md](docs/SIGNIEREN.md)
 
 Aufbau und Regeln: [AGENT.md](AGENT.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) ·
 [docs/DESIGN.md](docs/DESIGN.md) · [docs/SECURITY.md](docs/SECURITY.md) · Fortschritt: [PROGRESS.md](PROGRESS.md)

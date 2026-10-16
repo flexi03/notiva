@@ -3,7 +3,9 @@
 Alle Versionen mit Downloads: [GitHub Releases](https://github.com/flexi03/notiva/releases).
 Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und installiert sie auf Wunsch selbst.
 
-## 0.1.4 – noch nicht veröffentlicht
+## 0.2.0 – 2026-10-16
+
+Größere Umstellung: Module statt Kurse, Unterlagen nach Aktuell/Archiv, Praktika mit einer Seite je Termin.
 
 - **Module statt Kurse:** keine Kurse-Datenbank mehr. Die Modulseite zeigt Unterlagen (`Unterlagen/<Modul>`),
   Moodle-Infos (Beschreibung, Ankündigungen, Ausfälle) und alles Verknüpfte. Ältere Ordner werden nach Rückfrage
@@ -76,7 +78,7 @@ Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und inst
   hinzufügen“ mit Anleitung; genauere Commit-Beschreibungen (Eigenschaften exakt, Textänderungen darunter).
 - **Unterlagen:** ein Ordner pro Kurs-Semester bei Modulen mit mehreren Moodle-Kursen; Anzeige nach Aktuell /
   Ältere Semester / Bestanden.
-- **Praktika:** Repositories liegen standardmäßig im gemeinsamen Praktikumsordner, eigene Umgebung auf Wunsch;
+- **Praktika:** Repositories liegen im gemeinsamen Praktikumsordner und sind mit ihrem Termin (P01 …) verknüpft;
   Beschreibung neben oder über der Datei, Größe ziehbar.
 - **Pfad:** Klick neben den Pfad oben zeigt ihn ganz – kopieren, bearbeiten, öffnen.
 - **Private Git-Projekte** mit Zugangstoken (verschlüsselt im Schlüsselbund, pro Server); Snippets werden über
@@ -85,6 +87,12 @@ Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und inst
 - **PDF:** Der Seitenabstand bleibt beim Zoomen gleich, Zoomen ist flüssiger, ←/→ blättern genau eine Seite.
 - Behoben: „PDFWorker.create – the worker is being destroyed“ beim Öffnen mancher PDFs.
 - Behoben: Unter „Ungelesen“ verschwand eine Benachrichtigung beim Anklicken, bevor man die Details sah.
+
+- **README-Bilder** ohne „Demo“-Hinweise: eigener Screenshot-Build (`npm run screenshots`), normale Builds
+  bleiben unverändert.
+- **macOS-Signierung vorbereitet:** Mit Developer-ID-Zertifikat und Notarisierungs-Schlüssel als GitHub-Secrets
+  baut der Release eine signierte, notarisierte App ([docs/SIGNIEREN.md](docs/SIGNIEREN.md)); ohne sie wie bisher
+  ad hoc signiert.
 
 ## 0.1.3 – 2026-10-15
 
