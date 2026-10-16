@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Code2, ExternalLink, FileCode2, FolderOpen, RefreshCw } from 'lucide-react'
 import { updateRepo } from '@/app/repoUpdate'
+import { loadRepoInfo, useRepoInfo } from '@/app/repoInfo'
+import { textHash } from '@/lib/textHash'
+import { MarkdownView } from '@/components/editor/MarkdownView'
 import { TokenBanner } from './GitTokens'
 import { RepoTask } from './LabLinks'
 import { useAction, useApp, useWorkspace } from '@/app/store'
@@ -27,10 +30,34 @@ export function RepoFiles({ page }: { page: Page }) {
   const link = typeof page.data.link === 'string' && /^https:/.test(page.data.link) ? page.data.link : null
   const code = electronBridge()?.code
   const remote = typeof page.data.repo === 'string' ? page.data.repo : undefined
+  const info = useRepoInfo((s) => (remote ? s[remote] : undefined))
+  useEffect(() => {
+    if (!remote) return
+    void loadRepoInfo(ws, remote)
+    // Pages of an earlier version had the description as their text: unchanged → it moves into the
+    // box above (the text is for notes now); changed → it stays as the user's notes.
+    if (page.data.descriptionHash !== undefined) {
+      const untouched = textHash(page.body.trim()) === String(page.data.bodyHash ?? '')
+      const data = { ...page.data }
+      delete data.descriptionHash
+      delete data.bodyHash
+      void ws.save(page.path, { data, ...(untouched ? { body: '' } : {}) })
+    }
+  }, [ws, remote, page])
   return (
     <section aria-label={t('repo.files')} data-testid="repo-files" className="no-print mt-4 space-y-3">
       <TokenBanner remote={remote} />
       <RepoTask repo={page} />
+      {(info?.description || info?.scope) && (
+        <div className="rounded-panel border border-line bg-sunken/60 p-3" data-testid="repo-description">
+          <p className="mb-1 text-[12px] font-semibold text-ink-3">{t('repo.description')}</p>
+          {info.description ? (
+            <MarkdownView markdown={info.description} untrusted className="md text-[14px]" />
+          ) : (
+            <p className="text-[13px] text-ink-2">{t('repo.noDescriptionScope')}</p>
+          )}
+        </div>
+      )}
       <div className="flex flex-wrap gap-2">
         {code?.repoFetch && (
           <Button icon={<RefreshCw size={15} />} onClick={() => void run(() => updateRepo(ws, folder))}>
@@ -57,6 +84,7 @@ export function RepoFiles({ page }: { page: Page }) {
           </Button>
         )}
       </div>
+      <p className="text-[12.5px] text-ink-3">{t('repo.filesHint')}</p>
       {files.length === 0 && <p className="text-sm text-ink-3">{t('repo.empty')}</p>}
       {files.map((f, i) => (
         <FilePreview

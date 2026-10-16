@@ -3,7 +3,6 @@ import { announce, useProgress, withProgress } from '@/app/progress'
 import { useApp } from '@/app/store'
 import { t } from '@/i18n'
 import { electronBridge } from '@/lib/vault'
-import { textHash } from '@/lib/textHash'
 import type { Workspace } from '@/lib/workspace'
 
 /**
@@ -33,12 +32,10 @@ export async function updateRepo(ws: Workspace, folder: string): Promise<boolean
     return false
   }
   // The snippet's description (API) – changed on the server?
-  const page = ws.get(`${folder}.md`)
-  const info = await code.snippetInfo?.(update.remote).catch(() => null)
-  const description = info && !('error' in info) ? info.description.trim() : null
-  const descriptionChanged =
-    description !== null && !!page && textHash(description) !== String(page.data.descriptionHash ?? '')
-
+  const { fetchRepoInfo, storeRepoInfo, useRepoInfo } = await import('@/app/repoInfo')
+  const fresh = await fetchRepoInfo(update.remote)
+  const known = useRepoInfo.getState()[update.remote]
+  const descriptionChanged = !!fresh?.hash && fresh.hash !== known?.hash
   if (!update.commits.length && !descriptionChanged) {
     announce(t('repo.upToDate', { name }))
     return false
@@ -74,17 +71,7 @@ export async function updateRepo(ws: Workspace, folder: string): Promise<boolean
           throw new Error(/CONFLICT:/.test(message) ? t('repo.conflict') : message, { cause: e })
         }
       }
-      if (descriptionChanged && page) {
-        // Replace the description only if the page still has the old one unchanged.
-        const untouched = textHash(page.body.trim()) === String(page.data.bodyHash ?? '')
-        const body = untouched
-          ? `${description}\n`
-          : `${page.body.trimEnd()}\n\n## ${t('repo.newDescriptionHeading', { date: new Date().toLocaleDateString() })}\n\n${description}\n`
-        await ws.save(page.path, {
-          data: { ...page.data, descriptionHash: textHash(description!), bodyHash: textHash(body.trim()) },
-          body,
-        })
-      }
+      if (descriptionChanged && fresh) await storeRepoInfo(ws, update.remote, fresh)
       await ws.reload()
     },
     { success: () => t('repo.applied', { name }) },

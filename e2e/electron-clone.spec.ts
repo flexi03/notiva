@@ -67,6 +67,8 @@ test('holt ein privates Repository mit Zugangstoken – Name frei wählbar', asy
   await expect(files).toContainText('aufgabe.sql')
   await expect(files).toContainText('select 1;')
   await expect(files.getByRole('button', { name: 'Link öffnen' })).toBeVisible()
+  // The page's own text: notes of the folder's Git – said so.
+  await expect(window.getByRole('heading', { name: /Meine Notizen/ })).toBeVisible()
   // Its own Git history: the vault's repository ignores it.
   expect(readFileSync(path.join(folder, 'Praktikum/.gitignore'), 'utf8')).toContain('/sql-wiederholung/')
   await window.evaluate(() => (location.hash = '#/p/Praktikum.md'))

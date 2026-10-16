@@ -1,6 +1,5 @@
-import { textHash } from '@/lib/textHash'
+import { fetchRepoInfo, storeRepoInfo } from '@/app/repoInfo'
 import { t } from '@/i18n'
-import { electronBridge } from '@/lib/vault'
 import type { Workspace } from '@/lib/workspace'
 
 /**
@@ -18,30 +17,21 @@ export async function ensureRepoPage(
   const path = `${target}.md`
   await ignoreInVault(ws, target)
   if (ws.get(path)) return path
-  const info = await electronBridge()
-    ?.code?.snippetInfo?.(cloneUrl)
-    .catch(() => null)
-  const meta = info && !('error' in info) ? info : null
-  const description = meta?.description?.trim()
-  const body = description
-    ? `${description}\n`
-    : info && 'error' in info
-      ? `> [!info] ${t('repo.noDescriptionScope')}\n`
-      : ''
+  // The server's description is shown read-only above (repo-info.json); the page text is notes.
+  const info = await fetchRepoInfo(cloneUrl)
+  if (info) await storeRepoInfo(ws, cloneUrl, info)
   const name = target.slice(target.lastIndexOf('/') + 1)
-  const heading = meta?.title || (title && !/^https?:/i.test(title) ? title : name)
+  const heading = info?.title || (title && !/^https?:/i.test(title) ? title : name)
   await ws.createPage({
     folder: target.slice(0, target.lastIndexOf('/')),
     title: name,
     data: {
       icon: '📦',
       repo: cloneUrl,
-      link: meta?.webUrl || link,
+      link: info?.webUrl || link,
       ...(heading !== name ? { title: heading } : {}),
-      // To notice a changed description on "Aktualisieren" (and whether the page was edited).
-      ...(description ? { descriptionHash: textHash(description), bodyHash: textHash(body.trim()) } : {}),
     },
-    body,
+    body: '',
   })
   await ws.reload()
   return path

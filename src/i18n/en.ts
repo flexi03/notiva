@@ -1021,6 +1021,10 @@ export const en: Record<MessageKey, string> = {
   'repo.conflict':
     'Your own changes do not fit the new ones from the server. Save them (e.g. copy into another file in the editor) and try again.',
   'repo.newDescriptionHeading': 'New description ({date})',
+  'repo.description': 'Description from the server – read only, change it there; “Update” gets it again',
+  'repo.notes': 'My notes',
+  'repo.notesHint': '(belong to your folder’s Git, not to the repository)',
+  'repo.filesHint': 'Files of the repository – changes to them show under Git → Lab repositories.',
   'repo.files': 'Files of the repository',
   'repo.openLink': 'Open link',
   'repo.showFolder': 'Show folder',

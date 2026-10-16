@@ -1031,6 +1031,11 @@ export const de = {
   'repo.conflict':
     'Deine eigenen Änderungen passen nicht zu den neuen vom Server. Sichere sie (z. B. im Editor in eine andere Datei kopieren) und versuche es dann noch einmal.',
   'repo.newDescriptionHeading': 'Neue Beschreibung ({date})',
+  'repo.description':
+    'Beschreibung aus dem Server – nur lesen, geändert wird sie dort; „Aktualisieren“ holt sie neu',
+  'repo.notes': 'Meine Notizen',
+  'repo.notesHint': '(gehören zu deinem Ordner-Git, nicht zum Repository)',
+  'repo.filesHint': 'Dateien des Repositories – Änderungen daran erscheinen unter Git → Praktikum-Repos.',
   'repo.files': 'Dateien des Repositories',
   'repo.openLink': 'Link öffnen',
   'repo.showFolder': 'Ordner zeigen',

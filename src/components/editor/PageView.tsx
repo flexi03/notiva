@@ -217,6 +217,12 @@ export function PageContent({
             </div>
           )}
 
+          {typeof page.data.repo === 'string' && (
+            // Below: the user's own notes – they belong to the folder's Git, not the repository.
+            <h2 className="no-print mt-6 flex items-baseline gap-2 text-[13px] font-semibold text-ink-2">
+              {t('repo.notes')} <span className="font-normal text-ink-3">{t('repo.notesHint')}</span>
+            </h2>
+          )}
           <div className="mt-6">
             {source ? (
               <SourceEditor key={page.path} page={page} />
