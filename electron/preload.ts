@@ -218,6 +218,7 @@ contextBridge.exposeInMainWorld('notiva', {
     push: () => invoke<string>('git:push'),
     pull: () => invoke<string>('git:pull'),
     untrackNested: (p: string) => invoke<void>('git:untrackNested', p),
+    addRemote: (url: string) => invoke<void>('git:addRemote', url),
     install: () => invoke<'installing' | 'opened'>('git:install'),
     onProgress(callback: (event: { done: number; total: number; file?: string }) => void) {
       const listener = (_e: unknown, event: { done: number; total: number; file?: string }) => callback(event)

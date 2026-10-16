@@ -1411,6 +1411,24 @@ export const en: Record<MessageKey, string> = {
   'git.binary.hint':
     'PDFs, images and archives are not compared line by line – compare newer versions from Moodle under Moodle → New versions.',
   'git.binary.open': 'Open file',
+  'remote.button': 'Add remote',
+  'remote.title': 'Connect the folder with GitHub or GitLab',
+  'remote.step1': 'Create a new, empty repository there – no README, .gitignore or licence:',
+  'remote.step2': 'Copy its address (HTTPS, ends in .git) and paste it below.',
+  'remote.step3':
+    'Notiva connects the folder and uploads everything once. Then ↑ (push) and ↓ (pull) are enough.',
+  'remote.url': 'Repository address',
+  'remote.private':
+    'Tip: make the repository private – your notes stay yours. If the server asks for a login, enter an access token (GitHub: scope “repo”).',
+  'remote.connect': 'Connect and upload',
+  'remote.uploading': 'Uploading the folder …',
+  'remote.done': 'Connected – the folder is uploaded',
+  'remote.problem.LOGIN': 'The server wants a login (or the access may not write).',
+  'remote.problem.NOTFOUND': 'No repository at this address – check it or create the repository first.',
+  'remote.problem.NOTEMPTY':
+    'The repository is not empty (e.g. a README). Create an empty one or delete the files there.',
+  'remote.problem.INVALID': 'The address does not look like a Git repository.',
+  'remote.problem.OTHER': 'The upload did not work.',
   'git.autoMessage': 'Suggestion',
   'git.autoMessageHint': 'Restore the automatic message listing all changes',
   'git.commit': 'Commit ({count})',

@@ -42,6 +42,8 @@ export interface GitBridge {
   pull(): Promise<string>
   /** take a got repository out of the vault's Git (index only) */
   untrackNested?(path: string): Promise<void>
+  /** origin = url, then the first upload (push -u) */
+  addRemote?(url: string): Promise<void>
   /** Progress of a commit (files added so far). */
   onProgress?(callback: (event: { done: number; total: number; file?: string }) => void): () => void
   /** One-click fix: install Git (Windows: winget, macOS: command line tools, else the download page). */

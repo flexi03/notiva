@@ -588,8 +588,24 @@ function registerIpc(): void {
   )
   handle('git:commitFiles', async (hash: unknown) => (await requireRepo()).commitFiles(hash))
   handle('git:init', async () => (await GitRepo.init(requireVault())).state())
-  handle('git:push', async () => (await requireRepo()).push())
-  handle('git:pull', async () => (await requireRepo()).pull())
+  // With the token stored for the remote's server (GitHub, GitLab …), if any.
+  const tokenForRepo = async (repo: GitRepo) => {
+    const remote = await repo.remote()
+    return remote && /^https:/.test(remote) ? (await loadGitTokens())[new URL(remote).host] : undefined
+  }
+  handle('git:push', async () => {
+    const repo = await requireRepo()
+    return repo.push(await tokenForRepo(repo))
+  })
+  handle('git:pull', async () => {
+    const repo = await requireRepo()
+    return repo.pull(await tokenForRepo(repo))
+  })
+  handle('git:addRemote', async (url: unknown) => {
+    const repo = await requireRepo()
+    const host = typeof url === 'string' && /^https:/.test(url.trim()) ? new URL(url.trim()).host : ''
+    return repo.addRemote(url, (await loadGitTokens())[host])
+  })
   handle('git:untrackNested', async (p: unknown) => (await requireRepo()).untrackNested(p))
   handle('moodle:status', async () => {
     const config = await loadMoodle()

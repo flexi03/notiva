@@ -1425,6 +1425,25 @@ export const de = {
   'git.binary.hint':
     'PDFs, Bilder und Archive vergleicht Notiva nicht Zeile für Zeile – neuere Fassungen aus Moodle vergleichst du unter Moodle → Neue Versionen.',
   'git.binary.open': 'Datei öffnen',
+  'remote.button': 'Remote hinzufügen',
+  'remote.title': 'Ordner mit GitHub oder GitLab verbinden',
+  'remote.step1': 'Lege dort ein neues, leeres Repository an – ohne README, .gitignore oder Lizenz:',
+  'remote.step2': 'Kopiere die Adresse (HTTPS, endet auf .git) und füge sie unten ein.',
+  'remote.step3':
+    'Notiva verbindet den Ordner und lädt alles einmal hoch. Danach reichen ↑ (Push) und ↓ (Pull).',
+  'remote.url': 'Adresse des Repositorys',
+  'remote.private':
+    'Tipp: Mach das Repository privat – deine Notizen sind dann nur für dich sichtbar. Fragt der Server nach einer Anmeldung, trägst du einen Zugangstoken ein (bei GitHub: Recht „repo“).',
+  'remote.connect': 'Verbinden und hochladen',
+  'remote.uploading': 'Ordner wird hochgeladen …',
+  'remote.done': 'Verbunden – der Ordner ist hochgeladen',
+  'remote.problem.LOGIN': 'Der Server verlangt eine Anmeldung (oder der Zugang darf nicht schreiben).',
+  'remote.problem.NOTFOUND':
+    'Unter dieser Adresse gibt es kein Repository – Adresse prüfen oder das Repository erst anlegen.',
+  'remote.problem.NOTEMPTY':
+    'Das Repository ist nicht leer (z. B. README angelegt). Lege ein leeres an oder lösche dort die Dateien.',
+  'remote.problem.INVALID': 'Die Adresse sieht nicht wie ein Git-Repository aus.',
+  'remote.problem.OTHER': 'Das Hochladen hat nicht geklappt.',
   'git.autoMessage': 'Vorschlag',
   'git.autoMessageHint': 'Automatische Nachricht mit allen Änderungen wiederherstellen',
   'git.commit': 'Commit ({count})',

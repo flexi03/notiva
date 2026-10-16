@@ -376,14 +376,56 @@ export class GitRepo {
     return out
   }
 
-  async push(): Promise<string> {
-    const r = await run(this.vault.root, ['push'], { timeout: 120_000 })
+  /** The address of "origin" (null: none). */
+  async remote(): Promise<string | null> {
+    const r = await run(this.vault.root, ['config', '--get', 'remote.origin.url'], { allowFail: true })
+    return r.code === 0 ? r.stdout.trim() || null : null
+  }
+
+  async push(token?: string): Promise<string> {
+    const remote = await this.remote()
+    const r = await run(this.vault.root, ['push'], {
+      timeout: 120_000,
+      env: remote && /^https:/.test(remote) ? tokenEnv(remote, token) : {},
+    })
     return (r.stderr || r.stdout).trim()
   }
 
-  async pull(): Promise<string> {
-    const r = await run(this.vault.root, ['pull', '--ff-only'], { timeout: 120_000 })
+  async pull(token?: string): Promise<string> {
+    const remote = await this.remote()
+    const r = await run(this.vault.root, ['pull', '--ff-only'], {
+      timeout: 120_000,
+      env: remote && /^https:/.test(remote) ? tokenEnv(remote, token) : {},
+    })
     return (r.stdout || r.stderr).trim()
+  }
+
+  /**
+   * "Remote hinzufügen": origin = url (replaced if there is one), then the first upload with
+   * tracking (push -u). Errors keep a marker for the app's explanation: LOGIN, NOTFOUND, NOTEMPTY.
+   */
+  async addRemote(url: unknown, token?: string): Promise<void> {
+    if (typeof url !== 'string' || !/^(https:\/\/[^\s/]+\/\S+|git@[^\s:]+:\S+)$/.test(url.trim()))
+      throw new GitError('INVALID: Die Adresse sieht nicht wie ein Git-Repository aus (https://… oder git@…)')
+    const clean = url.trim()
+    const had = await this.remote()
+    await run(
+      this.vault.root,
+      had ? ['remote', 'set-url', 'origin', clean] : ['remote', 'add', 'origin', clean],
+    )
+    const branch = (await run(this.vault.root, ['rev-parse', '--abbrev-ref', 'HEAD'])).stdout.trim() || 'main'
+    const r = await run(this.vault.root, ['push', '-u', 'origin', branch], {
+      allowFail: true,
+      timeout: 300_000,
+      env: /^https:/.test(clean) ? tokenEnv(clean, token) : {},
+    })
+    if (r.code === 0) return
+    const text = r.stderr.trim().slice(0, 800)
+    if (/not found|does not appear to be a git repository|repository .* not found/i.test(text))
+      throw new GitError(`NOTFOUND: ${text}`)
+    if (/rejected|non-fast-forward|fetch first/i.test(text)) throw new GitError(`NOTEMPTY: ${text}`)
+    if (LOGIN.test(text) || /permission|403|denied/i.test(text)) throw new GitError(`LOGIN: ${text}`)
+    throw new GitError(text)
   }
 }
 

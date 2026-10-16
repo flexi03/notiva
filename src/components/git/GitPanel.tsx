@@ -1,6 +1,7 @@
 import { electronBridge } from '@/lib/vault'
 import { commitSummary, localModelAvailable } from '@/app/localModel'
 import { LabRepos } from './LabRepos'
+import { RemoteDialog } from './RemoteDialog'
 import { graphRows, type GraphRow } from '@/lib/gitGraph'
 import { explain } from '@/app/fixes'
 import { withProgress } from '@/app/progress'
@@ -130,6 +131,7 @@ export function GitPanel() {
   const changes = useMemo(() => (state?.changes ?? []).filter((c) => !c.nested), [state])
   const nested = (state?.changes ?? []).filter((c) => c.nested)
   const [tab, setTab] = useState<'vault' | 'labs'>('vault')
+  const [remoteOpen, setRemoteOpen] = useState(false)
   const stats = useStats(changes)
   const selected = changes.filter((c) => !excluded.has(c.path))
   const showToast = useApp((s) => s.showToast)
@@ -263,279 +265,291 @@ export function GitPanel() {
   )
 
   return (
-    <SidePanel view="git" title={t('git.title')} icon={<GitBranch size={16} />} actions={header}>
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        {!gitAvailable() ? (
-          <EmptyState icon={<GitBranch size={22} />} title={t('git.desktopOnly')}>
-            {t('git.desktopOnlyHint')}
-          </EmptyState>
-        ) : !state && error ? (
-          <GitError error={error} retry={() => void refresh()} />
-        ) : !state ? (
-          <p className="p-4 text-sm text-ink-3">{t('common.loading')}</p>
-        ) : !state.isRepo ? (
-          // The lab repositories have their own Git – reachable without one for the folder.
-          <div className="space-y-4 p-3">
-            {tabBar}
-            {tab === 'labs' ? (
-              <LabRepos />
-            ) : (
-              <EmptyState
-                icon={<GitBranch size={22} />}
-                title={t('git.noRepo')}
-                action={
-                  <Button variant="primary" onClick={() => void act((git) => git.init())}>
-                    {t('git.init')}
-                  </Button>
-                }
-              >
-                {t('git.noRepoHint')}
-              </EmptyState>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-4 p-3">
-            {tabBar}
-            {tab === 'labs' ? (
-              <LabRepos />
-            ) : (
-              <>
-                {nested.map((n) => (
-                  <div
-                    key={n.path}
-                    role="note"
-                    data-testid="nested-repo"
-                    className="space-y-1.5 rounded-control border border-line bg-sunken p-2.5 text-[13px]"
-                  >
-                    <p>
-                      <span className="font-semibold">{n.path.split('/').pop()}</span> – {t('git.nested')}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        size="sm"
-                        variant="primary"
-                        onClick={() =>
-                          void act((git) => git.untrackNested!(n.path)).then(() =>
-                            showToast(t('git.nestedDone')),
-                          )
-                        }
-                      >
-                        {t('git.nestedFix')}
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setTab('labs')}>
-                        {t('git.nestedShow')}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-                <p className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-[13px] text-ink-2">
-                  <span className="flex items-center gap-1 font-semibold text-ink">
-                    <GitBranch size={13} /> {state.branch ?? 'HEAD'}
-                  </span>
-                  {state.upstream ? (
-                    <>
-                      {state.ahead > 0 && <span>↑ {t('git.ahead', { count: state.ahead })}</span>}
-                      {state.behind > 0 && <span>↓ {t('git.behind', { count: state.behind })}</span>}
-                    </>
-                  ) : (
-                    <span className="text-ink-3">{t('git.noUpstream')}</span>
-                  )}
-                </p>
-
-                <form
-                  className="space-y-2"
-                  onSubmit={(e) => {
-                    e.preventDefault()
-                    void commit()
-                  }}
+    <>
+      {remoteOpen && <RemoteDialog open onClose={() => setRemoteOpen(false)} />}
+      <SidePanel view="git" title={t('git.title')} icon={<GitBranch size={16} />} actions={header}>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {!gitAvailable() ? (
+            <EmptyState icon={<GitBranch size={22} />} title={t('git.desktopOnly')}>
+              {t('git.desktopOnlyHint')}
+            </EmptyState>
+          ) : !state && error ? (
+            <GitError error={error} retry={() => void refresh()} />
+          ) : !state ? (
+            <p className="p-4 text-sm text-ink-3">{t('common.loading')}</p>
+          ) : !state.isRepo ? (
+            // The lab repositories have their own Git – reachable without one for the folder.
+            <div className="space-y-4 p-3">
+              {tabBar}
+              {tab === 'labs' ? (
+                <LabRepos />
+              ) : (
+                <EmptyState
+                  icon={<GitBranch size={22} />}
+                  title={t('git.noRepo')}
+                  action={
+                    <Button variant="primary" onClick={() => void act((git) => git.init())}>
+                      {t('git.init')}
+                    </Button>
+                  }
                 >
-                  {selected.length > 0 && !pending && (
+                  {t('git.noRepoHint')}
+                </EmptyState>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4 p-3">
+              {tabBar}
+              {tab === 'labs' ? (
+                <LabRepos />
+              ) : (
+                <>
+                  {nested.map((n) => (
                     <div
-                      className="flex flex-wrap items-center gap-1.5 text-[12px]"
-                      data-testid="commit-source"
+                      key={n.path}
+                      role="note"
+                      data-testid="nested-repo"
+                      className="space-y-1.5 rounded-control border border-line bg-sunken p-2.5 text-[13px]"
                     >
-                      {source === 'ai' ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] px-2 py-0.5 font-semibold text-accent">
-                          <Sparkles size={11} /> {t('git.source.ai')}
-                        </span>
-                      ) : source === 'user' ? (
-                        <span className="rounded-full bg-hover px-2 py-0.5 font-semibold text-ink-2">
-                          {t('git.source.user')}
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-hover px-2 py-0.5 font-semibold text-ink-2">
-                          {t('git.source.template')}
-                        </span>
+                      <p>
+                        <span className="font-semibold">{n.path.split('/').pop()}</span> – {t('git.nested')}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          onClick={() =>
+                            void act((git) => git.untrackNested!(n.path)).then(() =>
+                              showToast(t('git.nestedDone')),
+                            )
+                          }
+                        >
+                          {t('git.nestedFix')}
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setTab('labs')}>
+                          {t('git.nestedShow')}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  <p className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-[13px] text-ink-2">
+                    <span className="flex items-center gap-1 font-semibold text-ink">
+                      <GitBranch size={13} /> {state.branch ?? 'HEAD'}
+                    </span>
+                    {state.upstream ? (
+                      <>
+                        {state.ahead > 0 && <span>↑ {t('git.ahead', { count: state.ahead })}</span>}
+                        {state.behind > 0 && <span>↓ {t('git.behind', { count: state.behind })}</span>}
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-ink-3">{t('git.noUpstream')}</span>
+                        {electronBridge()?.git?.addRemote && (
+                          <Button size="sm" variant="secondary" onClick={() => setRemoteOpen(true)}>
+                            {t('remote.button')}
+                          </Button>
+                        )}
+                      </>
+                    )}
+                  </p>
+
+                  <form
+                    className="space-y-2"
+                    onSubmit={(e) => {
+                      e.preventDefault()
+                      void commit()
+                    }}
+                  >
+                    {selected.length > 0 && !pending && (
+                      <div
+                        className="flex flex-wrap items-center gap-1.5 text-[12px]"
+                        data-testid="commit-source"
+                      >
+                        {source === 'ai' ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] px-2 py-0.5 font-semibold text-accent">
+                            <Sparkles size={11} /> {t('git.source.ai')}
+                          </span>
+                        ) : source === 'user' ? (
+                          <span className="rounded-full bg-hover px-2 py-0.5 font-semibold text-ink-2">
+                            {t('git.source.user')}
+                          </span>
+                        ) : (
+                          <span className="rounded-full bg-hover px-2 py-0.5 font-semibold text-ink-2">
+                            {t('git.source.template')}
+                          </span>
+                        )}
+                        {model && (
+                          <button
+                            type="button"
+                            className="font-semibold text-accent hover:underline"
+                            onClick={() => void summarize()}
+                          >
+                            {source === 'ai' ? t('git.rewrite') : t('git.writeWithAi')}
+                          </button>
+                        )}
+                        {source === 'user' && (
+                          <button
+                            type="button"
+                            className="text-ink-3 hover:text-ink hover:underline"
+                            onClick={() => setCustom(aiText)}
+                            title={t('git.autoMessageHint')}
+                          >
+                            {t('git.backToSuggestion')}
+                          </button>
+                        )}
+                        <span className="flex-1" />
+                        <button
+                          type="button"
+                          aria-expanded={explain}
+                          className="text-ink-3 hover:text-ink hover:underline"
+                          onClick={() => setExplain((v) => !v)}
+                        >
+                          {t('git.howTitle')}
+                        </button>
+                      </div>
+                    )}
+                    {explain && (
+                      <div
+                        className="space-y-1 rounded-control border border-line bg-sunken p-2.5 text-[12.5px] text-ink-2"
+                        data-testid="commit-explain"
+                      >
+                        <p>{t('git.how1')}</p>
+                        <p>{t('git.how2')}</p>
+                        <p>{t('git.how3')}</p>
+                      </div>
+                    )}
+                    <div className="relative">
+                      <AutoTextArea
+                        value={message}
+                        onChange={(e) => setCustom(e.target.value)}
+                        placeholder={pending ? '' : t('git.messagePlaceholder')}
+                        aria-label={t('git.message')}
+                        aria-busy={pending}
+                        readOnly={pending}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                            e.preventDefault()
+                            void commit()
+                          }
+                        }}
+                        className="min-h-16"
+                      />
+                      {pending && (
+                        // While the model writes: shimmering lines instead of the template.
+                        <div
+                          role="status"
+                          data-testid="commit-generating"
+                          className="pointer-events-none absolute inset-0 flex flex-col justify-center gap-1.5 px-3 py-2"
+                        >
+                          <span className="flex items-center gap-1.5 text-[12px] font-medium text-accent">
+                            <Sparkles size={12} className="animate-pulse" /> {t('git.generating')}
+                          </span>
+                          <span className="skeleton-line w-11/12" />
+                          <span className="skeleton-line w-2/3" />
+                        </div>
                       )}
-                      {model && (
+                    </div>
+                    {!model && custom === null && selected.length > 0 && (
+                      <p className="text-[12px] text-ink-3" data-testid="commit-fallback">
+                        {t('git.templateNoModel')}{' '}
+                        <button
+                          type="button"
+                          className="font-semibold text-accent hover:underline"
+                          onClick={() => useApp.getState().navigate({ name: 'settings', section: 'ai' })}
+                        >
+                          {t('git.setUpModel')}
+                        </button>
+                      </p>
+                    )}
+                    {model && fallback === 'failed' && custom === null && (
+                      <p className="text-[12px] text-ink-3" data-testid="commit-fallback">
+                        {t('git.templateFailed')}{' '}
                         <button
                           type="button"
                           className="font-semibold text-accent hover:underline"
                           onClick={() => void summarize()}
                         >
-                          {source === 'ai' ? t('git.rewrite') : t('git.writeWithAi')}
+                          {t('fix.retry')}
                         </button>
-                      )}
-                      {source === 'user' && (
-                        <button
-                          type="button"
-                          className="text-ink-3 hover:text-ink hover:underline"
-                          onClick={() => setCustom(aiText)}
-                          title={t('git.autoMessageHint')}
-                        >
-                          {t('git.backToSuggestion')}
-                        </button>
-                      )}
-                      <span className="flex-1" />
-                      <button
-                        type="button"
-                        aria-expanded={explain}
-                        className="text-ink-3 hover:text-ink hover:underline"
-                        onClick={() => setExplain((v) => !v)}
-                      >
-                        {t('git.howTitle')}
-                      </button>
-                    </div>
-                  )}
-                  {explain && (
-                    <div
-                      className="space-y-1 rounded-control border border-line bg-sunken p-2.5 text-[12.5px] text-ink-2"
-                      data-testid="commit-explain"
-                    >
-                      <p>{t('git.how1')}</p>
-                      <p>{t('git.how2')}</p>
-                      <p>{t('git.how3')}</p>
-                    </div>
-                  )}
-                  <div className="relative">
-                    <AutoTextArea
-                      value={message}
-                      onChange={(e) => setCustom(e.target.value)}
-                      placeholder={pending ? '' : t('git.messagePlaceholder')}
-                      aria-label={t('git.message')}
-                      aria-busy={pending}
-                      readOnly={pending}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                          e.preventDefault()
-                          void commit()
-                        }
-                      }}
-                      className="min-h-16"
-                    />
-                    {pending && (
-                      // While the model writes: shimmering lines instead of the template.
-                      <div
-                        role="status"
-                        data-testid="commit-generating"
-                        className="pointer-events-none absolute inset-0 flex flex-col justify-center gap-1.5 px-3 py-2"
-                      >
-                        <span className="flex items-center gap-1.5 text-[12px] font-medium text-accent">
-                          <Sparkles size={12} className="animate-pulse" /> {t('git.generating')}
-                        </span>
-                        <span className="skeleton-line w-11/12" />
-                        <span className="skeleton-line w-2/3" />
-                      </div>
+                      </p>
                     )}
-                  </div>
-                  {!model && custom === null && selected.length > 0 && (
-                    <p className="text-[12px] text-ink-3" data-testid="commit-fallback">
-                      {t('git.templateNoModel')}{' '}
-                      <button
-                        type="button"
-                        className="font-semibold text-accent hover:underline"
-                        onClick={() => useApp.getState().navigate({ name: 'settings', section: 'ai' })}
-                      >
-                        {t('git.setUpModel')}
-                      </button>
-                    </p>
-                  )}
-                  {model && fallback === 'failed' && custom === null && (
-                    <p className="text-[12px] text-ink-3" data-testid="commit-fallback">
-                      {t('git.templateFailed')}{' '}
-                      <button
-                        type="button"
-                        className="font-semibold text-accent hover:underline"
-                        onClick={() => void summarize()}
-                      >
-                        {t('fix.retry')}
-                      </button>
-                    </p>
-                  )}
-                  <div className="flex gap-2">
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      icon={<GitCommitHorizontal size={15} />}
-                      disabled={pending || !message.trim() || selected.length === 0}
-                      className="flex-1"
-                    >
-                      {t('git.commit', { count: selected.length })}
-                    </Button>
-                    {pending && (
+                    <div className="flex gap-2">
                       <Button
-                        variant="ghost"
-                        onClick={() => {
-                          setSummarized(signature)
-                          setCustom(auto)
-                        }}
-                        title={t('git.useTemplateHint')}
+                        type="submit"
+                        variant="primary"
+                        icon={<GitCommitHorizontal size={15} />}
+                        disabled={pending || !message.trim() || selected.length === 0}
+                        className="flex-1"
                       >
-                        {t('git.useTemplate')}
+                        {t('git.commit', { count: selected.length })}
                       </Button>
-                    )}
-                  </div>
-                </form>
+                      {pending && (
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            setSummarized(signature)
+                            setCustom(auto)
+                          }}
+                          title={t('git.useTemplateHint')}
+                        >
+                          {t('git.useTemplate')}
+                        </Button>
+                      )}
+                    </div>
+                  </form>
 
-                <section aria-label={t('git.changes')}>
-                  <h3 className="mb-1 flex items-center gap-2 px-1 text-[13px] font-semibold text-ink-2">
-                    {changes.length > 0 && (
-                      <Checkbox
-                        label={t('git.selectAll')}
-                        checked={excluded.size === 0}
-                        onChange={(all) => setExcluded(all ? new Set() : new Set(changes.map((c) => c.path)))}
-                      />
-                    )}
-                    {t('git.changes')} <span className="font-normal text-ink-3">{changes.length}</span>
-                  </h3>
-                  {changes.length === 0 ? (
-                    <p className="px-1 text-[13px] text-ink-3">{t('git.noChanges')}</p>
-                  ) : (
-                    <ul>
-                      {changes.map((change) => (
-                        <ChangeRow
-                          key={change.path}
-                          change={change}
-                          stats={stats.get(change.path)}
-                          selected={!excluded.has(change.path)}
-                          onSelect={(on) =>
-                            setExcluded((prev) => {
-                              const next = new Set(prev)
-                              if (on) next.delete(change.path)
-                              else next.add(change.path)
-                              return next
-                            })
-                          }
-                          onShow={() =>
-                            showDiff({
-                              path: change.path,
-                              status: change.status,
-                              ...(change.from ? { from: change.from } : {}),
-                            })
+                  <section aria-label={t('git.changes')}>
+                    <h3 className="mb-1 flex items-center gap-2 px-1 text-[13px] font-semibold text-ink-2">
+                      {changes.length > 0 && (
+                        <Checkbox
+                          label={t('git.selectAll')}
+                          checked={excluded.size === 0}
+                          onChange={(all) =>
+                            setExcluded(all ? new Set() : new Set(changes.map((c) => c.path)))
                           }
                         />
-                      ))}
-                    </ul>
-                  )}
-                </section>
+                      )}
+                      {t('git.changes')} <span className="font-normal text-ink-3">{changes.length}</span>
+                    </h3>
+                    {changes.length === 0 ? (
+                      <p className="px-1 text-[13px] text-ink-3">{t('git.noChanges')}</p>
+                    ) : (
+                      <ul>
+                        {changes.map((change) => (
+                          <ChangeRow
+                            key={change.path}
+                            change={change}
+                            stats={stats.get(change.path)}
+                            selected={!excluded.has(change.path)}
+                            onSelect={(on) =>
+                              setExcluded((prev) => {
+                                const next = new Set(prev)
+                                if (on) next.delete(change.path)
+                                else next.add(change.path)
+                                return next
+                              })
+                            }
+                            onShow={() =>
+                              showDiff({
+                                path: change.path,
+                                status: change.status,
+                                ...(change.from ? { from: change.from } : {}),
+                              })
+                            }
+                          />
+                        ))}
+                      </ul>
+                    )}
+                  </section>
 
-                <History />
-              </>
-            )}
-          </div>
-        )}
-      </div>
-    </SidePanel>
+                  <History />
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      </SidePanel>
+    </>
   )
 }
 

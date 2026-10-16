@@ -218,4 +218,17 @@ test('ein geholtes Repository mit eigenem Git: aus dem Ordner-Git nehmen, eigene
     .click()
   await expect(window.getByTestId('binary-change')).toContainText('Neu hinzugefügt')
   await window.getByRole('dialog').getByRole('button', { name: 'Schließen' }).click()
+
+  // Without remote: "Remote hinzufügen" explains the steps; a failing upload says why.
+  await panel().getByRole('tab', { name: 'Notizen & Dateien' }).click()
+  await panel().getByRole('button', { name: 'Remote hinzufügen' }).click()
+  const remote = window.getByTestId('remote-dialog')
+  await expect(remote).toContainText('leeres Repository')
+  const connect = window.getByRole('button', { name: 'Verbinden und hochladen' })
+  await remote.getByLabel('Adresse des Repositorys').fill('kein link')
+  await expect(connect).toBeDisabled()
+  await remote.getByLabel('Adresse des Repositorys').fill('https://127.0.0.1:9/nichts.git')
+  await connect.click()
+  await expect(window.getByTestId('remote-problem')).toBeVisible()
+  await window.getByRole('button', { name: 'Abbrechen' }).click()
 })

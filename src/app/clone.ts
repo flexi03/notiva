@@ -154,7 +154,10 @@ export async function enterToken(url: string): Promise<boolean> {
   if (!code?.setToken) return false
   const { origin, host } = new URL(url)
   // read_api: the description of snippets comes from the API.
-  const page = `${origin}/-/user_settings/personal_access_tokens?name=Notiva&scopes=read_repository,read_api`
+  const page =
+    host === 'github.com'
+      ? 'https://github.com/settings/tokens/new?description=Notiva&scopes=repo'
+      : `${origin}/-/user_settings/personal_access_tokens?name=Notiva&scopes=read_repository,read_api,write_repository`
   const token = await useApp.getState().ask({
     title: t('clone.tokenTitle', { host }),
     label: t('clone.tokenLabel'),
