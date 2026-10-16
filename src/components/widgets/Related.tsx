@@ -10,7 +10,8 @@ import { planSort } from '@/lib/materialVersions'
 import { LAB_DATE, LAB_PREP } from '@/lib/labPlan'
 import { ModuleSchedule } from './ModuleSchedule'
 import { MATERIAL_CATEGORIES } from '@/lib/moodle'
-import { courseIdsOf, materialFolderFor } from '@/lib/study/modules'
+import { courseIdsOf, isTermFolder, materialFolderFor, termFolder } from '@/lib/study/modules'
+import { parseTerm, termIndex, termOf } from '@/lib/study/terms'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import { toIsoDate } from '@/lib/dates'
@@ -93,7 +94,12 @@ export function Related({ from }: { from: string }) {
               </Button>
             )}
           </div>
-          <CourseFiles folder={moduleFolder} files={moduleFiles.map((f) => f.path)} courses={courses} />
+          <CourseFiles
+            folder={moduleFolder}
+            files={moduleFiles.map((f) => f.path)}
+            courses={courses}
+            passed={page.data.Status === 'Bestanden'}
+          />
         </section>
       )}
       {!isModule && sorted.length === 0 && moduleFiles.length === 0 && courses.length === 0 && (
@@ -197,12 +203,23 @@ export function Related({ from }: { from: string }) {
  * folders Notiva saves Moodle files into. Each group can be collapsed.
  */
 /**
- * Files of the module, split by Moodle course (a new lecturer, a new term – not the same material):
- * the courses that count now first, "later" ones marked, ignored ones folded away; within a course
- * by kind (lecture, lab & exercises, other), names in natural order. Files Notiva cannot assign to
- * a course (older or own) come last.
+ * Files of the module by status, then by Moodle course (a new lecturer, a new term – not the same
+ * material): "Aktuell" (this term's courses, else the newest), "Ältere Semester" (older terms and
+ * courses marked "later"), files without a known course; courses not counted are hidden. A passed
+ * module shows everything as "Bestanden – zum Nachschlagen". Within a course: lecture, lab &
+ * exercises, other – names in natural order.
  */
-function CourseFiles({ folder, files, courses }: { folder: string; files: string[]; courses: string[] }) {
+function CourseFiles({
+  folder,
+  files,
+  courses,
+  passed,
+}: {
+  folder: string
+  files: string[]
+  courses: string[]
+  passed: boolean
+}) {
   const ws = useWorkspace()
   const navigate = useApp((s) => s.navigate)
   const snapshot = useMoodle((s) => s.snapshot)
@@ -213,24 +230,45 @@ function CourseFiles({ folder, files, courses }: { folder: string; files: string
   useEffect(() => {
     void loadMaterialMap(ws).then(setMap)
   }, [ws, ws.version])
-  // File → course: saved materials (id → path) and the course of each material in the last fetch.
+  const known = (snapshot?.courses ?? []).filter((c) => courses.includes(c.id))
+  // File → course: saved materials (id → path, course from the last fetch) or the term folder.
   const courseOfId = new Map((snapshot?.materials ?? []).map((m) => [m.id, m.courseId]))
   const courseOf = new Map<string, string>()
   for (const [id, path] of Object.entries(map)) {
     const c = courseOfId.get(id)
     if (c) courseOf.set(path, c)
   }
-  const byCourse = new Map<string, string[]>()
-  for (const f of files) {
-    const c = courseOf.get(f) ?? ''
-    byCourse.set(c, [...(byCourse.get(c) ?? []), f])
+  const byTermFolder = new Map(known.map((c) => [termFolder(c), c.id]))
+  const course = (f: string) => {
+    const hit = courseOf.get(f)
+    if (hit) return hit
+    const seg = f.slice(folder.length + 1).split('/')[0] ?? ''
+    return isTermFolder(seg) ? (byTermFolder.get(seg) ?? '') : ''
   }
-  const name = (id: string) => snapshot?.courses.find((c) => c.id === id)?.name ?? id
-  const ordered = [...courses].reverse().filter((c) => byCourse.has(c))
-  const counted = ordered.filter((c) => choices[c] !== 'ignore')
-  const ignored = ordered.filter((c) => choices[c] === 'ignore')
+  const byCourse = new Map<string, string[]>()
+  for (const f of files) byCourse.set(course(f), [...(byCourse.get(course(f)) ?? []), f])
+  const termOfCourse = (id: string) => parseTerm(known.find((c) => c.id === id)?.name)
+  const nowIndex = termIndex(termOf(new Date()))
+  const counted = courses.filter((c) => byCourse.has(c) && choices[c] !== 'ignore')
+  const ignored = courses.filter((c) => byCourse.has(c) && choices[c] === 'ignore')
+  // "Aktuell": this term's courses; none → the newest course that counts.
+  let current = counted.filter(
+    (c) => choices[c] !== 'later' && termOfCourse(c) && termIndex(termOfCourse(c)!) === nowIndex,
+  )
+  if (!current.length) {
+    const newest = [...counted]
+      .filter((c) => choices[c] !== 'later')
+      .sort(
+        (a, b) =>
+          (termOfCourse(b) ? termIndex(termOfCourse(b)!) : 0) -
+          (termOfCourse(a) ? termIndex(termOfCourse(a)!) : 0),
+      )[0]
+    if (newest) current = [newest]
+  }
+  const older = counted.filter((c) => !current.includes(c))
   const hidden = new Set(ignored.flatMap((c) => byCourse.get(c) ?? []))
   const recent = recentAll.filter((r) => files.includes(r.path) && !hidden.has(r.path)).slice(0, 3)
+  const name = (id: string) => known.find((c) => c.id === id)?.name ?? id
   const item = (f: string) => (
     <li key={f}>
       <button
@@ -246,9 +284,12 @@ function CourseFiles({ folder, files, courses }: { folder: string; files: string
   const byKind = (list: string[], key: string, openFirst: boolean) => {
     const groups = new Map<string, string[]>()
     for (const f of list) {
-      const rest = f.slice(folder.length + 1)
-      const head = rest.includes('/') ? rest.slice(0, rest.indexOf('/')) : ''
-      const group = (MATERIAL_CATEGORIES as readonly string[]).includes(head) ? head : t('related.otherFiles')
+      const cat = f
+        .slice(folder.length + 1)
+        .split('/')
+        .slice(0, -1)
+        .find((p) => (MATERIAL_CATEGORIES as readonly string[]).includes(p))
+      const group = cat ?? t('related.otherFiles')
       groups.set(group, [...(groups.get(group) ?? []), f])
     }
     const natural = (a: string, b: string) =>
@@ -264,21 +305,30 @@ function CourseFiles({ folder, files, courses }: { folder: string; files: string
         </details>
       ))
   }
-  const section = (id: string, list: string[], first: boolean) => (
-    <details key={id || 'none'} open={first} className="space-y-0.5" data-testid="files-course">
-      <summary className="cursor-pointer text-[13px] font-semibold">
+  const courseBlock = (id: string, open: boolean) => (
+    <details key={id || 'none'} open={open} className="ml-1" data-testid="files-course">
+      <summary className="cursor-pointer text-[13px] font-medium">
         {id ? name(id) : t('related.filesNoCourse')}
-        <span className="ml-1.5 text-[12px] font-normal text-ink-3">{list.length}</span>
+        <span className="ml-1.5 text-[12px] font-normal text-ink-3">{byCourse.get(id)!.length}</span>
         {choices[id] === 'later' && (
           <span className="ml-1.5 rounded-full bg-[var(--opt-yellow)] px-1.5 text-[11px] text-[var(--opt-yellow-ink)]">
             {t('courseUse.laterShort')}
           </span>
         )}
       </summary>
-      {byKind(list, id, first)}
+      {byKind(byCourse.get(id)!, id, open)}
     </details>
   )
-  const single = ordered.length <= 1 && !byCourse.has('')
+  const status = (title: string, ids: string[], open: boolean, testid: string) =>
+    ids.length > 0 && (
+      <details key={testid} open={open} data-testid={testid}>
+        <summary className="cursor-pointer text-[12px] font-semibold tracking-wide text-ink-3">
+          {title} ({ids.reduce((n, id) => n + (byCourse.get(id)?.length ?? 0), 0)})
+        </summary>
+        <div className="mt-1 space-y-1">{ids.map((id, i) => courseBlock(id, open && i === 0))}</div>
+      </details>
+    )
+  const unknown = byCourse.has('') ? [''] : []
   return (
     <div className="mt-0.5 ml-3 space-y-1.5 border-l border-line pl-2" aria-label={t('related.files')}>
       {recent.length > 0 && (
@@ -287,12 +337,15 @@ function CourseFiles({ folder, files, courses }: { folder: string; files: string
           <ul>{recent.map((r) => item(r.path))}</ul>
         </div>
       )}
-      {single
-        ? byKind(files, 'all', true)
-        : [
-            ...counted.map((c, i) => section(c, byCourse.get(c)!, i === 0)),
-            ...(byCourse.has('') ? [section('', byCourse.get('')!, counted.length === 0)] : []),
-          ]}
+      {passed ? (
+        status(t('related.filesPassed'), [...counted, ...unknown], false, 'files-passed')
+      ) : (
+        <>
+          {status(t('related.filesCurrent'), current, true, 'files-current')}
+          {status(t('related.filesOlder'), older, false, 'files-older')}
+          {status(t('related.filesNoCourse'), unknown, !current.length, 'files-unknown')}
+        </>
+      )}
       {ignored.length > 0 && (
         <button
           type="button"
@@ -302,7 +355,7 @@ function CourseFiles({ folder, files, courses }: { folder: string; files: string
           {t('related.filesIgnored', { count: hidden.size })}
         </button>
       )}
-      {showIgnored && ignored.map((c) => section(c, byCourse.get(c)!, false))}
+      {showIgnored && ignored.map((c) => courseBlock(c, false))}
     </div>
   )
 }

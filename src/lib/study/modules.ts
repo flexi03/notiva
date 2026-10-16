@@ -31,3 +31,17 @@ export function materialFolderFor(base: string, course: { name: string }, module
     ? `${base}/${safeFileName(moduleTitle)}`
     : `${base}/${ORGA_FOLDER}/${safeFileName(course.name)}`
 }
+
+/**
+ * Folder of one course's term inside a module with several courses: "Datenbanksysteme 2 - WiSe
+ * 2025/26" → "WiSe 25-26" (a new lecturer, a new term – its own material). Course without term in
+ * its name: its short name.
+ */
+export function termFolder(course: { name: string; shortname?: string }): string {
+  const m = /(WiSe|WS|SoSe|SS)\s*(?:20)?(\d{2})(?:\s*[/ -]\s*(?:20)?(\d{2}))?/i.exec(course.name)
+  if (m) return `${/^w/i.test(m[1]!) ? 'WiSe' : 'SoSe'} ${m[2]}${m[3] ? `-${m[3]}` : ''}`
+  return safeFileName(course.shortname || course.name).slice(0, 40)
+}
+
+/** "WiSe 25-26", "SoSe 26" … – a term folder name. */
+export const isTermFolder = (name: string) => /^(WiSe|SoSe) \d{2}(-\d{2})?$/.test(name)

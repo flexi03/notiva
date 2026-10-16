@@ -1,7 +1,7 @@
 import { announce, withProgress } from '@/app/progress'
 import { t } from '@/i18n'
 import { importTargets, type MoodleMaterial, type MoodleSnapshot } from '@/lib/moodle'
-import { materialFolderFor, moduleOfCourse } from '@/lib/study/modules'
+import { courseIdsOf, materialFolderFor, moduleOfCourse, termFolder } from '@/lib/study/modules'
 import { notesPathFor } from '@/lib/annotations'
 import { versionName } from '@/lib/materialVersions'
 import { findStudyDashboard } from '@/lib/study/sync'
@@ -163,14 +163,17 @@ export function courseFolder(
   const dash = findStudyDashboard(ws)
   const rows = dash && ws.get(`${dash.folder}/Module.md`) ? ws.rows(`${dash.folder}/Module.md`) : []
   const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim()
-  return materialFolderFor(
+  const row = moduleOfCourse(rows, course.id)
+  const folder = materialFolderFor(
     materialFolder(ws),
     course,
-    moduleOfCourse(rows, course.id)?.title ??
+    row?.title ??
       moduleNames[course.id] ??
       // Not linked yet: a module of the same name.
       rows.find((r) => norm(r.title) === norm(course.name))?.title,
   )
+  // Several courses (terms) for one module: each its own folder – the material is not the same.
+  return row && courseIdsOf(row.data).length > 1 ? `${folder}/${termFolder(course)}` : folder
 }
 
 /** Saves a material into the vault (main process downloads it) and remembers where. */

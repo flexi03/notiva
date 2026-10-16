@@ -105,3 +105,19 @@ describe('sorting loose files', () => {
     ])
   })
 })
+
+describe('term folders', () => {
+  it('names a course term and sorts files inside it', async () => {
+    const { termFolder } = await import('../study/modules')
+    expect(termFolder({ name: 'Datenbanksysteme 2 - WiSe 2025/26' })).toBe('WiSe 25-26')
+    expect(termFolder({ name: 'BMI 12 Mathematik 2 (SoSe2025)' })).toBe('SoSe 25')
+    expect(termFolder({ name: 'BMI 32: Datenbanksysteme 2', shortname: 'DBS2' })).toBe('DBS2')
+    const base = 'U'
+    expect(planSort([`${base}/DBS 2/WiSe 25-26/DBS2-3_SQL.pdf`], base)).toEqual([
+      {
+        from: `${base}/DBS 2/WiSe 25-26/DBS2-3_SQL.pdf`,
+        to: `${base}/DBS 2/WiSe 25-26/Vorlesung/DBS2-3_SQL.pdf`,
+      },
+    ])
+  })
+})

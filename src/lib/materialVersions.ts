@@ -1,3 +1,4 @@
+import { isTermFolder } from './study/modules'
 import { MATERIAL_CATEGORIES, materialCategory, type MoodleMaterial } from './moodle'
 
 /**
@@ -140,8 +141,8 @@ export function planSort(
   for (const path of paths) {
     if (!path.startsWith(`${base}/`) || /\.md$/i.test(path)) continue
     const parts = path.slice(base.length + 1).split('/')
-    // <Modul>/<Datei> or Orga/<Kurs>/<Datei>
-    const depth = parts[0] === 'Orga' ? 3 : 2
+    // <Modul>/<Datei>, <Modul>/<Semester>/<Datei> or Orga/<Kurs>/<Datei>
+    const depth = parts[0] === 'Orga' || (parts.length === 3 && isTermFolder(parts[1]!)) ? 3 : 2
     if (parts.length !== depth || parts[0] === 'Prüfungsplan') continue
     const parent = parts[depth - 2]!
     if (categories.has(parent)) continue
