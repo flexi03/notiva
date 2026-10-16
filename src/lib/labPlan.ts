@@ -48,6 +48,8 @@ export interface LabPlanInput {
   prepDays: number
   firstNumber?: number
   sheets?: Record<number, string>
+  /** preparation sheets ("… Vorbereitungsblatt.pdf") – linked from the preparation */
+  prepSheets?: Record<number, string>
 }
 
 const pad = (n: number) => String(n).padStart(2, '0')
@@ -78,7 +80,7 @@ export function planLabs(input: LabPlanInput): LabEntry[] {
         kind: LAB_PREP,
         title: `${input.module} – ${label} ${LAB_PREP}`,
         due: iso(prep),
-        ...(sheet ? { sheet } : {}),
+        ...((input.prepSheets?.[n] ?? sheet) ? { sheet: input.prepSheets?.[n] ?? sheet } : {}),
       })
     }
   }
@@ -112,3 +114,43 @@ export function nextWeekday(day: string, from: Date): Date {
 }
 
 export { iso as isoDay }
+
+/** Number of a lab file ("DBS2_Praktikum_03_Musterloesung.pdf" → 3), null if none. */
+export function labFileNumber(path: string): number | null {
+  const name = path.slice(path.lastIndexOf('/') + 1)
+  const m = /(?:praktikum|(?:^|[\s_.-])P|labor)[\s_.-]*0?(\d{1,2})(?![\d])/i.exec(name)
+  return m && Number(m[1]) ? Number(m[1]) : null
+}
+
+/** All files of one lab session: sheet, preparation sheet, solutions, data – by kind. */
+export function labFilesOf(
+  paths: string[],
+  n: number,
+): Array<{ path: string; kind: 'prep' | 'solution' | 'sheet' | 'other' }> {
+  return paths
+    .filter((p) => !/\.md$/i.test(p) && labFileNumber(p) === n)
+    .map((path) => {
+      const name = path.slice(path.lastIndexOf('/') + 1)
+      const kind = /vorbereit/i.test(name)
+        ? ('prep' as const)
+        : /l(ö|oe)sung|musterl/i.test(name)
+          ? ('solution' as const)
+          : /\.(pdf|docx?)$/i.test(name) && !/\s\d\.\w+$/.test(name)
+            ? ('sheet' as const)
+            : ('other' as const)
+      return { path, kind }
+    })
+    .sort((a, b) => a.kind.localeCompare(b.kind) || a.path.length - b.path.length)
+}
+
+/** Preparation sheets by number ("DBS2 - Praktikum 01 - Vorbereitungsblatt.pdf"). */
+export function prepSheets(paths: string[]): Record<number, string> {
+  const out: Record<number, string> = {}
+  for (const path of paths) {
+    const name = path.slice(path.lastIndexOf('/') + 1)
+    if (!/vorbereit/i.test(name) || /\.md$/i.test(name)) continue
+    const n = labFileNumber(path)
+    if (n && (!out[n] || name.length < out[n]!.length)) out[n] = path
+  }
+  return out
+}

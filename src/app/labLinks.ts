@@ -22,7 +22,8 @@ export function moduleOfPath(ws: Workspace, path: string): Page | null {
   while (dir.includes('/')) {
     dir = dir.slice(0, dir.lastIndexOf('/'))
     const page = ws.get(`${dir}.md`)
-    if (page && page.path.startsWith(rows)) return page
+    // A row of "Module" itself – not a page further down (lab folder, session page).
+    if (page && page.path.startsWith(rows) && !page.path.slice(rows.length).includes('/')) return page
   }
   return null
 }

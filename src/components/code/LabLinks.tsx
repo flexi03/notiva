@@ -1,88 +1,129 @@
 import { CalendarClock, Link2, Package } from 'lucide-react'
-import {
-  connectLabTasks,
-  labTasksOf,
-  linkRepoToTask,
-  linksTo,
-  moduleOfPath,
-  reposOf,
-  suggestedTask,
-} from '@/app/labLinks'
+import { labNumber, labTasksOf, linkRepoToTask, moduleOfPath, reposOf, suggestedTask } from '@/app/labLinks'
+import { applyStructure, hubName, hubsOf, planStructure, taskNumber } from '@/app/labHubs'
+import { loadClones, useClones } from '@/app/clones'
 import { announce } from '@/app/progress'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import { formatValue } from '@/lib/database'
 import { LAB_DATE } from '@/lib/labPlan'
 import type { Page } from '@/lib/workspace'
-import { Button, Chip } from '@/components/ui'
+import { Button, Chip, cx } from '@/components/ui'
 
 const due = (p: Page) => formatValue({ name: 'Fällig', type: 'date' }, String(p.data.Fällig ?? ''))
 
-/** In a lab folder: the module's lab dates and preparations – with the repository each belongs to. */
+/**
+ * In a lab folder: its sessions (P01, P02 …) – each with its date, preparation and repositories,
+ * past ones included (faded). "Nach Praktika ordnen" creates the session pages, moves numbered
+ * repositories there and links the dates – after showing what it would do.
+ */
 export function LabDates({ lab }: { lab: Page }) {
   const ws = useWorkspace()
   const run = useAction()
-  const openEntry = useApp((s) => s.openEntry)
   const navigate = useApp((s) => s.navigate)
+  const clones = useClones((s) => s[lab.path.slice(0, -3)]) ?? []
   const module = moduleOfPath(ws, lab.path)
   if (!module) return null
+  const folder = lab.path.slice(0, -3)
   const tasks = labTasksOf(ws, module.path)
+  const hubs = hubsOf(ws, folder)
+  const repos = clones.map((c) => {
+    const page = ws.get(`${folder}/${c.name}.md`)
+    return { name: c.name, n: labNumber(`${c.name} ${page?.title ?? ''}`) }
+  })
+  const plan = planStructure(ws, folder, module.path, repos)
+  const work = plan.hubs.length + plan.repos.length + plan.tasks.length
+  const numbers = [
+    ...new Set([...hubs.keys(), ...tasks.flatMap((p) => (taskNumber(p) ? [taskNumber(p)!] : []))]),
+  ].sort((a, b) => a - b)
   const today = new Date().toISOString().slice(0, 10)
-  const upcoming = tasks.filter(
-    (p) => String(p.data.Fällig ?? '').slice(0, 10) >= today && p.data.Status !== 'Erledigt',
-  )
-  const loose = tasks.filter((p) => !linksTo(ws, p, lab.path)).length
+  const short = (p: Page) => p.title.replace(`${module.title} – `, '')
+
+  const organise = () =>
+    run(async () => {
+      const lines = [
+        ...plan.hubs.map((n) => t('structure.hub', { name: hubName(n) })),
+        ...plan.repos.map((r) => t('structure.repo', { name: r.name, hub: hubName(r.n) })),
+        ...(plan.tasks.length ? [t('structure.tasks', { count: plan.tasks.length })] : []),
+      ]
+      const ok = await useApp.getState().ask({
+        title: t('structure.title', { name: lab.title }),
+        label: lines.map((l) => `• ${l}`).join('\n'),
+        confirmLabel: t('structure.apply'),
+        confirm: true,
+      })
+      if (ok === null) return
+      const n = await applyStructure(ws, folder, plan)
+      await loadClones(folder)
+      announce(t('structure.done', { count: n }))
+    })
+
   return (
     <div data-testid="lab-dates-folder">
       <div className="mb-1 flex items-center gap-2">
         <h3 className="flex flex-1 items-center gap-1.5 text-[12.5px] font-semibold text-ink-2">
-          <CalendarClock size={13} /> {t('lab.dates')}
+          <CalendarClock size={13} /> {t('lab.sessions')}
         </h3>
-        {loose > 0 && (
-          <Button
-            size="sm"
-            variant="ghost"
-            icon={<Link2 size={13} />}
-            onClick={() =>
-              void run(async () => {
-                const n = await connectLabTasks(ws, module.path, lab.path)
-                announce(t('lab.connected', { count: n }))
-              })
-            }
-          >
-            {t('lab.connect', { count: loose })}
+        {work > 0 && (
+          <Button size="sm" variant="primary" icon={<Link2 size={13} />} onClick={() => void organise()}>
+            {t('structure.button', { count: work })}
           </Button>
         )}
       </div>
-      {tasks.length === 0 ? (
+      {numbers.length === 0 ? (
         <p className="text-[13px] text-ink-3">{t('lab.noDates')}</p>
       ) : (
-        <ul className="space-y-0.5">
-          {(upcoming.length ? upcoming : tasks).slice(0, 8).map((p) => (
-            <li key={p.path} className="flex flex-wrap items-center gap-2 text-[13px]">
-              <Chip color={p.data.Art === LAB_DATE ? 'orange' : 'blue'}>
-                {p.data.Art === LAB_DATE ? t('lab.date') : t('lab.prep')}
-              </Chip>
-              <button
-                type="button"
-                className="min-w-0 flex-1 truncate text-left hover:underline"
-                onClick={(e) => openEntry(p.path, e)}
+        <ul className="space-y-1">
+          {numbers.map((n) => {
+            const own = tasks.filter((p) => taskNumber(p) === n)
+            const date = own.find((p) => p.data.Art === LAB_DATE)
+            const past = !!date && String(date.data.Fällig ?? '').slice(0, 10) < today
+            const hub = hubs.get(n)
+            return (
+              <li
+                key={n}
+                className={cx('flex flex-wrap items-center gap-2 text-[13px]', past && 'opacity-60')}
               >
-                {p.title.replace(`${module.title} – `, '')}
-              </button>
-              <span className="text-[12px] text-ink-3 tabular-nums">{due(p)}</span>
-              {reposOf(ws, p).map((r) => (
                 <button
-                  key={r.path}
                   type="button"
-                  className="inline-flex items-center gap-1 rounded-full border border-line px-1.5 text-[11.5px] hover:bg-hover"
-                  onClick={() => navigate({ name: 'page', path: r.path })}
+                  disabled={!hub}
+                  onClick={() => hub && navigate({ name: 'page', path: hub.path })}
+                  className="w-12 shrink-0 text-left font-semibold text-accent enabled:hover:underline disabled:text-ink-2"
                 >
-                  <Package size={10} /> {r.title}
+                  {hubName(n)}
                 </button>
-              ))}
-            </li>
-          ))}
+                <span className="min-w-0 flex-1 truncate">
+                  {own.map((p) => (
+                    <button
+                      key={p.path}
+                      type="button"
+                      className="mr-2 inline-flex items-center gap-1 hover:underline"
+                      onClick={(e) => useApp.getState().openEntry(p.path, e)}
+                    >
+                      <Chip color={p.data.Art === LAB_DATE ? 'orange' : 'blue'}>
+                        {p.data.Art === LAB_DATE ? t('lab.date') : t('lab.prep')}
+                      </Chip>
+                      <span className="tabular-nums text-ink-2">{due(p)}</span>
+                    </button>
+                  ))}
+                  {!own.length && <span className="text-ink-3">{short(hub ?? lab)}</span>}
+                </span>
+                {own
+                  .flatMap((p) => reposOf(ws, p))
+                  .filter((r, i, a) => a.findIndex((x) => x.path === r.path) === i)
+                  .map((r) => (
+                    <button
+                      key={r.path}
+                      type="button"
+                      className="inline-flex items-center gap-1 rounded-full border border-line px-1.5 text-[11.5px] hover:bg-hover"
+                      onClick={() => navigate({ name: 'page', path: r.path })}
+                    >
+                      <Package size={10} /> {r.title}
+                    </button>
+                  ))}
+              </li>
+            )
+          })}
         </ul>
       )}
     </div>

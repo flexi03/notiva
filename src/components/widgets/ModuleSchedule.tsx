@@ -12,6 +12,7 @@ import {
 import { ModuleMoodle } from './ModuleMoodle'
 import { labFolderOf } from '@/app/clone'
 import { reposOf } from '@/app/labLinks'
+import { ensureHub } from '@/app/labHubs'
 import { materialFolder } from '@/app/materials'
 import { suggestTimetable } from '@/app/schedule'
 import { materialFolderFor } from '@/lib/study/modules'
@@ -25,6 +26,7 @@ import {
   LAB_DATE,
   LAB_PREP,
   labSheets,
+  prepSheets,
   nextWeekday,
   planLabs,
   REMINDERS,
@@ -280,7 +282,16 @@ function LabPlanner({
   const [prepDays, setPrepDays] = useState(1)
   const [remind, setRemind] = useState<string>('1 Tag vorher')
   const [remindPrep, setRemindPrep] = useState<string>('2 Std. vorher')
-  const plan = planLabs({ module: module.title, first, start, everyWeeks: every, count, prepDays, sheets })
+  const plan = planLabs({
+    module: module.title,
+    first,
+    start,
+    everyWeeks: every,
+    count,
+    prepDays,
+    sheets,
+    prepSheets: prepSheets(files),
+  })
   const fresh = plan.filter((e) => !existing.has(e.title))
   const label = 'text-[12px] font-semibold text-ink-2'
 
@@ -435,12 +446,13 @@ async function createLabTask(
     Status: 'Offen',
     Erinnerung: reminder,
   })
-  // Linked: the sheet, and the lab (code) folder – each shows up on the other's page.
+  // Linked: the sheet, and the session's page in the lab folder (P01 …) – each on the other's page.
+  const hub = lab ? await ensureHub(ws, lab, e.n) : null
   const lines = [
     ...(e.sheet
       ? [`${e.kind === LAB_PREP ? t('lab.prepBody') : t('lab.dateBody')}\n\n- [[${ws.linkText(e.sheet)}]]`]
       : []),
-    ...(lab ? [`${t('lab.labLink')} [[${ws.linkText(`${lab}.md`)}]]`] : []),
+    ...(hub ? [`${t('lab.labLink')} [[${ws.linkText(hub)}]]`] : []),
   ]
   if (lines.length) await ws.save(path, { body: `${lines.join('\n\n')}\n` })
 }

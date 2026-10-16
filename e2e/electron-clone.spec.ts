@@ -43,6 +43,9 @@ test.afterAll(async () => {
 test('holt ein privates Repository mit Zugangstoken – Name frei wählbar', async () => {
   await window.evaluate(() => (location.hash = '#/p/Praktikum.md'))
   await window.getByRole('button', { name: 'Repository ins Praktikum holen' }).click()
+  // Which session? No number in this link: directly into the lab folder.
+  const session = window.getByRole('dialog', { name: 'Zu welchem Praktikum gehört das Repository?' })
+  await session.getByRole('button', { name: 'Weiter' }).click()
   const dialog = window.getByRole('dialog')
   const name = dialog.getByRole('textbox')
   await expect(name).toHaveValue('snippet-41')
@@ -78,7 +81,9 @@ test('holt ein privates Repository mit Zugangstoken – Name frei wählbar', asy
   await expect(window.getByRole('button', { name: 'In der App öffnen: sql-wiederholung' })).toBeVisible()
   await expect(window.getByRole('button', { name: 'Repository ins Praktikum holen' })).toHaveCount(0)
   await expect(window.getByTestId('lab-repos')).toContainText('sql-wiederholung')
-  await expect(window.getByTestId('lab-repos').getByRole('button', { name: 'Öffnen', exact: true })).toBeVisible()
+  await expect(
+    window.getByTestId('lab-repos').getByRole('button', { name: 'Öffnen', exact: true }),
+  ).toBeVisible()
   // The token never shows up in git's arguments (process list).
   expect(readFileSync(log, 'utf8')).toContain('https://projectbase.example.org/snippets/41.git')
   expect(readFileSync(log, 'utf8')).not.toContain(TOKEN)

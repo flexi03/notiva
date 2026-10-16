@@ -13,6 +13,7 @@ import { EmojiPicker } from './EmojiPicker'
 import { PageProperties } from './PageProperties'
 import { CodeFolder } from '@/components/code/CodeFolder'
 import { RepoFiles } from '@/components/code/RepoFiles'
+import { LabHub } from '@/components/code/LabHub'
 import { ModuleSchedule } from '@/components/widgets/ModuleSchedule'
 import { DayOverview, dailyDate } from '@/components/widgets/DayOverview'
 import { SourceEditor } from './SourceEditor'
@@ -208,6 +209,7 @@ export function PageContent({
 
           {page.data.code === true && <CodeFolder page={page} />}
           {typeof page.data.repo === 'string' && <RepoFiles page={page} />}
+          {typeof page.data.praktikum === 'number' && <LabHub page={page} />}
           {/* Daily notes ("Heute"): the day's sessions, exams, labs, tasks and deadlines. */}
           {daily && <DayOverview date={daily} />}
           {/* Module pages without the "related" block still show their sessions and lab dates. */}

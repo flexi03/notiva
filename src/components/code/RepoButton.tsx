@@ -3,6 +3,9 @@ import { FolderOpen, GitBranch } from 'lucide-react'
 import { cloneIntoLab, labFolderOf } from '@/app/clone'
 import { labFoldersOf, loadClones, sameRepo, useClones } from '@/app/clones'
 import { useRepo } from '@/app/repoDetect'
+import { ensureHub, hubName, hubsOf } from '@/app/labHubs'
+import { labNumber } from '@/app/labLinks'
+import type { Workspace } from '@/lib/workspace'
 import { ensureRepoPage } from '@/app/repoPage'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
@@ -30,7 +33,12 @@ export function RepoButton({
   const run = useAction()
   const repo = useRepo(link, title)
   const navigate = useApp((s) => s.navigate)
-  const labs = folder ? [folder] : module ? labFoldersOf(ws, module) : []
+  const baseLabs = folder ? [folder] : module ? labFoldersOf(ws, module) : []
+  // Sessions (P01 …) inside the labs hold repositories too.
+  const labs = [
+    ...baseLabs,
+    ...baseLabs.flatMap((l) => [...hubsOf(ws, l).values()].map((h) => h.path.slice(0, -3))),
+  ]
   const key = labs.join('|')
   const clones = useClones()
   useEffect(() => {
@@ -72,12 +80,41 @@ export function RepoButton({
             folder ??
             labFolderOf(ws, module!) ??
             (await createCodeFolder(ws, module!, 'Praktikum')).slice(0, -3)
-          const target = await cloneIntoLab(ws, link, lab, repo, title)
-          if (target && !folder) navigate({ name: 'page', path: `${lab}.md` })
+          const into = await chooseSession(ws, lab, `${title} ${link}`)
+          if (into === null) return
+          await cloneIntoLab(ws, link, into, repo, title)
         })
       }
     >
       {t('clone.button')}
     </Button>
   )
+}
+
+/**
+ * Which lab session the repository belongs to: a session page (P01 …) is used as it is; in a lab
+ * folder Notiva suggests the session by number ("Praktikum 2" → P02, created if needed) and asks.
+ */
+async function chooseSession(ws: Workspace, lab: string, text: string): Promise<string | null> {
+  if (typeof ws.get(`${lab}.md`)?.data.praktikum === 'number') return lab
+  const hubs = hubsOf(ws, lab)
+  const n = labNumber(text)
+  const options = [
+    ...(n && !hubs.has(n) ? [{ value: `new:${n}`, label: t('clone.sessionNew', { name: hubName(n) }) }] : []),
+    ...[...hubs]
+      .sort((a, b) => a[0] - b[0])
+      .map(([k, h]) => ({ value: h.path.slice(0, -3), label: hubName(k) })),
+    { value: lab, label: t('clone.sessionNone', { name: lab.slice(lab.lastIndexOf('/') + 1) }) },
+  ]
+  const suggested = n ? (hubs.get(n)?.path.slice(0, -3) ?? `new:${n}`) : options[0]!.value
+  const picked = await useApp.getState().ask({
+    title: t('clone.sessionTitle'),
+    label: n ? t('clone.sessionSuggested', { name: hubName(n) }) : t('clone.sessionPick'),
+    confirmLabel: t('common.next'),
+    choices: options,
+    initial: suggested,
+  })
+  if (picked === null) return null
+  if (picked.startsWith('new:')) return (await ensureHub(ws, lab, Number(picked.slice(4)))).slice(0, -3)
+  return picked
 }
