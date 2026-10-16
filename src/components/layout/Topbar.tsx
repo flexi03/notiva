@@ -27,6 +27,8 @@ export function Topbar({ title, actions }: { title?: string; actions?: ReactNode
   const moreRef = useRef<HTMLButtonElement>(null)
   const page = route.name === 'page' ? ws.get(route.path) : undefined
   const crumbs = page ? ws.breadcrumbs(page.path) : []
+  const currentPath = page?.path ?? (route.name === 'file' ? route.path : null)
+  const [editing, setEditing] = useState<string | null>(null)
 
   return (
     <header
@@ -56,26 +58,41 @@ export function Topbar({ title, actions }: { title?: string; actions?: ReactNode
       >
         <ArrowRight size={16} />
       </IconButton>
-      <ol className="flex min-w-0 flex-1 items-center gap-0.5 text-[14px] text-ink-2" aria-label="Breadcrumb">
-        {crumbs.map((c, i) => (
-          <li key={i} className="flex min-w-0 items-center gap-0.5 max-sm:hidden">
-            {c.path ? (
-              <button
-                type="button"
-                className="truncate rounded px-1.5 py-0.5 hover:bg-hover hover:text-ink"
-                onClick={() => openPage(c.path!)}
-              >
-                {c.title}
-              </button>
-            ) : (
-              <span className="truncate px-1.5">{c.title}</span>
-            )}
-            <ChevronRight size={13} className="shrink-0 text-ink-3" />
+      {editing !== null ? (
+        <PathField initial={editing} onDone={() => setEditing(null)} />
+      ) : (
+        <ol
+          className="flex min-w-0 flex-1 cursor-text items-center gap-0.5 text-[14px] text-ink-2"
+          aria-label="Breadcrumb"
+          title={currentPath ? t('path.hint') : undefined}
+          onClick={(e) => {
+            // A click beside the crumbs (or on the current name): the whole path, to copy or edit.
+            if (currentPath && (e.target === e.currentTarget || (e.target as HTMLElement).dataset.current))
+              setEditing(currentPath)
+          }}
+        >
+          {crumbs.map((c, i) => (
+            <li key={i} className="flex min-w-0 items-center gap-0.5 max-sm:hidden">
+              {c.path ? (
+                <button
+                  type="button"
+                  className="truncate rounded px-1.5 py-0.5 hover:bg-hover hover:text-ink"
+                  onClick={() => openPage(c.path!)}
+                >
+                  {c.title}
+                </button>
+              ) : (
+                <span className="truncate px-1.5">{c.title}</span>
+              )}
+              <ChevronRight size={13} className="shrink-0 text-ink-3" />
+            </li>
+          ))}
+          <li className="min-w-0 truncate px-1.5 font-semibold text-ink" data-current="1">
+            {page?.title ?? title}
           </li>
-        ))}
-        <li className="min-w-0 truncate px-1.5 font-semibold text-ink">{page?.title ?? title}</li>
-        {page && <GitChip path={page.path} />}
-      </ol>
+          {page && <GitChip path={page.path} />}
+        </ol>
+      )}
       <UnsavedButton />
       {actions}
       <AssistantToggle />
@@ -201,5 +218,57 @@ function UnsavedButton() {
       <span aria-hidden className="size-1.5 rounded-full bg-[var(--git-modified)]" />
       {t('autosave.unsaved', { count })}
     </button>
+  )
+}
+
+/** The whole path of the open page or file: copy it, or type another one and open it (Enter). */
+function PathField({ initial, onDone }: { initial: string; onDone: () => void }) {
+  const ws = useWorkspace()
+  const [value, setValue] = useState(initial)
+  const [copied, setCopied] = useState(false)
+  const open = () => {
+    const raw = value.trim().replace(/^\/+/, '')
+    const target = ws.get(raw)
+      ? raw
+      : ws.get(`${raw}.md`)
+        ? `${raw}.md`
+        : ws.has(raw)
+          ? raw
+          : ws.resolveLink(raw)
+    if (target) {
+      useApp.getState().openPage(target)
+      onDone()
+    } else useApp.getState().showToast(t('path.notFound', { path: raw }))
+  }
+  return (
+    <div className="flex min-w-0 flex-1 items-center gap-1" data-testid="path-field">
+      <input
+        autoFocus
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onFocus={(e) => e.target.select()}
+        onBlur={(e) => {
+          if (!e.relatedTarget?.closest('[data-testid="path-field"]')) onDone()
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') open()
+          if (e.key === 'Escape') onDone()
+        }}
+        aria-label={t('path.label')}
+        className="h-7 min-w-0 flex-1 rounded-control border border-line bg-surface px-2 font-code text-[12.5px] outline-none focus:border-accent"
+      />
+      <button
+        type="button"
+        className="rounded-control px-2 py-1 text-[12px] font-semibold text-accent hover:bg-hover"
+        onClick={() =>
+          void navigator.clipboard.writeText(value).then(() => {
+            setCopied(true)
+            setTimeout(() => setCopied(false), 1500)
+          })
+        }
+      >
+        {copied ? t('path.copied') : t('path.copy')}
+      </button>
+    </div>
   )
 }

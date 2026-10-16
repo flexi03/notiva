@@ -87,3 +87,13 @@ test('Hilfe erklärt einen Ort beim Anklicken und öffnet ihn', async ({ page })
   await page.getByRole('button', { name: 'Öffnen', exact: true }).click()
   await expect(page.getByRole('tab', { name: /Studium/ }).first()).toBeVisible()
 })
+
+test('Pfad oben: ganzer Pfad zum Kopieren und Bearbeiten', async ({ page }) => {
+  await openDemo(page)
+  await page.getByRole('list', { name: 'Breadcrumb' }).getByText('Studium', { exact: true }).last().click()
+  const field = page.getByRole('textbox', { name: /Pfad im Ordner/ })
+  await expect(field).toHaveValue('Studium.md')
+  await field.fill('Studium/Module')
+  await field.press('Enter')
+  await expect(page.getByRole('list', { name: 'Breadcrumb' })).toContainText('Module')
+})
