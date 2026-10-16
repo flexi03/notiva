@@ -372,6 +372,13 @@ test('meldet Neuigkeiten aus Moodle im Benachrichtigungscenter', async () => {
   await expect(list).toContainText('Geändert: Woche 1')
   await expect(list).toContainText('Klausur am 03.02.')
   await expect(list).toContainText('neue Unterlagen in Moodle')
+  // "Ungelesen": an opened entry stays (now read) with its details until the filter changes.
+  await panel.getByRole('button', { name: /^Ungelesen/ }).click()
+  const entry = list.getByRole('button', { name: /Raumänderung: heute H3/ })
+  await entry.click()
+  await expect(entry).toHaveAttribute('aria-expanded', 'true')
+  await expect(list).toContainText('Die Vorlesung ist heute in H3.')
+  await panel.getByRole('button', { name: 'Alle', exact: true }).click()
   await panel.getByRole('button', { name: 'Alle als gelesen markieren' }).click()
   await expect(bell).not.toContainText('5')
   // Stored on the device, not in the vault.

@@ -132,7 +132,10 @@ export function NotificationPanel() {
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
   const [open, setOpen] = useState<string | null>(null)
   const unread = unreadCount(list)
-  const shown = filter === 'unread' ? list.filter((n) => !n.read) : list
+  // Opened in "Ungelesen": it stays in the list (now read) so its details can be seen – until the
+  // filter is switched.
+  const [kept, setKept] = useState<Set<string>>(new Set())
+  const shown = filter === 'unread' ? list.filter((n) => !n.read || kept.has(n.id)) : list
   const desktop = Boolean(electronBridge()?.notifications)
 
   useEffect(() => {
@@ -161,7 +164,10 @@ export function NotificationPanel() {
             key={f}
             type="button"
             aria-pressed={filter === f}
-            onClick={() => setFilter(f)}
+            onClick={() => {
+              setFilter(f)
+              setKept(new Set())
+            }}
             className={cx(
               'rounded-full px-2.5 py-0.5 hover:bg-hover',
               filter === f ? 'bg-hover font-semibold text-ink' : 'text-ink-2',
@@ -193,7 +199,10 @@ export function NotificationPanel() {
                     aria-expanded={open === n.id}
                     onClick={() => {
                       setOpen(open === n.id ? null : n.id)
-                      if (!n.read) void markRead([n.id])
+                      if (!n.read) {
+                        setKept((k) => new Set(k).add(n.id))
+                        void markRead([n.id])
+                      }
                     }}
                     className="flex w-full items-start gap-2.5 py-2.5 pr-3 pl-2.5 text-left hover:bg-hover"
                     style={{ borderLeft: `3px solid var(--opt-${notificationColor(n)}-ink)` }}
