@@ -2,7 +2,7 @@ import { electronBridge } from '@/lib/vault'
 import { commitSummary, localModelAvailable } from '@/app/localModel'
 import { explain } from '@/app/fixes'
 import { withProgress } from '@/app/progress'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
@@ -128,36 +128,47 @@ export function GitPanel() {
   const auto = commitMessage(
     selected.map((c) => ({ ...c, added: stats.get(c.path)?.added, removed: stats.get(c.path)?.removed })),
   )
-  const message = custom ?? auto
-
-  // The local model summarises automatically when there are changes (once per set of changes).
+  // The local model writes the message (once per set of changes); the template from the file
+  // names is only the fallback – when no model is set up or it doesn't answer (with a hint).
   const [summarizing, setSummarizing] = useState(false)
+  const [fallback, setFallback] = useState<'off' | 'failed' | null>(null)
   const signature = selected.map((c) => `${c.path}:${stats.get(c.path)?.added ?? ''}`).join('|')
-  const lastSummary = useRef('')
-  const summarize = async (manual = false) => {
+  /** The set of changes the model already wrote for (or the template was taken for). */
+  const [summarized, setSummarized] = useState('')
+  const model = localModelAvailable()
+  // Waiting for the model (also during the short pause before it starts).
+  const pending =
+    model && custom === null && selected.length > 0 && (summarizing || summarized !== signature)
+  const message = custom ?? (pending ? '' : auto)
+  const summarize = async () => {
     if (summarizing || !selected.length) return
-    lastSummary.current = signature
+    setSummarized(signature)
     setSummarizing(true)
+    setFallback(null)
     try {
-      const text = await commitSummary(
-        selected.map((c) => ({
-          path: c.path,
-          status: c.status,
-          added: stats.get(c.path)?.added,
-          removed: stats.get(c.path)?.removed,
-          excerpt: stats.get(c.path)?.excerpt,
-        })),
-      )
+      const text = await Promise.race([
+        commitSummary(
+          selected.map((c) => ({
+            path: c.path,
+            status: c.status,
+            added: stats.get(c.path)?.added,
+            removed: stats.get(c.path)?.removed,
+            excerpt: stats.get(c.path)?.excerpt,
+          })),
+        ),
+        new Promise<string>((_, reject) => setTimeout(() => reject(new Error('timeout')), 90_000)),
+      ])
       if (text) setCustom(text)
-    } catch (e) {
-      if (manual) void import('@/app/fixes').then((m) => m.reportError(e))
+      else setFallback('failed')
+    } catch {
+      setFallback('failed')
     } finally {
       setSummarizing(false)
     }
   }
   useEffect(() => {
-    if (!localModelAvailable() || custom !== null || !selected.length || summarizing) return
-    if (lastSummary.current === signature) return
+    if (!model || custom !== null || !selected.length || summarizing) return
+    if (summarized === signature) return
     // Wait until the line counts are there (they carry the changed lines).
     const timer = setTimeout(() => void summarize(), 800)
     return () => clearTimeout(timer)
@@ -264,35 +275,85 @@ export function GitPanel() {
                 void commit()
               }}
             >
-              <AutoTextArea
-                value={message}
-                onChange={(e) => setCustom(e.target.value)}
-                placeholder={t('git.messagePlaceholder')}
-                aria-label={t('git.message')}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                    e.preventDefault()
-                    void commit()
-                  }
-                }}
-                className="min-h-16"
-              />
+              <div className="relative">
+                <AutoTextArea
+                  value={message}
+                  onChange={(e) => setCustom(e.target.value)}
+                  placeholder={pending ? '' : t('git.messagePlaceholder')}
+                  aria-label={t('git.message')}
+                  aria-busy={pending}
+                  readOnly={pending}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                      e.preventDefault()
+                      void commit()
+                    }
+                  }}
+                  className="min-h-16"
+                />
+                {pending && (
+                  // While the model writes: shimmering lines instead of the template.
+                  <div
+                    role="status"
+                    data-testid="commit-generating"
+                    className="pointer-events-none absolute inset-0 flex flex-col justify-center gap-1.5 px-3 py-2"
+                  >
+                    <span className="flex items-center gap-1.5 text-[12px] font-medium text-accent">
+                      <Sparkles size={12} className="animate-pulse" /> {t('git.generating')}
+                    </span>
+                    <span className="skeleton-line w-11/12" />
+                    <span className="skeleton-line w-2/3" />
+                  </div>
+                )}
+              </div>
+              {!model && custom === null && selected.length > 0 && (
+                <p className="text-[12px] text-ink-3" data-testid="commit-fallback">
+                  {t('git.templateNoModel')}{' '}
+                  <button
+                    type="button"
+                    className="font-semibold text-accent hover:underline"
+                    onClick={() => useApp.getState().navigate({ name: 'settings', section: 'ai' })}
+                  >
+                    {t('git.setUpModel')}
+                  </button>
+                </p>
+              )}
+              {model && fallback === 'failed' && custom === null && (
+                <p className="text-[12px] text-ink-3" data-testid="commit-fallback">
+                  {t('git.templateFailed')}{' '}
+                  <button
+                    type="button"
+                    className="font-semibold text-accent hover:underline"
+                    onClick={() => void summarize()}
+                  >
+                    {t('fix.retry')}
+                  </button>
+                </p>
+              )}
               <div className="flex gap-2">
                 <Button
                   type="submit"
                   variant="primary"
                   icon={<GitCommitHorizontal size={15} />}
-                  disabled={!message.trim() || selected.length === 0}
+                  disabled={pending || !message.trim() || selected.length === 0}
                   className="flex-1"
                 >
                   {t('git.commit', { count: selected.length })}
                 </Button>
-                {localModelAvailable() && selected.length > 0 && (
-                  <IconButton
-                    label={t('localModel.suggest')}
-                    disabled={summarizing}
-                    onClick={() => void summarize(true)}
+                {pending && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setSummarized(signature)
+                      setCustom(auto)
+                    }}
+                    title={t('git.useTemplateHint')}
                   >
+                    {t('git.useTemplate')}
+                  </Button>
+                )}
+                {model && selected.length > 0 && !pending && (
+                  <IconButton label={t('localModel.suggest')} onClick={() => void summarize()}>
                     <Sparkles size={15} className={summarizing ? 'animate-pulse' : undefined} />
                   </IconButton>
                 )}

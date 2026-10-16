@@ -1,3 +1,4 @@
+import { withAi } from '@/app/aiActivity'
 import { withProgress } from '@/app/progress'
 import { getLanguage, t } from '@/i18n'
 import { electronBridge } from '@/lib/vault'
@@ -67,7 +68,7 @@ export function localSummary(
     const off = bridge.onProgress((e) => e.kind === 'start' && e.text && task.detail(e.text))
     try {
       task.detail(t('localModel.thinking'))
-      return await bridge.complete(id, system, prompt, maxTokens, examples)
+      return await withAi(label, () => bridge.complete(id, system, prompt, maxTokens, examples))
     } finally {
       off()
     }

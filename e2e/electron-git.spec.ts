@@ -74,6 +74,9 @@ test('markiert geänderte Zeilen und zeigt den Diff', async () => {
 test('schlägt eine Commit-Nachricht mit allen Änderungen vor', async () => {
   const field = panel().getByRole('textbox', { name: 'Commit-Nachricht' })
   await expect(field).toHaveValue('Notiz geändert\n\nGeändert:\n- Notiz.md (+1 −1)')
+  // Without the local model the template is the fallback – and says so, with the way to set it up.
+  await expect(panel().getByTestId('commit-fallback')).toContainText('Nachricht aus der Vorlage')
+  await expect(panel().getByRole('button', { name: 'Einrichten' })).toBeVisible()
 })
 
 test('committet ausgewählte Änderungen', async () => {

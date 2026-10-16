@@ -1,3 +1,4 @@
+import { AiGlow } from './AiGlow'
 import type { CSSProperties } from 'react'
 import { useEffect, useRef, type ReactNode } from 'react'
 import { saveAllNow, useApp, useWorkspace } from '@/app/store'
@@ -135,7 +136,7 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
   useEffect(() => electronBridge()?.onMenu?.((id) => runCommand(id, ws, actions, saveNow)), [ws, actions])
 
   return (
-    <div className="flex h-full flex-col overflow-clip">
+    <div className="relative flex h-full flex-col overflow-clip">
       <div className="flex min-h-0 flex-1 overflow-clip" data-sidebar={sidebarOpen ? 'open' : 'closed'}>
         {sidebarOpen && (
           <div
@@ -221,6 +222,7 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
         <EventBadge />
       </div>
       <StatusBar />
+      <AiGlow />
     </div>
   )
 }
