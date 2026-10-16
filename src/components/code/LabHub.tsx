@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { CalendarClock, ExternalLink, FileText, FolderOpen, GitBranch, Link2 } from 'lucide-react'
 import { loadClones, useClones } from '@/app/clones'
 import { labNumber, labTasksOf, moduleOfPath } from '@/app/labLinks'
-import { taskNumber } from '@/app/labHubs'
+import { linkRepoToSession, moveRepoToHub, moveRepoToLab, reposOfSession, taskNumber } from '@/app/labHubs'
 import { materialFolder } from '@/app/materials'
 import { useMoodle } from '@/app/moodle'
 import { ensureRepoPage } from '@/app/repoPage'
@@ -32,10 +32,14 @@ export function LabHub({ page }: { page: Page }) {
   const n = Number(page.data.praktikum)
   const folder = page.path.slice(0, -3)
   const module = moduleOfPath(ws, page.path)
-  const clones = useClones((s) => s[folder]) ?? []
+  // Repositories of this session: in the shared lab folder (linked) or in its own folder.
+  const lab = folder.slice(0, folder.lastIndexOf('/'))
+  const allClones = useClones()
+  const clones = reposOfSession(ws, lab, page, allClones)
   useEffect(() => {
     void loadClones(folder)
-  }, [folder, ws.version])
+    void loadClones(lab)
+  }, [folder, lab, ws.version])
   const tasks = module ? labTasksOf(ws, module.path).filter((p) => taskNumber(p) === n) : []
   const materials = module
     ? materialFolderFor(materialFolder(ws), { name: module.title }, module.title)
@@ -148,9 +152,10 @@ export function LabHub({ page }: { page: Page }) {
         {clones.length === 0 && <p className="text-[13px] text-ink-3">{t('hub.noRepos')}</p>}
         <ul className="space-y-0.5">
           {clones.map((c) => (
-            <li key={c.name} className="flex flex-wrap items-center gap-2 text-[13.5px]">
+            <li key={c.folder} className="flex flex-wrap items-center gap-2 text-[13.5px]">
               <span className="font-medium">{c.name}</span>
-              <span className="min-w-0 flex-1 truncate text-[12px] text-ink-3">{c.remote}</span>
+              <span className="text-[12px] text-ink-3">{c.own ? t('hub.ownEnv') : t('hub.sharedEnv')}</span>
+              <span className="min-w-0 flex-1" />
               <Button
                 size="sm"
                 variant="secondary"
@@ -158,7 +163,7 @@ export function LabHub({ page }: { page: Page }) {
                   void run(async () =>
                     navigate({
                       name: 'page',
-                      path: await ensureRepoPage(ws, `${folder}/${c.name}`, c.remote, c.remote, c.name),
+                      path: await ensureRepoPage(ws, c.folder, c.remote, c.remote, c.name),
                     }),
                   )
                 }
@@ -169,11 +174,28 @@ export function LabHub({ page }: { page: Page }) {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => void run(() => code.open(`${folder}/${c.name}`, 'editor'))}
+                  onClick={() => void run(() => code.open(c.folder, 'editor'))}
                 >
                   {t('clone.openEditor')}
                 </Button>
               )}
+              <Button
+                size="sm"
+                variant="ghost"
+                title={c.own ? t('hub.toSharedHint') : t('hub.toOwnHint')}
+                onClick={() =>
+                  void run(async () => {
+                    const to = c.own
+                      ? await moveRepoToLab(ws, lab, c.folder)
+                      : await moveRepoToHub(ws, lab, c.name, n)
+                    await linkRepoToSession(ws, `${to}.md`, page.path)
+                    await loadClones(folder)
+                    await loadClones(lab)
+                  })
+                }
+              >
+                {c.own ? t('hub.toShared') : t('hub.toOwn')}
+              </Button>
             </li>
           ))}
         </ul>

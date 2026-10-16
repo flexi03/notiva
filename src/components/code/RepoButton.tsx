@@ -3,7 +3,7 @@ import { FolderOpen, GitBranch } from 'lucide-react'
 import { cloneIntoLab, labFolderOf } from '@/app/clone'
 import { labFoldersOf, loadClones, sameRepo, useClones } from '@/app/clones'
 import { useRepo } from '@/app/repoDetect'
-import { ensureHub, hubName, hubsOf } from '@/app/labHubs'
+import { ensureHub, hubName, hubsOf, linkRepoToSession } from '@/app/labHubs'
 import { labNumber } from '@/app/labLinks'
 import type { Workspace } from '@/lib/workspace'
 import { ensureRepoPage } from '@/app/repoPage'
@@ -80,9 +80,11 @@ export function RepoButton({
             folder ??
             labFolderOf(ws, module!) ??
             (await createCodeFolder(ws, module!, 'Praktikum')).slice(0, -3)
-          const into = await chooseSession(ws, lab, `${title} ${link}`)
-          if (into === null) return
-          await cloneIntoLab(ws, link, into, repo, title)
+          const choice = await chooseSession(ws, lab, `${title} ${link}`)
+          if (choice === null) return
+          const target = await cloneIntoLab(ws, link, choice.folder, repo, title)
+          // Linked with its session (wherever it lies) – shown on the session's page.
+          if (target && choice.session) await linkRepoToSession(ws, `${target}.md`, choice.session)
         })
       }
     >
@@ -92,29 +94,44 @@ export function RepoButton({
 }
 
 /**
- * Which lab session the repository belongs to: a session page (P01 …) is used as it is; in a lab
- * folder Notiva suggests the session by number ("Praktikum 2" → P02, created if needed) and asks.
+ * Where the repository goes and which session it belongs to. Default: the shared lab folder (a
+ * later session may need an earlier one's files), linked with the session suggested by its number
+ * ("Praktikum 2" → P02, created if needed); "eigene Umgebung" puts it into the session's own folder.
+ * Called on a session page: that session, its shared folder.
  */
-async function chooseSession(ws: Workspace, lab: string, text: string): Promise<string | null> {
-  if (typeof ws.get(`${lab}.md`)?.data.praktikum === 'number') return lab
+async function chooseSession(
+  ws: Workspace,
+  lab: string,
+  text: string,
+): Promise<{ folder: string; session?: string } | null> {
+  const here = ws.get(`${lab}.md`)
+  if (typeof here?.data.praktikum === 'number') {
+    const parent = lab.slice(0, lab.lastIndexOf('/'))
+    return { folder: parent, session: here.path }
+  }
   const hubs = hubsOf(ws, lab)
   const n = labNumber(text)
-  const options = [
-    ...(n && !hubs.has(n) ? [{ value: `new:${n}`, label: t('clone.sessionNew', { name: hubName(n) }) }] : []),
-    ...[...hubs]
-      .sort((a, b) => a[0] - b[0])
-      .map(([k, h]) => ({ value: h.path.slice(0, -3), label: hubName(k) })),
-    { value: lab, label: t('clone.sessionNone', { name: lab.slice(lab.lastIndexOf('/') + 1) }) },
-  ]
-  const suggested = n ? (hubs.get(n)?.path.slice(0, -3) ?? `new:${n}`) : options[0]!.value
+  const options: Array<{ value: string; label: string }> = []
+  if (n) {
+    options.push({ value: `shared:${n}`, label: t('clone.sessionShared', { name: hubName(n) }) })
+    options.push({ value: `own:${n}`, label: t('clone.sessionOwn', { name: hubName(n) }) })
+  }
+  for (const k of [...hubs.keys()].sort((a, b) => a - b))
+    if (k !== n) options.push({ value: `shared:${k}`, label: hubName(k) })
+  options.push({
+    value: 'none',
+    label: t('clone.sessionNone', { name: lab.slice(lab.lastIndexOf('/') + 1) }),
+  })
   const picked = await useApp.getState().ask({
     title: t('clone.sessionTitle'),
     label: n ? t('clone.sessionSuggested', { name: hubName(n) }) : t('clone.sessionPick'),
     confirmLabel: t('common.next'),
     choices: options,
-    initial: suggested,
+    initial: options[0]!.value,
   })
   if (picked === null) return null
-  if (picked.startsWith('new:')) return (await ensureHub(ws, lab, Number(picked.slice(4)))).slice(0, -3)
-  return picked
+  if (picked === 'none') return { folder: lab }
+  const [where, num] = picked.split(':') as ['shared' | 'own', string]
+  const hub = await ensureHub(ws, lab, Number(num))
+  return { folder: where === 'own' ? hub.slice(0, -3) : lab, session: hub }
 }

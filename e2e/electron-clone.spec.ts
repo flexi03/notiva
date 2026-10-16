@@ -125,12 +125,19 @@ test('holt ein privates Repository mit Zugangstoken – Name frei wählbar', asy
   const row = window.getByRole('listitem').filter({ hasText: 'dbs/praktikum-2.git' })
   await row.getByRole('button', { name: 'Repository ins Praktikum holen' }).click()
   const choose = window.getByRole('dialog', { name: 'Zu welchem Praktikum gehört das Repository?' })
-  await expect(choose.getByRole('radio', { name: 'P02 (neu anlegen)' })).toBeChecked()
+  // Suggested: P02, in the shared folder (P01's files stay usable); an own environment is possible.
+  await expect(choose.getByRole('radio', { name: /^P02 – im gemeinsamen Praktikumsordner/ })).toBeChecked()
+  await expect(choose.getByRole('radio', { name: /^P02 – eigene Umgebung/ })).toBeVisible()
   await choose.getByRole('button', { name: 'Weiter' }).click()
   await window.getByRole('dialog').getByRole('button', { name: 'Holen' }).click()
-  await expect.poll(() => existsSync(path.join(folder, 'Praktikum/P02/praktikum-2/aufgabe.sql'))).toBe(true)
+  await expect.poll(() => existsSync(path.join(folder, 'Praktikum/praktikum-2/aufgabe.sql'))).toBe(true)
+  // Its session page lists it; it can move into an own environment.
+  await window.evaluate(() => (location.hash = '#/p/Praktikum%2FP02.md'))
+  const hubRepos = window.getByTestId('lab-hub')
+  await expect(hubRepos).toContainText('praktikum-2')
+  await expect(hubRepos).toContainText('gemeinsamer Ordner')
   // The file shows what it belongs to.
-  await window.evaluate(() => (location.hash = '#/f/Praktikum%2FP02%2Fpraktikum-2%2Faufgabe.sql'))
+  await window.evaluate(() => (location.hash = '#/f/Praktikum%2Fpraktikum-2%2Faufgabe.sql'))
   await expect(window.getByTestId('file-context')).toContainText('P02')
   await window
     .getByRole('navigation', { name: 'Werkzeugleiste', exact: true })

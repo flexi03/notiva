@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ChevronDown, ChevronRight, FlaskConical, Package } from 'lucide-react'
 import { loadRepoInfo, useRepoInfo } from '@/app/repoInfo'
+import { sessionOfRepo } from '@/app/labHubs'
 import { useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import type { Page, Workspace } from '@/lib/workspace'
@@ -16,6 +17,11 @@ function ancestors(ws: Workspace, path: string): { repo?: Page; session?: Page }
     if (!page) continue
     if (!out.repo && typeof page.data.repo === 'string') out.repo = page
     if (!out.session && typeof page.data.praktikum === 'number') out.session = page
+  }
+  // A repository in the shared lab folder: its session from its link.
+  if (out.repo && !out.session) {
+    const hub = sessionOfRepo(ws, out.repo)
+    if (hub && ws.get(hub)) out.session = ws.get(hub)
   }
   return out
 }
