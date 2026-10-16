@@ -66,6 +66,14 @@ export const PdfViewer = forwardRef<
 
   const maxWidth = sizes ? Math.max(...sizes.map((s) => s.width)) : 600
   const scale = (Math.max(200, width - 32) / maxWidth) * zoom
+  // Layout follows the zoom at once (page boxes, fixed gaps, text layer via CSS); the pages are
+  // drawn sharp again only when zooming pauses – the old image stays stretched meanwhile.
+  const [renderScale, setRenderScale] = useState(scale)
+  useEffect(() => {
+    if (renderScale === scale) return
+    const timer = setTimeout(() => setRenderScale(scale), 180)
+    return () => clearTimeout(timer)
+  }, [scale, renderScale])
 
   useImperativeHandle(ref, () => ({
     element: () => scroller.current,
@@ -76,13 +84,16 @@ export const PdfViewer = forwardRef<
     },
   }))
 
-  // Current page = the one covering the middle of the viewport.
+  // Current page = the one at the upper third of the view – for small (zoomed out) pages a bit
+  // below the top, so a page scrolled to the top counts as current, not the one after it.
   useEffect(() => {
     const el = scroller.current
     if (!el || !onPage) return
     let last = 0
     const update = () => {
-      const middle = el.getBoundingClientRect().top + el.clientHeight / 3
+      const first = el.querySelector<HTMLElement>('[data-page]')
+      const pageHeight = first?.getBoundingClientRect().height ?? el.clientHeight
+      const middle = el.getBoundingClientRect().top + Math.min(el.clientHeight / 3, pageHeight / 2)
       for (const pageEl of el.querySelectorAll<HTMLElement>('[data-page]')) {
         const box = pageEl.getBoundingClientRect()
         if (box.top <= middle && box.bottom >= middle) {
@@ -108,7 +119,15 @@ export const PdfViewer = forwardRef<
       {/* w-max: zoomed in wider than the window, the left edge stays reachable. */}
       <div className="flex w-max min-w-full flex-col items-center gap-4 px-4 py-4">
         {sizes?.map((size, i) => (
-          <PdfPage key={i} doc={doc} number={i + 1} size={size} scale={scale} root={scroller}>
+          <PdfPage
+            key={i}
+            doc={doc}
+            number={i + 1}
+            size={size}
+            scale={scale}
+            renderScale={renderScale}
+            root={scroller}
+          >
             {overlay?.(i + 1, { width: size.width * scale, height: size.height * scale }, scale)}
           </PdfPage>
         ))}
@@ -122,6 +141,7 @@ function PdfPage({
   number,
   size,
   scale,
+  renderScale,
   root,
   children,
 }: {
@@ -129,6 +149,8 @@ function PdfPage({
   number: number
   size: PageSize
   scale: number
+  /** the scale the canvas is drawn at (follows `scale` once zooming pauses) */
+  renderScale: number
   root: React.RefObject<HTMLDivElement | null>
   children?: ReactNode
 }) {
@@ -156,7 +178,7 @@ function PdfPage({
       const lib = await pdfjs()
       const page = await doc.getPage(number)
       if (cancelled || !canvas.current || !text.current) return
-      const viewport = page.getViewport({ scale })
+      const viewport = page.getViewport({ scale: renderScale })
       const ratio = Math.min(window.devicePixelRatio || 1, 3)
       // Draw off-screen and swap when done: while zooming, the old image stays (stretched) instead
       // of a blank page.
@@ -189,7 +211,7 @@ function PdfPage({
       cancelled = true
       task?.cancel()
     }
-  }, [visible, doc, number, scale])
+  }, [visible, doc, number, renderScale])
 
   const width = size.width * scale
   const height = size.height * scale

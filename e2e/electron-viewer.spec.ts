@@ -273,3 +273,43 @@ test('wechselt schnell zwischen PDFs, ohne dass der Worker abbricht', async () =
   await expect(window.getByTestId('pdf-pages')).toHaveText('/ 3')
   await expect(window.getByText(/worker is being destroyed/)).toHaveCount(0)
 })
+
+test('blättert mit ←/→ genau eine Seite – auch herausgezoomt', async () => {
+  await window.evaluate(() => (location.hash = '#/f/Skripte%2FGraphen.pdf'))
+  await window.locator('[data-page="1"]').waitFor()
+  const pageField = window.getByRole('textbox', { name: 'Seite' })
+  // Small pages: several fit into the view.
+  for (let i = 0; i < 4; i++) await window.getByRole('button', { name: 'Verkleinern' }).click()
+  await window.locator('[data-page="1"]').hover()
+  await window.keyboard.press('ArrowRight')
+  await expect(pageField).toHaveAttribute('placeholder', '2')
+  await window.keyboard.press('ArrowRight')
+  await expect(pageField).toHaveAttribute('placeholder', '3')
+  await window.keyboard.press('ArrowLeft')
+  await expect(pageField).toHaveAttribute('placeholder', '2')
+  await window.keyboard.press('ArrowLeft')
+  await expect(pageField).toHaveAttribute('placeholder', '1')
+  await window.getByRole('button', { name: 'An Breite anpassen' }).click()
+})
+
+test('der Abstand zwischen den Seiten bleibt beim Zoomen gleich', async () => {
+  await window.evaluate(() => (location.hash = '#/f/Skripte%2FGraphen.pdf'))
+  await window.locator('[data-page="2"]').waitFor()
+  const gap = () =>
+    window.evaluate(() => {
+      const a = document.querySelector('[data-page="1"]')!.getBoundingClientRect()
+      const b = document.querySelector('[data-page="2"]')!.getBoundingClientRect()
+      return Math.round(b.top - a.bottom)
+    })
+  const before = await gap()
+  await window.locator('[data-page="1"]').hover()
+  await window.keyboard.down('Control')
+  for (let i = 0; i < 5; i++) {
+    await window.mouse.wheel(0, -20)
+    // Mid-gesture, too.
+    expect(await gap()).toBe(before)
+  }
+  await window.keyboard.up('Control')
+  expect(await gap()).toBe(before)
+  await window.getByRole('button', { name: 'An Breite anpassen' }).click()
+})

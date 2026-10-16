@@ -157,9 +157,24 @@ export function PdfDocumentView({
   const [searchOpen, setSearchOpen] = useState(false)
   // ←/→: previous/next page, ↑/↓: scroll; ⌘F: search.
   const currentRef = useRef(current)
+  const jumped = useRef<number | null>(null)
   useEffect(() => {
     currentRef.current = current
   })
+  // Scrolling by hand (wheel, touch, scrollbar) ends the arrow-key paging.
+  useEffect(() => {
+    const el = viewer.current?.element()
+    if (!el) return
+    const reset = () => (jumped.current = null)
+    el.addEventListener('wheel', reset, { passive: true })
+    el.addEventListener('pointerdown', reset)
+    el.addEventListener('touchmove', reset, { passive: true })
+    return () => {
+      el.removeEventListener('wheel', reset)
+      el.removeEventListener('pointerdown', reset)
+      el.removeEventListener('touchmove', reset)
+    }
+  }, [doc])
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = document.activeElement as HTMLElement | null
@@ -174,11 +189,19 @@ export function PdfDocumentView({
       // ←/→ jump without animation (fast paging), ↑/↓ scroll – also when the focus is elsewhere.
       if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
         e.preventDefault()
-        const next = currentRef.current + (e.key === 'ArrowRight' ? 1 : -1)
-        if (next >= 1 && next <= doc.numPages) viewer.current?.scrollToPage(next, false)
+        // From the page jumped to last (the scroll position may show the next one as "current",
+        // e.g. small pages or the end of the document) – until the user scrolls by hand.
+        const base = jumped.current ?? currentRef.current
+        const next = base + (e.key === 'ArrowRight' ? 1 : -1)
+        if (next >= 1 && next <= doc.numPages) {
+          jumped.current = next
+          viewer.current?.scrollToPage(next, false)
+          setCurrent(next)
+        }
       } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         if (el?.closest('button, select, [role="slider"], [role="listbox"]')) return
         e.preventDefault()
+        jumped.current = null
         viewer.current?.element()?.scrollBy({ top: e.key === 'ArrowDown' ? 80 : -80, behavior: 'instant' })
       }
     }
@@ -238,8 +261,8 @@ export function PdfDocumentView({
   }
 
   // Pinch (trackpad), ⌘/Strg + Mausrad and ⌘/Strg + Plus/Minus/0 zoom the PDF, not the app.
-  // While pinching only a CSS scale around the mouse (smooth, nothing redrawn); when the gesture
-  // pauses the pages are drawn at the new size and the point under the mouse stays put.
+  // Once per frame the page sizes follow (gaps between pages stay the same, the point under the
+  // mouse stays put); the viewer draws the pages sharp again when the gesture pauses.
   const area = useRef<HTMLDivElement>(null)
   const zoomToRef = useRef(zoomTo)
   const stepRef = useRef(step)
@@ -251,36 +274,22 @@ export function PdfDocumentView({
     const el = area.current
     if (!el) return
     let live: { factor: number; x: number; y: number } | null = null
-    let timer = 0
-    const content = () => viewer.current?.content()
-    const commit = () => {
+    let frame = 0
+    const apply = () => {
+      frame = 0
       if (!live) return
       const { factor, x, y } = live
       live = null
-      const c = content()
-      if (c) {
-        c.style.transform = ''
-        c.style.transformOrigin = ''
-        c.style.willChange = ''
-      }
       flushSync(() => zoomToRef.current(zoomRef.current * factor, x, y))
     }
     const onWheel = (e: WheelEvent) => {
       if (!e.ctrlKey && !e.metaKey) return
       e.preventDefault()
-      const c = content()
-      if (!c) return
-      if (!live) {
-        const b = c.getBoundingClientRect()
-        live = { factor: 1, x: e.clientX, y: e.clientY }
-        c.style.transformOrigin = `${e.clientX - b.left}px ${e.clientY - b.top}px`
-        c.style.willChange = 'transform'
-      }
-      const z = zoomRef.current
-      live.factor = Math.min(MAX_ZOOM / z, Math.max(MIN_ZOOM / z, live.factor * Math.exp(-e.deltaY * 0.01)))
-      c.style.transform = `scale(${live.factor})`
-      clearTimeout(timer)
-      timer = window.setTimeout(commit, 160)
+      live ??= { factor: 1, x: e.clientX, y: e.clientY }
+      live.x = e.clientX
+      live.y = e.clientY
+      live.factor *= Math.exp(-e.deltaY * 0.01)
+      frame ||= requestAnimationFrame(apply)
     }
     const onKey = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey) || e.altKey) return
@@ -293,7 +302,7 @@ export function PdfDocumentView({
     el.addEventListener('wheel', onWheel, { passive: false })
     window.addEventListener('keydown', onKey)
     return () => {
-      clearTimeout(timer)
+      cancelAnimationFrame(frame)
       el.removeEventListener('wheel', onWheel)
       window.removeEventListener('keydown', onKey)
     }
