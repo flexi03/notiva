@@ -199,6 +199,7 @@ const DE = {
         '„Zeiten vorschlagen“ sucht in den Moodle-Texten und den ersten Seiten der Einführungs-PDFs. Jeder Vorschlag sagt, wo er gefunden wurde (Kurs oder Folie und Seite) – du entscheidest.',
         'Die Quelle bleibt in der Spalte „Quelle“ und erscheint beim Darüberfahren im Wochenplan.',
         'Auf der Modulseite stehen die Termine des Moduls mit „Termin hinzufügen“ und „Zeiten suchen“.',
+        'Ein Klick auf „Als Nächstes“ unten öffnet das Modul und hebt die Dateien für den Termin hervor.',
       ],
       route: { name: 'timetable' },
     },
@@ -248,6 +249,7 @@ const DE = {
         'Ein Code-Ordner ist eine Seite mit eigenem Ordner – öffnen im Editor (VS Code), im Finder oder im Terminal.',
         'Die Links des Kurses stehen darunter; Git-Projekte holst du mit „Repository ins Praktikum holen“.',
         'Verlangt das Repository eine Anmeldung, holt „Im Terminal holen“ es dort (Git fragt nach Benutzername und Token).',
+        '„Termine planen“ auf der Modulseite trägt Vorbereitung und Praktikumstermine mit Erinnerung ein – vorgeschlagen aus Stundenplan und Praktikumsblättern.',
       ],
     },
     {
@@ -375,6 +377,7 @@ const EN: typeof DE = {
         '"Suggest times" searches the Moodle texts and the first pages of intro PDFs. Each suggestion says where it was found (course or slide and page) – you decide.',
         'The source stays in the "Quelle" column and shows when you hover the week view.',
         'The module page lists its sessions with "Add session" and "Find times".',
+        'A click on "Next" at the bottom opens the module and highlights the files for the session.',
       ],
     },
     {
@@ -420,6 +423,7 @@ const EN: typeof DE = {
         'A code folder is a page with its own folder – open it in your editor (VS Code), the Finder or the Terminal.',
         'The course links are listed below; get Git projects with "Get repository into the lab".',
         'If the repository needs a login, "Get it in the Terminal" clones it there (Git asks for user name and token).',
+        '"Plan dates" on the module page adds preparations and lab dates with reminders – suggested from the timetable and lab sheets.',
       ],
     },
     {

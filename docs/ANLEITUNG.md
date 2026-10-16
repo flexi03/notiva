@@ -36,6 +36,14 @@ _Hilfe → So funktioniert Notiva_ (bitte beides gemeinsam aktuell halten). Engl
   Quelle (Kurs oder Folie und Seite, mit dem passenden Satz). Die Quelle bleibt in der Spalte „Quelle“ und erscheint
   beim Darüberfahren. Weicht etwas von deinen eigenen Einträgen ab, fragt Notiva nach. Auf der Modulseite stehen
   die Termine des Moduls mit „Termin hinzufügen“ und „Zeiten suchen“.
+- **Modulseite**: oben die Termine des Moduls aus dem Stundenplan, bei Praktika die Vorbereitungen und
+  Praktikumstermine.
+  - Für Praktika schlägt _Termine planen_ eine Reihe vor: erster Termin aus dem Stundenplan, Rhythmus, Anzahl
+    aus den gefundenen Blättern (P01, Praktikum_02 …), Vorbereitung einige Tage vorher und Erinnerungen.
+  - Eingetragen wird nach der Vorschau in _Aufgaben_ (mit Datum, Uhrzeit und `Erinnerung`).
+  - _Links aus Moodle_ zeigt Git-Projekte mit „Repository ins Praktikum holen“.
+- **Als Nächstes** in der Statusleiste öffnet das Modul. „Für diesen Termin“ zeigt dort die wahrscheinlichsten
+  Dateien.
 - **Prüfungsplan**: die neueste PDF der Fakultät wird gelesen und in _Prüfungen_ eingetragen.
 - **Hintergrund-Abrufe**: jede Quelle hat ein eigenes Intervall (_Einstellungen → Benachrichtigungen_).
 

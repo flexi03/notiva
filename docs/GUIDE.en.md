@@ -34,6 +34,12 @@ Everything beyond the [README](../README.en.md). Deutsch: [ANLEITUNG.md](ANLEITU
   pages of intro PDFs. For each session it asks whether to add it and names the source (course or slide and page,
   with the matching sentence). The source stays in the "Quelle" column and shows on hover. If something differs
   from your own entries, Notiva asks. The module page lists its sessions with "Add session" and "Find times".
+- **Module page**: at the top the module's sessions from the timetable, for labs the preparations and lab dates.
+  - For labs, _Plan dates_ suggests a series: first date from the timetable, rhythm, count from the sheets
+    found (P01, Praktikum_02 …), preparation a few days before and reminders.
+  - It is added to _Aufgaben_ after a preview (with date, time and `Erinnerung`).
+  - _Links from Moodle_ lists Git projects with "Get repository into the lab".
+- **Next** in the status bar opens the module. "For this session" there shows the most likely files.
 - **Exam schedule**: the faculty's newest PDF is read into _Prüfungen_.
 - **Background checks**: every source has its own interval (_Settings → Notifications_).
 

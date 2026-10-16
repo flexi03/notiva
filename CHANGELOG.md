@@ -37,6 +37,23 @@ Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und inst
 - **Externe Links** (z. B. ProjectBase) öffnen im Browser oder im App-Fenster. Git-Projekte holt
   „Repository ins Praktikum holen“ in den Praktikumsordner (#21).
 - Behoben: Die ganze Oberfläche ließ sich aus dem Fenster scrollen (#25).
+- **Modulseite:**
+  - Oben stehen die Termine aus dem Stundenplan (Tag, Zeit, Typ, Raum, nächster Termin, Quelle), direkt änderbar.
+  - Bei Praktika: Vorbereitung und Praktikumstermine mit Datum, Uhrzeit und Erinnerung. Notiva schlägt sie aus
+    dem Stundenplan und den gefundenen Praktikumsblättern vor; vor dem Eintragen siehst du eine Vorschau.
+  - „Links aus Moodle“: Git-Projekte (ProjectBase, auch Snippets) stehen mit „Repository ins Praktikum holen“
+    direkt neben dem Link. Erkennt Notiva einen Link nicht sicher, fragt es das lokale Modell.
+- **Lose Unterlagen einsortieren:** Dateien, die direkt im Modulordner liegen, kommen nach Rückfrage in Vorlesung,
+  Praktikum & Übung oder Sonstiges. Folien wie „DBS2-10_…“ gelten als Vorlesung.
+- **Als Nächstes** (Statusleiste) öffnet das Modul und hebt die Dateien hervor, die am wahrscheinlichsten zum
+  Termin gehören.
+- **Git:** Das lokale Modell schreibt die Commit-Nachricht, solange zeigt das Feld eine Ladeanimation. Die
+  Vorlage ist nur noch Rückfallebene, mit Hinweis.
+- **KI-Leuchtband** am unteren Fensterrand, solange eine KI arbeitet.
+- **Erinnerungen** pro Aufgabe („2 Std. vorher“, „Keine“); Datumsfelder können eine Uhrzeit haben.
+- **PDF:** Der Seitenabstand bleibt beim Zoomen gleich, Zoomen ist flüssiger, ←/→ blättern genau eine Seite.
+- Behoben: „PDFWorker.create – the worker is being destroyed“ beim Öffnen mancher PDFs.
+- Behoben: Unter „Ungelesen“ verschwand eine Benachrichtigung beim Anklicken, bevor man die Details sah.
 
 ## 0.1.3 – 2026-10-15
 
