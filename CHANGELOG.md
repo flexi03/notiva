@@ -3,6 +3,8 @@
 Alle Versionen mit Downloads: [GitHub Releases](https://github.com/flexi03/notiva/releases).
 Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und installiert sie auf Wunsch selbst.
 
+## 0.2.1 – noch nicht veröffentlicht
+
 ## 0.2.0 – 2026-10-16
 
 Größere Umstellung: Module statt Kurse, Unterlagen nach Aktuell/Archiv, Praktika mit einer Seite je Termin.
