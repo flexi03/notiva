@@ -74,12 +74,16 @@ async function pagesOf(ws: Workspace, path: string, mtime: number, max = 15): Pr
     pages = (async () => {
       const { openPdf } = await import('@/lib/pdfjs')
       const doc = await openPdf(await ws.vault.readBinary(path))
-      const out: string[] = []
-      for (let n = 1; n <= Math.min(doc.numPages, max); n++) {
-        const content = await (await doc.getPage(n)).getTextContent()
-        out.push(content.items.map((i) => ('str' in i ? i.str + (i.hasEOL ? '\n' : ' ') : '')).join(''))
+      try {
+        const out: string[] = []
+        for (let n = 1; n <= Math.min(doc.numPages, max); n++) {
+          const content = await (await doc.getPage(n)).getTextContent()
+          out.push(content.items.map((i) => ('str' in i ? i.str + (i.hasEOL ? '\n' : ' ') : '')).join(''))
+        }
+        return out
+      } finally {
+        await doc.loadingTask.destroy()
       }
-      return out
     })().catch(() => [])
     pdfPages.set(key, pages)
   }

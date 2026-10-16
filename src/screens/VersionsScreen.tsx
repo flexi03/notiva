@@ -108,6 +108,7 @@ function Comparison({
   useEffect(() => {
     if (!pdf) return
     let cancelled = false
+    let opened: PDFDocumentProxy[] = []
     void (async () => {
       try {
         const { openPdf } = await import('@/lib/pdfjs')
@@ -115,6 +116,7 @@ function Comparison({
           openPdf(await ws.vault.readBinary(version.current)),
           openPdf(await ws.vault.readBinary(version.next)),
         ])
+        opened = [old, next]
         const result = comparePdfText(await pageTexts(old), await pageTexts(next))
         if (cancelled) return
         setDocs({ old, next })
@@ -127,6 +129,7 @@ function Comparison({
     })()
     return () => {
       cancelled = true
+      for (const doc of opened) void doc.loadingTask.destroy()
     }
   }, [ws, version, pdf])
   const change = diff?.pages.find((p) => p.page === page)

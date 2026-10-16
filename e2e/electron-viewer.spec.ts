@@ -18,6 +18,7 @@ test.beforeAll(async () => {
   const { mkdirSync } = await import('node:fs')
   mkdirSync(path.join(folder, 'Skripte'))
   copyFileSync(PDF, path.join(folder, 'Skripte/Graphen.pdf'))
+  copyFileSync(PDF, path.join(folder, 'Skripte/Graphen 2.pdf'))
   app = await electron.launch({
     args: ['.'],
     env: {
@@ -261,4 +262,14 @@ test('der App-Rahmen verrutscht nie (Blättern, Mausrad am Ende)', async () => {
   )
   expect(shifted).toEqual([])
   expect(await window.evaluate(() => globalThis.scrollY)).toBe(0)
+})
+
+test('wechselt schnell zwischen PDFs, ohne dass der Worker abbricht', async () => {
+  for (let i = 0; i < 6; i++) {
+    const name = i % 2 ? 'Graphen%202.pdf' : 'Graphen.pdf'
+    await window.evaluate((n) => (location.hash = `#/f/Skripte%2F${n}`), name)
+    if (i % 2) await window.waitForTimeout(30)
+  }
+  await expect(window.getByTestId('pdf-pages')).toHaveText('/ 3')
+  await expect(window.getByText(/worker is being destroyed/)).toHaveCount(0)
 })
