@@ -300,3 +300,28 @@ describe('autosave off', () => {
     expect(ws.get('C.md')!.body).toBe('c')
   })
 })
+
+describe('tree and trash for files', () => {
+  it('hangs a notes page under its PDF and trashes files and folders restorably', async () => {
+    const vault = new MemoryVault('T', {
+      'U/Skript.pdf': 'PDF',
+      'U/Skript (Notizen).md': '---\npdf: Skript.pdf\n---\n',
+      'U/alt/a.pdf': 'A',
+      'U/alt/b.sql': 'B',
+    })
+    const ws = await Workspace.open(vault)
+    const u = ws.tree().find((n) => n.title === 'U')!
+    const pdf = u.children.find((n) => n.file === 'U/Skript.pdf')!
+    expect(pdf.children.map((c) => c.title)).toEqual(['Skript (Notizen)'])
+    expect(u.children.some((c) => c.page?.path === 'U/Skript (Notizen).md')).toBe(false)
+    const entry = await ws.trashPath('U/alt')
+    expect(ws.has('U/alt/a.pdf')).toBe(false)
+    expect(entry.files.sort()).toEqual(['U/alt/a.pdf', 'U/alt/b.sql'])
+    await ws.restore(entry.id)
+    expect(ws.has('U/alt/b.sql')).toBe(true)
+    const file = await ws.trashPath('U/Skript.pdf')
+    expect(ws.has('U/Skript.pdf')).toBe(false)
+    await ws.restore(file.id)
+    expect(ws.has('U/Skript.pdf')).toBe(true)
+  })
+})

@@ -64,6 +64,8 @@ export interface TrashEntry {
   original: string
   deletedAt: string
   files: string[]
+  /** a whole folder was moved (with hidden parts like a repository's .git) */
+  folder?: boolean
 }
 
 export interface SearchHit {
@@ -325,6 +327,16 @@ export class Workspace {
         file: file.path,
         page: null,
         children: [],
+      })
+    }
+    // A PDF's notes page ("Skript (Notizen).md") hangs under its PDF – they belong together.
+    for (const node of nodes.values()) {
+      const pdfs = new Map(node.children.filter((c) => c.file).map((c) => [c.title, c]))
+      node.children = node.children.filter((c) => {
+        const pdf = c.page && typeof c.page.data.pdf === 'string' ? pdfs.get(c.page.data.pdf) : undefined
+        if (!pdf) return true
+        pdf.children.push(c)
+        return false
       })
     }
     // Folders that only contain database rows must still appear (they are the database itself).
@@ -711,6 +723,40 @@ export class Workspace {
     })
   }
 
+  /**
+   * A file or a whole folder (Unterlagen, a lab repository …) into the trash – restorable like
+   * pages. A folder is moved as one, hidden parts (.git) included.
+   */
+  trashPath(path: string): Promise<TrashEntry> {
+    return this.run(async () => {
+      await this.flushPending()
+      const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
+      const isFile = this.files.some((f) => f.path === path)
+      const files = isFile
+        ? [path]
+        : this.files.filter((f) => f.path.startsWith(`${path}/`)).map((f) => f.path)
+      if (!files.length && isFile) throw new Error(`Not found: ${path}`)
+      if (isFile) await this.vault.rename(path, `${TRASH_DIR}/${id}/${path}`)
+      else
+        try {
+          await this.vault.rename(path, `${TRASH_DIR}/${id}/${path}`)
+        } catch {
+          // Storage without folder moves (browser): file by file.
+          for (const f of files) await this.vault.rename(f, `${TRASH_DIR}/${id}/${f}`)
+        }
+      const entry: TrashEntry = {
+        id,
+        original: path,
+        deletedAt: new Date().toISOString(),
+        files,
+        ...(isFile ? {} : { folder: true }),
+      }
+      await this.vault.write(`${TRASH_DIR}/${id}.json`, JSON.stringify(entry))
+      await this.reload()
+      return entry
+    })
+  }
+
   async listTrash(): Promise<TrashEntry[]> {
     const files = await this.vault.list()
     const entries = await Promise.all(
@@ -734,6 +780,20 @@ export class Workspace {
       const entry = (await this.listTrash()).find((e) => e.id === id)
       if (!entry) throw new Error(`Not in trash: ${id}`)
       let original = entry.original
+      if (entry.folder) {
+        // The whole folder back (unless the place is taken again).
+        let target = entry.original
+        for (let i = 2; this.files.some((f) => f.path.startsWith(`${target}/`)); i++)
+          target = `${entry.original} ${i}`
+        try {
+          await this.vault.rename(`${TRASH_DIR}/${id}/${entry.original}`, target)
+          await this.vault.remove(`${TRASH_DIR}/${id}.json`)
+          await this.reload()
+          return target
+        } catch {
+          /* file by file below */
+        }
+      }
       for (const file of entry.files) {
         let target = file
         if (this.has(target)) target = uniquePath(target, (p) => this.has(p))

@@ -109,6 +109,15 @@ export const de = {
   'nav.demoBadge': 'Demo – nichts wird gespeichert',
 
   'tree.addChild': 'Unterseite hinzufügen',
+  'tree.open': 'Öffnen',
+  'tree.showInFolder': 'Im Finder zeigen',
+  'tree.toTrash': 'In den Papierkorb',
+  'tree.trashTitle': '„{name}“ in den Papierkorb?',
+  'tree.trashFile':
+    'Die Datei verschwindet aus dem Ordner. Du kannst sie unter Einstellungen → Speicher → Papierkorb wiederherstellen.',
+  'tree.trashFolder':
+    'Der ganze Ordner mit {count} Dateien verschwindet aus dem Ordner. Wiederherstellen kannst du ihn unter Einstellungen → Speicher → Papierkorb.',
+  'tree.trashed': '„{name}“ liegt im Papierkorb',
   'tree.more': 'Weitere Aktionen',
   'tree.expand': 'Aufklappen',
   'tree.collapse': 'Zuklappen',

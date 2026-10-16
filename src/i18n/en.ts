@@ -109,6 +109,14 @@ export const en: Record<MessageKey, string> = {
   'nav.demoBadge': 'Demo – nothing is saved',
 
   'tree.addChild': 'Add sub-page',
+  'tree.open': 'Open',
+  'tree.showInFolder': 'Show in Finder',
+  'tree.toTrash': 'Move to trash',
+  'tree.trashTitle': 'Move “{name}” to the trash?',
+  'tree.trashFile': 'The file leaves the folder. You can restore it under Settings → Storage → Trash.',
+  'tree.trashFolder':
+    'The whole folder with {count} files leaves the folder. Restore it under Settings → Storage → Trash.',
+  'tree.trashed': '“{name}” is in the trash',
   'tree.more': 'More actions',
   'tree.expand': 'Expand',
   'tree.collapse': 'Collapse',

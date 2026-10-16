@@ -1,10 +1,11 @@
 import { useRef, useState, type DragEvent } from 'react'
-import { ChevronRight, FileText, MoreHorizontal, Plus } from 'lucide-react'
+import { ChevronRight, FileText, FolderOpen, MoreHorizontal, Plus, Trash2 } from 'lucide-react'
 import { useApp, useWorkspace } from '@/app/store'
 import { usePageActions } from '@/app/hooks/usePageActions'
 import { t } from '@/i18n'
 import type { TreeNode } from '@/lib/workspace'
-import { cx, IconButton, MenuList, Popover } from '@/components/ui'
+import { cx, IconButton, MenuList, Popover, type MenuItem } from '@/components/ui'
+import { electronBridge } from '@/lib/vault'
 import { PageIcon } from './PageIcon'
 import { pageMenuItems } from './pageMenu'
 import { useGit } from '@/app/git'
@@ -101,6 +102,11 @@ function TreeItem({
         }}
         onDragLeave={() => setDropTarget(false)}
         onDrop={onDrop}
+        // Right click: the same menu as "⋯" (files and folders too: open, show, to the trash).
+        onContextMenu={(e) => {
+          e.preventDefault()
+          setMenu(true)
+        }}
       >
         <IconButton
           size="sm"
@@ -147,6 +153,11 @@ function TreeItem({
           )
         )}
         <div className="flex opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 max-md:opacity-100">
+          {!node.page && (
+            <IconButton ref={moreRef} size="sm" label={t('tree.more')} onClick={() => setMenu((m) => !m)}>
+              <MoreHorizontal size={14} />
+            </IconButton>
+          )}
           {node.page && (
             <>
               <IconButton ref={moreRef} size="sm" label={t('tree.more')} onClick={() => setMenu((m) => !m)}>
@@ -166,11 +177,12 @@ function TreeItem({
           )}
         </div>
       </div>
-      {node.page && (
-        <Popover anchor={moreRef} open={menu} onClose={() => setMenu(false)} label={t('tree.more')}>
-          <MenuList items={pageMenuItems(node.page.path, ws, actions)} onDone={() => setMenu(false)} />
-        </Popover>
-      )}
+      <Popover anchor={moreRef} open={menu} onClose={() => setMenu(false)} label={t('tree.more')}>
+        <MenuList
+          items={node.page ? pageMenuItems(node.page.path, ws, actions) : fileMenuItems(node, ws)}
+          onDone={() => setMenu(false)}
+        />
+      </Popover>
       {hasChildren && isOpen && (
         <ul role="group" className="space-y-px">
           {node.children.map((child) => (
@@ -180,4 +192,60 @@ function TreeItem({
       )}
     </li>
   )
+}
+
+/** "⋯" / right click on a file or folder: open, show in the Finder, into the trash (asked first). */
+function fileMenuItems(node: TreeNode, ws: ReturnType<typeof useWorkspace>): Array<MenuItem | 'divider'> {
+  const path = node.file ?? node.id
+  const inside = node.file
+    ? 1
+    : ws.assets().filter((f) => f.path.startsWith(`${path}/`)).length +
+      ws.all().filter((p) => p.path.startsWith(`${path}/`)).length
+  const code = electronBridge()?.code
+  return [
+    ...(node.file
+      ? [
+          {
+            label: t('tree.open'),
+            icon: <FileText size={14} />,
+            onSelect: () => useApp.getState().navigate({ name: 'file' as const, path }),
+          },
+        ]
+      : []),
+    ...(code
+      ? [
+          {
+            label: t('tree.showInFolder'),
+            icon: <FolderOpen size={14} />,
+            onSelect: () => void code.open(node.file ? path.slice(0, path.lastIndexOf('/')) : path, 'finder'),
+          },
+        ]
+      : []),
+    'divider' as const,
+    {
+      label: t('tree.toTrash'),
+      icon: <Trash2 size={14} />,
+      danger: true,
+      onSelect: () =>
+        void (async () => {
+          const ok = await useApp.getState().ask({
+            title: t('tree.trashTitle', { name: node.title }),
+            label: node.file ? t('tree.trashFile') : t('tree.trashFolder', { count: inside }),
+            confirmLabel: t('tree.toTrash'),
+            confirm: true,
+            danger: true,
+          })
+          if (ok === null) return
+          await ws.trashPath(path)
+          useApp.getState().showToast(t('tree.trashed', { name: node.title }), {
+            label: t('page.undo'),
+            run: () =>
+              void ws.listTrash().then((list) => {
+                const entry = list.find((e) => e.original === path)
+                if (entry) void ws.restore(entry.id)
+              }),
+          })
+        })(),
+    },
+  ]
 }

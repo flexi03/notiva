@@ -246,7 +246,10 @@ export function Sidebar() {
         </div>
       )}
 
-      <div className="mt-1 min-h-0 flex-1 overflow-y-auto px-2 pb-2">
+      <div
+        className="mx-2 mt-2 min-h-0 flex-1 overflow-y-auto border-t border-line px-0 pt-1 pb-2"
+        data-testid="nav-scroll"
+      >
         {favorites.length > 0 && (
           <>
             <SectionLabel>{t('nav.favorites')}</SectionLabel>

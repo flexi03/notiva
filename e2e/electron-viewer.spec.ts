@@ -321,3 +321,17 @@ test('öffnet die Notizseite eines PDFs (mit Markierungen) ohne Fehler', async (
   await expect(window.getByText('Hier ist etwas schiefgegangen')).toHaveCount(0)
   await expect(window.locator('main')).toContainText('Graphen')
 })
+
+test('Seitenleiste: Notizen unter ihrer PDF, Dateien per Rechtsklick in den Papierkorb', async () => {
+  const tree = window.getByRole('tree', { name: 'Seiten' })
+  // The notes page hangs under its PDF (not as a separate entry next to it).
+  const pdf = tree.getByRole('treeitem', { name: /Graphen\.pdf/ }).first()
+  await pdf.getByRole('button', { name: 'Aufklappen' }).click()
+  await expect(pdf.getByRole('group')).toContainText('Graphen (Notizen)')
+  // Right click on another PDF: into the trash after asking – restorable.
+  await tree.getByRole('button', { name: 'Graphen 2.pdf' }).click({ button: 'right' })
+  await window.getByRole('menuitem', { name: 'In den Papierkorb' }).click()
+  await window.getByRole('dialog').getByRole('button', { name: 'In den Papierkorb' }).click()
+  await expect.poll(() => existsSync(path.join(folder, 'Skripte/Graphen 2.pdf'))).toBe(false)
+  await expect(tree.getByRole('button', { name: 'Graphen 2.pdf' })).toHaveCount(0)
+})
