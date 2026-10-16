@@ -149,6 +149,9 @@ contextBridge.exposeInMainWorld('notiva', {
       ),
     repoFetch: (folder: string) => invoke('code:repoFetch', folder),
     repoPull: (folder: string) => invoke<void>('code:repoPull', folder),
+    repoStatus: (folder: string) => invoke('code:repoStatus', folder),
+    repoCommit: (folder: string, message: string) => invoke<void>('code:repoCommit', folder, message),
+    repoPush: (folder: string) => invoke<void>('code:repoPush', folder),
     tokenStatus: () => invoke('code:tokenStatus'),
     clones: (folder: string) => invoke<Array<{ name: string; remote: string }>>('code:clones', folder),
     setToken: (host: string, token: string | null) => invoke<boolean>('code:setToken', host, token),
@@ -211,6 +214,7 @@ contextBridge.exposeInMainWorld('notiva', {
     init: () => invoke('git:init'),
     push: () => invoke<string>('git:push'),
     pull: () => invoke<string>('git:pull'),
+    untrackNested: (p: string) => invoke<void>('git:untrackNested', p),
     install: () => invoke<'installing' | 'opened'>('git:install'),
     onProgress(callback: (event: { done: number; total: number; file?: string }) => void) {
       const listener = (_e: unknown, event: { done: number; total: number; file?: string }) => callback(event)

@@ -9,6 +9,8 @@ export interface GitChange {
   path: string
   status: GitStatus
   from?: string
+  /** a got repository of its own inside the vault (not a file) */
+  nested?: boolean
 }
 export interface GitState {
   isRepo: boolean
@@ -36,6 +38,8 @@ export interface GitBridge {
   init(): Promise<GitState>
   push(): Promise<string>
   pull(): Promise<string>
+  /** take a got repository out of the vault's Git (index only) */
+  untrackNested?(path: string): Promise<void>
   /** Progress of a commit (files added so far). */
   onProgress?(callback: (event: { done: number; total: number; file?: string }) => void): () => void
   /** One-click fix: install Git (Windows: winget, macOS: command line tools, else the download page). */
@@ -219,6 +223,14 @@ export interface NotivaBridge {
     }>
     /** take over what is new (fast-forward only) */
     repoPull?(folder: string): Promise<void>
+    repoStatus?(folder: string): Promise<{
+      branch: string | null
+      ahead: number
+      behind: number
+      changes: Array<{ path: string; status: string }>
+    }>
+    repoCommit?(folder: string, message: string): Promise<void>
+    repoPush?(folder: string): Promise<void>
     /** do the stored tokens still work? */
     tokenStatus?(): Promise<
       Array<{

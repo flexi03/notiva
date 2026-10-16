@@ -16,6 +16,8 @@ export interface GitChange {
   status: GitStatus
   /** For renames: the previous vault-relative path. */
   from?: string
+  /** A repository of its own inside the vault (a got lab repository) – not a file. */
+  nested?: boolean
 }
 
 export interface GitState {
@@ -183,8 +185,42 @@ export class GitRepo {
       const fromVault = from ? this.toVault(from) : null
       state.changes.push({ path, status, ...(fromVault ? { from: fromVault } : {}) })
     }
+    // A got repository inside (own .git): Git lists it as one "changed" path without content.
+    for (const c of state.changes) {
+      const abs = path.join(this.vault.root, c.path)
+      if (await fs.stat(path.join(abs, '.git')).catch(() => null)) c.nested = true
+    }
     state.changes.sort((a, b) => a.path.localeCompare(b.path))
     return state
+  }
+
+  /** Takes a got repository out of the vault's Git (index only – its files stay untouched). */
+  async untrackNested(relative: unknown): Promise<void> {
+    if (typeof relative !== 'string') throw new GitError('Kein Pfad')
+    await this.vault.resolve(relative)
+    const clean = relative.replace(/\/+$/, '')
+    const staged = (await run(this.vault.root, ['diff', '--cached', '--name-only'])).stdout.trim()
+    if (staged)
+      throw new GitError(
+        'Es sind schon andere Änderungen zum Commit vorgemerkt – erst committen, dann das Repository herausnehmen.',
+      )
+    await run(this.vault.root, ['rm', '--cached', '-r', '-q', '--ignore-unmatch', '--', spec(clean)])
+    // …and ignored from now on (".gitignore" next to it), committed together.
+    const parent = path.posix.dirname(clean)
+    const ignore = parent === '.' ? '.gitignore' : `${parent}/.gitignore`
+    const current = await this.vault.read(ignore).catch(() => '')
+    const line = `/${path.posix.basename(clean)}/`
+    if (!current.split(/\r?\n/).some((l) => l.trim() === line)) {
+      await this.vault.write(ignore, `${current.trimEnd()}${current.trim() ? '\n' : ''}${line}\n`)
+    }
+    await run(this.vault.root, ['add', '--', spec(ignore)])
+    // A pathspec would add the folder (with its .git) right back – commit what is staged: only this.
+    await run(this.vault.root, [
+      'commit',
+      '-q',
+      '-m',
+      `chore: ${path.basename(clean)} als eigenes Repository führen`,
+    ])
   }
 
   /** File content at a revision ("HEAD", a hash, or "<hash>^"), null if it did not exist there. */
@@ -535,4 +571,49 @@ export async function repoPull(dir: string): Promise<void> {
         ? `CONFLICT: ${result.stderr.trim().slice(0, 600)}`
         : result.stderr.trim().slice(0, 800),
     )
+}
+
+/** A got repository's state: branch, ahead/behind the server (last fetch), changed files. */
+export async function repoStatus(dir: string): Promise<{
+  branch: string | null
+  ahead: number
+  behind: number
+  changes: Array<{ path: string; status: GitStatus }>
+}> {
+  const status = await run(dir, ['status', '--porcelain=v1', '-b', '--untracked-files=all'])
+  const lines = status.stdout.split('\n').filter(Boolean)
+  const head = /^## (?:No commits yet on )?([^.\s]+)(?:\.\.\.(\S+))?(?: \[(.*)\])?/.exec(lines[0] ?? '')
+  const changes = lines.slice(1).map((l) => {
+    const xy = l.slice(0, 2)
+    const status: GitStatus =
+      xy === '??' ? 'untracked' : xy.includes('D') ? 'deleted' : xy.includes('A') ? 'added' : 'modified'
+    return { path: l.slice(3).replace(/^"|"$/g, ''), status }
+  })
+  return {
+    branch: head?.[1] ?? null,
+    ahead: Number(/ahead (\d+)/.exec(head?.[3] ?? '')?.[1] ?? 0),
+    behind: Number(/behind (\d+)/.exec(head?.[3] ?? '')?.[1] ?? 0),
+    changes,
+  }
+}
+
+/** Commit of everything changed in a got repository. */
+export async function repoCommit(dir: string, message: string): Promise<void> {
+  if (!message.trim()) throw new GitError('Keine Nachricht')
+  await run(dir, ['add', '-A'])
+  await run(dir, ['commit', '-q', '-m', message.slice(0, 5000)])
+}
+
+/** Push to the server – with the stored token; refused writes say which scope is missing. */
+export async function repoPush(dir: string, token?: string): Promise<void> {
+  const remote = (await run(dir, ['config', '--get', 'remote.origin.url'])).stdout.trim()
+  const result = await run(dir, ['push', '--quiet', 'origin', 'HEAD'], {
+    allowFail: true,
+    timeout: 120_000,
+    env: tokenEnv(remote, token),
+  })
+  if (result.code === 0) return
+  const text = result.stderr.trim().slice(0, 800)
+  if (/403|not allowed|denied|permission|write_repository/i.test(text)) throw new GitError(`WRITE: ${text}`)
+  throw new GitError(LOGIN.test(text) ? `LOGIN: ${text}` : text)
 }

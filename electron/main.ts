@@ -31,8 +31,11 @@ import {
   cloneRepo,
   clonesIn,
   GitRepo,
+  repoCommit,
   repoFetch,
   repoPull,
+  repoPush,
+  repoStatus,
   installGit,
   setGitIdentity,
   type GitState,
@@ -586,6 +589,7 @@ function registerIpc(): void {
   handle('git:init', async () => (await GitRepo.init(requireVault())).state())
   handle('git:push', async () => (await requireRepo()).push())
   handle('git:pull', async () => (await requireRepo()).pull())
+  handle('git:untrackNested', async (p: unknown) => (await requireRepo()).untrackNested(p))
   handle('moodle:status', async () => {
     const config = await loadMoodle()
     return { ...statusOf(config), ...(config ? { remembered: moodleRemembered } : {}) }
@@ -736,6 +740,16 @@ function registerIpc(): void {
     const remote = (await clonesIn(path.dirname(dir))).find((c) => c.name === path.basename(dir))?.remote
     const host = remote && /^https?:/.test(remote) ? new URL(remote).host : ''
     return repoFetch(dir, (await loadGitTokens())[host])
+  })
+  handle('code:repoStatus', async (p: unknown) => repoStatus(await requireVault().resolve(p as string)))
+  handle('code:repoCommit', async (p: unknown, message: unknown) =>
+    repoCommit(await requireVault().resolve(p as string), String(message)),
+  )
+  handle('code:repoPush', async (p: unknown) => {
+    const dir = await requireVault().resolve(p as string)
+    const remote = (await clonesIn(path.dirname(dir))).find((c) => c.name === path.basename(dir))?.remote
+    const host = remote && /^https?:/.test(remote) ? new URL(remote).host : ''
+    return repoPush(dir, (await loadGitTokens())[host])
   })
   handle('code:repoPull', async (p: unknown) => repoPull(await requireVault().resolve(p as string)))
   // The stored tokens still work? (revoked, expired, missing scope) – asked at GitLab's API.
