@@ -204,6 +204,9 @@ export interface NotivaBridge {
     /** The same in the Terminal app, where git can ask for a login (Mac). */
     cloneInTerminal?(url: string, target: string): Promise<void>
     onCloneProgress?(callback: (percent: number) => void): () => void
+    /** access token for a Git server (stored encrypted in the main process, never readable) */
+    hasToken?(host: string): Promise<boolean>
+    setToken?(host: string, token: string | null): Promise<boolean>
   }
   /** Built-in terminal: a shell in a vault folder. */
   terminal?: {

@@ -1,11 +1,4 @@
-import {
-  AlertTriangle,
-  Code2,
-  ExternalLink,
-  FileText,
-  FolderInput,
-  Plus,
-} from 'lucide-react'
+import { AlertTriangle, Code2, ExternalLink, FileText, FolderInput, Plus } from 'lucide-react'
 import { createCodeFolder } from '@/components/code/CodeFolder'
 import { useRecent } from '@/app/recent'
 import { useMoodle } from '@/app/moodle'

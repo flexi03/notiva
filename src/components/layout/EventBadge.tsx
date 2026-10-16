@@ -68,6 +68,7 @@ export function EventBadge({ inline = false }: { inline?: boolean }) {
     if (module) {
       useSessionFocus.setState({
         module: module.path,
+        source: e.path,
         start: e.start.getTime(),
         ...(e.type ? { type: e.type } : {}),
       })

@@ -16,6 +16,10 @@ export interface PromptRequest {
   label?: string
   initial?: string
   confirmLabel: string
+  /** the text field hides what is typed (tokens) */
+  secret?: boolean
+  /** a link below the field (e.g. where to create a token) */
+  help?: { label: string; run: () => void }
   /** confirm-only dialog (no text field) */
   confirm?: boolean
   danger?: boolean

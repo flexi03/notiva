@@ -42,7 +42,7 @@ export function RepoButton({
             folder ??
             labFolderOf(ws, module!) ??
             (await createCodeFolder(ws, module!, 'Praktikum')).slice(0, -3)
-          const target = await cloneIntoLab(ws, link, lab, repo)
+          const target = await cloneIntoLab(ws, link, lab, repo, title)
           if (target && !folder) navigate({ name: 'page', path: `${lab}.md` })
         })
       }

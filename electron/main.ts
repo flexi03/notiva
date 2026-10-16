@@ -202,6 +202,26 @@ async function saveMoodle(config: MoodleConfig | null): Promise<boolean> {
   return (moodleRemembered = true)
 }
 
+/** Access tokens for Git servers (e.g. ProjectBase), per host – encrypted with the OS keychain. */
+const GIT_TOKENS = () => path.join(app.getPath('userData'), 'git-tokens')
+async function loadGitTokens(): Promise<Record<string, string>> {
+  try {
+    const raw = await fs.readFile(GIT_TOKENS())
+    const json = plainSecrets() ? raw.toString('utf8') : safeStorage.decryptString(raw)
+    return JSON.parse(json) as Record<string, string>
+  } catch {
+    return {}
+  }
+}
+async function saveGitTokens(tokens: Record<string, string>): Promise<boolean> {
+  const json = JSON.stringify(tokens)
+  if (plainSecrets()) await fs.writeFile(GIT_TOKENS(), json, { mode: 0o600 })
+  else if (safeStorage.isEncryptionAvailable())
+    await fs.writeFile(GIT_TOKENS(), safeStorage.encryptString(json), { mode: 0o600 })
+  else return false
+  return true
+}
+
 /* ---------- notification center + Moodle polling ---------- */
 
 const notifications = new NotificationStore(
@@ -677,9 +697,21 @@ function registerIpc(): void {
   // "Repository ins Praktikum holen": only https, only into a new folder inside the vault.
   handle('code:clone', async (url: unknown, p: unknown) => {
     const absolute = await requireVault().resolve(p as string)
-    await cloneRepo(String(url), absolute, (percent) =>
-      window?.webContents.send('code:cloneProgress', percent),
+    // With the access token stored for that server, if any.
+    await cloneRepo(
+      String(url),
+      absolute,
+      (percent) => window?.webContents.send('code:cloneProgress', percent),
+      (await loadGitTokens())[new URL(String(url)).host],
     )
+  })
+  handle('code:hasToken', async (host: unknown) => !!(await loadGitTokens())[String(host)])
+  handle('code:setToken', async (host: unknown, token: unknown) => {
+    if (typeof host !== 'string' || !/^[\w.-]+(:\d+)?$/.test(host)) throw new Error('Ungültiger Server')
+    const tokens = await loadGitTokens()
+    if (typeof token === 'string' && token.trim()) tokens[host] = token.trim().slice(0, 500)
+    else delete tokens[host]
+    return saveGitTokens(tokens)
   })
   handle('code:cloneInTerminal', async (url: unknown, p: unknown) => {
     const target = String(url)

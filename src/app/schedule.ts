@@ -3,7 +3,7 @@ import { useApp } from '@/app/store'
 import { t } from '@/i18n'
 import { findSessions, planTimetable, type Session, type TimetableRow } from '@/lib/schedule'
 import { findStudyDashboard } from '@/lib/study/sync'
-import type { Workspace } from '@/lib/workspace'
+import { TRASH_DIR, type Workspace } from '@/lib/workspace'
 import { courseInfoMarkdown } from '@/lib/moodleInfo'
 import { electronBridge } from '@/lib/vault'
 import { currentProfile } from '@/app/university'
@@ -143,6 +143,7 @@ async function timetableSuggestions(ws: Workspace): Promise<{ db: string; list: 
     const latest = Math.max(...ids.map((id) => termsOf.get(id) ?? -Infinity))
     return ids.filter((id) => (termsOf.get(id) ?? -Infinity) === latest)
   }
+  const deleted = await deletedSessions(ws, dash.folder)
   const list: Suggestion[] = []
   for (const row of ws.rows(`${dash.folder}/Module.md`)) {
     if (!Array.isArray(row.data.Belegung) || !row.data.Belegung.length) continue
@@ -177,7 +178,9 @@ async function timetableSuggestions(ws: Workspace): Promise<{ db: string; list: 
       const options = change.kind === 'groups' ? change.options! : [change.session]
       for (const session of options) {
         const id = skipKey(row.title, session)
-        if (skipped(id)) continue
+        // Declined, or deleted from the timetable by the user: not suggested again.
+        if (skipped(id) || deleted.has(`${row.title}|${session.type}|${session.day}|${session.start}`))
+          continue
         list.push({
           id,
           module,
@@ -189,6 +192,21 @@ async function timetableSuggestions(ws: Workspace): Promise<{ db: string; list: 
     }
   }
   return { db, list }
+}
+
+/** Timetable rows the user deleted (in the trash): "Modul|Typ|Tag|Beginn". */
+async function deletedSessions(ws: Workspace, folder: string): Promise<Set<string>> {
+  const out = new Set<string>()
+  const entries = await ws.listTrash().catch(() => [])
+  for (const e of entries) {
+    if (!e.original.startsWith(`${folder}/Stundenplan/`)) continue
+    const text = await ws.vault.read(`${TRASH_DIR}/${e.id}/${e.original}`).catch(() => '')
+    const field = (name: string) =>
+      new RegExp(`^${name}:\\s*"?([^"\\n]*)"?\\s*$`, 'm').exec(text)?.[1]?.trim() ?? ''
+    const module = /\[\[([^\]|#]+)/.exec(/^Modul:[\s\S]*?(?=^\S|\n---)/m.exec(text)?.[0] ?? '')?.[1]
+    if (module) out.add(`${module}|${field('Typ')}|${field('Tag')}|${field('Beginn')}`)
+  }
+  return out
 }
 
 /**

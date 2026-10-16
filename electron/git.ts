@@ -384,6 +384,8 @@ export async function cloneRepo(
   url: string,
   target: string,
   onProgress: (percent: number) => void,
+  /** access token for this server (GitLab: read_repository) – sent as HTTP header, never in argv */
+  token?: string,
 ): Promise<void> {
   if (!/^https:\/\/[^\s/]+\/\S+$/.test(url)) throw new GitError('Nur https-Adressen können geholt werden')
   if (await fs.stat(target).catch(() => null))
@@ -392,7 +394,19 @@ export async function cloneRepo(
   const { spawn } = await import('node:child_process')
   await new Promise<void>((resolve, reject) => {
     const child = spawn(process.env.NOTIVA_E2E_GIT ?? 'git', ['clone', '--progress', '--', url, target], {
-      env: { ...process.env, GIT_TERMINAL_PROMPT: '0', LC_ALL: 'C' },
+      env: {
+        ...process.env,
+        GIT_TERMINAL_PROMPT: '0',
+        LC_ALL: 'C',
+        // Token via environment config (git ≥ 2.31): not visible in the process list.
+        ...(token
+          ? {
+              GIT_CONFIG_COUNT: '1',
+              GIT_CONFIG_KEY_0: `http.${new URL(url).origin}/.extraHeader`,
+              GIT_CONFIG_VALUE_0: `Authorization: Basic ${Buffer.from(`oauth2:${token}`).toString('base64')}`,
+            }
+          : {}),
+      },
       windowsHide: true,
     })
     let err = ''
@@ -416,7 +430,11 @@ export async function cloneRepo(
         .split(/[\r\n]/)
         .filter((l) => /fatal|error|denied|not found|could not/i.test(l))
         .join('\n')
-      reject(new GitError((last || err).trim().slice(0, 800) || `git clone fehlgeschlagen (${code})`))
+      const text = (last || err).trim().slice(0, 800) || `git clone fehlgeschlagen (${code})`
+      // Sent to the sign-in page (private project) or refused: a login is needed.
+      const login =
+        /redirection|authentication|could not read username|terminal prompts disabled|access denied|\b40[13]\b/i
+      reject(new GitError(login.test(text) ? `LOGIN: ${text}` : text))
     })
   })
 }

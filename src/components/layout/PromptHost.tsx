@@ -100,10 +100,21 @@ function PromptDialog() {
           <Field label={prompt.label ?? prompt.title}>
             <TextInput
               value={value}
+              type={prompt.secret ? 'password' : 'text'}
+              autoComplete={prompt.secret ? 'off' : undefined}
               onChange={(e) => setValue(e.target.value)}
               onFocus={(e) => e.target.select()}
             />
           </Field>
+          {prompt.help && (
+            <button
+              type="button"
+              className="mt-2 text-[13px] font-semibold text-accent hover:underline"
+              onClick={prompt.help.run}
+            >
+              {prompt.help.label}
+            </button>
+          )}
         </form>
       )}
     </Dialog>

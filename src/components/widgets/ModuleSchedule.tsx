@@ -424,7 +424,8 @@ function SessionFocus({ module, labTasks }: { module: Page; labTasks: Page[] }) 
   const ws = useWorkspace()
   const focus = useSessionFocus()
   const navigate = useApp((s) => s.navigate)
-  if (focus.module !== module.path || !focus.start) return null
+  // The session was deleted meanwhile: nothing to highlight.
+  if (focus.module !== module.path || !focus.start || (focus.source && !ws.get(focus.source))) return null
   const date = new Date(focus.start)
   const day = isoDay(date)
   const folder = materialFolderFor(materialFolder(ws), { name: module.title }, module.title)

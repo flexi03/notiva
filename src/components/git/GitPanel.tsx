@@ -137,8 +137,7 @@ export function GitPanel() {
   const [summarized, setSummarized] = useState('')
   const model = localModelAvailable()
   // Waiting for the model (also during the short pause before it starts).
-  const pending =
-    model && custom === null && selected.length > 0 && (summarizing || summarized !== signature)
+  const pending = model && custom === null && selected.length > 0 && (summarizing || summarized !== signature)
   const message = custom ?? (pending ? '' : auto)
   const summarize = async () => {
     if (summarizing || !selected.length) return
