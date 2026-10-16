@@ -42,7 +42,9 @@ export function maybeRepo(link: string, title = ''): boolean {
   try {
     const u = new URL(link)
     if (u.protocol !== 'https:') return false
-    return HINT.test(`${u.hostname} ${u.pathname} ${title}`) && u.pathname.split('/').filter(Boolean).length >= 1
+    return (
+      HINT.test(`${u.hostname} ${u.pathname} ${title}`) && u.pathname.split('/').filter(Boolean).length >= 1
+    )
   } catch {
     return false
   }
@@ -78,7 +80,11 @@ export function detectRepo(link: string, title = ''): Promise<Repo | null> {
       const clone = json.repo && typeof json.clone === 'string' ? new URL(json.clone) : null
       // Only a clone address on the same server, never somewhere else.
       if (clone && clone.protocol === 'https:' && clone.hostname === new URL(link).hostname) {
-        const name = clone.pathname.split('/').filter(Boolean).pop()?.replace(/\.git$/, '')
+        const name = clone.pathname
+          .split('/')
+          .filter(Boolean)
+          .pop()
+          ?.replace(/\.git$/, '')
         if (name) repo = { url: clone.toString(), name }
       }
     } catch {
