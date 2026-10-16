@@ -4,6 +4,7 @@ import { updateRepo } from '@/app/repoUpdate'
 import { loadRepoInfo, useRepoInfo } from '@/app/repoInfo'
 import { textHash } from '@/lib/textHash'
 import { MarkdownView } from '@/components/editor/MarkdownView'
+import { ResizeHandle, useStoredWidth } from '@/components/layout/ResizeHandle'
 import { TokenBanner } from './GitTokens'
 import { RepoTask } from './LabLinks'
 import { useAction, useApp, useWorkspace } from '@/app/store'
@@ -31,6 +32,7 @@ export function RepoFiles({ page }: { page: Page }) {
   const code = electronBridge()?.code
   const remote = typeof page.data.repo === 'string' ? page.data.repo : undefined
   const info = useRepoInfo((s) => (remote ? s[remote] : undefined))
+  const [descHeight, setDescHeight] = useStoredWidth('repo-desc-h', 260, 80, 1400)
   useEffect(() => {
     if (!remote) return
     void loadRepoInfo(ws, remote)
@@ -52,7 +54,19 @@ export function RepoFiles({ page }: { page: Page }) {
         <div className="rounded-panel border border-line bg-sunken/60 p-3" data-testid="repo-description">
           <p className="mb-1 text-[12px] font-semibold text-ink-3">{t('repo.description')}</p>
           {info.description ? (
-            <MarkdownView markdown={info.description} untrusted className="md text-[14px]" />
+            // Height draggable at the lower edge (like the terminal).
+            <div className="relative" style={{ height: descHeight }}>
+              <div className="h-full overflow-y-auto pr-2">
+                <MarkdownView markdown={info.description} untrusted className="md text-[14px]" />
+              </div>
+              <ResizeHandle
+                side="bottom"
+                width={descHeight}
+                onResize={setDescHeight}
+                label={t('fileContext.description')}
+                reset={260}
+              />
+            </div>
           ) : (
             <p className="text-[13px] text-ink-2">{t('repo.noDescriptionScope')}</p>
           )}

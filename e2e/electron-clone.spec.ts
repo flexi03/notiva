@@ -139,6 +139,7 @@ test('holt ein privates Repository mit Zugangstoken – Name frei wählbar', asy
   // The file shows what it belongs to.
   await window.evaluate(() => (location.hash = '#/f/Praktikum%2Fpraktikum-2%2Faufgabe.sql'))
   await expect(window.getByTestId('file-context')).toContainText('P02')
+  await expect(window.getByTestId('code-editor')).toBeVisible()
   await window
     .getByRole('navigation', { name: 'Werkzeugleiste', exact: true })
     .getByRole('button', { name: /Änderungen/ })

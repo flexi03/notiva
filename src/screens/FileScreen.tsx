@@ -66,34 +66,35 @@ export function FileScreen({ path, page }: { path: string; page?: number }) {
   return (
     <div className="flex h-full flex-col">
       <Topbar title={name} actions={actions} />
-      <FileContext path={path} />
       <div className="min-h-0 flex-1">
-        {!state ? (
-          <Spinner label={t('common.loading')} />
-        ) : state.error ? (
-          <p role="alert" className="p-6 text-sm text-danger">
-            {state.error}
-          </p>
-        ) : state.doc ? (
-          <PdfDocumentView doc={state.doc} path={path} name={name} initialPage={page} Side={LecturePanel} />
-        ) : state.url ? (
-          <div className="flex h-full items-start justify-center overflow-auto bg-sunken p-6">
-            <img src={state.url} alt={name} className="max-w-full shadow-[var(--shadow-pop)]" />
-          </div>
-        ) : state.text !== undefined ? (
-          <CodeFileView key={path} path={path} initial={state.text} />
-        ) : (
-          <EmptyState
-            title={t('file.noPreview')}
-            action={
-              system && (
-                <Button variant="primary" onClick={() => void system(path)}>
-                  {t('file.openWithSystem')}
-                </Button>
-              )
-            }
-          />
-        )}
+        <FileContext path={path}>
+          {!state ? (
+            <Spinner label={t('common.loading')} />
+          ) : state.error ? (
+            <p role="alert" className="p-6 text-sm text-danger">
+              {state.error}
+            </p>
+          ) : state.doc ? (
+            <PdfDocumentView doc={state.doc} path={path} name={name} initialPage={page} Side={LecturePanel} />
+          ) : state.url ? (
+            <div className="flex h-full items-start justify-center overflow-auto bg-sunken p-6">
+              <img src={state.url} alt={name} className="max-w-full shadow-[var(--shadow-pop)]" />
+            </div>
+          ) : state.text !== undefined ? (
+            <CodeFileView key={path} path={path} initial={state.text} />
+          ) : (
+            <EmptyState
+              title={t('file.noPreview')}
+              action={
+                system && (
+                  <Button variant="primary" onClick={() => void system(path)}>
+                    {t('file.openWithSystem')}
+                  </Button>
+                )
+              }
+            />
+          )}
+        </FileContext>
       </div>
     </div>
   )

@@ -38,13 +38,14 @@ export function ResizeHandle({
   label,
   reset,
 }: {
-  side: 'left' | 'right' | 'top'
+  /** where the handle sits on the resized panel ('bottom': drag down = taller) */
+  side: 'left' | 'right' | 'top' | 'bottom'
   width: number
   onResize: (width: number) => void
   label: string
   reset?: number
 }) {
-  const vertical = side === 'top'
+  const vertical = side === 'top' || side === 'bottom'
   const start = (e: React.PointerEvent) => {
     e.preventDefault()
     const origin = vertical ? e.clientY : e.clientX
@@ -54,7 +55,7 @@ export function ResizeHandle({
     // At most one layout per frame; no width animations while dragging (smooth like VS Code).
     const move = (ev: PointerEvent) => {
       const delta = (vertical ? ev.clientY : ev.clientX) - origin
-      latest = side === 'right' ? base + delta : base - delta
+      latest = side === 'right' || side === 'bottom' ? base + delta : base - delta
       if (!frame)
         frame = requestAnimationFrame(() => {
           frame = 0
@@ -88,12 +89,12 @@ export function ResizeHandle({
       onKeyDown={(e) => {
         const step = e.shiftKey ? 40 : 10
         const grow = vertical
-          ? e.key === 'ArrowUp'
+          ? e.key === (side === 'bottom' ? 'ArrowDown' : 'ArrowUp')
           : side === 'right'
             ? e.key === 'ArrowRight'
             : e.key === 'ArrowLeft'
         const shrink = vertical
-          ? e.key === 'ArrowDown'
+          ? e.key === (side === 'bottom' ? 'ArrowUp' : 'ArrowDown')
           : side === 'right'
             ? e.key === 'ArrowLeft'
             : e.key === 'ArrowRight'
@@ -104,7 +105,7 @@ export function ResizeHandle({
       }}
       className={
         vertical
-          ? 'absolute inset-x-0 -top-1 z-10 h-2 cursor-row-resize hover:bg-accent/30 focus-visible:bg-accent/40 focus-visible:outline-none'
+          ? `absolute inset-x-0 ${side === 'bottom' ? '-bottom-1' : '-top-1'} z-10 h-2 cursor-row-resize hover:bg-accent/30 focus-visible:bg-accent/40 focus-visible:outline-none`
           : `absolute inset-y-0 ${side === 'left' ? '-left-1' : '-right-1'} z-10 w-2 cursor-col-resize hover:bg-accent/30 focus-visible:bg-accent/40 focus-visible:outline-none`
       }
     />
