@@ -539,7 +539,11 @@ export function formatValue(def: PropertyDef | undefined, value: FormulaValue | 
   }
   if (def?.type === 'date' && typeof value === 'string') {
     const d = parseDate(value)
-    if (d) return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    if (d) {
+      const day = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+      // With a time ("2026-10-22T09:00") it is shown too.
+      return /T\d{2}:\d{2}/.test(value) ? `${day}, ${value.slice(11, 16)}` : day
+    }
   }
   return toText(value)
 }

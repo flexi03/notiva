@@ -128,8 +128,24 @@ function Editor({ def, value, onChange, onAddOption, close }: PropertyCellProps 
             defaultValue={typeof value === 'string' ? value.slice(0, 10) : ''}
             // While a date is being typed the field is briefly empty – only "Löschen" removes it,
             // otherwise the key would move to the end of the frontmatter.
-            onChange={(e) => e.target.value && onChange(e.target.value)}
+            onChange={(e) => {
+              if (!e.target.value) return
+              // Keeps a time that was set ("2026-10-22T09:00").
+              const time = typeof value === 'string' ? value.slice(10) : ''
+              onChange(`${e.target.value}${time}`)
+            }}
             aria-label={def.name}
+          />
+          {/* Optional time (lab dates, exams): "Fällig: 2026-10-22T09:00". */}
+          <TextInput
+            type="time"
+            defaultValue={typeof value === 'string' ? value.slice(11, 16) : ''}
+            disabled={typeof value !== 'string' || !value}
+            onChange={(e) => {
+              if (typeof value !== 'string' || !value) return
+              onChange(e.target.value ? `${value.slice(0, 10)}T${e.target.value}` : value.slice(0, 10))
+            }}
+            aria-label={t('database.time', { name: def.name })}
           />
           {value ? (
             <button

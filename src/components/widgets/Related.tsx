@@ -1,20 +1,19 @@
 import {
   AlertTriangle,
-  CalendarPlus,
   Code2,
   ExternalLink,
   FileText,
   FolderInput,
   Plus,
-  Search,
 } from 'lucide-react'
 import { createCodeFolder } from '@/components/code/CodeFolder'
 import { useRecent } from '@/app/recent'
 import { useMoodle } from '@/app/moodle'
 import { materialFolder } from '@/app/materials'
-import { suggestTimetable } from '@/app/schedule'
 import { reindexMaterials } from '@/app/reindex'
 import { planSort } from '@/lib/materialVersions'
+import { LAB_DATE, LAB_PREP } from '@/lib/labPlan'
+import { ModuleSchedule } from './ModuleSchedule'
 import { MATERIAL_CATEGORIES } from '@/lib/moodle'
 import { courseIdsOf, materialFolderFor } from '@/lib/study/modules'
 import { useAction, useApp, useWorkspace } from '@/app/store'
@@ -43,6 +42,8 @@ export function Related({ from }: { from: string }) {
   const groups = new Map<string, Page[]>()
   for (const p of ws.backlinks(from)) {
     const name = dbOf(p)?.title ?? t('related.other')
+    // Sessions and lab dates have their own section above (ModuleSchedule).
+    if (name === 'Stundenplan' || p.data.Art === LAB_DATE || p.data.Art === LAB_PREP) continue
     groups.set(name, [...(groups.get(name) ?? []), p])
   }
   const sorted = [...groups.entries()].sort(
@@ -58,6 +59,8 @@ export function Related({ from }: { from: string }) {
       : []
 
   const courses = courseIdsOf(page.data)
+  // A module page (row of "Module"): sessions and lab dates first.
+  const isModule = dbOf(page)?.title === 'Module'
   const moduleFolder = materialFolderFor(materialFolder(ws), { name: page.title }, page.title)
   const moduleFiles = files(moduleFolder)
   // Loose files in the module folder (older versions saved them there): sort into categories.
@@ -76,18 +79,9 @@ export function Related({ from }: { from: string }) {
       navigate({ name: 'page', path })
     })
 
-  const timetableDb = ws.findDatabase('Stundenplan', from)
-  const newSession = () =>
-    run(async () => {
-      const path = await ws.createRow(timetableDb!.path, `${page.title} – ${t('related.session')}`, {
-        Modul: [`[[${ws.linkText(from)}]]`],
-        Typ: 'Vorlesung',
-      })
-      openEntry(path)
-    })
-
   return (
     <div className="related space-y-4 rounded-panel border border-line p-3" data-interactive>
+      {isModule && <ModuleSchedule module={page} />}
       {moduleFiles.length > 0 && (
         <section aria-label={t('related.files')}>
           <div className="mb-1 flex items-center gap-2">
@@ -108,7 +102,7 @@ export function Related({ from }: { from: string }) {
         </section>
       )}
       {courses.length > 0 && <ModuleMoodle courses={courses} />}
-      {sorted.length === 0 && moduleFiles.length === 0 && courses.length === 0 && (
+      {!isModule && sorted.length === 0 && moduleFiles.length === 0 && courses.length === 0 && (
         <p className="text-sm text-ink-3">{t('related.empty')}</p>
       )}
       {sorted.map(([name, pages]) => (
@@ -180,21 +174,6 @@ export function Related({ from }: { from: string }) {
         {notesDb && (
           <Button size="sm" icon={<Plus size={13} />} onClick={() => void newNote()}>
             {t('related.newNote')}
-          </Button>
-        )}
-        {timetableDb && (
-          <Button size="sm" icon={<CalendarPlus size={13} />} onClick={() => void newSession()}>
-            {t('related.newSession')}
-          </Button>
-        )}
-        {timetableDb && courses.length > 0 && (
-          <Button
-            size="sm"
-            variant="ghost"
-            icon={<Search size={13} />}
-            onClick={() => void run(() => suggestTimetable(ws, true))}
-          >
-            {t('related.findTimes')}
           </Button>
         )}
         <Button

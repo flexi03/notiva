@@ -66,3 +66,27 @@ test.describe('Studien-Dashboard', () => {
     await expect(await pageTitle(page)).toHaveValue('Praktikum')
   })
 })
+
+test.describe('Modulseite', () => {
+  test.beforeEach(async ({ page }) => openDemo(page))
+  test.afterEach(({ page }) => expect(pageErrors(page)).toEqual([]))
+
+  test('zeigt die Termine und plant Praktikumstermine mit Vorbereitung', async ({ page }) => {
+    await go(page, `/#/p/${encodeURIComponent('Studium/Module/Software Engineering.md')}`)
+    const sessions = page.getByRole('region', { name: 'Termine' })
+    await expect(sessions.getByTestId('module-sessions')).toContainText('14:00–17:00 · Labor')
+    await expect(sessions).toContainText('Lab 1')
+    const lab = page.getByRole('region', { name: 'Praktikum', exact: true })
+    await expect(lab).toContainText('Vorschlag: Praktikumstermine ab Do 14:00')
+    await lab.getByRole('button', { name: 'Ansehen' }).click()
+    const planner = lab.getByTestId('lab-planner')
+    await expect(planner.getByLabel('Erster Termin')).toHaveValue('2026-10-15')
+    await planner.getByLabel('Anzahl Termine').fill('2')
+    await expect(planner.getByRole('list', { name: 'Vorschau' })).toContainText('P01 Praktikumstermin')
+    await planner.getByRole('button', { name: '4 eintragen' }).click()
+    const dates = lab.getByTestId('lab-dates')
+    await expect(dates.getByRole('listitem')).toHaveCount(4)
+    await expect(dates).toContainText('15.10.2026, 14:00')
+    await expect(dates).toContainText('P01 Vorbereitung')
+  })
+})

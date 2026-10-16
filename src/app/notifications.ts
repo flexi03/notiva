@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { getLanguage } from '@/i18n'
 import { propertyDef } from '@/lib/database'
+import { reminderHours } from '@/lib/labPlan'
 import { importTargets } from '@/lib/moodle'
 import {
   deadlineReminders,
@@ -87,7 +88,11 @@ export function taskReminders(ws: Workspace, now = new Date()): AppNotification[
         continue
       const end = /^\d{4}-\d{2}-\d{2}$/.test(due) ? new Date(`${due}T23:59:00`) : new Date(due)
       if (Number.isNaN(end.getTime())) continue
+      // "Erinnerung: 2 Std. vorher" / "Keine" (lab dates, preparations …).
+      const lead = reminderHours(row.data.Erinnerung)
+      if (lead === null) continue
       events.push({
+        hours: lead,
         id: `task:${row.path}`,
         title: row.title,
         due: end.toISOString(),

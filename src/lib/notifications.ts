@@ -158,14 +158,21 @@ export function moodleNews(
 
 /** Reminders for deadlines in the next `hours` (one per deadline and date). */
 export function deadlineReminders(
-  events: Array<{ id: string; title: string; due: string; course?: string; target?: NotificationTarget }>,
+  events: Array<{
+    id: string
+    title: string
+    due: string
+    course?: string
+    target?: NotificationTarget
+    /** own lead time ("Erinnerung: 2 Std. vorher") instead of `hours` */
+    hours?: number
+  }>,
   { now = new Date(), locale = 'de-DE', hours = 24 }: { now?: Date; locale?: string; hours?: number } = {},
 ): AppNotification[] {
-  const until = now.getTime() + hours * 3_600_000
   return events
     .filter((e) => {
       const due = new Date(e.due).getTime()
-      return due >= now.getTime() && due <= until
+      return due >= now.getTime() && due <= now.getTime() + (e.hours ?? hours) * 3_600_000
     })
     .map((e) => ({
       id: `reminder:${e.id}:${e.due.slice(0, 10)}`,

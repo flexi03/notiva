@@ -12,6 +12,7 @@ import { BlockEditor } from './BlockEditor'
 import { EmojiPicker } from './EmojiPicker'
 import { PageProperties } from './PageProperties'
 import { CodeFolder } from '@/components/code/CodeFolder'
+import { ModuleSchedule } from '@/components/widgets/ModuleSchedule'
 import { SourceEditor } from './SourceEditor'
 import { PageRail } from './PageRail'
 import { ChangeMarker } from './Block'
@@ -105,6 +106,8 @@ export function PageContent({
   if (!page) return <EmptyState title={t('page.notFound')} />
 
   const backlinks = ws.backlinks(page.path)
+  const modulesDb = ws.findDatabase('Module', page.path)
+  const isModuleRow = !!modulesDb && page.path.startsWith(`${ws.rowFolder(modulesDb)}/`)
   const children = page.database ? [] : ws.children(page.path)
   const isRow = page.parentDatabase !== null
   const hasProperties =
@@ -201,6 +204,12 @@ export function PageContent({
           )}
 
           {page.data.code === true && <CodeFolder page={page} />}
+          {/* Module pages without the "related" block still show their sessions and lab dates. */}
+          {isModuleRow && !/type:\s*related/.test(page.body) && (
+            <div className="no-print mt-4 space-y-4 rounded-panel border border-line p-3">
+              <ModuleSchedule module={page} />
+            </div>
+          )}
 
           <div className="mt-6">
             {source ? (
