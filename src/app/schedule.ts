@@ -1,3 +1,4 @@
+import { courseCounts } from '@/app/courseChoices'
 import { announce } from '@/app/progress'
 import { useApp } from '@/app/store'
 import { t } from '@/i18n'
@@ -37,19 +38,34 @@ export function timetableRows(ws: Workspace, folder: string): TimetableRow[] {
 }
 
 const skipKey = (module: string, s: Session) => `notiva:tt-skip:${module}|${s.type}|${s.day}|${s.start}`
-const skipped = (key: string) => {
+/** Declined / discarded suggestions – in the folder (.notiva), so they never come back. */
+const DECLINED = 'timetable-declined.json'
+let declined: Set<string> | null = null
+async function loadDeclined(ws: Workspace): Promise<Set<string>> {
+  if (declined) return declined
+  const list = await ws.readMeta<string[]>(DECLINED).catch(() => null)
+  declined = new Set(Array.isArray(list) ? list : [])
+  // Earlier versions kept them in this browser only.
   try {
-    return !!localStorage.getItem(key)
-  } catch {
-    return false
-  }
-}
-const skip = (key: string) => {
-  try {
-    localStorage.setItem(key, '1')
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i)
+      if (k?.startsWith('notiva:tt-skip:')) declined.add(k)
+    }
   } catch {
     /* private mode */
   }
+  return declined
+}
+const skipped = (key: string) => !!declined?.has(key)
+const pendingSkips: string[] = []
+const skip = (key: string) => {
+  declined?.add(key)
+  pendingSkips.push(key)
+}
+async function saveDeclined(ws: Workspace): Promise<void> {
+  if (!declined || !pendingSkips.length) return
+  pendingSkips.length = 0
+  await ws.writeMeta(DECLINED, [...declined]).catch(() => undefined)
 }
 
 /** One proposal: a new session, a different time than the own entry, or one of several groups. */
@@ -137,13 +153,15 @@ async function timetableSuggestions(ws: Workspace): Promise<{ db: string; list: 
       for (const c of m.courses) if (c.term) termsOf.set(c.id, termIndex(c.term))
   const current = preview.ok ? termIndex(preview.state.current) : Infinity
   const coursesOf = (data: Record<string, unknown>) => {
-    const ids = courseIdsOf(data as FrontmatterData).filter((id) => info[id])
+    // Courses taken later or not at all (module page) suggest no times.
+    const ids = courseIdsOf(data as FrontmatterData).filter((id) => info[id] && courseCounts(id))
     const now = ids.filter((id) => termsOf.get(id) === current)
     if (now.length) return now
     const latest = Math.max(...ids.map((id) => termsOf.get(id) ?? -Infinity))
     return ids.filter((id) => (termsOf.get(id) ?? -Infinity) === latest)
   }
   const deleted = await deletedSessions(ws, dash.folder)
+  await loadDeclined(ws)
   const list: Suggestion[] = []
   for (const row of ws.rows(`${dash.folder}/Module.md`)) {
     if (!Array.isArray(row.data.Belegung) || !row.data.Belegung.length) continue
@@ -227,6 +245,7 @@ export async function suggestTimetable(ws: Workspace, interactive = false): Prom
       title: t('timetable.reviewTitle', { count: list.length }),
       label: t('timetable.reviewNote'),
       confirmLabel: t('timetable.apply'),
+      cancelLabel: t('timetable.discardAll'),
       checklist: list.map((x) => ({
         value: x.id,
         label: `${x.module.title}: ${x.session.type}${x.session.group ? ` ${t('timetable.group', { group: x.session.group })}` : ''} · ${when(x.session)}`,
@@ -242,7 +261,15 @@ export async function suggestTimetable(ws: Workspace, interactive = false): Prom
         checked: x.kind === 'create',
       })),
     })
-    if (picked === null) return 0
+    if (picked === null) {
+      // "Alle verwerfen": none of them comes back.
+      for (const x of list) skip(x.id)
+      await saveDeclined(ws)
+      await electronBridge()
+        ?.notifications?.markRead(['suggest:timetable'])
+        .catch(() => undefined)
+      return 0
+    }
     const chosen = new Set(JSON.parse(picked) as string[])
     await ensureLabType(ws, db)
     let done = 0
@@ -270,6 +297,7 @@ export async function suggestTimetable(ws: Workspace, interactive = false): Prom
       done++
     }
     if (done) announce(t('timetable.added', { count: done }))
+    await saveDeclined(ws)
     return done
   }
   if (interactive) return review()
@@ -289,8 +317,14 @@ export async function suggestTimetable(ws: Workspace, interactive = false): Prom
   announce(t('timetable.foundTitle', { count: list.length }), {
     state: 'info',
     key: 'timetable-suggestions',
+    sticky: true,
     note: t('timetable.foundNote'),
     action: { label: t('timetable.review'), run: () => void review() },
+    // Closing the hint discards them – they do not come back with the next check.
+    onDismiss: () => {
+      for (const x of list) skip(x.id)
+      void saveDeclined(ws)
+    },
   })
   return 0
 }

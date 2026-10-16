@@ -16,6 +16,8 @@ export interface PromptRequest {
   label?: string
   initial?: string
   confirmLabel: string
+  /** instead of "Abbrechen" (e.g. "Alle verwerfen") */
+  cancelLabel?: string
   /** the text field hides what is typed (tokens) */
   secret?: boolean
   /** a link below the field (e.g. where to create a token) */

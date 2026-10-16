@@ -1,3 +1,4 @@
+import { useCourseChoices } from '@/app/courseChoices'
 import { announce } from '@/app/progress'
 import { checkResult } from '@/lib/notifications'
 import { syncTimetable } from '@/app/schedule'
@@ -58,6 +59,7 @@ export function previewStudy(
     results: moduleResults(sources.exams?.records ?? []),
     courses: sources.moodle?.courses ?? [],
     now,
+    setAside: (id) => !!useCourseChoices.getState()[id],
   })
   return {
     ok: true,

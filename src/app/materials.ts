@@ -262,7 +262,9 @@ export async function moduleNamesOf(
  * in the notifications) with "Speichern" and "Ansehen".
  */
 export async function suggestMaterials(ws: Workspace, snapshot: MoodleSnapshot): Promise<number> {
-  const todo = await missingMaterials(ws, snapshot)
+  // Courses taken later or not at all: nothing is suggested from them.
+  const { courseCounts } = await import('@/app/courseChoices')
+  const todo = (await missingMaterials(ws, snapshot)).filter((m) => courseCounts(m.courseId))
   if (!todo.length) return 0
   const course = (id: string) => snapshot.courses.find((c) => c.id === id)?.name ?? ''
   const names = todo
@@ -293,7 +295,8 @@ export async function suggestMaterials(ws: Workspace, snapshot: MoodleSnapshot):
 export async function reviewMaterials(ws: Workspace): Promise<number> {
   const snapshot = await electronBridge()?.moodle?.snapshot()
   if (!snapshot) return 0
-  const todo = await missingMaterials(ws, snapshot)
+  const { courseCounts } = await import('@/app/courseChoices')
+  const todo = (await missingMaterials(ws, snapshot)).filter((m) => courseCounts(m.courseId))
   if (!todo.length) return 0
   const { useApp } = await import('@/app/store')
   const course = (id: string) => snapshot.courses.find((c) => c.id === id)?.name ?? ''

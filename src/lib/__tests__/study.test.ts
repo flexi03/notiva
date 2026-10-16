@@ -136,6 +136,22 @@ const COURSES = [
 
 describe('study state', () => {
   const state = studyState(HSD_BMI_2018, start, { results: moduleResults(RECORDS), courses: COURSES, now })
+
+  it('does not count a course set aside (another semester / not taken)', () => {
+    const courses = [{ id: 'course:9', name: 'BMI 13: Software Engineering - WiSe 2026/2027' }]
+    const of = (setAside?: (id: string) => boolean) =>
+      studyState(HSD_BMI_2018, start, {
+        results: [],
+        courses,
+        now,
+        ...(setAside ? { setAside } : {}),
+      }).modules.find((m) => m.module.nr === 'BMI 13')!
+    expect(of().status).toBe('In Vorlesung')
+    const aside = of((id) => id === 'course:9')
+    expect(aside.status).not.toBe('In Vorlesung')
+    // Still attached to the module (kept on its page, to look at).
+    expect(aside.courses.map((c) => c.id)).toContain('course:9')
+  })
   const of = (nr: string) => state.modules.find((m) => m.module.nr === nr)!
 
   it('derives status, history and semesters per module', () => {

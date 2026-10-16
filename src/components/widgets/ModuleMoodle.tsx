@@ -2,13 +2,14 @@ import { useState } from 'react'
 import { AlarmClock, AlertTriangle, ExternalLink, Link2, Megaphone, School } from 'lucide-react'
 import { useMoodle } from '@/app/moodle'
 import { maybeRepo } from '@/app/repoDetect'
-import { useApp } from '@/app/store'
+import { useAction, useApp, useWorkspace } from '@/app/store'
+import { setCourseChoice, useCourseChoices, type CourseChoice } from '@/app/courseChoices'
 import { getLanguage, t } from '@/i18n'
 import { repoUrl } from '@/lib/gitUrl'
 import { courseIdsOf } from '@/lib/study/modules'
 import { electronBridge } from '@/lib/vault'
 import type { Page } from '@/lib/workspace'
-import { Chip, cx } from '@/components/ui'
+import { Chip, cx, Select } from '@/components/ui'
 import { RepoButton } from '@/components/code/RepoButton'
 
 type Kind = 'deadline' | 'news' | 'link'
@@ -20,6 +21,7 @@ interface Entry {
   title: string
   /** course (term) it belongs to */
   course: string
+  courseId: string
   section?: string
   text?: string
   url?: string
@@ -43,6 +45,9 @@ export function termLabel(name: string): string {
 export function ModuleMoodle({ module }: { module: Page }) {
   const snapshot = useMoodle((s) => s.snapshot)
   const navigate = useApp((s) => s.navigate)
+  const ws = useWorkspace()
+  const run = useAction()
+  const choices = useCourseChoices()
   const [all, setAll] = useState(false)
   const [now] = useState(() => Date.now())
   const courses = courseIdsOf(module.data)
@@ -63,6 +68,7 @@ export function ModuleMoodle({ module }: { module: Page }) {
         date: e.due,
         title: e.title,
         course: courseLabel(e.course.id),
+        courseId: e.course.id,
         ...(e.url ? { url: e.url } : {}),
       })
   for (const id of courses)
@@ -73,6 +79,7 @@ export function ModuleMoodle({ module }: { module: Page }) {
         ...(n.modified ? { date: n.modified } : {}),
         title: n.title,
         course: courseLabel(id),
+        courseId: id,
         text: n.text,
         ...(n.url ? { url: n.url } : {}),
         ...(n.important ? { important: true } : {}),
@@ -87,17 +94,21 @@ export function ModuleMoodle({ module }: { module: Page }) {
       ...(m.modified ? { date: m.modified } : {}),
       title: m.title,
       course: courseLabel(m.courseId),
+      courseId: m.courseId,
       section: m.section,
       url: m.url,
       repo: !!repoUrl(m.url) || maybeRepo(m.url, m.title),
     })
   }
+  // Courses not taken (module page choice): their entries are hidden; "later" ones stay (marked).
+  const visible = (e: Entry) => choices[e.courseId] !== 'ignore'
   const ahead = entries
+    .filter(visible)
     .filter((e) => e.kind === 'deadline' && e.date && new Date(e.date).getTime() >= now)
     .sort((a, b) => a.date!.localeCompare(b.date!))
   // Newest first; without a date at the end; Git links always visible.
   const history = entries
-    .filter((e) => !ahead.includes(e))
+    .filter((e) => visible(e) && !ahead.includes(e))
     .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? '') || a.title.localeCompare(b.title))
   const shown = all ? history : history.filter((e, i) => i < 12 || e.repo || e.important)
   const locale = getLanguage() === 'de' ? 'de-DE' : 'en-US'
@@ -136,6 +147,7 @@ export function ModuleMoodle({ module }: { module: Page }) {
           </button>
           {e.repo && e.url && <RepoButton link={e.url} title={e.title} module={module.path} />}
           {many && e.course && <Chip>{e.course}</Chip>}
+          {choices[e.courseId] === 'later' && <Chip color="yellow">{t('courseUse.laterShort')}</Chip>}
         </div>
         {(e.section || e.text) && (
           <p className="ml-[4.5rem] line-clamp-2 text-[12px] text-ink-3">
@@ -154,18 +166,43 @@ export function ModuleMoodle({ module }: { module: Page }) {
         <h3 className="flex flex-1 items-center gap-1.5 text-[12.5px] font-semibold text-ink-2">
           <School size={13} /> {t('related.moodle')}
         </h3>
-        {[...known].reverse().map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            onClick={() => navigate({ name: 'moodle', course: c.id })}
-            title={c.name}
-            className="inline-flex items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[12px] hover:bg-hover"
-          >
-            {termLabel(c.name)} <ExternalLink size={10} />
-          </button>
-        ))}
       </div>
+      {/* The module's courses: which ones count now – another semester or not at all is possible. */}
+      <ul className="mb-2 space-y-1" aria-label={t('courseUse.title')}>
+        {[...known].reverse().map((c) => (
+          <li key={c.id} className="flex flex-wrap items-center gap-2 text-[13px]">
+            <button
+              type="button"
+              onClick={() => navigate({ name: 'moodle', course: c.id })}
+              title={c.name}
+              className={cx(
+                'inline-flex min-w-0 items-center gap-1 truncate hover:underline',
+                choices[c.id] === 'ignore' && 'text-ink-3 line-through',
+              )}
+            >
+              {c.name} <ExternalLink size={10} className="shrink-0" />
+            </button>
+            <Select
+              aria-label={t('courseUse.label', { name: c.name })}
+              value={choices[c.id] ?? 'now'}
+              onChange={(e) =>
+                void run(() =>
+                  setCourseChoice(
+                    ws,
+                    c.id,
+                    e.target.value === 'now' ? null : (e.target.value as CourseChoice),
+                  ),
+                )
+              }
+              className="h-7 w-auto py-0 text-[12.5px]"
+            >
+              <option value="now">{t('courseUse.now')}</option>
+              <option value="later">{t('courseUse.later')}</option>
+              <option value="ignore">{t('courseUse.ignore')}</option>
+            </Select>
+          </li>
+        ))}
+      </ul>
       {ahead.length > 0 && (
         <div className="mb-1">
           <h4 className="text-[12px] font-semibold text-ink-3">{t('moodleInfo.ahead')}</h4>

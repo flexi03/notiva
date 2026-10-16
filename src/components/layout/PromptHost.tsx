@@ -28,7 +28,7 @@ function PromptDialog() {
       footer={
         <>
           <Button variant="ghost" onClick={() => prompt.resolve(null)}>
-            {t('common.cancel')}
+            {prompt.cancelLabel ?? t('common.cancel')}
           </Button>
           <Button
             variant={prompt.danger ? 'danger' : 'primary'}

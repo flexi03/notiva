@@ -80,7 +80,13 @@ function attemptText(a: ModuleResult['attempts'][number]): string {
 export function studyState(
   program: StudyProgram,
   start: Term,
-  input: { results: ModuleResult[]; courses: MoodleCourse[]; now: Date },
+  input: {
+    results: ModuleResult[]
+    courses: MoodleCourse[]
+    now: Date
+    /** courses the user takes later or not at all: they don't make a module current */
+    setAside?: (courseId: string) => boolean
+  },
 ): StudyState {
   const current = termOf(input.now)
   const semester = studySemester(start, current)
@@ -126,7 +132,9 @@ export function studyState(
     const passed = result?.status === 'passed'
     const failedTries = result?.failedTries ?? 0
     const nowIndex = termIndex(current)
-    const currentCourse = courses.some((c) => c.term && termIndex(c.term) === nowIndex)
+    const currentCourse = courses.some(
+      (c) => c.term && termIndex(c.term) === nowIndex && !input.setAside?.(c.id),
+    )
     let status: ModuleStatus
     if (passed) status = 'Bestanden'
     else if (result?.status === 'failedFinal') status = 'Endgültig nicht bestanden'

@@ -473,4 +473,12 @@ test('legt eine neue Version daneben, vergleicht sie und ersetzt nach Wahl', asy
   const moodle = window.getByTestId('module-moodle')
   await expect(moodle).toContainText('Praktikumsaufgaben (ProjectBase)')
   await expect(moodle.getByRole('button', { name: 'Repository ins Praktikum holen' })).toBeVisible()
+  // A course taken later / not at all: chosen per course; not counted → its entries are hidden.
+  await moodle.getByLabel(/Wie zählt „Betriebssysteme“/).selectOption('ignore')
+  await expect(moodle).not.toContainText('Praktikumsaufgaben (ProjectBase)')
+  expect(readFileSync(path.join(folder, '.notiva/course-choices.json'), 'utf8')).toContain(
+    '"course:43": "ignore"',
+  )
+  await moodle.getByLabel(/Wie zählt „Betriebssysteme“/).selectOption('now')
+  await expect(moodle).toContainText('Praktikumsaufgaben (ProjectBase)')
 })

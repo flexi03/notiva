@@ -78,6 +78,7 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
   useEffect(() => {
     if (!moodleAvailable()) return
     void useMoodle.getState().refresh()
+    void import('@/app/courseChoices').then((m) => m.loadCourseChoices(ws))
     // Revoked / expired Git tokens are reported right away (hint + notification).
     void import('@/app/gitTokens').then((m) => m.checkGitTokens()).catch(() => undefined)
     // The last fetch right away – module pages show its infos and links without opening Moodle.
