@@ -131,6 +131,15 @@ If your folder is a Git repository (or after _Set up Git_), the desktop app show
 (`⌘/Ctrl ⇧ G`) with +/− lines, a diff (stacked or side by side), commit of selected files, discard, history and
 push/pull. The editor marks changed (blue), new (green) and deleted (red) lines like VS Code.
 
+### Connect with GitHub or GitLab
+
+1. Create a new, **empty** repository there (no README), preferably private.
+2. In Notiva under _Changes_ click **Add remote**, paste the HTTPS address, **Connect and upload**.
+3. If the server asks for a login: **Enter access token** (GitHub: scope "repo", GitLab: "read_repository" and
+   "write_repository"). Notiva stores it encrypted in the keychain.
+
+Notiva explains the usual errors right away: wrong address, repository not empty, missing login.
+
 ## Shortcuts
 
 |                        |                                       |

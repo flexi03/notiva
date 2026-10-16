@@ -1,4 +1,4 @@
-import { groupChanges } from '../commitGroups'
+import { describeLines, groupChanges } from '../commitGroups'
 
 const U = 'Studium/Unterlagen/Datenbanksysteme 2'
 
@@ -39,5 +39,20 @@ describe('commit groups', () => {
     expect(bullets[0]).toBe('6 Dateien in 6 Ordnern einsortiert bzw. verschoben')
     expect(bullets.at(-1)).toBe('… und 1 weitere Ordner')
     expect(groupedFiles).toBe(6)
+  })
+
+  it('reads property changes exactly', () => {
+    expect(
+      describeLines([
+        '- Status: Offen',
+        '+ Status: Erledigt',
+        '+ Fällig: 2026-10-21',
+        '+ ## Lernziele',
+        '+ Joins üben',
+      ]),
+    ).toEqual({
+      props: ['Status: Offen → Erledigt', 'Fällig: 2026-10-21 (neu)'],
+      content: ['+ ## Lernziele', '+ Joins üben'],
+    })
   })
 })

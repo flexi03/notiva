@@ -1,5 +1,5 @@
 import { withAi } from '@/app/aiActivity'
-import { changeKind, groupChanges } from '@/lib/commitGroups'
+import { changeKind, describeLines, groupChanges } from '@/lib/commitGroups'
 import { withProgress } from '@/app/progress'
 import { getLanguage, t } from '@/i18n'
 import { electronBridge } from '@/lib/vault'
@@ -199,8 +199,22 @@ export async function commitSummary(changes: CommitChange[]): Promise<string> {
       for (const [i, c] of shown.entries()) {
         task.update(i, shown.length + 1, c.path.split('/').pop())
         const head = describeChange(c, de)
-        const text = await ask(`${head}:\n${c.excerpt!.slice(0, 12).join('\n')}`, 40, examples)
-        bullets.push(firstLine(text) || head)
+        const name = c.path.split('/').pop()!.replace(/\.md$/, '')
+        // Changed properties are read here exactly; the model only describes text.
+        const { props, content } = describeLines(c.excerpt!)
+        const summary = content.length
+          ? firstLine(await ask(`${head}:\n${c.excerpt!.slice(0, 12).join('\n')}`, 40, examples)) || head
+          : de
+            ? `„${name}“: Eigenschaften geändert`
+            : `“${name}”: properties changed`
+        // Below each point: what exactly changed (properties, first changed lines).
+        const details = [
+          ...props,
+          ...content.slice(0, 3).map((l) => `${l.slice(0, 2)}${l.slice(2).trim().slice(0, 90)}`),
+        ]
+        bullets.push(
+          `${summary}${content.length ? ` (${name})` : ''}${details.length ? `\n${details.map((d) => `  - ${d}`).join('\n')}` : ''}`,
+        )
       }
       if (texts.length > shown.length)
         bullets.push(
@@ -212,7 +226,7 @@ export async function commitSummary(changes: CommitChange[]): Promise<string> {
       // One subject line over everything – by the model, else the first point.
       task.update(shown.length, shown.length + 1, t('localModel.subject'))
       const subjectSystem = de
-        ? 'Fasse die Änderungen in EINER kurzen deutschen Betreffzeile zusammen (höchstens 8 Wörter, ohne Punkt). Erfinde nichts dazu.'
+        ? 'Fasse die Änderungen in EINER deutschen Betreffzeile zusammen (höchstens 10 Wörter, ohne Punkt): das Wichtigste konkret benennen (welches Modul, welcher Inhalt). Erfinde nichts dazu.'
         : 'Summarise the changes in ONE short English subject line (at most 8 words, no full stop). Invent nothing.'
       const subjectExamples: Array<[string, string]> = de
         ? [
@@ -228,10 +242,12 @@ export async function commitSummary(changes: CommitChange[]): Promise<string> {
             ],
           ]
       const list = bullets.map((b) => `- ${b}`).join('\n')
+      // The subject is built from the points only (not the detail lines).
+      const points = bullets.map((b) => `- ${b.split('\n')[0]}`).join('\n')
       const subject = groupSubject
         ? firstLine(grouped[0]!)
         : bullets.length > 1
-          ? firstLine(await ask(list, 30, subjectExamples, subjectSystem).catch(() => '')) ||
+          ? firstLine(await ask(points, 30, subjectExamples, subjectSystem).catch(() => '')) ||
             firstLine(bullets[0]!)
           : firstLine(bullets[0] ?? '')
       task.update(shown.length + 1, shown.length + 1)

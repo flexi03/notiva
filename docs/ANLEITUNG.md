@@ -148,6 +148,16 @@ _Änderungen_ (`⌘/Strg ⇧ G`) alle neuen, geänderten und gelöschten Seiten 
 markiert ein farbiger Rand geänderte (blau), neue (grün) und gelöschte (rot) Stellen – wie in VS Code; der
 Seitenbaum zeigt `M`/`U`.
 
+### Mit GitHub oder GitLab verbinden
+
+1. Dort ein neues, **leeres** Repository anlegen (ohne README), am besten privat.
+2. In Notiva unter _Änderungen_ auf **Remote hinzufügen**, die HTTPS-Adresse einfügen, **Verbinden und
+   hochladen**.
+3. Fragt der Server nach einer Anmeldung: **Zugangstoken eintragen** (GitHub: Recht „repo“, GitLab:
+   „read_repository“ und „write_repository“). Notiva speichert ihn verschlüsselt im Schlüsselbund.
+
+Typische Fehler erklärt Notiva direkt: falsche Adresse, Repository nicht leer, fehlende Anmeldung.
+
 ## Tastenkürzel
 
 |                        |                                        |

@@ -141,3 +141,30 @@ export function groupChanges<T extends ChangeLike>(changes: T[], de = true): Com
   const groupedFiles = moves.length + [...counted.values()].reduce((n, l) => n + l.length, 0)
   return { bullets, texts, groupedFiles }
 }
+
+const PROP = /^([+-]) ([A-Za-zÄÖÜäöüß][\wÄÖÜäöüß .-]{0,30}): ?(.*)$/
+
+/**
+ * Property changes in a file's changed lines ("- Status: Offen", "+ Status: Erledigt") →
+ * "Status: Offen → Erledigt"; the other lines are content.
+ */
+export function describeLines(excerpt: string[]): { props: string[]; content: string[] } {
+  const removed = new Map<string, string>()
+  const added = new Map<string, string>()
+  const content: string[] = []
+  for (const line of excerpt) {
+    const m = PROP.exec(line)
+    if (m && !/^https?$/i.test(m[2]!)) (m[1] === '-' ? removed : added).set(m[2]!.trim(), m[3]!.trim())
+    else if (/^[+-] \S/.test(line)) content.push(line)
+  }
+  const props: string[] = []
+  for (const [key, value] of added) {
+    const before = removed.get(key)
+    if (before === value) continue
+    props.push(
+      before !== undefined ? `${key}: ${before || '–'} → ${value || '–'}` : `${key}: ${value || '–'} (neu)`,
+    )
+  }
+  for (const key of removed.keys()) if (!added.has(key)) props.push(`${key} entfernt`)
+  return { props, content }
+}

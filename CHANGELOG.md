@@ -65,6 +65,14 @@ Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und inst
   eigener Reiter „Praktikum-Repos“; `.DS_Store` & Co. werden immer ignoriert.
 - Behoben: Absturz „t.map is not a function“ auf Seiten mit Verknüpfungen als Text; Links auf PDFs verloren die
   Endung.
+- **Git:** PDFs und andere Binärdateien werden in Commits nicht mehr als Text verglichen (das konnte eine
+  Minute dauern oder abstürzen); Praktikum-Repos mit farbigem Diff und Änderungsmarken im Editor; „Remote
+  hinzufügen“ mit Anleitung; genauere Commit-Beschreibungen (Eigenschaften exakt, Textänderungen darunter).
+- **Unterlagen:** ein Ordner pro Kurs-Semester bei Modulen mit mehreren Moodle-Kursen; Anzeige nach Aktuell /
+  Ältere Semester / Bestanden.
+- **Praktika:** Repositories liegen standardmäßig im gemeinsamen Praktikumsordner, eigene Umgebung auf Wunsch;
+  Beschreibung neben oder über der Datei, Größe ziehbar.
+- **Pfad:** Klick neben den Pfad oben zeigt ihn ganz – kopieren, bearbeiten, öffnen.
 - **Private Git-Projekte** mit Zugangstoken (verschlüsselt im Schlüsselbund, pro Server); Snippets werden über
   ihre Git-Adresse geholt.
 - **Erinnerungen** pro Aufgabe („2 Std. vorher“, „Keine“); Datumsfelder können eine Uhrzeit haben.
