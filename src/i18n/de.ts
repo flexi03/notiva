@@ -997,6 +997,7 @@ export const de = {
   'path.copy': 'Kopieren',
   'path.copied': 'Kopiert',
   'path.notFound': '„{path}“ gibt es nicht',
+  'link.fileMissing': '„{name}“ gibt es im Ordner nicht (mehr) – gelöscht oder umbenannt?',
   'related.newNote': 'Neue Mitschrift',
   'related.recent': 'Zuletzt geöffnet',
   'related.otherFiles': 'Weitere Dateien',

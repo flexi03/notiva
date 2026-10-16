@@ -80,6 +80,8 @@ describe('Workspace index', () => {
     // Same name twice: the full path.
     expect(ws.linkText('Unterlagen/P/Blatt 01.pdf')).toBe('Unterlagen/P/Blatt 01.pdf')
     expect(ws.resolveLink('Unterlagen/P/Blatt 01.pdf')).toBe('Unterlagen/P/Blatt 01.pdf')
+    // Moved into another folder: still found by its name.
+    expect(ws.resolveLink('Unterlagen/Alt/bild.png')).toBe('bild.png')
   })
 
   it('computes backlinks and tags', async () => {

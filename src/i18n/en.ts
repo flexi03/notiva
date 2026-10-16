@@ -986,6 +986,7 @@ export const en: Record<MessageKey, string> = {
   'path.copy': 'Copy',
   'path.copied': 'Copied',
   'path.notFound': '“{path}” does not exist',
+  'link.fileMissing': '“{name}” is not in the folder (any more) – deleted or renamed?',
   'related.newNote': 'New note',
   'related.recent': 'Recently opened',
   'related.otherFiles': 'Other files',

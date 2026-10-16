@@ -50,8 +50,12 @@ export function PageProperties({ page }: { page: Page }) {
   }
 
   // Nested settings (e.g. "studium:") are not properties – they stay in the file, untouched.
+  // Structured data (settings, a notes page's highlights – lists of objects) is no property.
   const entries = Object.entries(page.data).filter(
-    ([k, v]) => !RESERVED.has(k) && !(typeof v === 'object' && v !== null && !Array.isArray(v)),
+    ([k, v]) =>
+      !RESERVED.has(k) &&
+      !(typeof v === 'object' && v !== null && !Array.isArray(v)) &&
+      !(Array.isArray(v) && v.some((x) => typeof x === 'object' && x !== null)),
   )
   return (
     <dl className="grid grid-cols-[minmax(7rem,11rem)_1fr] gap-y-px text-[14px]">

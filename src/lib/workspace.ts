@@ -203,7 +203,8 @@ export class Workspace {
     if (/\.[a-z0-9]{1,8}$/i.test(clean) && !this.pages.has(`${clean}.md`)) {
       const files = this.files.filter((f) => !isMarkdown(f.path))
       if (files.some((f) => f.path === clean)) return clean
-      const name = clean.toLowerCase()
+      // By path – or, when the file was moved (sorted into a folder), by its name.
+      const name = clean.toLowerCase().slice(clean.lastIndexOf('/') + 1)
       const matches = files.filter(
         (f) => f.path.toLowerCase().endsWith(`/${name}`) || f.path.toLowerCase() === name,
       )

@@ -234,7 +234,7 @@ export interface ValueContext {
 export function relationTargets(value: FrontmatterValue | undefined): string[] {
   const list = Array.isArray(value) ? value : value === undefined || value === null ? [] : [value]
   return list
-    .map((v) => toText(v as FormulaValue).trim())
+    .map((v) => String(toText(v as FormulaValue) ?? '').trim())
     .filter(Boolean)
     .map((v) => {
       const match = /^\[\[([^\]]+)\]\]$/.exec(v)
@@ -255,7 +255,7 @@ export function coerceValue(def: PropertyDef, raw: FrontmatterValue | undefined)
       return raw === true || raw === 'true' || raw === 'x' || raw === 1
     case 'multiSelect':
       return (Array.isArray(raw) ? raw : String(raw).split(','))
-        .map((v) => toText(v as FormulaValue).trim())
+        .map((v) => String(toText(v as FormulaValue) ?? '').trim())
         .filter(Boolean)
     case 'relation':
       return relationTargets(raw)

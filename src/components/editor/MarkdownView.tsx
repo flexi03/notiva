@@ -136,6 +136,14 @@ export const MarkdownView = memo(function MarkdownView({
       e.stopPropagation()
       const resolved = ws.resolveLink(link.dataset.target ?? '', from)
       if (resolved) openPage(resolved)
+      // A missing file ("Blatt.pdf") never becomes a new, empty page.
+      else if (
+        /\.[a-z0-9]{1,8}$/i.test(link.dataset.target ?? '') &&
+        !/\.md$/i.test(link.dataset.target ?? '')
+      )
+        useApp
+          .getState()
+          .showToast(t('link.fileMissing', { name: (link.dataset.target ?? '').split('/').pop() ?? '' }))
       else {
         const title = link.dataset.target ?? ''
         void ws.createPage({ folder: from ? dirname(from) : '', title }).then(openPage)

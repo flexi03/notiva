@@ -313,3 +313,11 @@ test('der Abstand zwischen den Seiten bleibt beim Zoomen gleich', async () => {
   expect(await gap()).toBe(before)
   await window.getByRole('button', { name: 'An Breite anpassen' }).click()
 })
+
+test('öffnet die Notizseite eines PDFs (mit Markierungen) ohne Fehler', async () => {
+  // Written by the highlight test above: "annotations" is a list of objects.
+  expect(notes()).toContain('annotations')
+  await window.evaluate(() => (location.hash = '#/p/Skripte%2FGraphen%20(Notizen).md'))
+  await expect(window.getByText('Hier ist etwas schiefgegangen')).toHaveCount(0)
+  await expect(window.locator('main')).toContainText('Graphen')
+})
