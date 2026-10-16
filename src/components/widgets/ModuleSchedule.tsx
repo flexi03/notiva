@@ -3,6 +3,8 @@ import { Bell, CalendarClock, CalendarPlus, FlaskConical, Info, Search, Sparkles
 import { materialFolder } from '@/app/materials'
 import { suggestTimetable } from '@/app/schedule'
 import { materialFolderFor } from '@/lib/study/modules'
+import { sessionFiles } from '@/lib/semesterView'
+import { useSessionFocus } from '@/app/sessionFocus'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { getLanguage, t } from '@/i18n'
 import { formatValue } from '@/lib/database'
@@ -78,6 +80,7 @@ export function ModuleSchedule({ module }: { module: Page }) {
 
   return (
     <>
+      <SessionFocus module={module} labTasks={labTasks} />
       <section aria-label={t('schedule.title')}>
         <div className="mb-1 flex flex-wrap items-center gap-2">
           <h3 className="flex flex-1 items-center gap-1.5 text-[12.5px] font-semibold text-ink-2">
@@ -404,4 +407,82 @@ async function createLabTask(ws: Workspace, db: string, module: Page, e: LabEntr
     await ws.save(path, {
       body: `${e.kind === LAB_PREP ? t('lab.prepBody') : t('lab.dateBody')}\n\n- [[${ws.linkText(e.sheet)}]]\n`,
     })
+}
+
+/**
+ * Came from "Als Nächstes" in the status bar: the files that likely belong to this session, the
+ * most likely one first (lab sheet planned for the day, file named after the date, lecture/lab
+ * folder, recently saved).
+ */
+function SessionFocus({ module, labTasks }: { module: Page; labTasks: Page[] }) {
+  const ws = useWorkspace()
+  const focus = useSessionFocus()
+  const navigate = useApp((s) => s.navigate)
+  if (focus.module !== module.path || !focus.start) return null
+  const date = new Date(focus.start)
+  const day = isoDay(date)
+  const folder = materialFolderFor(materialFolder(ws), { name: module.title }, module.title)
+  // Sheets linked from the lab tasks of that day.
+  const sheets = labTasks
+    .filter((p) => str(p.data.Fällig).slice(0, 10) === day)
+    .flatMap((p) => [...p.body.matchAll(/\[\[([^\]|#]+)/g)].map((m) => ws.resolveLink(m[1]!, p.path)))
+    .filter((p): p is string => !!p)
+  const ranked = sessionFiles(
+    ws.assets().filter((f) => f.path.startsWith(`${folder}/`)),
+    { ...(focus.type ? { type: focus.type } : {}), date },
+    new Date(),
+    sheets,
+  )
+  const when = date.toLocaleString(getLanguage() === 'de' ? 'de-DE' : 'en-US', {
+    weekday: 'short',
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+  return (
+    <section
+      aria-label={t('focus.title')}
+      data-testid="session-focus"
+      className="rounded-panel border-2 border-accent bg-[color-mix(in_srgb,var(--accent)_8%,transparent)] p-3"
+    >
+      <div className="mb-1.5 flex items-center gap-2">
+        <h3 className="flex-1 text-[13px] font-semibold">
+          {t('focus.title')} · {focus.type ?? ''} {when}
+        </h3>
+        <button
+          type="button"
+          className="text-[12px] text-ink-3 hover:text-ink"
+          onClick={() => useSessionFocus.setState({ module: null })}
+        >
+          {t('common.close')}
+        </button>
+      </div>
+      {ranked.length === 0 ? (
+        <p className="text-[13px] text-ink-3">{t('focus.none')}</p>
+      ) : (
+        <ol className="space-y-1">
+          {ranked.map((f, i) => (
+            <li key={f.path}>
+              <button
+                type="button"
+                onClick={() => navigate({ name: 'file', path: f.path })}
+                className={cx(
+                  'flex w-full items-center gap-2 rounded-control px-2 py-1.5 text-left hover:bg-hover',
+                  i === 0 && 'bg-surface font-semibold shadow-sm',
+                )}
+              >
+                <span className="min-w-0 flex-1 truncate text-[13.5px]">
+                  {f.path.slice(f.path.lastIndexOf('/') + 1)}
+                </span>
+                <span className="shrink-0 text-[11.5px] font-normal text-ink-3">
+                  {i === 0 ? t('focus.likely') : t('focus.possible')} · {t(`focus.reason.${f.reason}`)}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
+  )
 }

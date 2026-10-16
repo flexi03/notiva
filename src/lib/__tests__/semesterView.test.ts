@@ -1,6 +1,6 @@
 import { MemoryVault } from '../vault'
 import { Workspace } from '../workspace'
-import { activeModules, annotatedPdfs, moduleColor, nextOccurrence } from '../semesterView'
+import { activeModules, annotatedPdfs, moduleColor, nextOccurrence, sessionFiles } from '../semesterView'
 import { installPack, studyPack } from '../packs'
 
 describe('Mein Semester', () => {
@@ -110,5 +110,37 @@ describe('module colours', () => {
     const colors = moduleColors([...list, page('own', { Farbe: 'blue' })])
     expect(colors.get('own')).toBe('blue')
     expect(new Set([...colors.entries()].filter(([k]) => k !== 'own').map(([, c]) => c)).size).toBe(7)
+  })
+})
+
+describe('files for a session', () => {
+  const now = new Date(2026, 9, 14, 10)
+  const day = 86_400_000
+  it('puts the planned sheet first, then dated and recent files of the right category', () => {
+    const files = [
+      { path: 'U/DBS/Praktikum & Übung/DBS2_Praktikum_03.pdf', mtime: now.getTime() - 30 * day },
+      { path: 'U/DBS/Praktikum & Übung/DBS2_Praktikum_02_Musterloesung.pdf', mtime: now.getTime() - day },
+      { path: 'U/DBS/Praktikum & Übung/DBS2_Praktikum_04.pdf', mtime: now.getTime() - day },
+      { path: 'U/DBS/Vorlesung/DBS2-3_SQL.pdf', mtime: now.getTime() - day },
+    ]
+    const ranked = sessionFiles(files, { type: 'Praktikum', date: new Date(2026, 9, 15, 9) }, now, [
+      'U/DBS/Praktikum & Übung/DBS2_Praktikum_03.pdf',
+    ])
+    expect(ranked.map((f) => [f.path.split('/').pop(), f.reason])).toEqual([
+      ['DBS2_Praktikum_03.pdf', 'sheet'],
+      ['DBS2_Praktikum_04.pdf', 'recent'],
+    ])
+  })
+  it('finds a lecture file named after the day', () => {
+    const ranked = sessionFiles(
+      [
+        { path: 'U/BWL/Vorlesung/07.10.2026 0810_Vorlesung.pdf', mtime: now.getTime() - 20 * day },
+        { path: 'U/BWL/Vorlesung/skript.pdf', mtime: now.getTime() - 20 * day },
+      ],
+      { type: 'Vorlesung', date: new Date(2026, 9, 7, 8) },
+      now,
+    )
+    expect(ranked[0]).toMatchObject({ reason: 'date' })
+    expect(ranked).toHaveLength(1)
   })
 })

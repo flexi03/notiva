@@ -4,6 +4,7 @@ import { materialFolder } from '@/app/materials'
 import { scriptFor } from '@/lib/semesterView'
 import { timetableRows } from '@/app/schedule'
 import { useApp, useWorkspace } from '@/app/store'
+import { useSessionFocus } from '@/app/sessionFocus'
 import { t } from '@/i18n'
 import { duration, nowAndNext, upcomingEvents, type CalendarEvent } from '@/lib/schedule'
 import { findStudyDashboard } from '@/lib/study/sync'
@@ -59,10 +60,19 @@ export function EventBadge({ inline = false }: { inline?: boolean }) {
     const script = e.module ? scriptFor(ws, base, e.module, e.start, now) : undefined
     return { script, page: module?.path ?? e.path }
   }
+  /** To the module page – it highlights the files that likely belong to this session. */
   const open = (e: CalendarEvent) => {
-    const { script, page } = target(e)
-    if (script) useApp.getState().navigate({ name: 'file', path: script })
-    else if (page) useApp.getState().openEntry(page)
+    const { page } = target(e)
+    if (!page) return
+    const module = e.module ? moduleRows.find((r) => r.title === e.module) : undefined
+    if (module) {
+      useSessionFocus.setState({
+        module: module.path,
+        start: e.start.getTime(),
+        ...(e.type ? { type: e.type } : {}),
+      })
+      useApp.getState().navigate({ name: 'page', path: module.path })
+    } else useApp.getState().openEntry(page)
   }
   const line = (label: string, e: CalendarEvent, time: string) => {
     const { script, page } = target(e)
@@ -72,10 +82,12 @@ export function EventBadge({ inline = false }: { inline?: boolean }) {
         disabled={!script && !page}
         onClick={() => open(e)}
         title={
-          script ? t('event.openScript', { name: script.split('/').pop() ?? '' }) : t('event.openModule')
+          script
+            ? t('event.openModuleScript', { name: script.split('/').pop() ?? '' })
+            : t('event.openModule')
         }
         className={cx(
-          'flex min-w-0 items-baseline gap-1.5 rounded-control text-left enabled:hover:underline',
+          'flex min-w-0 items-baseline gap-1.5 rounded-control px-1 text-left enabled:hover:bg-hover',
           !inline && 'w-full',
         )}
       >

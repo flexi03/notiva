@@ -228,3 +228,58 @@ export function activeModules(
       ),
   )
 }
+
+export interface SessionFile {
+  path: string
+  score: number
+  /** why: "date" (named after the day), "sheet" (lab sheet of this date), "recent", "category" */
+  reason: 'date' | 'sheet' | 'recent' | 'category'
+}
+
+/**
+ * Which files of the module belong to a session (most likely first): a lab sheet planned for this
+ * day, a file named after the date, the right category (lecture / lab), recently saved, no
+ * solutions for labs. At most three, only reasonably likely ones.
+ */
+export function sessionFiles(
+  files: Array<{ path: string; mtime: number }>,
+  session: { type?: string; date: Date },
+  now = new Date(),
+  sheets: string[] = [],
+): SessionFile[] {
+  const lab = /praktik|labor|übung|uebung|tutorium/i.test(session.type ?? '')
+  const d = String(session.date.getDate()).padStart(2, '0')
+  const m = String(session.date.getMonth() + 1).padStart(2, '0')
+  const y = session.date.getFullYear()
+  const dated = new RegExp(`${d}[._-]?${m}[._-]?(${y}|${String(y).slice(2)})?(?!\\d)|${y}-?${m}-?${d}`)
+  const out: SessionFile[] = []
+  for (const f of files) {
+    if (!/\.(pdf|pptx?|key|odp|docx?|zip|sql|txt|md)$/i.test(f.path) || /\(Notizen\)\.md$/.test(f.path))
+      continue
+    const name = f.path.slice(f.path.lastIndexOf('/') + 1)
+    let score = 0
+    let reason: SessionFile['reason'] = 'category'
+    if (sheets.includes(f.path)) {
+      score += 10
+      reason = 'sheet'
+    }
+    if (dated.test(name)) {
+      score += 6
+      if (reason === 'category') reason = 'date'
+    }
+    const inLecture = /\/Vorlesung\//.test(f.path)
+    const inLab = /\/Praktikum & Übung\//.test(f.path)
+    if ((lab && inLab) || (!lab && inLecture)) score += 3
+    else if (inLab || inLecture) score -= 2
+    const age = now.getTime() - f.mtime
+    if (age < 7 * 86_400_000) {
+      score += 2
+      if (reason === 'category') reason = 'recent'
+    } else if (age < 14 * 86_400_000) score += 1
+    if (lab && /l(ö|oe)sung|musterl/i.test(name)) score -= 3
+    if (score >= 4) out.push({ path: f.path, score, reason })
+  }
+  return out
+    .sort((a, b) => b.score - a.score || a.path.localeCompare(b.path, 'de', { numeric: true }))
+    .slice(0, 3)
+}

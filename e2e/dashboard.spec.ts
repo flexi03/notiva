@@ -89,4 +89,15 @@ test.describe('Modulseite', () => {
     await expect(dates).toContainText('15.10.2026, 14:00')
     await expect(dates).toContainText('P01 Vorbereitung')
   })
+
+  test('„Als Nächstes“ in der Statusleiste öffnet das Modul und hebt passende Dateien hervor', async ({
+    page,
+  }) => {
+    const bar = page.getByRole('contentinfo', { name: 'Statusleiste' })
+    await bar.getByRole('button', { name: /SE Labor/ }).click()
+    await expect(await pageTitle(page)).toHaveValue('Software Engineering')
+    const focus = page.getByTestId('session-focus')
+    await expect(focus).toContainText('Für diesen Termin')
+    await expect(focus).toContainText('Labor')
+  })
 })
