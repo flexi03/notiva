@@ -159,3 +159,24 @@ export function planSort(
   }
   return moves
 }
+
+/**
+ * Term folders lying directly in a module ("Datenbanksysteme 2/WiSe 24-25/…", from an earlier
+ * version or courses Moodle no longer lists) → "…/Archiv/WiSe 24-25/…". `keep`: folder names of
+ * current courses, which stay.
+ */
+export function planArchive(
+  paths: string[],
+  base: string,
+  keep: (module: string, folder: string) => boolean = () => false,
+): Array<{ from: string; to: string }> {
+  const moves: Array<{ from: string; to: string }> = []
+  for (const path of paths) {
+    if (!path.startsWith(`${base}/`)) continue
+    const parts = path.slice(base.length + 1).split('/')
+    if (parts.length < 3 || parts[0] === 'Orga' || !isTermFolder(parts[1]!) || keep(parts[0]!, parts[1]!))
+      continue
+    moves.push({ from: path, to: `${base}/${parts[0]}/Archiv/${parts.slice(1).join('/')}` })
+  }
+  return moves
+}

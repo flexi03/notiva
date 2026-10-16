@@ -13,7 +13,7 @@ import {
 } from '@/app/materials'
 import { useApp } from '@/app/store'
 import { t } from '@/i18n'
-import { planReindex, planSort } from '@/lib/materialVersions'
+import { planArchive, planReindex, planSort } from '@/lib/materialVersions'
 import { electronBridge } from '@/lib/vault'
 import type { Workspace } from '@/lib/workspace'
 
@@ -58,6 +58,12 @@ export async function reindexMaterials(
     sectionOf,
   ))
     if (!planned.has(m.from)) plan.moves.push({ id: idOf.get(m.from) ?? '', ...m })
+  // Term folders left directly in a module (courses Moodle no longer lists): into the archive.
+  for (const m of planArchive(
+    ws.assets().map((f) => f.path),
+    materialFolder(ws),
+  ))
+    if (!plan.moves.some((x) => x.from === m.from)) plan.moves.push({ id: idOf.get(m.from) ?? '', ...m })
   if (options.folder) plan.moves = plan.moves.filter((m) => m.from.startsWith(`${options.folder}/`))
   const waiting = new Set((await pendingVersions(ws)).map((v) => v.id))
   const updated = plan.updated.filter((u) => !waiting.has(u.material.id))

@@ -137,3 +137,21 @@ describe('current course of a module', () => {
     expect(currentCourse(dbs, (id) => id === 'c', now)).toBe('b')
   })
 })
+
+describe('archive of old term folders', () => {
+  it('moves term folders lying in the module into Archiv', async () => {
+    const { planArchive } = await import('../materialVersions')
+    expect(
+      planArchive(
+        [
+          'U/DBS 2/WiSe 24-25/Vorlesung/a.pdf',
+          'U/DBS 2/Vorlesung/b.pdf',
+          'U/DBS 2/Archiv/WiSe 23-24/Vorlesung/c.pdf',
+        ],
+        'U',
+      ),
+    ).toEqual([
+      { from: 'U/DBS 2/WiSe 24-25/Vorlesung/a.pdf', to: 'U/DBS 2/Archiv/WiSe 24-25/Vorlesung/a.pdf' },
+    ])
+  })
+})
