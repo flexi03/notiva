@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from 'react'
+import { useEffect, useRef, type RefObject } from 'react'
 
 const FOCUSABLE = 'input, textarea, select, button, [href], [tabindex]:not([tabindex="-1"])'
 
@@ -8,6 +8,12 @@ const FOCUSABLE = 'input, textarea, select, button, [href], [tabindex]:not([tabi
  * inner element (editor, menu – they call preventDefault) does not close the surface.
  */
 export function useModal(panel: RefObject<HTMLElement | null>, open: boolean, onClose: () => void): void {
+  // The latest onClose without re-running the effect: callers pass a new function on every render,
+  // and re-running refocused (and with select-on-focus: selected) the field after each key press.
+  const close = useRef(onClose)
+  useEffect(() => {
+    close.current = onClose
+  })
   useEffect(() => {
     if (!open) return
     const previous = document.activeElement as HTMLElement | null
@@ -22,7 +28,7 @@ export function useModal(panel: RefObject<HTMLElement | null>, open: boolean, on
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !e.defaultPrevented) {
         e.preventDefault()
-        onClose()
+        close.current()
       }
       if (e.key === 'Tab') {
         const list = focusables()
@@ -43,5 +49,5 @@ export function useModal(panel: RefObject<HTMLElement | null>, open: boolean, on
       document.removeEventListener('keydown', onKey)
       if (previous && document.contains(previous)) previous.focus()
     }
-  }, [open, onClose, panel])
+  }, [open, panel])
 }

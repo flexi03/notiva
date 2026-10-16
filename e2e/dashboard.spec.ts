@@ -100,4 +100,16 @@ test.describe('Modulseite', () => {
     await expect(focus).toContainText('Für diesen Termin')
     await expect(focus).toContainText('Labor')
   })
+
+  test('Namensfeld im Dialog: Tippen markiert nicht nach jedem Zeichen alles', async ({ page }) => {
+    await go(page, '/#/semester')
+    await page
+      .getByRole('region', { name: 'Datenbanken' })
+      .getByRole('button', { name: 'Praktikum bearbeiten' })
+      .click()
+    await page.getByRole('button', { name: 'Neue Datei' }).click()
+    const field = page.getByRole('dialog').getByRole('textbox')
+    await field.pressSequentially('abfrage.sql')
+    await expect(field).toHaveValue('abfrage.sql')
+  })
 })
