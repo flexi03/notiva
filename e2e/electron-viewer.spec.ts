@@ -326,7 +326,9 @@ test('Seitenleiste: Notizen unter ihrer PDF, Dateien per Rechtsklick in den Papi
   const tree = window.getByRole('tree', { name: 'Seiten' })
   // The notes page hangs under its PDF (not as a separate entry next to it).
   const pdf = tree.getByRole('treeitem', { name: /Graphen\.pdf/ }).first()
-  await pdf.getByRole('button', { name: 'Aufklappen' }).click()
+  // (Opened by itself when its notes were open – like VS Code reveals the open file.)
+  if (await pdf.getByRole('button', { name: 'Aufklappen' }).count())
+    await pdf.getByRole('button', { name: 'Aufklappen' }).first().click()
   await expect(pdf.getByRole('group')).toContainText('Graphen (Notizen)')
   // Right click on another PDF: into the trash after asking – restorable.
   await tree.getByRole('button', { name: 'Graphen 2.pdf' }).click({ button: 'right' })

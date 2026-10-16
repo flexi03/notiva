@@ -14,7 +14,7 @@ import { PageProperties } from './PageProperties'
 import { CodeFolder } from '@/components/code/CodeFolder'
 import { RepoFiles } from '@/components/code/RepoFiles'
 import { LabHub } from '@/components/code/LabHub'
-import { ModuleSchedule } from '@/components/widgets/ModuleSchedule'
+import { Related } from '@/components/widgets/Related'
 import { DayOverview, dailyDate } from '@/components/widgets/DayOverview'
 import { SourceEditor } from './SourceEditor'
 import { PageRail } from './PageRail'
@@ -212,10 +212,10 @@ export function PageContent({
           {typeof page.data.praktikum === 'number' && <LabHub page={page} />}
           {/* Daily notes ("Heute"): the day's sessions, exams, labs, tasks and deadlines. */}
           {daily && <DayOverview date={daily} />}
-          {/* Module pages without the "related" block still show their sessions and lab dates. */}
+          {/* Module pages without the "related" block still show their sessions, lab dates and material. */}
           {isModuleRow && !/type:\s*related/.test(page.body) && (
             <div className="no-print mt-4 space-y-4 rounded-panel border border-line p-3">
-              <ModuleSchedule module={page} />
+              <Related from={page.path} />
             </div>
           )}
 

@@ -36,6 +36,24 @@ export function PageTree() {
       }
       return next
     })
+  // Like VS Code: the open page or file is revealed – its folders open in the tree.
+  const route = useApp((s) => s.route)
+  const openPath = route.name === 'page' || route.name === 'file' ? route.path : null
+  // (Adjusted while rendering, once per opened path – React's pattern for state that follows a prop.)
+  const [revealed, setRevealed] = useState<string | null>(null)
+  if (openPath && openPath !== revealed) {
+    setRevealed(openPath)
+    const ids: string[] = []
+    let dir = openPath
+    while (dir.includes('/')) {
+      dir = dir.slice(0, dir.lastIndexOf('/'))
+      ids.push(ws.get(`${dir}.md`) ? `${dir}.md` : dir)
+    }
+    // A notes page sits under its PDF: open that too.
+    const pdf = ws.get(openPath)?.data.pdf
+    if (typeof pdf === 'string') ids.push(`${openPath.slice(0, openPath.lastIndexOf('/') + 1)}${pdf}`)
+    setExpanded((prev) => (ids.every((id) => prev.has(id)) ? prev : new Set([...prev, ...ids])))
+  }
   const tree = ws.tree()
   if (tree.length === 0) return <p className="px-3 py-2 text-[13px] text-ink-3">{t('tree.empty')}</p>
   return (

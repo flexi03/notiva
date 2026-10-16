@@ -6,6 +6,35 @@ import path from 'node:path'
 
 const args = process.argv.slice(2)
 if (process.env.FAKE_GIT_LOG) appendFileSync(process.env.FAKE_GIT_LOG, `${JSON.stringify(args)}\n`)
+// FAKE_GIT_REAL: everything but the network – a clone becomes a real repository with one commit,
+// all other commands run the real git (status, diff, commit … in the user flow test).
+if (process.env.FAKE_GIT_REAL) {
+  const { execFileSync, spawnSync } = await import('node:child_process')
+  if (args[0] === 'clone') {
+    const target = args[args.length - 1]
+    const url = args[args.length - 2]
+    mkdirSync(target, { recursive: true })
+    writeFileSync(path.join(target, 'aufgabe.sql'), '-- Aufgabe P02\nselect 1;\n')
+    const env = {
+      ...process.env,
+      GIT_AUTHOR_NAME: 'Dozent',
+      GIT_AUTHOR_EMAIL: 'd@example.org',
+      GIT_COMMITTER_NAME: 'Dozent',
+      GIT_COMMITTER_EMAIL: 'd@example.org',
+    }
+    for (const a of [
+      ['init', '-q', '-b', 'main'],
+      ['add', '.'],
+      ['commit', '-q', '-m', 'Aufgabe'],
+      ['remote', 'add', 'origin', url],
+    ])
+      execFileSync('git', a, { cwd: target, env })
+    process.exit(0)
+  }
+  const r = spawnSync('git', args, { stdio: 'inherit', env: process.env })
+  process.exit(r.status ?? 1)
+}
+
 // Inside a got repository: what "Aktualisieren" needs. ".git/new" marks a change on the server.
 const cwd = process.cwd()
 const marker = path.join(cwd, '.git', 'new')

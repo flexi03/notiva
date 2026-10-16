@@ -9,6 +9,12 @@ Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und inst
   Moodle-Infos (Beschreibung, Ankündigungen, Ausfälle) und alles Verknüpfte. Ältere Ordner werden nach Rückfrage
   umgestellt (#1).
 - **Unterlagen** landen zuverlässiger in Vorlesung bzw. Praktikum & Übung (#2).
+- **Aktuell und Archiv:** der aktuelle Kurs liegt direkt im Modul, ältere Semester unter `Archiv/<Semester>`
+  (ausgegraut, eingeklappt). Jede Modulseite zeigt ihre Unterlagen so getrennt.
+- **Seitenleiste:** Notizen hängen unter ihrem PDF, Dateien und Ordner per Rechtsklick in den Papierkorb (mit
+  Rückgängig), die geöffnete Seite wird aufgeklappt, Trennlinie zwischen festen Einträgen und Liste.
+- **Abläufe zur Abnahme:** [docs/ABLAEUFE.md](docs/ABLAEUFE.md) – Vorlesung und Praktikum Schritt für Schritt, jeder
+  Schritt durch einen Test abgedeckt.
 - **Mein Semester:** farbige Modulkarten nebeneinander mit nächstem Termin, Prüfung, Aufgaben, neuestem Skript (#3).
 - **Stundenplan** als Wochenansicht in der Seitenleiste (#4).
 - **Vorschlagen statt still ändern:** Stundenplan-Zeiten und Studium-Abgleich als Vorschläge zum Abhaken (#5).
