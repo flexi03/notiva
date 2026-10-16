@@ -17,7 +17,7 @@ test.beforeAll(async () => {
   log = path.join(mkdtempSync(path.join(os.tmpdir(), 'notiva-e2e-gitlog-')), 'git.log')
   writeFileSync(
     path.join(folder, 'Praktikum.md'),
-    '---\ncode: true\nlinks:\n  - "https://projectbase.example.org/-/snippets/41"\n---\n# Praktikum\n',
+    '---\ncode: true\nlinks:\n  - "https://projectbase.example.org/-/snippets/41"\n  - "https://projectbase.example.org/dbs/praktikum-2.git"\n---\n# Praktikum\n',
   )
   mkdirSync(path.join(folder, 'Praktikum'))
   // A link written as plain text (as an older version did) must not break the page.
@@ -42,7 +42,11 @@ test.afterAll(async () => {
 
 test('holt ein privates Repository mit Zugangstoken – Name frei wählbar', async () => {
   await window.evaluate(() => (location.hash = '#/p/Praktikum.md'))
-  await window.getByRole('button', { name: 'Repository ins Praktikum holen' }).click()
+  await window
+    .getByRole('listitem')
+    .filter({ hasText: 'snippets/41' })
+    .getByRole('button', { name: 'Repository ins Praktikum holen' })
+    .click()
   // Which session? No number in this link: directly into the lab folder.
   const session = window.getByRole('dialog', { name: 'Zu welchem Praktikum gehört das Repository?' })
   await session.getByRole('button', { name: 'Weiter' }).click()
@@ -79,7 +83,12 @@ test('holt ein privates Repository mit Zugangstoken – Name frei wählbar', asy
   await window.evaluate(() => (location.hash = '#/p/Praktikum.md'))
   // Got once: the link now leads to it, and the lab folder lists it.
   await expect(window.getByRole('button', { name: 'In der App öffnen: sql-wiederholung' })).toBeVisible()
-  await expect(window.getByRole('button', { name: 'Repository ins Praktikum holen' })).toHaveCount(0)
+  await expect(
+    window
+      .getByRole('listitem')
+      .filter({ hasText: 'snippets/41' })
+      .getByRole('button', { name: 'Repository ins Praktikum holen' }),
+  ).toHaveCount(0)
   await expect(window.getByTestId('lab-repos')).toContainText('sql-wiederholung')
   await expect(
     window.getByTestId('lab-repos').getByRole('button', { name: 'Öffnen', exact: true }),
@@ -110,4 +119,23 @@ test('holt ein privates Repository mit Zugangstoken – Name frei wählbar', asy
   await window.evaluate(() => (location.hash = '#/p/Verknuepft.md'))
   await expect(window.getByRole('button', { name: 'Praktikum', exact: true }).first()).toBeVisible()
   await expect(window.getByText('Hier ist etwas schiefgegangen')).toHaveCount(0)
+
+  // A repository with a number: into its session (P02, created), listed in the Git tab.
+  await window.evaluate(() => (location.hash = '#/p/Praktikum.md'))
+  const row = window.getByRole('listitem').filter({ hasText: 'dbs/praktikum-2.git' })
+  await row.getByRole('button', { name: 'Repository ins Praktikum holen' }).click()
+  const choose = window.getByRole('dialog', { name: 'Zu welchem Praktikum gehört das Repository?' })
+  await expect(choose.getByRole('radio', { name: 'P02 (neu anlegen)' })).toBeChecked()
+  await choose.getByRole('button', { name: 'Weiter' }).click()
+  await window.getByRole('dialog').getByRole('button', { name: 'Holen' }).click()
+  await expect.poll(() => existsSync(path.join(folder, 'Praktikum/P02/praktikum-2/aufgabe.sql'))).toBe(true)
+  // The file shows what it belongs to.
+  await window.evaluate(() => (location.hash = '#/f/Praktikum%2FP02%2Fpraktikum-2%2Faufgabe.sql'))
+  await expect(window.getByTestId('file-context')).toContainText('P02')
+  await window
+    .getByRole('navigation', { name: 'Werkzeugleiste', exact: true })
+    .getByRole('button', { name: /Änderungen/ })
+    .click()
+  await window.getByRole('tab', { name: 'Praktikum-Repos' }).click()
+  await expect(window.getByTestId('lab-repos-tab')).toContainText('praktikum-2')
 })

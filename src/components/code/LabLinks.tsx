@@ -137,8 +137,11 @@ export function RepoTask({ repo }: { repo: Page }) {
   const openEntry = useApp((s) => s.openEntry)
   const module = moduleOfPath(ws, repo.path)
   if (!module) return null
-  const target =
-    typeof repo.data.termin === 'string' ? /\[\[([^\]|#]+)/.exec(repo.data.termin)?.[1] : undefined
+  // Stored as a list ("termin: [\"[[…]]\"]"); older versions as text.
+  const raw = Array.isArray(repo.data.termin)
+    ? String(repo.data.termin[0] ?? '')
+    : String(repo.data.termin ?? '')
+  const target = /\[\[([^\]|#]+)/.exec(raw)?.[1]
   const linkedPath = target ? ws.resolveLink(target, repo.path) : null
   const linked = linkedPath ? ws.get(linkedPath) : undefined
   const dates = labTasksOf(ws, module.path).filter((p) => p.data.Art === LAB_DATE)

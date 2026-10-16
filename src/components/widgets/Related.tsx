@@ -1,7 +1,10 @@
+import { useEffect, useState } from 'react'
 import { Code2, ExternalLink, FileText, FolderInput, Plus } from 'lucide-react'
+import { useMoodle } from '@/app/moodle'
+import { useCourseChoices } from '@/app/courseChoices'
 import { createCodeFolder } from '@/components/code/CodeFolder'
 import { useRecent } from '@/app/recent'
-import { materialFolder } from '@/app/materials'
+import { loadMaterialMap, materialFolder } from '@/app/materials'
 import { reindexMaterials } from '@/app/reindex'
 import { planSort } from '@/lib/materialVersions'
 import { LAB_DATE, LAB_PREP } from '@/lib/labPlan'
@@ -90,7 +93,7 @@ export function Related({ from }: { from: string }) {
               </Button>
             )}
           </div>
-          <CourseFiles folder={moduleFolder} files={moduleFiles.map((f) => f.path)} />
+          <CourseFiles folder={moduleFolder} files={moduleFiles.map((f) => f.path)} courses={courses} />
         </section>
       )}
       {!isModule && sorted.length === 0 && moduleFiles.length === 0 && courses.length === 0 && (
@@ -193,18 +196,41 @@ export function Related({ from }: { from: string }) {
  * Files of a module: recently opened first, then by kind (lecture, lab & exercises, other) – the
  * folders Notiva saves Moodle files into. Each group can be collapsed.
  */
-function CourseFiles({ folder, files }: { folder: string; files: string[] }) {
+/**
+ * Files of the module, split by Moodle course (a new lecturer, a new term – not the same material):
+ * the courses that count now first, "later" ones marked, ignored ones folded away; within a course
+ * by kind (lecture, lab & exercises, other), names in natural order. Files Notiva cannot assign to
+ * a course (older or own) come last.
+ */
+function CourseFiles({ folder, files, courses }: { folder: string; files: string[]; courses: string[] }) {
+  const ws = useWorkspace()
   const navigate = useApp((s) => s.navigate)
+  const snapshot = useMoodle((s) => s.snapshot)
+  const choices = useCourseChoices()
   const recentAll = useRecent((s) => s.files)
-  const recent = recentAll.filter((r) => files.includes(r.path)).slice(0, 3)
-  const groups = new Map<string, string[]>()
-  for (const f of files) {
-    const rest = f.slice(folder.length + 1)
-    const head = rest.includes('/') ? rest.slice(0, rest.indexOf('/')) : ''
-    const group = (MATERIAL_CATEGORIES as readonly string[]).includes(head) ? head : t('related.otherFiles')
-    groups.set(group, [...(groups.get(group) ?? []), f])
+  const [map, setMap] = useState<Record<string, string>>({})
+  const [showIgnored, setShowIgnored] = useState(false)
+  useEffect(() => {
+    void loadMaterialMap(ws).then(setMap)
+  }, [ws, ws.version])
+  // File → course: saved materials (id → path) and the course of each material in the last fetch.
+  const courseOfId = new Map((snapshot?.materials ?? []).map((m) => [m.id, m.courseId]))
+  const courseOf = new Map<string, string>()
+  for (const [id, path] of Object.entries(map)) {
+    const c = courseOfId.get(id)
+    if (c) courseOf.set(path, c)
   }
-  const order = [...MATERIAL_CATEGORIES, t('related.otherFiles')]
+  const byCourse = new Map<string, string[]>()
+  for (const f of files) {
+    const c = courseOf.get(f) ?? ''
+    byCourse.set(c, [...(byCourse.get(c) ?? []), f])
+  }
+  const name = (id: string) => snapshot?.courses.find((c) => c.id === id)?.name ?? id
+  const ordered = [...courses].reverse().filter((c) => byCourse.has(c))
+  const counted = ordered.filter((c) => choices[c] !== 'ignore')
+  const ignored = ordered.filter((c) => choices[c] === 'ignore')
+  const hidden = new Set(ignored.flatMap((c) => byCourse.get(c) ?? []))
+  const recent = recentAll.filter((r) => files.includes(r.path) && !hidden.has(r.path)).slice(0, 3)
   const item = (f: string) => (
     <li key={f}>
       <button
@@ -217,24 +243,66 @@ function CourseFiles({ folder, files }: { folder: string; files: string[] }) {
       </button>
     </li>
   )
+  const byKind = (list: string[], key: string, openFirst: boolean) => {
+    const groups = new Map<string, string[]>()
+    for (const f of list) {
+      const rest = f.slice(folder.length + 1)
+      const head = rest.includes('/') ? rest.slice(0, rest.indexOf('/')) : ''
+      const group = (MATERIAL_CATEGORIES as readonly string[]).includes(head) ? head : t('related.otherFiles')
+      groups.set(group, [...(groups.get(group) ?? []), f])
+    }
+    const natural = (a: string, b: string) =>
+      a.split('/').pop()!.localeCompare(b.split('/').pop()!, 'de', { numeric: true })
+    return [...MATERIAL_CATEGORIES, t('related.otherFiles')]
+      .filter((g) => groups.has(g))
+      .map((g) => (
+        <details key={`${key}:${g}`} open={openFirst && g === 'Vorlesung'} className="ml-2">
+          <summary className="cursor-pointer text-[12.5px] font-semibold text-ink-2">
+            {g} ({groups.get(g)!.length})
+          </summary>
+          <ul>{groups.get(g)!.sort(natural).slice(0, 150).map(item)}</ul>
+        </details>
+      ))
+  }
+  const section = (id: string, list: string[], first: boolean) => (
+    <details key={id || 'none'} open={first} className="space-y-0.5" data-testid="files-course">
+      <summary className="cursor-pointer text-[13px] font-semibold">
+        {id ? name(id) : t('related.filesNoCourse')}
+        <span className="ml-1.5 text-[12px] font-normal text-ink-3">{list.length}</span>
+        {choices[id] === 'later' && (
+          <span className="ml-1.5 rounded-full bg-[var(--opt-yellow)] px-1.5 text-[11px] text-[var(--opt-yellow-ink)]">
+            {t('courseUse.laterShort')}
+          </span>
+        )}
+      </summary>
+      {byKind(list, id, first)}
+    </details>
+  )
+  const single = ordered.length <= 1 && !byCourse.has('')
   return (
-    <div className="mt-0.5 ml-3 space-y-1 border-l border-line pl-2" aria-label={t('related.files')}>
+    <div className="mt-0.5 ml-3 space-y-1.5 border-l border-line pl-2" aria-label={t('related.files')}>
       {recent.length > 0 && (
         <div>
           <p className="text-[12px] font-semibold text-ink-3">{t('related.recent')}</p>
           <ul>{recent.map((r) => item(r.path))}</ul>
         </div>
       )}
-      {order
-        .filter((g) => groups.has(g))
-        .map((g) => (
-          <details key={g} open={g === 'Vorlesung' || groups.size === 1}>
-            <summary className="cursor-pointer text-[12.5px] font-semibold text-ink-2">
-              {g} ({groups.get(g)!.length})
-            </summary>
-            <ul>{groups.get(g)!.slice(0, 80).map(item)}</ul>
-          </details>
-        ))}
+      {single
+        ? byKind(files, 'all', true)
+        : [
+            ...counted.map((c, i) => section(c, byCourse.get(c)!, i === 0)),
+            ...(byCourse.has('') ? [section('', byCourse.get('')!, counted.length === 0)] : []),
+          ]}
+      {ignored.length > 0 && (
+        <button
+          type="button"
+          className="text-[12px] text-ink-3 hover:text-ink hover:underline"
+          onClick={() => setShowIgnored((v) => !v)}
+        >
+          {t('related.filesIgnored', { count: hidden.size })}
+        </button>
+      )}
+      {showIgnored && ignored.map((c) => section(c, byCourse.get(c)!, false))}
     </div>
   )
 }

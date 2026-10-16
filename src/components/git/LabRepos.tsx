@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ArrowUpFromLine, GitBranch, GitCommitHorizontal, RefreshCw } from 'lucide-react'
 import { labFoldersOf, loadClones, useClones } from '@/app/clones'
+import { hubsOf } from '@/app/labHubs'
 import { showLoginHint } from '@/app/clone'
 import { updateRepo } from '@/app/repoUpdate'
 import { announce, withProgress } from '@/app/progress'
@@ -28,7 +29,9 @@ export function LabRepos() {
     .filter((p) => p.data.code === true)
     .map((p) => p.path.slice(0, -3))
   // Labs below modules and free ones (e.g. "Praktikum.md" at the top).
-  const all = [...new Set([...labs, ...ws.databases().flatMap((db) => labFoldersOf(ws, db.path))])]
+  const base = [...new Set([...labs, ...ws.databases().flatMap((db) => labFoldersOf(ws, db.path))])]
+  // Repositories live in the sessions' folders too (P01/…).
+  const all = [...base, ...base.flatMap((l) => [...hubsOf(ws, l).values()].map((h) => h.path.slice(0, -3)))]
   const key = all.join('|')
   const clones = useClones()
   useEffect(() => {

@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Code2,
   FileText,
+  FlaskConical,
   GraduationCap,
   Inbox,
   LayoutTemplate,
@@ -19,6 +20,9 @@ import {
 import { moodleAvailable } from '@/app/moodle'
 import { useState, type ReactNode } from 'react'
 import { useRecent } from '@/app/recent'
+import { hubsOf, taskNumber } from '@/app/labHubs'
+import { labTasksOf, moduleOfPath } from '@/app/labLinks'
+import { LAB_DATE } from '@/lib/labPlan'
 import { findStudyDashboard } from '@/lib/study/sync'
 import { useApp, useWorkspace } from '@/app/store'
 import { usePageActions } from '@/app/hooks/usePageActions'
@@ -70,6 +74,41 @@ export function Sidebar() {
     return parent ? `${page.title} · ${parent.title}` : page.title
   }
   const assets = new Set(ws.assets().map((f) => f.path))
+  // Labs: their sessions (P01 …) with the lab date – the next one highlighted.
+  const today = new Date().toISOString().slice(0, 10)
+  const labSessions = codePages
+    .map((lab) => {
+      const folder = lab.path.slice(0, -3)
+      const module = moduleOfPath(ws, lab.path)
+      const tasks = module ? labTasksOf(ws, module.path) : []
+      const sessions = [...hubsOf(ws, folder).entries()]
+        .sort((a, b) => a[0] - b[0])
+        .map(([n, page]) => {
+          const date = String(
+            tasks.find((p) => p.data.Art === LAB_DATE && taskNumber(p) === n)?.data.Fällig ?? '',
+          )
+          return { page, date: date.slice(0, 10), past: !!date && date.slice(0, 10) < today, next: false }
+        })
+      const next = sessions.find((s) => s.date && !s.past)
+      if (next) next.next = true
+      return { lab, sessions }
+    })
+    .filter((x) => x.sessions.length > 0)
+  const [labsOpen, setLabsOpen] = useState(() => {
+    try {
+      return localStorage.getItem('notiva:nav-labs') !== '0'
+    } catch {
+      return true
+    }
+  })
+  const toggleLabs = () => {
+    setLabsOpen(!labsOpen)
+    try {
+      localStorage.setItem('notiva:nav-labs', labsOpen ? '0' : '1')
+    } catch {
+      /* private mode */
+    }
+  }
   const dash = findStudyDashboard(ws)
   const [studyOpen, setStudyOpen] = useState(() => {
     try {
@@ -221,6 +260,55 @@ export function Sidebar() {
               />
             ))}
           </>
+        )}
+        {labSessions.length > 0 && (
+          <div data-testid="nav-labs">
+            <button
+              type="button"
+              aria-expanded={labsOpen}
+              onClick={() => toggleLabs()}
+              className="mt-2 flex w-full items-center gap-1 rounded-control px-2 py-1 text-left text-[12px] font-semibold tracking-wide text-ink-3 hover:bg-hover hover:text-ink-2"
+            >
+              <ChevronRight
+                size={12}
+                className={labsOpen ? 'rotate-90 transition-transform' : 'transition-transform'}
+              />
+              {t('nav.labs')}
+            </button>
+            {labsOpen &&
+              labSessions.map(({ lab, sessions }) => (
+                <div key={lab.path}>
+                  <NavButton
+                    icon={<FlaskConical size={14} />}
+                    label={codeLabel(lab)}
+                    active={route.name === 'page' && route.path === lab.path}
+                    onClick={() => openPage(lab.path)}
+                  />
+                  <div className="ml-6 flex flex-wrap gap-1 pb-1">
+                    {sessions.map((s) => (
+                      <button
+                        key={s.page.path}
+                        type="button"
+                        title={s.date ? `${s.page.title} · ${s.date}` : s.page.title}
+                        onClick={() => openPage(s.page.path)}
+                        className={cx(
+                          'rounded-full border px-1.5 text-[11.5px] tabular-nums hover:bg-hover',
+                          route.name === 'page' && route.path === s.page.path
+                            ? 'border-accent bg-accent-soft font-semibold text-accent'
+                            : s.next
+                              ? 'border-accent text-accent'
+                              : s.past
+                                ? 'border-line text-ink-3'
+                                : 'border-line text-ink-2',
+                        )}
+                      >
+                        {s.page.title}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+          </div>
         )}
         {codePages.length > 0 && (
           <>

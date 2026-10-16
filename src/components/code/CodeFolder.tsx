@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { RepoButton } from './RepoButton'
 import { loadClones, useClones } from '@/app/clones'
+import { hubsOf } from '@/app/labHubs'
 import { ensureRepoPage } from '@/app/repoPage'
 import { updateRepo } from '@/app/repoUpdate'
 import { TokenBanner } from './GitTokens'
@@ -52,10 +53,20 @@ export function CodeFolder({ page }: { page: Page }) {
   const open = (how: 'editor' | 'finder' | 'terminal') => void run(() => bridge!.open(folder, how))
   const navigate = useApp((s) => s.navigate)
   // Repositories got into this folder ("Repository ins Praktikum holen").
-  const repos = useClones((s) => s[folder]) ?? []
+  // Its repositories – directly in it and in its sessions' folders (P01/…).
+  const hubFolders = [...hubsOf(ws, folder).values()].map((h) => h.path.slice(0, -3))
+  const allClones = useClones()
+  const repos = [folder, ...hubFolders].flatMap((f) =>
+    (allClones[f] ?? []).map((c) => ({
+      ...c,
+      name: f === folder ? c.name : `${f.slice(folder.length + 1)}/${c.name}`,
+    })),
+  )
+  const hubKey = hubFolders.join('|')
   useEffect(() => {
     void loadClones(folder)
-  }, [folder, ws.version])
+    for (const f of hubKey ? hubKey.split('|') : []) void loadClones(f)
+  }, [folder, hubKey, ws.version])
   // Links of the lab: own ones (frontmatter "links") and the links of the module's Moodle courses.
   const links = Array.isArray(page.data.links)
     ? page.data.links.filter((l): l is string => typeof l === 'string')

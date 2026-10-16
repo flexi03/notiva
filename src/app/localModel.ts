@@ -186,7 +186,9 @@ export async function commitSummary(changes: CommitChange[]): Promise<string> {
         ],
       ]
   // Moves, files per folder and Notiva's data are named here; only text changes go to the model.
-  const { bullets: grouped, texts } = groupChanges(changes, de)
+  const { bullets: grouped, texts, groupedFiles } = groupChanges(changes, de)
+  // Mostly moved/new files (e.g. sorting materials): that is the subject – the model would guess.
+  const groupSubject = grouped.length > 0 && (texts.length === 0 || groupedFiles >= 5 * texts.length)
   const shown = texts.slice(0, 6)
   const ask = (prompt: string, max: number, ex: Array<[string, string]>, sys = system) =>
     withAi(t('localModel.commit'), () => bridge.complete(id, sys, prompt, max, ex))
@@ -226,8 +228,9 @@ export async function commitSummary(changes: CommitChange[]): Promise<string> {
             ],
           ]
       const list = bullets.map((b) => `- ${b}`).join('\n')
-      const subject =
-        bullets.length > 1
+      const subject = groupSubject
+        ? firstLine(grouped[0]!)
+        : bullets.length > 1
           ? firstLine(await ask(list, 30, subjectExamples, subjectSystem).catch(() => '')) ||
             firstLine(bullets[0]!)
           : firstLine(bullets[0] ?? '')

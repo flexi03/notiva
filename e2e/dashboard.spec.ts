@@ -164,5 +164,8 @@ test.describe('Modulseite', () => {
     const hub = page.getByTestId('lab-hub')
     await expect(hub).toContainText('P01 Praktikumstermin')
     await expect(hub).toContainText('P01 Vorbereitung')
+    // The side bar lists the labs with their sessions.
+    const nav = page.getByRole('navigation', { name: 'Seiten' })
+    if (await nav.isVisible()) await expect(nav.getByTestId('nav-labs')).toContainText('P01')
   })
 })

@@ -29,4 +29,15 @@ describe('commit groups', () => {
     ])
     expect(texts.map((t) => t.path)).toEqual(['Studium/Mitschriften/DBS2 – 2026-10-16.md'])
   })
+
+  it('sums up sorting in many folders', () => {
+    const changes = ['A', 'B', 'C', 'D', 'E', 'F'].flatMap((m) => [
+      { path: `U/${m}/x${m}.pdf`, status: 'deleted' },
+      { path: `U/${m}/Vorlesung/x${m}.pdf`, status: 'untracked' },
+    ])
+    const { bullets, groupedFiles } = groupChanges(changes)
+    expect(bullets[0]).toBe('6 Dateien in 6 Ordnern einsortiert bzw. verschoben')
+    expect(bullets.at(-1)).toBe('… und 1 weitere Ordner')
+    expect(groupedFiles).toBe(6)
+  })
 })

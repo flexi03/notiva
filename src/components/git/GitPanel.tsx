@@ -242,6 +242,26 @@ export function GitPanel() {
     </>
   )
 
+  const tabBar = (
+    <div role="tablist" aria-label={t('git.tabs')} className="flex gap-1 border-b border-line pb-2">
+      {(['vault', 'labs'] as const).map((id) => (
+        <button
+          key={id}
+          type="button"
+          role="tab"
+          aria-selected={tab === id}
+          onClick={() => setTab(id)}
+          className={cx(
+            'rounded-full px-2.5 py-0.5 text-[13px] hover:bg-hover',
+            tab === id ? 'bg-hover font-semibold text-ink' : 'text-ink-2',
+          )}
+        >
+          {id === 'vault' ? t('git.tab.vault') : t('git.tab.labs')}
+        </button>
+      ))}
+    </div>
+  )
+
   return (
     <SidePanel view="git" title={t('git.title')} icon={<GitBranch size={16} />} actions={header}>
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -254,36 +274,28 @@ export function GitPanel() {
         ) : !state ? (
           <p className="p-4 text-sm text-ink-3">{t('common.loading')}</p>
         ) : !state.isRepo ? (
-          <EmptyState
-            icon={<GitBranch size={22} />}
-            title={t('git.noRepo')}
-            action={
-              <Button variant="primary" onClick={() => void act((git) => git.init())}>
-                {t('git.init')}
-              </Button>
-            }
-          >
-            {t('git.noRepoHint')}
-          </EmptyState>
+          // The lab repositories have their own Git – reachable without one for the folder.
+          <div className="space-y-4 p-3">
+            {tabBar}
+            {tab === 'labs' ? (
+              <LabRepos />
+            ) : (
+              <EmptyState
+                icon={<GitBranch size={22} />}
+                title={t('git.noRepo')}
+                action={
+                  <Button variant="primary" onClick={() => void act((git) => git.init())}>
+                    {t('git.init')}
+                  </Button>
+                }
+              >
+                {t('git.noRepoHint')}
+              </EmptyState>
+            )}
+          </div>
         ) : (
           <div className="space-y-4 p-3">
-            <div role="tablist" aria-label={t('git.tabs')} className="flex gap-1 border-b border-line pb-2">
-              {(['vault', 'labs'] as const).map((id) => (
-                <button
-                  key={id}
-                  type="button"
-                  role="tab"
-                  aria-selected={tab === id}
-                  onClick={() => setTab(id)}
-                  className={cx(
-                    'rounded-full px-2.5 py-0.5 text-[13px] hover:bg-hover',
-                    tab === id ? 'bg-hover font-semibold text-ink' : 'text-ink-2',
-                  )}
-                >
-                  {id === 'vault' ? t('git.tab.vault') : t('git.tab.labs')}
-                </button>
-              ))}
-            </div>
+            {tabBar}
             {tab === 'labs' ? (
               <LabRepos />
             ) : (

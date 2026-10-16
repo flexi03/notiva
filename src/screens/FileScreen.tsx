@@ -1,3 +1,4 @@
+import { FileContext } from '@/components/code/FileContext'
 import { useEffect, useState } from 'react'
 import { ExternalLink } from 'lucide-react'
 import { isImage, isPdf } from '@/app/materials'
@@ -65,6 +66,7 @@ export function FileScreen({ path, page }: { path: string; page?: number }) {
   return (
     <div className="flex h-full flex-col">
       <Topbar title={name} actions={actions} />
+      <FileContext path={path} />
       <div className="min-h-0 flex-1">
         {!state ? (
           <Spinner label={t('common.loading')} />

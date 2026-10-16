@@ -28,6 +28,8 @@ export interface CommitGroups<T extends ChangeLike> {
   bullets: string[]
   /** text changes with changed lines – for the model, biggest first */
   texts: T[]
+  /** how many files the bullets cover (moves, counted files) – vs. texts */
+  groupedFiles: number
 }
 
 const dirOf = (path: string) => path.slice(0, Math.max(0, path.lastIndexOf('/')))
@@ -64,7 +66,17 @@ export function groupChanges<T extends ChangeLike>(changes: T[], de = true): Com
     const key = `${dirOf(m.from)}\u0000${dirOf(m.to)}`
     byRoute.set(key, (byRoute.get(key) ?? 0) + 1)
   }
-  for (const [key, count] of [...byRoute].sort((a, b) => b[1] - a[1])) {
+  const routes = [...byRoute].sort((a, b) => b[1] - a[1])
+  // Many folders (sorting all materials): one line over all, then the biggest folders.
+  if (routes.length > 3) {
+    const modules = new Set(routes.map(([k]) => place(k.split('\u0000')[0]!).split(' / ').pop()))
+    bullets.push(
+      de
+        ? `${moves.length} Dateien in ${modules.size} Ordnern einsortiert bzw. verschoben`
+        : `${moves.length} files sorted or moved in ${modules.size} folders`,
+    )
+  }
+  for (const [key, count] of routes.slice(0, routes.length > 3 ? 5 : routes.length)) {
     const [from, to] = key.split('\u0000') as [string, string]
     // Into a sub folder of where they were: "einsortiert"; elsewhere: "verschoben".
     const into = to.startsWith(`${from}/`)
@@ -78,6 +90,9 @@ export function groupChanges<T extends ChangeLike>(changes: T[], de = true): Com
         `${count === 1 ? '1 file' : `${count} files`} in ${q(place(from))} ${into ? 'sorted into' : 'moved to'} ${q(target)}`,
       )
   }
+
+  if (routes.length > 5)
+    bullets.push(de ? `… und ${routes.length - 5} weitere Ordner` : `… and ${routes.length - 5} more folders`)
 
   // Text changes with their lines go to the model; everything else is counted per folder.
   const texts: T[] = []
@@ -123,5 +138,6 @@ export function groupChanges<T extends ChangeLike>(changes: T[], de = true): Com
       de ? 'Notiva-Daten aktualisiert (Unterlagen-Zuordnung, Einstellungen)' : 'Updated Notiva data',
     )
   texts.sort((a, b) => (b.added ?? 0) + (b.removed ?? 0) - ((a.added ?? 0) + (a.removed ?? 0)))
-  return { bullets, texts }
+  const groupedFiles = moves.length + [...counted.values()].reduce((n, l) => n + l.length, 0)
+  return { bullets, texts, groupedFiles }
 }
