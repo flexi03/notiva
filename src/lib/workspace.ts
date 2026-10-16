@@ -199,6 +199,19 @@ export class Workspace {
   resolveLink(target: string, from?: string): string | null {
     const clean = target.trim().replace(/\.md$/i, '')
     if (!clean) return null
+    // A file ("Skript.pdf", "Unterlagen/DBS 2/Blatt 01.pdf"): by path, else by name – the nearest.
+    if (/\.[a-z0-9]{1,8}$/i.test(clean) && !this.pages.has(`${clean}.md`)) {
+      const files = this.files.filter((f) => !isMarkdown(f.path))
+      if (files.some((f) => f.path === clean)) return clean
+      const name = clean.toLowerCase()
+      const matches = files.filter(
+        (f) => f.path.toLowerCase().endsWith(`/${name}`) || f.path.toLowerCase() === name,
+      )
+      if (matches.length) {
+        const near = (p: string) => (from && p.startsWith(dirname(from)) ? 0 : 1)
+        return matches.sort((a, b) => near(a.path) - near(b.path) || a.path.length - b.path.length)[0]!.path
+      }
+    }
     const lower = clean.toLowerCase()
     if (clean.includes('/') && this.pages.has(`${clean}.md`)) return `${clean}.md`
     const candidates = this.all().filter((p) => {
@@ -224,6 +237,12 @@ export class Workspace {
 
   /** Shortest unique link text for a page (file name, or path if ambiguous). */
   linkText(path: string): string {
+    // Files (PDF, SQL …) keep their extension: "[[Skript.pdf]]" or the full path.
+    if (!path.endsWith('.md')) {
+      const file = path.slice(path.lastIndexOf('/') + 1)
+      const same = this.files.filter((f) => f.path === file || f.path.endsWith(`/${file}`)).length
+      return same === 1 ? file : path
+    }
     const name = stem(path)
     return this.resolveLink(name) === path ? name : path.slice(0, -3)
   }

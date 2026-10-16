@@ -164,11 +164,13 @@ export const useApp = create<AppState>((set, get) => ({
     if (window.innerWidth < 900) set({ sidebarOpen: false })
   },
   openPage(path) {
+    // Links to files ("[[Blatt 01.pdf]]") open the file view.
+    if (!path.endsWith('.md')) return get().navigate({ name: 'file', path })
     get().navigate({ name: 'page', path })
   },
   openEntry(path, event) {
     const full = event && (event.metaKey || event.ctrlKey || event.shiftKey)
-    if (full || get().settings.openEntries === 'page') get().openPage(path)
+    if (full || get().settings.openEntries === 'page' || !path.endsWith('.md')) get().openPage(path)
     else set({ peek: path })
   },
   closePeek: () => set({ peek: null }),

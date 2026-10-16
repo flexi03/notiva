@@ -73,6 +73,15 @@ describe('Workspace index', () => {
     expect(ws.linkText('Archiv/Start.md')).toBe('Archiv/Start')
   })
 
+  it('links files with their extension', async () => {
+    const { ws } = await setup({ 'Unterlagen/P/Blatt 01.pdf': 'PDF', 'Unterlagen/Q/Blatt 01.pdf': 'PDF' })
+    expect(ws.linkText('bild.png')).toBe('bild.png')
+    expect(ws.resolveLink(ws.linkText('bild.png'))).toBe('bild.png')
+    // Same name twice: the full path.
+    expect(ws.linkText('Unterlagen/P/Blatt 01.pdf')).toBe('Unterlagen/P/Blatt 01.pdf')
+    expect(ws.resolveLink('Unterlagen/P/Blatt 01.pdf')).toBe('Unterlagen/P/Blatt 01.pdf')
+  })
+
   it('computes backlinks and tags', async () => {
     const { ws } = await setup()
     expect(ws.backlinks('Studium/Module/Analysis.md').map((p) => p.path)).toEqual(['Start.md'])

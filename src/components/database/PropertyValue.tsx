@@ -37,7 +37,7 @@ export function PropertyValue({
     case 'relation':
       return (
         <span className={cx('flex gap-1', compact ? 'flex-nowrap overflow-hidden' : 'flex-wrap')}>
-          {(value as string[]).map((target) => {
+          {(Array.isArray(value) ? (value as string[]) : [String(value)]).map((target) => {
             const path = ws.resolveLink(target)
             const page = path ? ws.get(path) : undefined
             return (

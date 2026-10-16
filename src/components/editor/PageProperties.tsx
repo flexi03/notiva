@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { Plus, X } from 'lucide-react'
 import { useAction, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
-import { propertyDef, rowValues, type PropertyDef } from '@/lib/database'
+import { coerceValue, propertyDef, rowValues, type PropertyDef } from '@/lib/database'
 import type { FrontmatterValue } from '@/lib/frontmatter'
 import type { FormulaValue } from '@/lib/formula'
 import { IconButton, Popover, TextInput } from '@/components/ui'
@@ -55,19 +55,29 @@ export function PageProperties({ page }: { page: Page }) {
   )
   return (
     <dl className="grid grid-cols-[minmax(7rem,11rem)_1fr] gap-y-px text-[14px]">
-      {entries.map(([key, value]) => (
-        <Row key={key} name={key} onRemove={() => void run(() => ws.setProperty(page.path, key, undefined))}>
-          <PropertyCell
-            def={guessDef(key, value)}
-            value={value as FormulaValue}
-            placeholder="–"
-            className="rounded-control"
-            onChange={(v) =>
-              void run(() => ws.setProperty(page.path, key, v === null ? undefined : (v as FrontmatterValue)))
-            }
-          />
-        </Row>
-      ))}
+      {entries.map(([key, value]) => {
+        const def = guessDef(key, value)
+        return (
+          <Row
+            key={key}
+            name={key}
+            onRemove={() => void run(() => ws.setProperty(page.path, key, undefined))}
+          >
+            <PropertyCell
+              def={def}
+              // "[[Seite]]" as plain text is a relation too – shown as a list, never crashing.
+              value={coerceValue(def, value)}
+              placeholder="–"
+              className="rounded-control"
+              onChange={(v) =>
+                void run(() =>
+                  ws.setProperty(page.path, key, v === null ? undefined : (v as FrontmatterValue)),
+                )
+              }
+            />
+          </Row>
+        )
+      })}
       <AddProperty
         onAdd={(key) => void run(() => ws.setProperty(page.path, key, ''))}
         existing={Object.keys(page.data)}

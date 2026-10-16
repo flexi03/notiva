@@ -87,5 +87,5 @@ export async function linkRepoToTask(
     if (!linksTo(ws, p, repo.path))
       await appendLine(ws, p, `${t('lab.repoLink')} [[${ws.linkText(repo.path)}]]`)
   const fresh = ws.get(repo.path) ?? repo
-  await ws.save(repo.path, { data: { ...fresh.data, termin: `[[${ws.linkText(task.path)}]]` } })
+  await ws.save(repo.path, { data: { ...fresh.data, termin: [`[[${ws.linkText(task.path)}]]`] } })
 }

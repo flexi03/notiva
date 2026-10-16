@@ -20,6 +20,8 @@ test.beforeAll(async () => {
     '---\ncode: true\nlinks:\n  - "https://projectbase.example.org/-/snippets/41"\n---\n# Praktikum\n',
   )
   mkdirSync(path.join(folder, 'Praktikum'))
+  // A link written as plain text (as an older version did) must not break the page.
+  writeFileSync(path.join(folder, 'Verknuepft.md'), '---\ntermin: "[[Praktikum]]"\n---\n# Verknüpft\n')
   app = await electron.launch({
     args: ['.'],
     env: {
@@ -98,4 +100,8 @@ test('holt ein privates Repository mit Zugangstoken – Name frei wählbar', asy
   await expect(
     window.getByTestId('git-tokens').getByRole('button', { name: 'Neuen Token eintragen' }),
   ).toBeVisible()
+
+  await window.evaluate(() => (location.hash = '#/p/Verknuepft.md'))
+  await expect(window.getByRole('button', { name: 'Praktikum', exact: true }).first()).toBeVisible()
+  await expect(window.getByText('Hier ist etwas schiefgegangen')).toHaveCount(0)
 })
