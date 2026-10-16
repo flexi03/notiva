@@ -123,6 +123,9 @@ test.describe('Modulseite', () => {
     await expect(day).toContainText('Heute')
     await expect(day).toContainText('Lineare Algebra')
     await expect(day).toContainText('Übung')
+    // Due in the next days: listed under "Demnächst" with their date.
+    await expect(day.getByTestId('day-upcoming')).toContainText('Demnächst')
+    await expect(day.getByTestId('day-upcoming').getByRole('listitem').first()).toBeVisible()
     // A click on a session opens its module (with the files for it).
     await day
       .getByRole('button', { name: /Lineare Algebra/ })

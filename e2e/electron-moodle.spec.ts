@@ -461,4 +461,16 @@ test('legt eine neue Version daneben, vergleicht sie und ersetzt nach Wahl', asy
   await expect(row.getByRole('button', { name: 'Im Browser öffnen' })).toBeVisible()
   await expect(row.getByRole('button', { name: 'In der App öffnen' })).toBeVisible()
   await expect(row.getByRole('button', { name: 'Repository ins Praktikum holen' })).toBeVisible()
+
+  // The module page: Moodle's news and links in time order, the Git link with its button.
+  const modulePage = path.join(folder, 'Studium/Module/Software Engineering.md')
+  const text = readFileSync(modulePage, 'utf8')
+  writeFileSync(modulePage, text.replace(/^---\n/, '---\nkurse: [course:43]\n'))
+  await window.evaluate(
+    (h) => (location.hash = h),
+    `#/p/${encodeURIComponent('Studium/Module/Software Engineering.md')}`,
+  )
+  const moodle = window.getByTestId('module-moodle')
+  await expect(moodle).toContainText('Praktikumsaufgaben (ProjectBase)')
+  await expect(moodle.getByRole('button', { name: 'Repository ins Praktikum holen' })).toBeVisible()
 })

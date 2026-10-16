@@ -32,6 +32,8 @@ interface Item {
   sub?: string
   overdue?: boolean
   done?: boolean
+  /** instead of the time: "Fr 18.10. 09:00" (upcoming days) */
+  label?: string
   open: (e: React.MouseEvent) => void
 }
 
@@ -69,6 +71,14 @@ export function DayOverview({ date }: { date: Date }) {
   const weekday = DAYS[(date.getDay() + 6) % 7]
   const dash = findStudyDashboard(ws)
   const items: Item[] = []
+  // "Demnächst": what is due in the next days (tasks, labs, deadlines a week, exams two weeks).
+  const upcoming: Array<Item & { date: string }> = []
+  const until = (days: number) => {
+    const d = new Date(date)
+    d.setDate(d.getDate() + days)
+    return isoDay(d)
+  }
+  const soon = (iso: string, days: number) => iso > day && iso <= until(days)
 
   if (dash) {
     const modules = ws.get(`${dash.folder}/Module.md`)?.database ? ws.rows(`${dash.folder}/Module.md`) : []
@@ -99,7 +109,17 @@ export function DayOverview({ date }: { date: Date }) {
     }
     const exams = `${dash.folder}/Prüfungen.md`
     if (ws.get(exams)?.database)
-      for (const e of ws.rows(exams))
+      for (const e of ws.rows(exams)) {
+        if (soon(str(e.data.Datum).slice(0, 10), 14))
+          upcoming.push({
+            key: e.path,
+            kind: 'exam',
+            date: str(e.data.Datum).slice(0, 10),
+            ...(str(e.data.Beginn) ? { time: str(e.data.Beginn) } : {}),
+            title: e.title,
+            sub: [t('semester.exam'), str(e.data.Raum)].filter(Boolean).join(' · '),
+            open: (ev) => openEntry(e.path, ev),
+          })
         if (str(e.data.Datum).slice(0, 10) === day)
           items.push({
             key: e.path,
@@ -109,6 +129,7 @@ export function DayOverview({ date }: { date: Date }) {
             sub: [t('semester.exam'), str(e.data.Raum)].filter(Boolean).join(' · '),
             open: (ev) => openEntry(e.path, ev),
           })
+      }
   }
 
   // Tasks of every task database (Aufgaben): due this day – and, today, the overdue ones.
@@ -121,8 +142,19 @@ export function DayOverview({ date }: { date: Date }) {
       if (!due) continue
       const done = p.data.Status === 'Erledigt'
       const overdue = today && due.slice(0, 10) < day && !done
-      if (due.slice(0, 10) !== day && !overdue) continue
       const time = /T(\d{2}:\d{2})/.exec(due)?.[1]
+      const kind = p.data.Art === LAB_DATE ? 'lab' : p.data.Art === LAB_PREP ? 'prep' : 'task'
+      if (!done && soon(due.slice(0, 10), 7))
+        upcoming.push({
+          key: p.path,
+          kind,
+          date: due.slice(0, 10),
+          ...(time ? { time } : {}),
+          title: p.title,
+          sub: str(p.data.Art),
+          open: (e) => openEntry(p.path, e),
+        })
+      if (due.slice(0, 10) !== day && !overdue) continue
       items.push({
         key: p.path,
         kind: p.data.Art === LAB_DATE ? 'lab' : p.data.Art === LAB_PREP ? 'prep' : 'task',
@@ -141,7 +173,18 @@ export function DayOverview({ date }: { date: Date }) {
   // Moodle deadlines not imported as tasks.
   for (const ev of snapshot?.events ?? []) {
     const due = new Date(ev.due)
-    if (isoDay(due) !== day || imported.has(ev.id)) continue
+    if (imported.has(ev.id)) continue
+    if (soon(isoDay(due), 7))
+      upcoming.push({
+        key: ev.id,
+        kind: 'moodle',
+        date: isoDay(due),
+        time: `${pad(due.getHours())}:${pad(due.getMinutes())}`,
+        title: ev.title,
+        sub: ev.course?.name ?? 'Moodle',
+        open: () => ev.url && void run(() => useMoodle.getState().open(ev.url!, false)),
+      })
+    if (isoDay(due) !== day) continue
     items.push({
       key: ev.id,
       kind: 'moodle',
@@ -177,7 +220,8 @@ export function DayOverview({ date }: { date: Date }) {
           )}
         >
           <span className="w-24 shrink-0 text-[13px] text-ink-2 tabular-nums">
-            {i.time ? `${i.time}${i.end ? `–${i.end}` : ''}` : i.overdue ? t('day.late') : t('day.due')}
+            {i.label ??
+              (i.time ? `${i.time}${i.end ? `–${i.end}` : ''}` : i.overdue ? t('day.late') : t('day.due'))}
           </span>
           <Icon
             size={15}
@@ -221,6 +265,23 @@ export function DayOverview({ date }: { date: Date }) {
           {allDay.length > 0 && <ul className="mb-1 space-y-0.5">{allDay.map(row)}</ul>}
           {timed.length > 0 && <ul className="space-y-0.5">{timed.map(row)}</ul>}
         </>
+      )}
+      {upcoming.length > 0 && (
+        <div className="mt-3 border-t border-line pt-2" data-testid="day-upcoming">
+          <h3 className="mb-1 px-2 text-[12.5px] font-semibold text-ink-2">{t('day.upcoming')}</h3>
+          <ul className="space-y-0.5">
+            {upcoming
+              .sort((a, b) => a.date.localeCompare(b.date) || (a.time ?? '').localeCompare(b.time ?? ''))
+              .map((i) =>
+                row({
+                  ...i,
+                  key: `soon:${i.key}`,
+                  time: undefined,
+                  label: `${new Date(`${i.date}T00:00`).toLocaleDateString(locale, { weekday: 'short', day: '2-digit', month: '2-digit' })}${i.time ? ` ${i.time}` : ''}`,
+                }),
+              )}
+          </ul>
+        </div>
       )}
     </section>
   )

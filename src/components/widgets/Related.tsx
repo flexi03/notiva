@@ -1,7 +1,6 @@
-import { AlertTriangle, Code2, ExternalLink, FileText, FolderInput, Plus } from 'lucide-react'
+import { Code2, ExternalLink, FileText, FolderInput, Plus } from 'lucide-react'
 import { createCodeFolder } from '@/components/code/CodeFolder'
 import { useRecent } from '@/app/recent'
-import { useMoodle } from '@/app/moodle'
 import { materialFolder } from '@/app/materials'
 import { reindexMaterials } from '@/app/reindex'
 import { planSort } from '@/lib/materialVersions'
@@ -94,7 +93,6 @@ export function Related({ from }: { from: string }) {
           <CourseFiles folder={moduleFolder} files={moduleFiles.map((f) => f.path)} />
         </section>
       )}
-      {courses.length > 0 && <ModuleMoodle courses={courses} />}
       {!isModule && sorted.length === 0 && moduleFiles.length === 0 && courses.length === 0 && (
         <p className="text-sm text-ink-3">{t('related.empty')}</p>
       )}
@@ -188,79 +186,6 @@ export function Related({ from }: { from: string }) {
         </Button>
       </div>
     </div>
-  )
-}
-
-/**
- * What Moodle says about the module's courses (newest term first): link, cancellations and news,
- * the description – from the last fetch, nothing is copied into the vault.
- */
-function ModuleMoodle({ courses }: { courses: string[] }) {
-  const snapshot = useMoodle((s) => s.snapshot)
-  const navigate = useApp((s) => s.navigate)
-  if (!snapshot) return null
-  const known = courses
-    .map((id) => snapshot.courses.find((c) => c.id === id))
-    .filter((c): c is NonNullable<typeof c> => !!c)
-    .reverse()
-  if (!known.length) return null
-  return (
-    <section aria-label={t('related.moodle')}>
-      <h3 className="mb-1 text-[12.5px] font-semibold text-ink-2">{t('related.moodle')}</h3>
-      <ul className="space-y-2">
-        {known.map((c, i) => {
-          const info = snapshot.info?.[c.id]
-          const news = (info?.announcements ?? []).slice(0, 3)
-          return (
-            <li key={c.id}>
-              <div className="flex flex-wrap items-center gap-x-2">
-                <button
-                  type="button"
-                  className="text-left text-sm font-medium hover:underline"
-                  onClick={() => navigate({ name: 'moodle', course: c.id })}
-                >
-                  {c.name}
-                </button>
-                {c.url && (
-                  <a
-                    href={c.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-0.5 text-[12px] text-accent hover:underline"
-                  >
-                    {t('related.openMoodle')} <ExternalLink size={11} />
-                  </a>
-                )}
-              </div>
-              {news.map((n) => (
-                <p key={n.id} className="ml-3 flex gap-1 text-[12.5px] text-ink-2">
-                  {n.important && <AlertTriangle size={12} className="mt-0.5 shrink-0 text-danger" />}
-                  <span>
-                    <span className="font-medium">{n.title}</span>
-                    {n.modified && (
-                      <span className="text-ink-3">
-                        {' '}
-                        · {new Date(n.modified).toLocaleDateString('de-DE')}
-                      </span>
-                    )}
-                  </span>
-                </p>
-              ))}
-              {info?.summary?.text && (
-                <details className="ml-3" open={i === 0 && !news.length}>
-                  <summary className="cursor-pointer text-[12.5px] text-ink-3">
-                    {t('related.description')}
-                  </summary>
-                  <p className="text-[12.5px] whitespace-pre-line text-ink-2">
-                    {info.summary.text.slice(0, 1200)}
-                  </p>
-                </details>
-              )}
-            </li>
-          )
-        })}
-      </ul>
-    </section>
   )
 }
 

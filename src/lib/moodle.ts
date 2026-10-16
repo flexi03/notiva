@@ -378,6 +378,8 @@ export function materialsOf(courseId: string, raw: unknown): MoodleMaterial[] {
       if (!cmid || !title) continue
       if (modname === 'url') {
         const link = text(contents[0]?.fileurl)
+        // When the link was added/changed – for sorting by date.
+        const changed = Number(contents[0]?.timemodified ?? contents[0]?.timecreated)
         if (/^https?:/i.test(link))
           out.push({
             id: `url:${cmid}`,
@@ -386,6 +388,7 @@ export function materialsOf(courseId: string, raw: unknown): MoodleMaterial[] {
             title,
             kind: 'url',
             url: link,
+            ...(changed > 0 ? { modified: new Date(changed * 1000).toISOString() } : {}),
             ...(activityUrl ? { activityUrl } : {}),
           })
         continue
