@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Code2,
   ExternalLink,
@@ -11,6 +11,7 @@ import {
   SquareTerminal,
 } from 'lucide-react'
 import { RepoButton } from './RepoButton'
+import { loadClones, useClones } from '@/app/clones'
 import { useDockRequests } from '@/app/dock'
 import { useMoodle } from '@/app/moodle'
 import { TerminalDock } from '@/components/terminal/TerminalDock'
@@ -45,6 +46,11 @@ export function CodeFolder({ page }: { page: Page }) {
   const changes = useGit((s) => s.state?.changes.filter((c) => c.path.startsWith(`${folder}/`)).length ?? 0)
   const open = (how: 'editor' | 'finder' | 'terminal') => void run(() => bridge!.open(folder, how))
   const navigate = useApp((s) => s.navigate)
+  // Repositories got into this folder ("Repository ins Praktikum holen").
+  const repos = useClones((s) => s[folder]) ?? []
+  useEffect(() => {
+    void loadClones(folder)
+  }, [folder, ws.version])
   // Links of the lab: own ones (frontmatter "links") and the links of the module's Moodle courses.
   const links = Array.isArray(page.data.links)
     ? page.data.links.filter((l): l is string => typeof l === 'string')
@@ -155,6 +161,34 @@ export function CodeFolder({ page }: { page: Page }) {
           </ul>
         )}
       </div>
+      {repos.length > 0 && bridge && (
+        <div data-testid="lab-repos">
+          <h3 className="mb-1 text-[12.5px] font-semibold text-ink-2">{t('clone.repos')}</h3>
+          <ul className="space-y-0.5">
+            {repos.map((r) => (
+              <li key={r.name} className="flex flex-wrap items-center gap-2 text-[13px]">
+                <GitBranch size={12} className="shrink-0 text-accent" />
+                <span className="font-medium">{r.name}</span>
+                <span className="min-w-0 flex-1 truncate text-[12px] text-ink-3">{r.remote}</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => void run(() => bridge.open(`${folder}/${r.name}`, 'editor'))}
+                >
+                  {t('clone.openEditor')}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => void run(() => bridge.open(`${folder}/${r.name}`, 'finder'))}
+                >
+                  <FolderOpen size={13} />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div>
         <div className="mb-1 flex items-center gap-2">
           <h3 className="flex-1 text-[12.5px] font-semibold text-ink-2">{t('code.links')}</h3>

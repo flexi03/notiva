@@ -454,3 +454,16 @@ export async function cloneInTerminal(url: string, target: string): Promise<void
   const { spawn } = await import('node:child_process')
   spawn('osascript', ['-e', script, '-e', 'tell application "Terminal" to activate']).unref()
 }
+
+/** Git repositories directly inside `dir` (the lab folder) with their origin address. */
+export async function clonesIn(dir: string): Promise<Array<{ name: string; remote: string }>> {
+  const out: Array<{ name: string; remote: string }> = []
+  const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => [])
+  for (const e of entries) {
+    if (!e.isDirectory() || e.name.startsWith('.')) continue
+    const config = await fs.readFile(path.join(dir, e.name, '.git', 'config'), 'utf8').catch(() => '')
+    const remote = /\[remote "origin"\][^[]*?url\s*=\s*(\S+)/.exec(config)?.[1]
+    if (remote) out.push({ name: e.name, remote })
+  }
+  return out
+}

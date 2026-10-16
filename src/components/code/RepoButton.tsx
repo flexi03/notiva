@@ -1,5 +1,7 @@
-import { GitBranch } from 'lucide-react'
+import { useEffect } from 'react'
+import { FolderOpen, GitBranch } from 'lucide-react'
 import { cloneIntoLab, labFolderOf } from '@/app/clone'
+import { labFoldersOf, loadClones, sameRepo, useClones } from '@/app/clones'
 import { useRepo } from '@/app/repoDetect'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
@@ -9,8 +11,8 @@ import { createCodeFolder } from './CodeFolder'
 
 /**
  * "Repository ins Praktikum holen" right next to a link that is a Git repository (known pattern, or
- * the local model said so). `folder`: the lab folder; else `module`: its lab folder, created as
- * "Praktikum" when there is none yet.
+ * the local model said so) – or, when it is already there, "Im Praktikum öffnen". `folder`: the lab
+ * folder; else `module`: its lab folders (a new one "Praktikum" when there is none yet).
  */
 export function RepoButton({
   link,
@@ -27,7 +29,28 @@ export function RepoButton({
   const run = useAction()
   const repo = useRepo(link, title)
   const navigate = useApp((s) => s.navigate)
+  const labs = folder ? [folder] : module ? labFoldersOf(ws, module) : []
+  const key = labs.join('|')
+  const clones = useClones()
+  useEffect(() => {
+    for (const lab of key ? key.split('|') : []) if (!useClones.getState()[lab]) void loadClones(lab)
+  }, [key])
   if (!repo || !electronBridge()?.code?.clone) return null
+  const found = labs
+    .flatMap((lab) => (clones[lab] ?? []).map((c) => ({ lab, ...c })))
+    .find((c) => sameRepo(c.remote, repo.url))
+  if (found)
+    return (
+      <Button
+        size="sm"
+        variant="ghost"
+        icon={<FolderOpen size={13} />}
+        title={`${found.lab}/${found.name}`}
+        onClick={() => navigate({ name: 'page', path: `${found.lab}.md` })}
+      >
+        {t('clone.openLab', { name: found.name })}
+      </Button>
+    )
   return (
     <Button
       size="sm"

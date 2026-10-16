@@ -21,3 +21,5 @@ if (!header.startsWith('Authorization: Basic ')) {
 process.stderr.write('Receiving objects:  50% (1/2)\rReceiving objects: 100% (2/2), done.\n')
 mkdirSync(target, { recursive: true })
 writeFileSync(path.join(target, 'aufgabe.sql'), 'select 1;\n')
+mkdirSync(path.join(target, '.git'), { recursive: true })
+writeFileSync(path.join(target, '.git', 'config'), `[remote "origin"]\n\turl = ${args[args.length - 2]}\n`)

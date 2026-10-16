@@ -26,7 +26,15 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { FsVault } from './vaultFs'
 import { parseAiRequest } from './aiRequest'
-import { cloneInTerminal, cloneRepo, GitRepo, installGit, setGitIdentity, type GitState } from './git'
+import {
+  cloneInTerminal,
+  cloneRepo,
+  clonesIn,
+  GitRepo,
+  installGit,
+  setGitIdentity,
+  type GitState,
+} from './git'
 import { loadShellPath, which } from './shellPath'
 import { cliArgs, detectClis, parseCliRequest, startCli, type CliInfo, type McpLaunch } from './aiCli'
 import { spawn, type ChildProcess } from 'node:child_process'
@@ -705,6 +713,7 @@ function registerIpc(): void {
       (await loadGitTokens())[new URL(String(url)).host],
     )
   })
+  handle('code:clones', async (p: unknown) => clonesIn(await requireVault().resolve(p as string)))
   handle('code:hasToken', async (host: unknown) => !!(await loadGitTokens())[String(host)])
   handle('code:setToken', async (host: unknown, token: unknown) => {
     if (typeof host !== 'string' || !/^[\w.-]+(:\d+)?$/.test(host)) throw new Error('Ungültiger Server')

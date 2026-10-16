@@ -62,6 +62,10 @@ test('holt ein privates Repository mit Zugangstoken – Name frei wählbar', asy
   const file = path.join(folder, 'Praktikum/sql-wiederholung/aufgabe.sql')
   await expect.poll(() => existsSync(file)).toBe(true)
   await expect(window.getByTestId('progress-summary')).toContainText('sql-wiederholung')
+  // Got once: the link now leads to it, and the lab folder lists it.
+  await expect(window.getByRole('button', { name: 'Im Praktikum: sql-wiederholung' })).toBeVisible()
+  await expect(window.getByRole('button', { name: 'Repository ins Praktikum holen' })).toHaveCount(0)
+  await expect(window.getByTestId('lab-repos')).toContainText('sql-wiederholung')
   // The token never shows up in git's arguments (process list).
   expect(readFileSync(log, 'utf8')).toContain('https://projectbase.example.org/snippets/41.git')
   expect(readFileSync(log, 'utf8')).not.toContain(TOKEN)

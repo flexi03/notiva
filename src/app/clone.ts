@@ -81,8 +81,17 @@ async function runClone(ws: Workspace, url: string, target: string, name: string
         }
         await ws.reload()
       },
-      { total: 100, success: () => t('clone.done', { name, folder: target }) },
+      {
+        total: 100,
+        success: () => t('clone.done', { name, folder: target }),
+        action: () => ({
+          label: t('clone.openEditor'),
+          run: () => void electronBridge()?.code?.open(target, 'editor'),
+        }),
+      },
     )
+    // The buttons next to the link now say "Im Praktikum öffnen".
+    void import('@/app/clones').then((m) => m.loadClones(target.slice(0, target.lastIndexOf('/'))))
     return target
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e)
