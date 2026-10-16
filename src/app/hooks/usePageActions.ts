@@ -72,7 +72,8 @@ export function usePageActions(ws: Workspace) {
     },
     async openToday() {
       const today = new Date()
-      const title = today.toISOString().slice(0, 10)
+      // The local day (toISOString is UTC: after midnight it was still yesterday).
+      const title = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
       const folder = settings.dailyFolder
       const existing = `${folder}/${title}.md`
       if (ws.get(existing)) return openPage(existing)

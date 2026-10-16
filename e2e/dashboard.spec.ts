@@ -112,4 +112,23 @@ test.describe('Modulseite', () => {
     await field.pressSequentially('abfrage.sql')
     await expect(field).toHaveValue('abfrage.sql')
   })
+
+  test('„Heute“ zeigt die Termine und Aufgaben des Tages', async ({ page }) => {
+    const nav = page.getByRole('navigation', { name: 'Seiten' })
+    // Narrow screens: the side bar is folded away.
+    if (!(await nav.isVisible()))
+      await page.getByRole('button', { name: 'Seitenleiste ein-/ausblenden' }).first().click()
+    await nav.getByRole('button', { name: 'Heute' }).click()
+    const day = page.getByTestId('day-overview')
+    await expect(day).toContainText('Heute')
+    await expect(day).toContainText('Lineare Algebra')
+    await expect(day).toContainText('Übung')
+    // A click on a session opens its module (with the files for it).
+    await day
+      .getByRole('button', { name: /Lineare Algebra/ })
+      .first()
+      .click()
+    await expect(await pageTitle(page)).toHaveValue('Lineare Algebra')
+    await expect(page.getByTestId('session-focus')).toBeVisible()
+  })
 })

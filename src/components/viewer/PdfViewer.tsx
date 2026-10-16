@@ -35,6 +35,11 @@ export const PdfViewer = forwardRef<
   }
 >(function PdfViewer({ doc, zoom, onPage, overlay, className, label }, ref) {
   const scroller = useRef<HTMLDivElement>(null)
+  const forced = useRef<number | null>(null)
+  const onPageRef = useRef(onPage)
+  useEffect(() => {
+    onPageRef.current = onPage
+  })
   const [sizes, setSizes] = useState<PageSize[] | null>(null)
   const [width, setWidth] = useState(800)
 
@@ -80,6 +85,10 @@ export const PdfViewer = forwardRef<
     content: () => (scroller.current?.firstElementChild as HTMLDivElement | null) ?? null,
     scrollToPage(page, smooth = false) {
       const el = scroller.current?.querySelector<HTMLElement>(`[data-page="${page}"]`)
+      // Jumped to by the app (keys, lecture mode, search): that page is the current one – also
+      // where the end of the document keeps it from reaching the top – until the user scrolls.
+      forced.current = page
+      onPageRef.current?.(page)
       scrollIntoContainer(el, 'start', smooth ? 'smooth' : 'auto')
     },
   }))
@@ -91,6 +100,10 @@ export const PdfViewer = forwardRef<
     if (!el || !onPage) return
     let last = 0
     const update = () => {
+      if (forced.current !== null) {
+        last = forced.current
+        return
+      }
       const first = el.querySelector<HTMLElement>('[data-page]')
       const pageHeight = first?.getBoundingClientRect().height ?? el.clientHeight
       const middle = el.getBoundingClientRect().top + Math.min(el.clientHeight / 3, pageHeight / 2)
@@ -103,9 +116,24 @@ export const PdfViewer = forwardRef<
         }
       }
     }
+    // Scrolling by hand ends a jump: the position decides again.
+    const release = () => (forced.current = null)
+    const releaseKey = (e: KeyboardEvent) => {
+      if (/^(ArrowUp|ArrowDown|PageUp|PageDown|Home|End| )$/.test(e.key)) forced.current = null
+    }
     el.addEventListener('scroll', update, { passive: true })
+    el.addEventListener('wheel', release, { passive: true })
+    el.addEventListener('pointerdown', release)
+    el.addEventListener('touchstart', release, { passive: true })
+    window.addEventListener('keydown', releaseKey, true)
     update()
-    return () => el.removeEventListener('scroll', update)
+    return () => {
+      el.removeEventListener('scroll', update)
+      el.removeEventListener('wheel', release)
+      el.removeEventListener('pointerdown', release)
+      el.removeEventListener('touchstart', release)
+      window.removeEventListener('keydown', releaseKey, true)
+    }
   }, [onPage, sizes])
 
   return (
