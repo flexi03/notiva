@@ -1,6 +1,17 @@
 import { useState } from 'react'
-import { Bell, CalendarClock, CalendarPlus, FlaskConical, Info, Search, Sparkles } from 'lucide-react'
+import {
+  Bell,
+  CalendarClock,
+  CalendarPlus,
+  FlaskConical,
+  Info,
+  Package,
+  Search,
+  Sparkles,
+} from 'lucide-react'
 import { ModuleMoodle } from './ModuleMoodle'
+import { labFolderOf } from '@/app/clone'
+import { reposOf } from '@/app/labLinks'
 import { materialFolder } from '@/app/materials'
 import { suggestTimetable } from '@/app/schedule'
 import { materialFolderFor } from '@/lib/study/modules'
@@ -209,6 +220,17 @@ export function ModuleSchedule({ module }: { module: Page }) {
                     {p.title.replace(`${module.title} – `, '')}
                   </button>
                   <span className="shrink-0 text-[12px] text-ink-3 tabular-nums">{due(p)}</span>
+                  {reposOf(ws, p).map((r) => (
+                    <button
+                      key={r.path}
+                      type="button"
+                      title={r.title}
+                      className="inline-flex shrink-0 items-center gap-1 rounded-full border border-line px-1.5 text-[11.5px] hover:bg-hover"
+                      onClick={() => useApp.getState().navigate({ name: 'page', path: r.path })}
+                    >
+                      <Package size={10} /> {r.title.length > 18 ? `${r.title.slice(0, 18)}…` : r.title}
+                    </button>
+                  ))}
                   {str(p.data.Erinnerung) && str(p.data.Erinnerung) !== 'Keine' && (
                     <Bell size={12} className="shrink-0 text-ink-3" aria-label={str(p.data.Erinnerung)} />
                   )}
@@ -297,8 +319,9 @@ function LabPlanner({
                 ]),
           ],
         }))
+      const lab = labFolderOf(ws, module.path)
       for (const e of fresh)
-        await createLabTask(ws, tasksDb.path, module, e, e.kind === LAB_DATE ? remind : remindPrep)
+        await createLabTask(ws, tasksDb.path, module, e, e.kind === LAB_DATE ? remind : remindPrep, lab)
       const { announce } = await import('@/app/progress')
       announce(t('lab.added', { count: fresh.length }))
       onDone()
@@ -397,7 +420,14 @@ function LabPlanner({
   )
 }
 
-async function createLabTask(ws: Workspace, db: string, module: Page, e: LabEntry, reminder: string) {
+async function createLabTask(
+  ws: Workspace,
+  db: string,
+  module: Page,
+  e: LabEntry,
+  reminder: string,
+  lab: string | null,
+) {
   const path = await ws.createRow(db, e.title, {
     Modul: [`[[${ws.linkText(module.path)}]]`],
     Fällig: e.due,
@@ -405,10 +435,14 @@ async function createLabTask(ws: Workspace, db: string, module: Page, e: LabEntr
     Status: 'Offen',
     Erinnerung: reminder,
   })
-  if (e.sheet)
-    await ws.save(path, {
-      body: `${e.kind === LAB_PREP ? t('lab.prepBody') : t('lab.dateBody')}\n\n- [[${ws.linkText(e.sheet)}]]\n`,
-    })
+  // Linked: the sheet, and the lab (code) folder – each shows up on the other's page.
+  const lines = [
+    ...(e.sheet
+      ? [`${e.kind === LAB_PREP ? t('lab.prepBody') : t('lab.dateBody')}\n\n- [[${ws.linkText(e.sheet)}]]`]
+      : []),
+    ...(lab ? [`${t('lab.labLink')} [[${ws.linkText(`${lab}.md`)}]]`] : []),
+  ]
+  if (lines.length) await ws.save(path, { body: `${lines.join('\n\n')}\n` })
 }
 
 /**

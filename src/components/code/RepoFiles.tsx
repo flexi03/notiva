@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Code2, ExternalLink, FileCode2, FolderOpen, RefreshCw } from 'lucide-react'
 import { updateRepo } from '@/app/repoUpdate'
 import { TokenBanner } from './GitTokens'
+import { RepoTask } from './LabLinks'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import { isTextFile } from '@/lib/codeFolders'
@@ -29,6 +30,7 @@ export function RepoFiles({ page }: { page: Page }) {
   return (
     <section aria-label={t('repo.files')} data-testid="repo-files" className="no-print mt-4 space-y-3">
       <TokenBanner remote={remote} />
+      <RepoTask repo={page} />
       <div className="flex flex-wrap gap-2">
         {code?.repoFetch && (
           <Button icon={<RefreshCw size={15} />} onClick={() => void run(() => updateRepo(ws, folder))}>

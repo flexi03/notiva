@@ -134,4 +134,30 @@ test.describe('Modulseite', () => {
     await expect(await pageTitle(page)).toHaveValue('Lineare Algebra')
     await expect(page.getByTestId('session-focus')).toBeVisible()
   })
+
+  test('Praktikumstermine sind mit dem Praktikumsordner verbunden', async ({ page }) => {
+    await go(page, '/#/semester')
+    await page
+      .getByRole('region', { name: 'Datenbanken' })
+      .getByRole('button', { name: 'Praktikum bearbeiten' })
+      .click()
+    await expect(page.getByTestId('lab-dates-folder')).toContainText('Noch keine Praktikumstermine')
+    await go(page, `/#/p/${encodeURIComponent('Studium/Module/Datenbanken.md')}`)
+    const lab = page.getByRole('region', { name: 'Praktikum', exact: true })
+    await lab.getByRole('button', { name: 'Termine planen' }).click()
+    const planner = lab.getByTestId('lab-planner')
+    await planner.getByLabel('Anzahl Termine').fill('1')
+    await planner.getByRole('button', { name: '2 eintragen' }).click()
+    await expect(lab.getByTestId('lab-dates').getByRole('listitem')).toHaveCount(2)
+    // The lab folder lists them – linked both ways.
+    await go(page, '/#/semester')
+    await page
+      .getByRole('region', { name: 'Datenbanken' })
+      .getByRole('button', { name: 'Praktikum bearbeiten' })
+      .click()
+    const dates = page.getByTestId('lab-dates-folder')
+    await expect(dates).toContainText('P01 Praktikumstermin')
+    await expect(dates).toContainText('P01 Vorbereitung')
+    await expect(dates.getByRole('button', { name: /Mit dem Praktikumsordner verbinden/ })).toHaveCount(0)
+  })
 })

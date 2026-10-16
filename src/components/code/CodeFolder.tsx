@@ -16,6 +16,7 @@ import { loadClones, useClones } from '@/app/clones'
 import { ensureRepoPage } from '@/app/repoPage'
 import { updateRepo } from '@/app/repoUpdate'
 import { TokenBanner } from './GitTokens'
+import { LabDates } from './LabLinks'
 import { useDockRequests } from '@/app/dock'
 import { useMoodle } from '@/app/moodle'
 import { TerminalDock } from '@/components/terminal/TerminalDock'
@@ -165,6 +166,7 @@ export function CodeFolder({ page }: { page: Page }) {
           </ul>
         )}
       </div>
+      <LabDates lab={page} />
       {/* One hint per server whose token stopped working. */}
       {[...new Map(repos.map((r) => [r.remote.replace(/^(https?:\/\/[^/]+).*$/, '$1'), r])).values()].map(
         (r) => (
