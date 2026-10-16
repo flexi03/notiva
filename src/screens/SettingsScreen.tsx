@@ -10,6 +10,7 @@ import { Row, Section } from './settingsLayout'
 import { AiSettingsSection, McpSection } from './AiSettings'
 import { MoodleSection } from '@/components/moodle/MoodleSettings'
 import { EcampusSection } from '@/components/ecampus/EcampusSettings'
+import { GitTokensSection } from '@/components/code/GitTokens'
 import { TranscriptionSettingsSection } from '@/components/lecture/TranscriptionSettings'
 import { NotificationSettingsSection } from '@/components/notifications/NotificationSettings'
 import { PromptEditor } from '@/components/ai/PromptEditor'
@@ -304,6 +305,11 @@ export function SettingsContent({ compact = false }: { compact?: boolean }) {
                 <Section title={t('ecampus.title')}>
                   <EcampusSection />
                 </Section>
+                {electronBridge()?.code?.tokenStatus && (
+                  <Section title={t('token.title')}>
+                    <GitTokensSection />
+                  </Section>
+                )}
               </div>
             )}
             {tab === 'checks' && (

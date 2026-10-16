@@ -57,7 +57,7 @@ test('holt ein privates Repository mit Zugangstoken – Name frei wählbar', asy
   const field = tokenDialog.getByLabel(/Token/)
   await expect(field).toHaveAttribute('type', 'password')
   await field.fill(TOKEN)
-  await tokenDialog.getByRole('button', { name: 'Speichern und holen' }).click()
+  await tokenDialog.getByRole('button', { name: 'Speichern' }).click()
 
   const file = path.join(folder, 'Praktikum/sql-wiederholung/aufgabe.sql')
   await expect.poll(() => existsSync(file)).toBe(true)
@@ -77,4 +77,23 @@ test('holt ein privates Repository mit Zugangstoken – Name frei wählbar', asy
   // The token never shows up in git's arguments (process list).
   expect(readFileSync(log, 'utf8')).toContain('https://projectbase.example.org/snippets/41.git')
   expect(readFileSync(log, 'utf8')).not.toContain(TOKEN)
+
+  // Something new on the server: "Aktualisieren" shows it first, takes it over after confirming.
+  writeFileSync(path.join(folder, 'Praktikum/sql-wiederholung/.git/new'), '')
+  await window.getByTestId('lab-repos').getByRole('button', { name: 'Aktualisieren' }).click()
+  const update = window.getByRole('dialog', { name: /1 neue Änderung\(en\) in „sql-wiederholung“/ })
+  await expect(update).toContainText('Aufgabe 2 ergänzt')
+  await expect(update).toContainText('aufgabe2.sql')
+  await update.getByRole('button', { name: 'Übernehmen' }).click()
+  await expect.poll(() => existsSync(path.join(folder, 'Praktikum/sql-wiederholung/aufgabe2.sql'))).toBe(true)
+  // Nothing new any more.
+  await window.getByTestId('lab-repos').getByRole('button', { name: 'Aktualisieren' }).click()
+  await expect(window.getByTestId('progress-summary')).toContainText('ist aktuell')
+
+  // The stored access is listed in the settings (with its state) and in the sync overview.
+  await window.evaluate(() => (location.hash = '#/settings/study'))
+  await expect(window.getByTestId('git-tokens')).toContainText('projectbase.example.org')
+  await expect(
+    window.getByTestId('git-tokens').getByRole('button', { name: 'Neuen Token eintragen' }),
+  ).toBeVisible()
 })

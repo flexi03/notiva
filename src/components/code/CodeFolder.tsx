@@ -6,6 +6,7 @@ import {
   FilePlus,
   FolderOpen,
   GitBranch,
+  RefreshCw,
   Globe,
   Link2,
   SquareTerminal,
@@ -13,6 +14,8 @@ import {
 import { RepoButton } from './RepoButton'
 import { loadClones, useClones } from '@/app/clones'
 import { ensureRepoPage } from '@/app/repoPage'
+import { updateRepo } from '@/app/repoUpdate'
+import { TokenBanner } from './GitTokens'
 import { useDockRequests } from '@/app/dock'
 import { useMoodle } from '@/app/moodle'
 import { TerminalDock } from '@/components/terminal/TerminalDock'
@@ -162,6 +165,12 @@ export function CodeFolder({ page }: { page: Page }) {
           </ul>
         )}
       </div>
+      {/* One hint per server whose token stopped working. */}
+      {[...new Map(repos.map((r) => [r.remote.replace(/^(https?:\/\/[^/]+).*$/, '$1'), r])).values()].map(
+        (r) => (
+          <TokenBanner key={`token:${r.name}`} remote={r.remote} />
+        ),
+      )}
       {repos.length > 0 && bridge && (
         <div data-testid="lab-repos">
           <h3 className="mb-1 text-[12.5px] font-semibold text-ink-2">{t('clone.repos')}</h3>
@@ -184,6 +193,14 @@ export function CodeFolder({ page }: { page: Page }) {
                   {r.name}
                 </button>
                 <span className="min-w-0 flex-1 truncate text-[12px] text-ink-3">{r.remote}</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={<RefreshCw size={13} />}
+                  onClick={() => void run(() => updateRepo(ws, `${folder}/${r.name}`))}
+                >
+                  {t('repo.update')}
+                </Button>
                 <Button
                   size="sm"
                   variant="ghost"

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Code2, ExternalLink, FileCode2, FolderOpen } from 'lucide-react'
+import { Code2, ExternalLink, FileCode2, FolderOpen, RefreshCw } from 'lucide-react'
+import { updateRepo } from '@/app/repoUpdate'
+import { TokenBanner } from './GitTokens'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import { isTextFile } from '@/lib/codeFolders'
@@ -23,9 +25,16 @@ export function RepoFiles({ page }: { page: Page }) {
     .sort((a, b) => a.path.localeCompare(b.path, 'de', { numeric: true }))
   const link = typeof page.data.link === 'string' && /^https:/.test(page.data.link) ? page.data.link : null
   const code = electronBridge()?.code
+  const remote = typeof page.data.repo === 'string' ? page.data.repo : undefined
   return (
     <section aria-label={t('repo.files')} data-testid="repo-files" className="no-print mt-4 space-y-3">
+      <TokenBanner remote={remote} />
       <div className="flex flex-wrap gap-2">
+        {code?.repoFetch && (
+          <Button icon={<RefreshCw size={15} />} onClick={() => void run(() => updateRepo(ws, folder))}>
+            {t('repo.update')}
+          </Button>
+        )}
         {code && (
           <Button
             variant="primary"

@@ -31,6 +31,8 @@ import {
   cloneRepo,
   clonesIn,
   GitRepo,
+  repoFetch,
+  repoPull,
   installGit,
   setGitIdentity,
   type GitState,
@@ -728,6 +730,49 @@ function registerIpc(): void {
     const json = (await res.json()) as { title?: unknown; description?: unknown; web_url?: unknown }
     const text = (v: unknown) => (typeof v === 'string' ? v.slice(0, 20_000) : '')
     return { title: text(json.title), description: text(json.description), webUrl: text(json.web_url) }
+  })
+  handle('code:repoFetch', async (p: unknown) => {
+    const dir = await requireVault().resolve(p as string)
+    const remote = (await clonesIn(path.dirname(dir))).find((c) => c.name === path.basename(dir))?.remote
+    const host = remote && /^https?:/.test(remote) ? new URL(remote).host : ''
+    return repoFetch(dir, (await loadGitTokens())[host])
+  })
+  handle('code:repoPull', async (p: unknown) => repoPull(await requireVault().resolve(p as string)))
+  // The stored tokens still work? (revoked, expired, missing scope) – asked at GitLab's API.
+  handle('code:tokenStatus', async () => {
+    const tokens = await loadGitTokens()
+    return Promise.all(
+      Object.entries(tokens).map(async ([host, token]) => {
+        try {
+          const res = await net.fetch(`https://${host}/api/v4/personal_access_tokens/self`, {
+            headers: { 'PRIVATE-TOKEN': token },
+          })
+          if (res.status === 401) return { host, state: 'invalid' as const }
+          // Valid, but without read_api: cloning works, the API (descriptions) does not.
+          if (res.status === 403) return { host, state: 'limited' as const }
+          if (res.status === 404) {
+            // Older GitLab without that route: /user answers 401 for a revoked token, too.
+            const user = await net.fetch(`https://${host}/api/v4/user`, {
+              headers: { 'PRIVATE-TOKEN': token },
+            })
+            if (user.status === 401) return { host, state: 'invalid' as const }
+            if (user.status === 403) return { host, state: 'limited' as const }
+            return { host, state: user.ok ? ('ok' as const) : ('unknown' as const) }
+          }
+          if (!res.ok) return { host, state: 'unknown' as const }
+          const json = (await res.json()) as { scopes?: unknown; expires_at?: unknown; active?: unknown }
+          const scopes = Array.isArray(json.scopes) ? json.scopes.map(String) : []
+          return {
+            host,
+            state: json.active === false ? ('invalid' as const) : ('ok' as const),
+            scopes,
+            ...(typeof json.expires_at === 'string' ? { expiresAt: json.expires_at } : {}),
+          }
+        } catch {
+          return { host, state: 'unknown' as const }
+        }
+      }),
+    )
   })
   handle('code:clones', async (p: unknown) => clonesIn(await requireVault().resolve(p as string)))
   handle('code:hasToken', async (host: unknown) => !!(await loadGitTokens())[String(host)])

@@ -1,3 +1,4 @@
+import { textHash } from '@/lib/textHash'
 import { t } from '@/i18n'
 import { electronBridge } from '@/lib/vault'
 import type { Workspace } from '@/lib/workspace'
@@ -37,6 +38,8 @@ export async function ensureRepoPage(
       repo: cloneUrl,
       link: meta?.webUrl || link,
       ...(heading !== name ? { title: heading } : {}),
+      // To notice a changed description on "Aktualisieren" (and whether the page was edited).
+      ...(description ? { descriptionHash: textHash(description), bodyHash: textHash(body.trim()) } : {}),
     },
     body,
   })

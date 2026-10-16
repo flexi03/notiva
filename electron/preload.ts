@@ -147,6 +147,9 @@ contextBridge.exposeInMainWorld('notiva', {
         'code:snippetInfo',
         url,
       ),
+    repoFetch: (folder: string) => invoke('code:repoFetch', folder),
+    repoPull: (folder: string) => invoke<void>('code:repoPull', folder),
+    tokenStatus: () => invoke('code:tokenStatus'),
     clones: (folder: string) => invoke<Array<{ name: string; remote: string }>>('code:clones', folder),
     setToken: (host: string, token: string | null) => invoke<boolean>('code:setToken', host, token),
     onCloneProgress: (callback: (percent: number) => void) => {

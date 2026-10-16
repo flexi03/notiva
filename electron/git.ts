@@ -50,7 +50,11 @@ const WRITE_TIMEOUT = 15 * 60_000
 /** Running write operation per repository (Notiva opens a new GitRepo per request). */
 const queues = new Map<string, Promise<unknown>>()
 
-function run(cwd: string, args: string[], options: { allowFail?: boolean; timeout?: number } = {}) {
+function run(
+  cwd: string,
+  args: string[],
+  options: { allowFail?: boolean; timeout?: number; env?: Record<string, string> } = {},
+) {
   return new Promise<{ code: number; stdout: string; stderr: string }>((resolve, reject) => {
     execFile(
       // E2E tests: a missing git (NOTIVA_E2E_GIT) shows the "install Git" fix.
@@ -60,7 +64,13 @@ function run(cwd: string, args: string[], options: { allowFail?: boolean; timeou
         cwd,
         timeout: options.timeout ?? 30_000,
         maxBuffer: 32 * 1024 * 1024,
-        env: { ...process.env, GIT_TERMINAL_PROMPT: '0', GIT_OPTIONAL_LOCKS: '0', LC_ALL: 'C' },
+        env: {
+          ...process.env,
+          GIT_TERMINAL_PROMPT: '0',
+          GIT_OPTIONAL_LOCKS: '0',
+          LC_ALL: 'C',
+          ...options.env,
+        },
       },
       (error, stdout, stderr) => {
         const code = error ? (typeof error.code === 'number' ? error.code : 1) : 0
@@ -399,13 +409,7 @@ export async function cloneRepo(
         GIT_TERMINAL_PROMPT: '0',
         LC_ALL: 'C',
         // Token via environment config (git ≥ 2.31): not visible in the process list.
-        ...(token
-          ? {
-              GIT_CONFIG_COUNT: '1',
-              GIT_CONFIG_KEY_0: `http.${new URL(url).origin}/.extraHeader`,
-              GIT_CONFIG_VALUE_0: `Authorization: Basic ${Buffer.from(`oauth2:${token}`).toString('base64')}`,
-            }
-          : {}),
+        ...tokenEnv(url, token),
       },
       windowsHide: true,
     })
@@ -466,4 +470,69 @@ export async function clonesIn(dir: string): Promise<Array<{ name: string; remot
     if (remote) out.push({ name: e.name, remote })
   }
   return out
+}
+
+/** The token as HTTP header for one server (git ≥ 2.31 reads GIT_CONFIG_* – never in argv). */
+export function tokenEnv(url: string, token?: string): Record<string, string> {
+  if (!token) return {}
+  return {
+    GIT_CONFIG_COUNT: '1',
+    GIT_CONFIG_KEY_0: `http.${new URL(url).origin}/.extraHeader`,
+    GIT_CONFIG_VALUE_0: `Authorization: Basic ${Buffer.from(`oauth2:${token}`).toString('base64')}`,
+  }
+}
+
+const LOGIN =
+  /redirection|authentication|could not read username|terminal prompts disabled|access denied|\b40[13]\b/i
+
+export interface RepoUpdate {
+  remote: string
+  /** commits on the server that are not here yet */
+  commits: Array<{ hash: string; date: string; subject: string }>
+  /** files those commits change */
+  files: string[]
+  /** own changes in the folder (would block or mix with an update) */
+  dirty: string[]
+}
+
+/** "Aktualisieren": git fetch, then what is new on the server – nothing is changed yet. */
+export async function repoFetch(dir: string, token?: string): Promise<RepoUpdate> {
+  const remote = (await run(dir, ['config', '--get', 'remote.origin.url'])).stdout.trim()
+  const env = tokenEnv(remote, token)
+  const fetched = await run(dir, ['fetch', '--quiet', 'origin'], { allowFail: true, timeout: 120_000, env })
+  if (fetched.code !== 0) {
+    const text = fetched.stderr.trim().slice(0, 800) || 'git fetch fehlgeschlagen'
+    throw new GitError(LOGIN.test(text) ? `LOGIN: ${text}` : text)
+  }
+  const log = await run(dir, ['log', 'HEAD..@{u}', '--format=%h%x09%ad%x09%s', '--date=short'], {
+    allowFail: true,
+  })
+  const commits = log.stdout
+    .split('\n')
+    .filter(Boolean)
+    .map((l) => {
+      const [hash = '', date = '', ...subject] = l.split('\t')
+      return { hash, date, subject: subject.join('\t') }
+    })
+  const files = commits.length
+    ? (await run(dir, ['diff', '--name-only', 'HEAD...@{u}'], { allowFail: true })).stdout
+        .split('\n')
+        .filter(Boolean)
+    : []
+  const dirty = (await run(dir, ['status', '--porcelain'], { allowFail: true })).stdout
+    .split('\n')
+    .filter(Boolean)
+    .map((l) => l.slice(3))
+  return { remote, commits, files, dirty }
+}
+
+/** Takes over what is new (fast-forward only – own commits are never rewritten). */
+export async function repoPull(dir: string): Promise<void> {
+  const result = await run(dir, ['merge', '--ff-only', '@{u}'], { allowFail: true })
+  if (result.code !== 0)
+    throw new GitError(
+      /not possible to fast-forward|diverging|overwritten/i.test(result.stderr)
+        ? `CONFLICT: ${result.stderr.trim().slice(0, 600)}`
+        : result.stderr.trim().slice(0, 800),
+    )
 }

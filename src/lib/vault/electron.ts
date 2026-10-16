@@ -210,6 +210,24 @@ export interface NotivaBridge {
     snippetInfo?(
       url: string,
     ): Promise<{ title: string; description: string; webUrl: string } | { error: 'scope' } | null>
+    /** git fetch of a got repository: what is new on the server (nothing changed yet) */
+    repoFetch?(folder: string): Promise<{
+      remote: string
+      commits: Array<{ hash: string; date: string; subject: string }>
+      files: string[]
+      dirty: string[]
+    }>
+    /** take over what is new (fast-forward only) */
+    repoPull?(folder: string): Promise<void>
+    /** do the stored tokens still work? */
+    tokenStatus?(): Promise<
+      Array<{
+        host: string
+        state: 'ok' | 'invalid' | 'limited' | 'unknown'
+        scopes?: string[]
+        expiresAt?: string
+      }>
+    >
     /** repositories already in a (lab) folder, with their origin address */
     clones?(folder: string): Promise<Array<{ name: string; remote: string }>>
     setToken?(host: string, token: string | null): Promise<boolean>

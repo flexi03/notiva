@@ -20,6 +20,8 @@ export async function syncAll(ws: Workspace): Promise<void> {
     if (ecampus?.connected) await useEcampus.getState().fetchNow()
     await syncExamPlan(ws).catch(() => undefined)
     await autoSyncStudy(ws).catch(() => undefined)
+    // Git access (ProjectBase …): still valid?
+    await import('@/app/gitTokens').then((m) => m.checkGitTokens()).catch(() => undefined)
   } finally {
     useSync.setState({ running: false })
   }

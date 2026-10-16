@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
-import { RefreshCw } from 'lucide-react'
+import { KeyRound, RefreshCw } from 'lucide-react'
+import { useGitTokens } from '@/app/gitTokens'
 import { useNotifications } from '@/app/notifications'
-import { useWorkspace } from '@/app/store'
+import { useApp, useWorkspace } from '@/app/store'
 import { SOURCES, syncAll, syncOne, useSync } from '@/app/sync'
 import { getLanguage, t } from '@/i18n'
 import { Button, cx, IconButton, Popover } from '@/components/ui'
@@ -13,6 +14,10 @@ export function SyncButton() {
   const anchor = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
   const running = useSync((s) => s.running)
+  const navigate = useApp((s) => s.navigate)
+  // Git access (ProjectBase …): a revoked token shows here, too.
+  const tokens = useGitTokens((s) => s.list)
+  const bad = tokens.filter((x) => x.state === 'invalid').length
   const list = useNotifications((s) => s.list)
   const checks = list.filter((n) => n.kind === 'check')
   const [now, setNow] = useState(0)
@@ -48,8 +53,15 @@ export function SyncButton() {
           setOpen((v) => !v)
         }}
         active={open}
+        className="relative"
       >
         <RefreshCw size={18} className={cx(running && 'animate-spin')} />
+        {bad > 0 && (
+          <span
+            aria-label={t('token.syncBad', { count: bad })}
+            className="absolute top-1 right-1 size-2 rounded-full bg-danger"
+          />
+        )}
       </IconButton>
       <Popover
         anchor={anchor}
@@ -90,6 +102,27 @@ export function SyncButton() {
               )
             })}
           </ul>
+          {tokens.length > 0 && (
+            <button
+              type="button"
+              data-testid="sync-tokens"
+              onClick={() => {
+                setOpen(false)
+                navigate({ name: 'settings', section: 'study' })
+              }}
+              className="flex w-full items-center gap-2 rounded-control px-1 py-1 text-left text-[13px] hover:bg-hover"
+            >
+              <KeyRound size={13} className={bad ? 'text-danger' : 'text-accent'} />
+              <span className="flex-1 font-medium">{t('token.sync')}</span>
+              <span className={bad ? 'text-[12px] font-semibold text-danger' : 'text-[12px] text-ink-3'}>
+                {bad
+                  ? t('token.syncBad', { count: bad })
+                  : t('token.syncOk', {
+                      count: tokens.filter((x) => x.state === 'ok' || x.state === 'limited').length,
+                    })}
+              </span>
+            </button>
+          )}
           <Button
             variant="primary"
             size="sm"

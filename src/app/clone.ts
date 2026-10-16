@@ -110,35 +110,46 @@ async function runClone(
     useProgress.setState((s) => ({
       tasks: s.tasks.filter((x) => !(x.state === 'error' && x.label === label)),
     }))
-    const host = new URL(url).host
-    const had = await code.hasToken?.(host)
-    announce(had ? t('clone.tokenRejected', { host }) : t('clone.login', { host }), {
-      state: 'info',
-      sticky: true,
-      open: true,
-      note: t('clone.loginNote'),
-      key: `clone-login:${url}`,
-      ...(code.setToken
-        ? {
-            action: {
-              label: t('clone.enterToken'),
-              run: () =>
-                void enterToken(url).then((saved) =>
-                  saved ? runClone(ws, url, target, name, link, title) : null,
-                ),
-            },
-          }
-        : {}),
-    })
+    await showLoginHint(url, () => void runClone(ws, url, target, name, link, title))
     return null
   }
+}
+
+/**
+ * The server wants a login (private project, revoked token): the reason and "Zugangstoken
+ * eintragen"; `retry` runs once a token was saved.
+ */
+export async function showLoginHint(url: string, retry: () => void): Promise<void> {
+  const code = electronBridge()?.code
+  const host = new URL(url).host
+  const had = await code?.hasToken?.(host)
+  announce(had ? t('clone.tokenRejected', { host }) : t('clone.login', { host }), {
+    state: 'info',
+    sticky: true,
+    open: true,
+    note: t('clone.loginNote'),
+    key: `clone-login:${url}`,
+    ...(code?.setToken
+      ? {
+          action: {
+            label: t('clone.enterToken'),
+            run: () =>
+              void enterToken(url).then((saved) => {
+                if (!saved) return
+                void import('@/app/gitTokens').then((m) => m.checkGitTokens())
+                retry()
+              }),
+          },
+        }
+      : {}),
+  })
 }
 
 /**
  * Asks for an access token of the Git server (with the page to create one, scope prefilled) and
  * stores it encrypted in the main process. Resolves whether one was saved.
  */
-async function enterToken(url: string): Promise<boolean> {
+export async function enterToken(url: string): Promise<boolean> {
   const code = electronBridge()?.code
   if (!code?.setToken) return false
   const { origin, host } = new URL(url)
