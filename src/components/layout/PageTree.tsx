@@ -89,6 +89,8 @@ function TreeItem({
         className={cx(
           'group relative flex h-8 items-center gap-1 rounded-control pr-1 text-[14px] text-ink-2 hover:bg-hover',
           active && 'bg-[color-mix(in_srgb,var(--accent)_13%,transparent)] font-semibold text-ink',
+          // Older terms' material: visible, but clearly not the current one.
+          !node.page && !node.file && node.title === 'Archiv' && 'italic opacity-60',
           dropTarget && 'ring-2 ring-accent',
         )}
         style={{ paddingLeft: 4 + depth * 14 }}

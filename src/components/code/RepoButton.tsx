@@ -111,23 +111,23 @@ async function chooseSession(
   }
   const hubs = hubsOf(ws, lab)
   const n = labNumber(text)
+  // One working folder for all sessions: the repository goes into it and is linked to its session.
   const options: Array<{ value: string; label: string }> = []
-  if (n) {
-    options.push({ value: `shared:${n}`, label: t('clone.sessionShared', { name: hubName(n) }) })
-    options.push({ value: `own:${n}`, label: t('clone.sessionOwn', { name: hubName(n) }) })
-  }
+  if (n && !hubs.has(n))
+    options.push({ value: `shared:${n}`, label: t('clone.sessionNew', { name: hubName(n) }) })
   for (const k of [...hubs.keys()].sort((a, b) => a - b))
-    if (k !== n) options.push({ value: `shared:${k}`, label: hubName(k) })
+    options.push({ value: `shared:${k}`, label: hubName(k) })
   options.push({
     value: 'none',
     label: t('clone.sessionNone', { name: lab.slice(lab.lastIndexOf('/') + 1) }),
   })
+  const suggested = n ? `shared:${n}` : options[0]!.value
   const picked = await useApp.getState().ask({
     title: t('clone.sessionTitle'),
     label: n ? t('clone.sessionSuggested', { name: hubName(n) }) : t('clone.sessionPick'),
     confirmLabel: t('common.next'),
     choices: options,
-    initial: options[0]!.value,
+    initial: suggested,
   })
   if (picked === null) return null
   if (picked === 'none') return { folder: lab }

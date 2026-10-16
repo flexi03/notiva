@@ -208,6 +208,18 @@ export function CodeFolder({ page }: { page: Page }) {
                 <span className="min-w-0 flex-1 truncate text-[12px] text-ink-3">{r.remote}</span>
                 <Button
                   size="sm"
+                  variant="ghost"
+                  title={t('labRepos.copyPathHint')}
+                  onClick={() =>
+                    void navigator.clipboard
+                      .writeText(`./${r.name}/`)
+                      .then(() => useApp.getState().showToast(t('path.copied')))
+                  }
+                >
+                  {t('labRepos.copyPath')}
+                </Button>
+                <Button
+                  size="sm"
                   variant="secondary"
                   onClick={() =>
                     void run(async () =>

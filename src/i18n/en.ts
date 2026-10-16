@@ -984,6 +984,8 @@ export const en: Record<MessageKey, string> = {
   'moodleInfo.kind.deadline': 'Deadline',
   'moodleInfo.kind.news': 'Announcement',
   'moodleInfo.kind.link': 'Link',
+  'related.filesArchive': 'Archive – older terms',
+  'related.active': 'active',
   'related.filesCurrent': 'Current',
   'related.filesOlder': 'Older terms (for reference)',
   'related.filesPassed': 'Passed – for reference',
@@ -1407,6 +1409,9 @@ export const en: Record<MessageKey, string> = {
   'labRepos.pushed': '“{name}” uploaded',
   'labRepos.writeScope':
     'The server refuses the upload: the token lacks the “write_repository” scope – or you may not write to this project (usual for snippets and lecturers’ task repositories).',
+  'labRepos.copyPath': 'Copy path',
+  'labRepos.copyPathHint':
+    'Path of the repository relative to the lab folder – for commands in the terminal (it starts in the lab folder)',
   'labRepos.open': 'Open',
   'git.notPushed': 'not uploaded yet',
   'git.source.ai': 'AI · local model',

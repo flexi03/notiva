@@ -121,3 +121,19 @@ describe('term folders', () => {
     ])
   })
 })
+
+describe('current course of a module', () => {
+  it('this term, else a course without term, else the newest – not set aside', async () => {
+    const { currentCourse } = await import('../study/modules')
+    const now = new Date(2026, 9, 16)
+    const dbs = [
+      { id: 'a', name: 'Datenbanksysteme 2 - WiSe 2024/25' },
+      { id: 'b', name: 'Datenbanksysteme 2 - WiSe 2025/26' },
+      { id: 'c', name: 'BMI 32: Datenbanksysteme 2' },
+    ]
+    expect(currentCourse(dbs, () => false, now)).toBe('c')
+    expect(currentCourse([...dbs, { id: 'd', name: 'DBS 2 - WiSe 2026/27' }], () => false, now)).toBe('d')
+    expect(currentCourse(dbs.slice(0, 2), () => false, now)).toBe('b')
+    expect(currentCourse(dbs, (id) => id === 'c', now)).toBe('b')
+  })
+})

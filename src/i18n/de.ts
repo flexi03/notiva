@@ -996,6 +996,8 @@ export const de = {
   'moodleInfo.kind.deadline': 'Frist',
   'moodleInfo.kind.news': 'Ankündigung',
   'moodleInfo.kind.link': 'Link',
+  'related.filesArchive': 'Archiv – ältere Semester',
+  'related.active': 'aktiv',
   'related.filesCurrent': 'Aktuell',
   'related.filesOlder': 'Ältere Semester (zum Nachschlagen)',
   'related.filesPassed': 'Bestanden – zum Nachschlagen',
@@ -1422,6 +1424,9 @@ export const de = {
   'labRepos.pushed': '„{name}“ hochgeladen',
   'labRepos.writeScope':
     'Der Server lässt nicht hochladen: Dem Token fehlt das Recht „write_repository“ – oder du darfst in dieses Projekt nicht schreiben (bei Snippets und Aufgaben-Repos der Dozierenden üblich).',
+  'labRepos.copyPath': 'Pfad kopieren',
+  'labRepos.copyPathHint':
+    'Pfad des Repositorys relativ zum Praktikumsordner – für Befehle im Terminal (es startet im Praktikumsordner)',
   'labRepos.open': 'Öffnen',
   'git.notPushed': 'noch nicht hochgeladen',
   'git.source.ai': 'KI · lokales Modell',

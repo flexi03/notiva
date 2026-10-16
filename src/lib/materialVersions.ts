@@ -142,7 +142,13 @@ export function planSort(
     if (!path.startsWith(`${base}/`) || /\.md$/i.test(path)) continue
     const parts = path.slice(base.length + 1).split('/')
     // <Modul>/<Datei>, <Modul>/<Semester>/<Datei> or Orga/<Kurs>/<Datei>
-    const depth = parts[0] === 'Orga' || (parts.length === 3 && isTermFolder(parts[1]!)) ? 3 : 2
+    // … or <Modul>/Archiv/<Semester>/<Datei>
+    const archived = parts.length === 4 && parts[1] === 'Archiv'
+    const depth = archived
+      ? 4
+      : parts[0] === 'Orga' || (parts.length === 3 && isTermFolder(parts[1]!))
+        ? 3
+        : 2
     if (parts.length !== depth || parts[0] === 'Prüfungsplan') continue
     const parent = parts[depth - 2]!
     if (categories.has(parent)) continue

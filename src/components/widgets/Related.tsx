@@ -1,17 +1,23 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Code2, ExternalLink, FileText, FolderInput, Plus } from 'lucide-react'
 import { useMoodle } from '@/app/moodle'
 import { useCourseChoices } from '@/app/courseChoices'
 import { createCodeFolder } from '@/components/code/CodeFolder'
 import { useRecent } from '@/app/recent'
-import { loadMaterialMap, materialFolder } from '@/app/materials'
+import { materialFolder } from '@/app/materials'
 import { reindexMaterials } from '@/app/reindex'
 import { planSort } from '@/lib/materialVersions'
 import { LAB_DATE, LAB_PREP } from '@/lib/labPlan'
 import { ModuleSchedule } from './ModuleSchedule'
 import { MATERIAL_CATEGORIES } from '@/lib/moodle'
-import { courseIdsOf, isTermFolder, materialFolderFor, termFolder } from '@/lib/study/modules'
-import { parseTerm, termIndex, termOf } from '@/lib/study/terms'
+import {
+  ARCHIVE_FOLDER,
+  courseIdsOf,
+  currentCourse,
+  isTermFolder,
+  materialFolderFor,
+  termFolder,
+} from '@/lib/study/modules'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import { toIsoDate } from '@/lib/dates'
@@ -203,11 +209,10 @@ export function Related({ from }: { from: string }) {
  * folders Notiva saves Moodle files into. Each group can be collapsed.
  */
 /**
- * Files of the module by status, then by Moodle course (a new lecturer, a new term – not the same
- * material): "Aktuell" (this term's courses, else the newest), "Ältere Semester" (older terms and
- * courses marked "later"), files without a known course; courses not counted are hidden. A passed
- * module shows everything as "Bestanden – zum Nachschlagen". Within a course: lecture, lab &
- * exercises, other – names in natural order.
+ * Files of the module: the current course's material ("Aktuell", open) and, greyed and folded, the
+ * archive of older terms ("Archiv/<Semester>"); courses not counted stay hidden. A passed module
+ * shows all of it as "Bestanden – zum Nachschlagen". Within: lecture, lab & exercises, other –
+ * names in natural order.
  */
 function CourseFiles({
   folder,
@@ -220,55 +225,37 @@ function CourseFiles({
   courses: string[]
   passed: boolean
 }) {
-  const ws = useWorkspace()
   const navigate = useApp((s) => s.navigate)
   const snapshot = useMoodle((s) => s.snapshot)
   const choices = useCourseChoices()
   const recentAll = useRecent((s) => s.files)
-  const [map, setMap] = useState<Record<string, string>>({})
   const [showIgnored, setShowIgnored] = useState(false)
-  useEffect(() => {
-    void loadMaterialMap(ws).then(setMap)
-  }, [ws, ws.version])
   const known = (snapshot?.courses ?? []).filter((c) => courses.includes(c.id))
-  // File → course: saved materials (id → path, course from the last fetch) or the term folder.
-  const courseOfId = new Map((snapshot?.materials ?? []).map((m) => [m.id, m.courseId]))
-  const courseOf = new Map<string, string>()
-  for (const [id, path] of Object.entries(map)) {
-    const c = courseOfId.get(id)
-    if (c) courseOf.set(path, c)
+  const current = currentCourse(known, (id) => !!choices[id], new Date())
+  // Archive folder ("WiSe 25-26") → its course, to hide courses not counted.
+  const courseOfTerm = new Map(known.map((c) => [termFolder(c), c.id]))
+  const termOf = (f: string) => {
+    const parts = f.slice(folder.length + 1).split('/')
+    if (parts[0] === ARCHIVE_FOLDER && parts.length > 2) return parts[1]!
+    // Before the archive existed: term folders directly in the module.
+    if (parts.length > 2 && (isTermFolder(parts[0]!) || courseOfTerm.has(parts[0]!))) return parts[0]!
+    return null
   }
-  const byTermFolder = new Map(known.map((c) => [termFolder(c), c.id]))
-  const course = (f: string) => {
-    const hit = courseOf.get(f)
-    if (hit) return hit
-    const seg = f.slice(folder.length + 1).split('/')[0] ?? ''
-    return isTermFolder(seg) ? (byTermFolder.get(seg) ?? '') : ''
+  const currentFiles: string[] = []
+  const archive = new Map<string, string[]>()
+  for (const f of files) {
+    const term = termOf(f)
+    if (term === null) currentFiles.push(f)
+    else archive.set(term, [...(archive.get(term) ?? []), f])
   }
-  const byCourse = new Map<string, string[]>()
-  for (const f of files) byCourse.set(course(f), [...(byCourse.get(course(f)) ?? []), f])
-  const termOfCourse = (id: string) => parseTerm(known.find((c) => c.id === id)?.name)
-  const nowIndex = termIndex(termOf(new Date()))
-  const counted = courses.filter((c) => byCourse.has(c) && choices[c] !== 'ignore')
-  const ignored = courses.filter((c) => byCourse.has(c) && choices[c] === 'ignore')
-  // "Aktuell": this term's courses; none → the newest course that counts.
-  let current = counted.filter(
-    (c) => choices[c] !== 'later' && termOfCourse(c) && termIndex(termOfCourse(c)!) === nowIndex,
-  )
-  if (!current.length) {
-    const newest = [...counted]
-      .filter((c) => choices[c] !== 'later')
-      .sort(
-        (a, b) =>
-          (termOfCourse(b) ? termIndex(termOfCourse(b)!) : 0) -
-          (termOfCourse(a) ? termIndex(termOfCourse(a)!) : 0),
-      )[0]
-    if (newest) current = [newest]
+  const ignoredTerm = (term: string) => {
+    const id = courseOfTerm.get(term)
+    return !!id && choices[id] === 'ignore'
   }
-  const older = counted.filter((c) => !current.includes(c))
-  const hidden = new Set(ignored.flatMap((c) => byCourse.get(c) ?? []))
-  const recent = recentAll.filter((r) => files.includes(r.path) && !hidden.has(r.path)).slice(0, 3)
-  const name = (id: string) => known.find((c) => c.id === id)?.name ?? id
+  const hidden = [...archive].filter(([term]) => ignoredTerm(term))
+  const shown = [...archive].filter(([term]) => !ignoredTerm(term)).sort((a, b) => b[0].localeCompare(a[0]))
+  const hiddenSet = new Set(hidden.flatMap(([, l]) => l))
+  const recent = recentAll.filter((r) => currentFiles.includes(r.path)).slice(0, 3)
   const item = (f: string) => (
     <li key={f}>
       <button
@@ -305,57 +292,74 @@ function CourseFiles({
         </details>
       ))
   }
-  const courseBlock = (id: string, open: boolean) => (
-    <details key={id || 'none'} open={open} className="ml-1" data-testid="files-course">
-      <summary className="cursor-pointer text-[13px] font-medium">
-        {id ? name(id) : t('related.filesNoCourse')}
-        <span className="ml-1.5 text-[12px] font-normal text-ink-3">{byCourse.get(id)!.length}</span>
-        {choices[id] === 'later' && (
-          <span className="ml-1.5 rounded-full bg-[var(--opt-yellow)] px-1.5 text-[11px] text-[var(--opt-yellow-ink)]">
-            {t('courseUse.laterShort')}
-          </span>
-        )}
-      </summary>
-      {byKind(byCourse.get(id)!, id, open)}
-    </details>
-  )
-  const status = (title: string, ids: string[], open: boolean, testid: string) =>
-    ids.length > 0 && (
-      <details key={testid} open={open} data-testid={testid}>
-        <summary className="cursor-pointer text-[12px] font-semibold tracking-wide text-ink-3">
-          {title} ({ids.reduce((n, id) => n + (byCourse.get(id)?.length ?? 0), 0)})
+  const currentName = current ? known.find((c) => c.id === current)?.name : undefined
+  const archiveBlock = (open: boolean) =>
+    shown.length > 0 && (
+      <details open={open} className="opacity-70" data-testid="files-archive">
+        <summary className="cursor-pointer text-[12.5px] font-semibold text-ink-3">
+          {t('related.filesArchive')} ({shown.reduce((n, [, l]) => n + l.length, 0)})
         </summary>
-        <div className="mt-1 space-y-1">{ids.map((id, i) => courseBlock(id, open && i === 0))}</div>
+        <div className="mt-1 space-y-1">
+          {shown.map(([term, list]) => (
+            <details key={term} className="ml-2">
+              <summary className="cursor-pointer text-[12.5px] text-ink-2">
+                {term} ({list.length})
+              </summary>
+              {byKind(list, term, false)}
+            </details>
+          ))}
+        </div>
       </details>
     )
-  const unknown = byCourse.has('') ? [''] : []
   return (
     <div className="mt-0.5 ml-3 space-y-1.5 border-l border-line pl-2" aria-label={t('related.files')}>
-      {recent.length > 0 && (
-        <div>
-          <p className="text-[12px] font-semibold text-ink-3">{t('related.recent')}</p>
-          <ul>{recent.map((r) => item(r.path))}</ul>
-        </div>
-      )}
       {passed ? (
-        status(t('related.filesPassed'), [...counted, ...unknown], false, 'files-passed')
+        <details data-testid="files-passed">
+          <summary className="cursor-pointer text-[12.5px] font-semibold text-ink-3">
+            {t('related.filesPassed')} ({files.length - hiddenSet.size})
+          </summary>
+          {byKind(currentFiles, 'passed', false)}
+          {archiveBlock(false)}
+        </details>
       ) : (
         <>
-          {status(t('related.filesCurrent'), current, true, 'files-current')}
-          {status(t('related.filesOlder'), older, false, 'files-older')}
-          {status(t('related.filesNoCourse'), unknown, !current.length, 'files-unknown')}
+          {recent.length > 0 && (
+            <div>
+              <p className="text-[12px] font-semibold text-ink-3">{t('related.recent')}</p>
+              <ul>{recent.map((r) => item(r.path))}</ul>
+            </div>
+          )}
+          {currentFiles.length > 0 && (
+            <details open data-testid="files-current">
+              <summary className="cursor-pointer text-[12.5px] font-semibold">
+                {t('related.filesCurrent')}
+                {currentName && <span className="ml-1.5 font-normal text-ink-3">{currentName}</span>}
+                <span className="ml-1.5 rounded-full bg-accent px-1.5 text-[10.5px] font-semibold text-on-accent">
+                  {t('related.active')}
+                </span>
+              </summary>
+              {byKind(currentFiles, 'current', true)}
+            </details>
+          )}
+          {archiveBlock(currentFiles.length === 0)}
         </>
       )}
-      {ignored.length > 0 && (
+      {hidden.length > 0 && (
         <button
           type="button"
           className="text-[12px] text-ink-3 hover:text-ink hover:underline"
           onClick={() => setShowIgnored((v) => !v)}
         >
-          {t('related.filesIgnored', { count: hidden.size })}
+          {t('related.filesIgnored', { count: hiddenSet.size })}
         </button>
       )}
-      {showIgnored && ignored.map((c) => courseBlock(c, false))}
+      {showIgnored &&
+        hidden.map(([term, list]) => (
+          <details key={term} className="ml-2 opacity-60">
+            <summary className="cursor-pointer text-[12.5px] text-ink-3">{term}</summary>
+            {byKind(list, `ign:${term}`, false)}
+          </details>
+        ))}
     </div>
   )
 }

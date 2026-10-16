@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { CalendarClock, ExternalLink, FileText, FolderOpen, GitBranch, Link2 } from 'lucide-react'
 import { loadClones, useClones } from '@/app/clones'
 import { labNumber, labTasksOf, moduleOfPath } from '@/app/labLinks'
-import { linkRepoToSession, moveRepoToHub, moveRepoToLab, reposOfSession, taskNumber } from '@/app/labHubs'
+import { linkRepoToSession, moveRepoToLab, reposOfSession, taskNumber } from '@/app/labHubs'
 import { materialFolder } from '@/app/materials'
 import { useMoodle } from '@/app/moodle'
 import { ensureRepoPage } from '@/app/repoPage'
@@ -154,7 +154,6 @@ export function LabHub({ page }: { page: Page }) {
           {clones.map((c) => (
             <li key={c.folder} className="flex flex-wrap items-center gap-2 text-[13.5px]">
               <span className="font-medium">{c.name}</span>
-              <span className="text-[12px] text-ink-3">{c.own ? t('hub.ownEnv') : t('hub.sharedEnv')}</span>
               <span className="min-w-0 flex-1" />
               <Button
                 size="sm"
@@ -179,23 +178,24 @@ export function LabHub({ page }: { page: Page }) {
                   {t('clone.openEditor')}
                 </Button>
               )}
-              <Button
-                size="sm"
-                variant="ghost"
-                title={c.own ? t('hub.toSharedHint') : t('hub.toOwnHint')}
-                onClick={() =>
-                  void run(async () => {
-                    const to = c.own
-                      ? await moveRepoToLab(ws, lab, c.folder)
-                      : await moveRepoToHub(ws, lab, c.name, n)
-                    await linkRepoToSession(ws, `${to}.md`, page.path)
-                    await loadClones(folder)
-                    await loadClones(lab)
-                  })
-                }
-              >
-                {c.own ? t('hub.toShared') : t('hub.toOwn')}
-              </Button>
+              {/* Older versions put a repository into the session's own folder: back to the shared one. */}
+              {c.own && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  title={t('hub.toSharedHint')}
+                  onClick={() =>
+                    void run(async () => {
+                      const to = await moveRepoToLab(ws, lab, c.folder)
+                      await linkRepoToSession(ws, `${to}.md`, page.path)
+                      await loadClones(folder)
+                      await loadClones(lab)
+                    })
+                  }
+                >
+                  {t('hub.toShared')}
+                </Button>
+              )}
             </li>
           ))}
         </ul>

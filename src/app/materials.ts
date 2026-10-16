@@ -1,7 +1,16 @@
 import { announce, withProgress } from '@/app/progress'
 import { t } from '@/i18n'
 import { importTargets, type MoodleMaterial, type MoodleSnapshot } from '@/lib/moodle'
-import { courseIdsOf, materialFolderFor, moduleOfCourse, termFolder } from '@/lib/study/modules'
+import {
+  ARCHIVE_FOLDER,
+  courseIdsOf,
+  currentCourse,
+  materialFolderFor,
+  moduleOfCourse,
+  termFolder,
+} from '@/lib/study/modules'
+import { useMoodle } from '@/app/moodle'
+import { useCourseChoices } from '@/app/courseChoices'
 import { notesPathFor } from '@/lib/annotations'
 import { versionName } from '@/lib/materialVersions'
 import { findStudyDashboard } from '@/lib/study/sync'
@@ -172,8 +181,18 @@ export function courseFolder(
       // Not linked yet: a module of the same name.
       rows.find((r) => norm(r.title) === norm(course.name))?.title,
   )
-  // Several courses (terms) for one module: each its own folder – the material is not the same.
-  return row && courseIdsOf(row.data).length > 1 ? `${folder}/${termFolder(course)}` : folder
+  // Several courses for one module: the current one directly in the module, the others (older
+  // terms, set aside) in "Archiv/<Semester>" – not the same material.
+  const ids = row ? courseIdsOf(row.data) : []
+  if (ids.length < 2) return folder
+  const known = useMoodle.getState().snapshot?.courses ?? []
+  const courses = ids.map(
+    (id) => known.find((c) => c.id === id) ?? (id === course.id ? course : { id, name: id }),
+  )
+  const choices = useCourseChoices.getState()
+  return currentCourse(courses, (id) => !!choices[id], new Date()) === course.id
+    ? folder
+    : `${folder}/${ARCHIVE_FOLDER}/${termFolder(course)}`
 }
 
 /** Saves a material into the vault (main process downloads it) and remembers where. */

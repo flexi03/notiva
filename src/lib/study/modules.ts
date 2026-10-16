@@ -1,3 +1,4 @@
+import { parseTerm, termIndex, termOf } from './terms'
 /**
  * Modules are the centre of the study folder: a module page knows its Moodle courses (`kurse:`,
  * course ids of all terms), its materials live in "Unterlagen/<Modul>/…". Moodle courses without a
@@ -45,3 +46,25 @@ export function termFolder(course: { name: string; shortname?: string }): string
 
 /** "WiSe 25-26", "SoSe 26" … – a term folder name. */
 export const isTermFolder = (name: string) => /^(WiSe|SoSe) \d{2}(-\d{2})?$/.test(name)
+
+/**
+ * The course of a module that is current: of this term (not set aside), else one without a term in
+ * its name (a course kept every term, e.g. "BMI 32: Datenbanksysteme 2"), else the newest.
+ */
+export function currentCourse(
+  courses: Array<{ id: string; name: string }>,
+  setAside: (id: string) => boolean,
+  now: Date,
+): string | null {
+  const open = courses.filter((c) => !setAside(c.id))
+  const nowIndex = termIndex(termOf(now))
+  const withTerm = open.map((c) => ({ c, term: parseTerm(c.name) }))
+  const thisTerm = withTerm.find((x) => x.term && termIndex(x.term) === nowIndex)
+  if (thisTerm) return thisTerm.c.id
+  const timeless = withTerm.find((x) => !x.term)
+  if (timeless) return timeless.c.id
+  const newest = withTerm.sort((a, b) => termIndex(b.term!) - termIndex(a.term!))[0]
+  return newest?.c.id ?? null
+}
+
+export const ARCHIVE_FOLDER = 'Archiv'
