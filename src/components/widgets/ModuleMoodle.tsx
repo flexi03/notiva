@@ -107,8 +107,15 @@ export function ModuleMoodle({ module }: { module: Page }) {
     .filter((e) => e.kind === 'deadline' && e.date && new Date(e.date).getTime() >= now)
     .sort((a, b) => a.date!.localeCompare(b.date!))
   // Newest first; without a date at the end; Git links always visible.
+  // Links by their Moodle section, in Moodle's order (as on the course page).
+  const sections = new Map<string, Entry[]>()
+  for (const e of entries)
+    if (e.kind === 'link' && visible(e)) {
+      const key = `${e.course}\u0000${e.section || t('moodleInfo.noSection')}`
+      sections.set(key, [...(sections.get(key) ?? []), e])
+    }
   const history = entries
-    .filter((e) => visible(e) && !ahead.includes(e))
+    .filter((e) => visible(e) && e.kind !== 'link' && !ahead.includes(e))
     .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? '') || a.title.localeCompare(b.title))
   const shown = all ? history : history.filter((e, i) => i < 12 || e.repo || e.important)
   const locale = getLanguage() === 'de' ? 'de-DE' : 'en-US'
@@ -149,10 +156,10 @@ export function ModuleMoodle({ module }: { module: Page }) {
           {many && e.course && <Chip>{e.course}</Chip>}
           {choices[e.courseId] === 'later' && <Chip color="yellow">{t('courseUse.laterShort')}</Chip>}
         </div>
-        {(e.section || e.text) && (
+        {((e.section && e.kind !== 'link') || e.text) && (
           <p className="ml-[4.5rem] line-clamp-2 text-[12px] text-ink-3">
-            {e.section}
-            {e.section && e.text ? ' · ' : ''}
+            {e.kind !== 'link' && e.section}
+            {e.kind !== 'link' && e.section && e.text ? ' · ' : ''}
             {e.text?.slice(0, 220)}
           </p>
         )}
@@ -207,6 +214,31 @@ export function ModuleMoodle({ module }: { module: Page }) {
         <div className="mb-1">
           <h4 className="text-[12px] font-semibold text-ink-3">{t('moodleInfo.ahead')}</h4>
           <ul>{ahead.map(row)}</ul>
+        </div>
+      )}
+      {sections.size > 0 && (
+        <div className="mb-2" data-testid="moodle-links">
+          <h4 className="text-[12px] font-semibold text-ink-3">{t('moodleInfo.links')}</h4>
+          {[...sections].map(([key, list]) => {
+            const [course, section] = key.split('\u0000') as [string, string]
+            const repos = list.some((e) => e.repo)
+            return (
+              <details
+                key={key}
+                open={repos || sections.size <= 3}
+                className="border-b border-line/60 py-0.5"
+              >
+                <summary className="cursor-pointer py-1 text-[13px] font-medium">
+                  {section}
+                  <span className="ml-1.5 text-[12px] font-normal text-ink-3">
+                    {list.length}
+                    {many && course ? ` · ${course}` : ''}
+                  </span>
+                </summary>
+                <ul className="pb-1">{list.map(row)}</ul>
+              </details>
+            )
+          })}
         </div>
       )}
       {history.length > 0 && (

@@ -197,6 +197,20 @@ export function CodeFolder({ page }: { page: Page }) {
                 <span className="min-w-0 flex-1 truncate text-[12px] text-ink-3">{r.remote}</span>
                 <Button
                   size="sm"
+                  variant="secondary"
+                  onClick={() =>
+                    void run(async () =>
+                      navigate({
+                        name: 'page',
+                        path: await ensureRepoPage(ws, `${folder}/${r.name}`, r.remote, r.remote, r.name),
+                      }),
+                    )
+                  }
+                >
+                  {t('labRepos.open')}
+                </Button>
+                <Button
+                  size="sm"
                   variant="ghost"
                   icon={<RefreshCw size={13} />}
                   onClick={() => void run(() => updateRepo(ws, `${folder}/${r.name}`))}

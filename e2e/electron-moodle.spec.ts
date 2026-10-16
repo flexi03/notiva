@@ -472,6 +472,8 @@ test('legt eine neue Version daneben, vergleicht sie und ersetzt nach Wahl', asy
   )
   const moodle = window.getByTestId('module-moodle')
   await expect(moodle).toContainText('Praktikumsaufgaben (ProjectBase)')
+  // Links grouped by their Moodle section.
+  await expect(moodle.getByTestId('moodle-links')).toContainText('Praktikum')
   await expect(moodle.getByRole('button', { name: 'Repository ins Praktikum holen' })).toBeVisible()
   // A course taken later / not at all: chosen per course; not counted → its entries are hidden.
   await moodle.getByLabel(/Wie zählt „Betriebssysteme“/).selectOption('ignore')
