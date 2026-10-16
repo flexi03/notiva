@@ -63,6 +63,6 @@ test('holt ein privates Repository mit Zugangstoken – Name frei wählbar', asy
   await expect.poll(() => existsSync(file)).toBe(true)
   await expect(window.getByTestId('progress-summary')).toContainText('sql-wiederholung')
   // The token never shows up in git's arguments (process list).
-  expect(readFileSync(log, 'utf8')).toContain('https://projectbase.example.org/-/snippets/41.git')
+  expect(readFileSync(log, 'utf8')).toContain('https://projectbase.example.org/snippets/41.git')
   expect(readFileSync(log, 'utf8')).not.toContain(TOKEN)
 })

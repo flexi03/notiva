@@ -23,7 +23,7 @@ describe('git links', () => {
       name: 'se-bmi-13',
     })
     expect(repoUrl('https://projectbase.medien.hs-duesseldorf.de/-/snippets/41')).toEqual({
-      url: 'https://projectbase.medien.hs-duesseldorf.de/-/snippets/41.git',
+      url: 'https://projectbase.medien.hs-duesseldorf.de/snippets/41.git',
       name: 'snippet-41',
     })
     expect(repoUrl('https://git.example.edu/dbs/lab-3')).toEqual({
