@@ -998,9 +998,17 @@ export const de = {
     'Notiva legt den Ordner „Studium“ an: Module nach Prüfungsordnung, eine Seite je Semester, Kurse, Prüfungen, Aufgaben und Orga – und richtet Git ein. Danach Moodle und eCampus verbinden, den Rest füllt Notiva selbst.',
   'clone.noModule':
     'Der Kurs gehört noch zu keinem Modul – verknüpfe ihn unter Einstellungen → Studium („Abgleichen“), dann landet das Repository im Praktikumsordner des Moduls.',
-  'clone.openLab': 'Im Praktikum: {name}',
+  'clone.openLab': 'In der App öffnen: {name}',
   'clone.openEditor': 'Im Editor öffnen',
   'clone.repos': 'Repositories',
+  'repo.ignoreComment': 'Geholtes Repository mit eigenem Git (Notiva)',
+  'repo.files': 'Dateien des Repositories',
+  'repo.openLink': 'Link öffnen',
+  'repo.showFolder': 'Ordner zeigen',
+  'repo.empty': 'Das Repository ist leer.',
+  'repo.openFile': 'In der App öffnen',
+  'repo.noDescriptionScope':
+    'Die Beschreibung des Snippets kommt über die API – dein Token braucht dafür zusätzlich das Recht „read_api“. Mit einem neuen Token (beide Rechte) erscheint sie beim nächsten Holen.',
   'clone.button': 'Repository ins Praktikum holen',
   'clone.ask': '„{name}“ ins Praktikum holen?',
   'clone.askNote': 'git clone {url}\nOrdnername im Praktikumsordner „{folder}“:',

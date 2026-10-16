@@ -2,6 +2,7 @@ import { announce, useProgress, withProgress } from '@/app/progress'
 import { useApp } from '@/app/store'
 import { t } from '@/i18n'
 import { repoUrl } from '@/lib/gitUrl'
+import { ensureRepoPage } from '@/app/repoPage'
 import { electronBridge } from '@/lib/vault'
 import type { Workspace } from '@/lib/workspace'
 
@@ -63,10 +64,17 @@ export async function cloneIntoLab(
     announce(t('clone.exists', { name }), { state: 'info' })
     return null
   }
-  return runClone(ws, repo.url, `${folder}/${name}`, name)
+  return runClone(ws, repo.url, `${folder}/${name}`, name, link, title)
 }
 
-async function runClone(ws: Workspace, url: string, target: string, name: string): Promise<string | null> {
+async function runClone(
+  ws: Workspace,
+  url: string,
+  target: string,
+  name: string,
+  link = url,
+  title = '',
+): Promise<string | null> {
   const code = electronBridge()!.code!
   const label = t('clone.running', { name })
   try {
@@ -90,8 +98,10 @@ async function runClone(ws: Workspace, url: string, target: string, name: string
         }),
       },
     )
-    // The buttons next to the link now say "Im Praktikum öffnen".
+    // Its page (description on top, files below) and the buttons next to the link: "Im Praktikum".
+    const page = await ensureRepoPage(ws, target, url, link, title).catch(() => null)
     void import('@/app/clones').then((m) => m.loadClones(target.slice(0, target.lastIndexOf('/'))))
+    if (page) useApp.getState().navigate({ name: 'page', path: page })
     return target
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e)
@@ -113,7 +123,9 @@ async function runClone(ws: Workspace, url: string, target: string, name: string
             action: {
               label: t('clone.enterToken'),
               run: () =>
-                void enterToken(url).then((saved) => (saved ? runClone(ws, url, target, name) : null)),
+                void enterToken(url).then((saved) =>
+                  saved ? runClone(ws, url, target, name, link, title) : null,
+                ),
             },
           }
         : {}),
@@ -130,7 +142,8 @@ async function enterToken(url: string): Promise<boolean> {
   const code = electronBridge()?.code
   if (!code?.setToken) return false
   const { origin, host } = new URL(url)
-  const page = `${origin}/-/user_settings/personal_access_tokens?name=Notiva&scopes=read_repository`
+  // read_api: the description of snippets comes from the API.
+  const page = `${origin}/-/user_settings/personal_access_tokens?name=Notiva&scopes=read_repository,read_api`
   const token = await useApp.getState().ask({
     title: t('clone.tokenTitle', { host }),
     label: t('clone.tokenLabel'),

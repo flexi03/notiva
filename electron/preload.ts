@@ -142,6 +142,11 @@ contextBridge.exposeInMainWorld('notiva', {
     clone: (url: string, target: string) => invoke<void>('code:clone', url, target),
     cloneInTerminal: (url: string, target: string) => invoke<void>('code:cloneInTerminal', url, target),
     hasToken: (host: string) => invoke<boolean>('code:hasToken', host),
+    snippetInfo: (url: string) =>
+      invoke<{ title: string; description: string; webUrl: string } | { error: 'scope' } | null>(
+        'code:snippetInfo',
+        url,
+      ),
     clones: (folder: string) => invoke<Array<{ name: string; remote: string }>>('code:clones', folder),
     setToken: (host: string, token: string | null) => invoke<boolean>('code:setToken', host, token),
     onCloneProgress: (callback: (percent: number) => void) => {

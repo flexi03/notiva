@@ -988,9 +988,17 @@ export const en: Record<MessageKey, string> = {
     'Notiva creates the folder “Studium”: modules by regulations, a page per semester, courses, exams, tasks and organisation – and sets up Git. Then connect Moodle and eCampus, Notiva fills in the rest.',
   'clone.noModule':
     'This course belongs to no module yet – link it in Settings → Studies (“Sync”), then the repository goes into the module’s lab folder.',
-  'clone.openLab': 'In the lab: {name}',
+  'clone.openLab': 'Open in the app: {name}',
   'clone.openEditor': 'Open in editor',
   'clone.repos': 'Repositories',
+  'repo.ignoreComment': 'Repository got with its own Git (Notiva)',
+  'repo.files': 'Files of the repository',
+  'repo.openLink': 'Open link',
+  'repo.showFolder': 'Show folder',
+  'repo.empty': 'The repository is empty.',
+  'repo.openFile': 'Open in the app',
+  'repo.noDescriptionScope':
+    'The snippet’s description comes from the API – your token also needs the “read_api” scope. With a new token (both scopes) it appears the next time.',
   'clone.button': 'Get repository into the lab',
   'clone.ask': 'Get “{name}” into the lab?',
   'clone.askNote': 'git clone {url}\nFolder name in the lab folder “{folder}”:',

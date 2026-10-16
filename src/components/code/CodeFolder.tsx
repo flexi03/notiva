@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { RepoButton } from './RepoButton'
 import { loadClones, useClones } from '@/app/clones'
+import { ensureRepoPage } from '@/app/repoPage'
 import { useDockRequests } from '@/app/dock'
 import { useMoodle } from '@/app/moodle'
 import { TerminalDock } from '@/components/terminal/TerminalDock'
@@ -168,7 +169,20 @@ export function CodeFolder({ page }: { page: Page }) {
             {repos.map((r) => (
               <li key={r.name} className="flex flex-wrap items-center gap-2 text-[13px]">
                 <GitBranch size={12} className="shrink-0 text-accent" />
-                <span className="font-medium">{r.name}</span>
+                <button
+                  type="button"
+                  className="font-medium text-accent hover:underline"
+                  onClick={() =>
+                    void run(async () =>
+                      navigate({
+                        name: 'page',
+                        path: await ensureRepoPage(ws, `${folder}/${r.name}`, r.remote, r.remote, r.name),
+                      }),
+                    )
+                  }
+                >
+                  {r.name}
+                </button>
                 <span className="min-w-0 flex-1 truncate text-[12px] text-ink-3">{r.remote}</span>
                 <Button
                   size="sm"

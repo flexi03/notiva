@@ -713,6 +713,22 @@ function registerIpc(): void {
       (await loadGitTokens())[new URL(String(url)).host],
     )
   })
+  // GitLab snippets: title and description are not in the repository – the API has them (the
+  // stored token needs "read_api" for that).
+  handle('code:snippetInfo', async (raw: unknown) => {
+    const url = checkUrl(raw)
+    const id = /\/snippets\/(\d+)(?:\.git)?\/?$/.exec(url.pathname)?.[1]
+    if (!id) return null
+    const token = (await loadGitTokens())[url.host]
+    const res = await net.fetch(`${url.origin}/api/v4/snippets/${id}`, {
+      headers: token ? { 'PRIVATE-TOKEN': token } : {},
+    })
+    if (res.status === 401 || res.status === 403) return { error: 'scope' as const }
+    if (!res.ok) return null
+    const json = (await res.json()) as { title?: unknown; description?: unknown; web_url?: unknown }
+    const text = (v: unknown) => (typeof v === 'string' ? v.slice(0, 20_000) : '')
+    return { title: text(json.title), description: text(json.description), webUrl: text(json.web_url) }
+  })
   handle('code:clones', async (p: unknown) => clonesIn(await requireVault().resolve(p as string)))
   handle('code:hasToken', async (host: unknown) => !!(await loadGitTokens())[String(host)])
   handle('code:setToken', async (host: unknown, token: unknown) => {

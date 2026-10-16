@@ -206,6 +206,10 @@ export interface NotivaBridge {
     onCloneProgress?(callback: (percent: number) => void): () => void
     /** access token for a Git server (stored encrypted in the main process, never readable) */
     hasToken?(host: string): Promise<boolean>
+    /** a GitLab snippet's title and description (API; "scope": the token lacks read_api) */
+    snippetInfo?(
+      url: string,
+    ): Promise<{ title: string; description: string; webUrl: string } | { error: 'scope' } | null>
     /** repositories already in a (lab) folder, with their origin address */
     clones?(folder: string): Promise<Array<{ name: string; remote: string }>>
     setToken?(host: string, token: string | null): Promise<boolean>

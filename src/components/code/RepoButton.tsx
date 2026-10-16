@@ -3,6 +3,7 @@ import { FolderOpen, GitBranch } from 'lucide-react'
 import { cloneIntoLab, labFolderOf } from '@/app/clone'
 import { labFoldersOf, loadClones, sameRepo, useClones } from '@/app/clones'
 import { useRepo } from '@/app/repoDetect'
+import { ensureRepoPage } from '@/app/repoPage'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import { electronBridge } from '@/lib/vault'
@@ -46,7 +47,13 @@ export function RepoButton({
         variant="ghost"
         icon={<FolderOpen size={13} />}
         title={`${found.lab}/${found.name}`}
-        onClick={() => navigate({ name: 'page', path: `${found.lab}.md` })}
+        onClick={() =>
+          void run(async () => {
+            // Its page in the app: description, files (also for repositories got before).
+            const page = await ensureRepoPage(ws, `${found.lab}/${found.name}`, repo.url, link, title)
+            navigate({ name: 'page', path: page })
+          })
+        }
       >
         {t('clone.openLab', { name: found.name })}
       </Button>
