@@ -10,8 +10,7 @@ import {
   Link2,
   SquareTerminal,
 } from 'lucide-react'
-import { cloneIntoLab } from '@/app/clone'
-import { repoUrl } from '@/lib/gitUrl'
+import { RepoButton } from './RepoButton'
 import { useDockRequests } from '@/app/dock'
 import { useMoodle } from '@/app/moodle'
 import { TerminalDock } from '@/components/terminal/TerminalDock'
@@ -184,16 +183,7 @@ export function CodeFolder({ page }: { page: Page }) {
                 >
                   <ExternalLink size={12} />
                 </IconButton>
-                {repoUrl(l.url) && bridge?.clone && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    icon={<GitBranch size={13} />}
-                    onClick={() => void run(() => cloneIntoLab(ws, l.url, folder))}
-                  >
-                    {t('clone.button')}
-                  </Button>
-                )}
+                <RepoButton link={l.url} title={l.title} folder={folder} />
               </li>
             ))}
           </ul>

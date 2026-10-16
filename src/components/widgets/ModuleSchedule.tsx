@@ -1,8 +1,13 @@
 import { useState } from 'react'
-import { Bell, CalendarClock, CalendarPlus, FlaskConical, Info, Search, Sparkles } from 'lucide-react'
+import { Bell, CalendarClock, CalendarPlus, FlaskConical, Info, Link2, Search, Sparkles } from 'lucide-react'
+import { useMoodle } from '@/app/moodle'
+import { maybeRepo } from '@/app/repoDetect'
+import { repoUrl } from '@/lib/gitUrl'
+import { electronBridge } from '@/lib/vault'
+import { RepoButton } from '@/components/code/RepoButton'
 import { materialFolder } from '@/app/materials'
 import { suggestTimetable } from '@/app/schedule'
-import { materialFolderFor } from '@/lib/study/modules'
+import { courseIdsOf, materialFolderFor } from '@/lib/study/modules'
 import { sessionFiles } from '@/lib/semesterView'
 import { useSessionFocus } from '@/app/sessionFocus'
 import { useAction, useApp, useWorkspace } from '@/app/store'
@@ -81,6 +86,7 @@ export function ModuleSchedule({ module }: { module: Page }) {
   return (
     <>
       <SessionFocus module={module} labTasks={labTasks} />
+      <ModuleLinks module={module} />
       <section aria-label={t('schedule.title')}>
         <div className="mb-1 flex flex-wrap items-center gap-2">
           <h3 className="flex flex-1 items-center gap-1.5 text-[12.5px] font-semibold text-ink-2">
@@ -482,6 +488,56 @@ function SessionFocus({ module, labTasks }: { module: Page; labTasks: Page[] }) 
             </li>
           ))}
         </ol>
+      )}
+    </section>
+  )
+}
+
+/**
+ * The module's links from Moodle (its courses): Git projects (ProjectBase …) first, each with
+ * "Repository ins Praktikum holen"; the others folded away.
+ */
+function ModuleLinks({ module }: { module: Page }) {
+  const snapshot = useMoodle((s) => s.snapshot)
+  const courses = courseIdsOf(module.data)
+  const links = (snapshot?.materials ?? []).filter((m) => m.kind === 'url' && courses.includes(m.courseId))
+  // Same link in several terms: once.
+  const unique = links.filter((m, i) => links.findIndex((x) => x.url === m.url) === i)
+  if (!unique.length) return null
+  const repos = unique.filter((m) => repoUrl(m.url) || maybeRepo(m.url, m.title))
+  const others = unique.filter((m) => !repos.includes(m))
+  const open = (url: string) => {
+    const bridge = electronBridge()
+    if (bridge) void bridge.openExternal(url)
+    else window.open(url, '_blank', 'noopener')
+  }
+  const row = (m: (typeof unique)[number]) => (
+    <li key={m.id} className="flex flex-wrap items-center gap-x-2 text-[13.5px]">
+      <Link2 size={12} className="shrink-0 text-ink-3" />
+      <button
+        type="button"
+        className="min-w-0 truncate text-left text-accent hover:underline"
+        title={m.url}
+        onClick={() => open(m.url)}
+      >
+        {m.title}
+      </button>
+      <RepoButton link={m.url} title={m.title} module={module.path} />
+    </li>
+  )
+  return (
+    <section aria-label={t('links.title')}>
+      <h3 className="mb-1 flex items-center gap-1.5 text-[12.5px] font-semibold text-ink-2">
+        <Link2 size={13} /> {t('links.title')}
+      </h3>
+      {repos.length > 0 && <ul className="space-y-0.5">{repos.map(row)}</ul>}
+      {others.length > 0 && (
+        <details className="mt-1">
+          <summary className="cursor-pointer text-[12.5px] text-ink-3 hover:text-ink">
+            {t('links.more', { count: others.length })}
+          </summary>
+          <ul className="mt-1 space-y-0.5">{others.map(row)}</ul>
+        </details>
       )}
     </section>
   )

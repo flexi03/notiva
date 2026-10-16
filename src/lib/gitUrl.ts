@@ -10,9 +10,18 @@ export function repoUrl(link: string): { url: string; name: string } | null {
     return null
   }
   if (u.protocol !== 'https:') return null
-  const gitHost = /gitlab|github|gitea|codeberg|bitbucket|projectbase|forgejo/i.test(u.hostname)
-  // Project path: everything before GitLab's "/-/" (tree, blob, issues …) or GitHub's "/tree/".
+  const gitHost =
+    /gitlab|github|gitea|codeberg|bitbucket|projectbase|forgejo/i.test(u.hostname) ||
+    /^git\./i.test(u.hostname)
   let parts = u.pathname.split('/').filter(Boolean)
+  // GitLab snippets are small repositories too: ".../-/snippets/41" → ".../-/snippets/41.git".
+  const snippet = /^\/(?:(.+)\/)?-\/snippets\/(\d+)/.exec(u.pathname)
+  if (snippet && gitHost)
+    return {
+      url: `${u.origin}/${snippet[1] ? `${snippet[1]}/` : ''}-/snippets/${snippet[2]}.git`,
+      name: `snippet-${snippet[2]}`,
+    }
+  // Project path: everything before GitLab's "/-/" (tree, blob, issues …) or GitHub's "/tree/".
   const dash = parts.indexOf('-')
   if (dash >= 0) parts = parts.slice(0, dash)
   else if (/github/i.test(u.hostname)) parts = parts.slice(0, 2)

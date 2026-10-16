@@ -17,9 +17,15 @@ export function labFolderOf(ws: Workspace, modulePath: string): string | null {
  * progress bar. When the server wants a login, the fix is the clone in the Terminal (git asks for
  * user name and token there, the keychain keeps them).
  */
-export async function cloneIntoLab(ws: Workspace, link: string, folder: string): Promise<string | null> {
+export async function cloneIntoLab(
+  ws: Workspace,
+  link: string,
+  folder: string,
+  /** found otherwise (e.g. by the local model) */
+  given?: { url: string; name: string } | null,
+): Promise<string | null> {
   const code = electronBridge()?.code
-  const repo = repoUrl(link)
+  const repo = given ?? repoUrl(link)
   if (!code?.clone || !repo) return null
   let name = repo.name
   for (let i = 2; ws.assets().some((f) => f.path.startsWith(`${folder}/${name}/`)); i++)

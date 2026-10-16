@@ -864,10 +864,12 @@ export const en: Record<MessageKey, string> = {
   'related.findTimes': 'Find times',
   'related.session': 'Session',
   'related.sort': 'Sort {count} files',
-  'related.sortHint': 'Sort loose files into Vorlesung, Praktikum & Übung and Sonstiges (notes move along) – you see the list first',
+  'related.sortHint':
+    'Sort loose files into Vorlesung, Praktikum & Übung and Sonstiges (notes move along) – you see the list first',
   'database.time': '{name}: time (optional)',
   'schedule.title': 'Sessions',
-  'schedule.none': 'No sessions in the timetable yet – "Find times" suggests some from Moodle and the slides.',
+  'schedule.none':
+    'No sessions in the timetable yet – "Find times" suggests some from Moodle and the slides.',
   'schedule.next': 'next {date}',
   'schedule.edit': 'Edit session',
   'lab.title': 'Lab',
@@ -908,6 +910,8 @@ export const en: Record<MessageKey, string> = {
   'focus.reason.date': 'named after the date',
   'focus.reason.recent': 'saved recently',
   'focus.reason.category': 'matching category',
+  'links.title': 'Links from Moodle',
+  'links.more': '{count} more links',
   'related.newNote': 'New note',
   'related.recent': 'Recently opened',
   'related.otherFiles': 'Other files',
@@ -967,6 +971,8 @@ export const en: Record<MessageKey, string> = {
   'study.created': 'Studies created – now connect Moodle and eCampus',
   'study.createHint':
     'Notiva creates the folder “Studium”: modules by regulations, a page per semester, courses, exams, tasks and organisation – and sets up Git. Then connect Moodle and eCampus, Notiva fills in the rest.',
+  'clone.noModule':
+    'This course belongs to no module yet – link it in Settings → Studies (“Sync”), then the repository goes into the module’s lab folder.',
   'clone.button': 'Get repository into the lab',
   'clone.ask': 'Get “{name}” into the lab?',
   'clone.askNote':
@@ -976,7 +982,7 @@ export const en: Record<MessageKey, string> = {
   'clone.done': '“{name}” is now in “{folder}”',
   'clone.login': 'The repository needs a login',
   'clone.loginNote':
-    'In the Terminal, Git asks for your user name and an access token (GitLab: Preferences → Access Tokens, scope “read_repository”). The keychain remembers both for next time.',
+    'In the Terminal, Git asks for your user name and an access token (GitLab: Preferences → Access Tokens, scope “read_repository”). The keychain remembers both for next time. If the link is a group (several projects), open it in the browser and use the project’s link.',
   'clone.inTerminal': 'Get it in the Terminal',
   'clone.noLab': 'First create a lab folder on the module page (“Create code folder”).',
   'course.openBrowser': 'Open in browser',
@@ -1219,7 +1225,8 @@ export const en: Record<MessageKey, string> = {
   'git.message': 'Commit message',
   'git.messagePlaceholder': 'What did you change?',
   'git.generating': 'The local model is writing the message …',
-  'git.templateNoModel': 'Message from the template – with the local mini model Notiva summarises every change.',
+  'git.templateNoModel':
+    'Message from the template – with the local mini model Notiva summarises every change.',
   'git.setUpModel': 'Set up',
   'git.templateFailed': 'The local model did not answer – message from the template.',
   'git.useTemplate': 'Use template',

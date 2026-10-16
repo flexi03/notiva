@@ -874,10 +874,12 @@ export const de = {
   'related.findTimes': 'Zeiten suchen',
   'related.session': 'Termin',
   'related.sort': '{count} Dateien einsortieren',
-  'related.sortHint': 'Lose Dateien nach Vorlesung, Praktikum & Übung und Sonstiges sortieren (Notizen wandern mit) – du siehst vorher die Liste',
+  'related.sortHint':
+    'Lose Dateien nach Vorlesung, Praktikum & Übung und Sonstiges sortieren (Notizen wandern mit) – du siehst vorher die Liste',
   'database.time': '{name}: Uhrzeit (optional)',
   'schedule.title': 'Termine',
-  'schedule.none': 'Noch keine Termine im Stundenplan – „Zeiten suchen“ schlägt welche aus Moodle und den Folien vor.',
+  'schedule.none':
+    'Noch keine Termine im Stundenplan – „Zeiten suchen“ schlägt welche aus Moodle und den Folien vor.',
   'schedule.next': 'nächster {date}',
   'schedule.edit': 'Termin bearbeiten',
   'lab.title': 'Praktikum',
@@ -918,6 +920,8 @@ export const de = {
   'focus.reason.date': 'nach dem Datum benannt',
   'focus.reason.recent': 'kürzlich gespeichert',
   'focus.reason.category': 'passende Kategorie',
+  'links.title': 'Links aus Moodle',
+  'links.more': '{count} weitere Links',
   'related.newNote': 'Neue Mitschrift',
   'related.recent': 'Zuletzt geöffnet',
   'related.otherFiles': 'Weitere Dateien',
@@ -977,6 +981,8 @@ export const de = {
   'study.created': 'Studium angelegt – jetzt Moodle und eCampus verbinden',
   'study.createHint':
     'Notiva legt den Ordner „Studium“ an: Module nach Prüfungsordnung, eine Seite je Semester, Kurse, Prüfungen, Aufgaben und Orga – und richtet Git ein. Danach Moodle und eCampus verbinden, den Rest füllt Notiva selbst.',
+  'clone.noModule':
+    'Der Kurs gehört noch zu keinem Modul – verknüpfe ihn unter Einstellungen → Studium („Abgleichen“), dann landet das Repository im Praktikumsordner des Moduls.',
   'clone.button': 'Repository ins Praktikum holen',
   'clone.ask': '„{name}“ ins Praktikum holen?',
   'clone.askNote':
@@ -986,7 +992,7 @@ export const de = {
   'clone.done': '„{name}“ liegt jetzt in „{folder}“',
   'clone.login': 'Das Repository verlangt eine Anmeldung',
   'clone.loginNote':
-    'Im Terminal fragt Git nach Benutzername und Zugangstoken (bei GitLab: Einstellungen → Access Tokens, Recht „read_repository“). Der Schlüsselbund merkt sich beides für das nächste Mal.',
+    'Im Terminal fragt Git nach Benutzername und Zugangstoken (bei GitLab: Einstellungen → Access Tokens, Recht „read_repository“). Der Schlüsselbund merkt sich beides für das nächste Mal. Ist der Link eine Gruppe (mehrere Projekte), öffne ihn im Browser und nimm den Link des Projekts.',
   'clone.inTerminal': 'Im Terminal holen',
   'clone.noLab': 'Lege zuerst auf der Modulseite einen Praktikumsordner an („Code-Ordner anlegen“).',
   'course.openBrowser': 'Im Browser öffnen',
@@ -1231,7 +1237,8 @@ export const de = {
   'git.message': 'Commit-Nachricht',
   'git.messagePlaceholder': 'Was hast du geändert?',
   'git.generating': 'Lokales Modell schreibt die Nachricht …',
-  'git.templateNoModel': 'Nachricht aus der Vorlage – mit dem lokalen Mini-Modell fasst Notiva jede Änderung zusammen.',
+  'git.templateNoModel':
+    'Nachricht aus der Vorlage – mit dem lokalen Mini-Modell fasst Notiva jede Änderung zusammen.',
   'git.setUpModel': 'Einrichten',
   'git.templateFailed': 'Das lokale Modell hat nicht geantwortet – Nachricht aus der Vorlage.',
   'git.useTemplate': 'Vorlage nehmen',

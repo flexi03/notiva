@@ -78,6 +78,11 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
   useEffect(() => {
     if (!moodleAvailable()) return
     void useMoodle.getState().refresh()
+    // The last fetch right away – module pages show its infos and links without opening Moodle.
+    void electronBridge()
+      ?.moodle?.snapshot()
+      .then((s) => s && !useMoodle.getState().snapshot && useMoodle.setState({ snapshot: s }))
+      .catch(() => undefined)
     // After every Moodle check (also in the background): fresh data, new documents into the vault.
     return electronBridge()?.moodle?.onPolled(async () => {
       const snapshot = await electronBridge()!.moodle!.snapshot()

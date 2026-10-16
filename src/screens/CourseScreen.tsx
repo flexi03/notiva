@@ -5,7 +5,6 @@ import {
   Download,
   ExternalLink,
   FileText,
-  GitBranch,
   Globe,
   Link as LinkIcon,
   NotebookText,
@@ -13,9 +12,7 @@ import {
 } from 'lucide-react'
 import { ipcMessage, useMoodle } from '@/app/moodle'
 import { withProgress } from '@/app/progress'
-import { cloneIntoLab, labFolderOf } from '@/app/clone'
-import { createCodeFolder } from '@/components/code/CodeFolder'
-import { repoUrl } from '@/lib/gitUrl'
+import { RepoButton } from '@/components/code/RepoButton'
 import { courseIdsOf } from '@/lib/study/modules'
 import { isPdf, loadMaterialMap, saveMaterial, type MaterialMap } from '@/app/materials'
 import { useApp, useWorkspace } from '@/app/store'
@@ -84,16 +81,8 @@ export function CourseScreen({ courseId }: { courseId: string }) {
     void electronBridge()
       ?.openInWindow?.(m.url)
       .catch((e: unknown) => showToast(ipcMessage(e)))
-  const cloneRepo = (m: MoodleMaterial) =>
-    withBusy(m.id, async () => {
-      const module = ws.all().find((p) => courseIdsOf(p.data).includes(courseId))
-      if (!module) return showToast(t('clone.noLab'))
-      // No lab folder yet: "Praktikum" below the module (code: true).
-      const lab =
-        labFolderOf(ws, module.path) ?? (await createCodeFolder(ws, module.path, 'Praktikum')).slice(0, -3)
-      const target = await cloneIntoLab(ws, m.url, lab)
-      if (target) navigate({ name: 'page', path: `${lab}.md` })
-    })
+  // The module of this course – Git links offer to get the repository into its lab folder.
+  const modulePath = ws.all().find((p) => courseIdsOf(p.data).includes(courseId))?.path
 
   const downloadAll = () =>
     withBusy('all', async () => {
@@ -191,16 +180,12 @@ export function CourseScreen({ courseId }: { courseId: string }) {
                             .join(' · ')}
                         </p>
                       </div>
-                      {m.kind === 'url' && repoUrl(m.url) && electronBridge()?.code?.clone && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          icon={<GitBranch size={14} />}
-                          disabled={busy.has(m.id)}
-                          onClick={() => void cloneRepo(m)}
-                        >
-                          {t('clone.button')}
-                        </Button>
+                      {m.kind === 'url' && (
+                        <RepoButton
+                          link={m.url}
+                          title={m.title}
+                          {...(modulePath ? { module: modulePath } : {})}
+                        />
                       )}
                       {m.kind === 'url' ? (
                         <>
