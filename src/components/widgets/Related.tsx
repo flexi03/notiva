@@ -1,9 +1,20 @@
-import { AlertTriangle, CalendarPlus, Code2, ExternalLink, FileText, Plus, Search } from 'lucide-react'
+import {
+  AlertTriangle,
+  CalendarPlus,
+  Code2,
+  ExternalLink,
+  FileText,
+  FolderInput,
+  Plus,
+  Search,
+} from 'lucide-react'
 import { createCodeFolder } from '@/components/code/CodeFolder'
 import { useRecent } from '@/app/recent'
 import { useMoodle } from '@/app/moodle'
 import { materialFolder } from '@/app/materials'
 import { suggestTimetable } from '@/app/schedule'
+import { reindexMaterials } from '@/app/reindex'
+import { planSort } from '@/lib/materialVersions'
 import { MATERIAL_CATEGORIES } from '@/lib/moodle'
 import { courseIdsOf, materialFolderFor } from '@/lib/study/modules'
 import { useAction, useApp, useWorkspace } from '@/app/store'
@@ -49,6 +60,11 @@ export function Related({ from }: { from: string }) {
   const courses = courseIdsOf(page.data)
   const moduleFolder = materialFolderFor(materialFolder(ws), { name: page.title }, page.title)
   const moduleFiles = files(moduleFolder)
+  // Loose files in the module folder (older versions saved them there): sort into categories.
+  const loose = planSort(
+    moduleFiles.map((f) => f.path),
+    materialFolder(ws),
+  ).length
 
   const newNote = () =>
     run(async () => {
@@ -74,7 +90,20 @@ export function Related({ from }: { from: string }) {
     <div className="related space-y-4 rounded-panel border border-line p-3" data-interactive>
       {moduleFiles.length > 0 && (
         <section aria-label={t('related.files')}>
-          <h3 className="mb-1 text-[12.5px] font-semibold text-ink-2">{t('related.files')}</h3>
+          <div className="mb-1 flex items-center gap-2">
+            <h3 className="flex-1 text-[12.5px] font-semibold text-ink-2">{t('related.files')}</h3>
+            {loose > 0 && (
+              <Button
+                size="sm"
+                variant="ghost"
+                icon={<FolderInput size={13} />}
+                title={t('related.sortHint')}
+                onClick={() => void run(() => reindexMaterials(ws, { moodle: false, folder: moduleFolder }))}
+              >
+                {t('related.sort', { count: loose })}
+              </Button>
+            )}
+          </div>
           <CourseFiles folder={moduleFolder} files={moduleFiles.map((f) => f.path)} />
         </section>
       )}

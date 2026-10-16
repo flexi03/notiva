@@ -873,6 +873,8 @@ export const de = {
   'related.newSession': 'Termin hinzufügen',
   'related.findTimes': 'Zeiten suchen',
   'related.session': 'Termin',
+  'related.sort': '{count} Dateien einsortieren',
+  'related.sortHint': 'Lose Dateien nach Vorlesung, Praktikum & Übung und Sonstiges sortieren (Notizen wandern mit) – du siehst vorher die Liste',
   'related.newNote': 'Neue Mitschrift',
   'related.recent': 'Zuletzt geöffnet',
   'related.otherFiles': 'Weitere Dateien',

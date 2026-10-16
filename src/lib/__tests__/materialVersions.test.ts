@@ -1,5 +1,5 @@
 import type { MoodleMaterial } from '../moodle'
-import { comparePdfText, planReindex, versionName } from '../materialVersions'
+import { comparePdfText, planReindex, planSort, versionName } from '../materialVersions'
 
 const file = (id: string, filename: string, extra: Partial<MoodleMaterial> = {}): MoodleMaterial => ({
   id,
@@ -70,5 +70,38 @@ describe('comparing two PDF versions', () => {
       { kind: 'same', old: 1 },
     ])
     expect(result.removed).toEqual([])
+  })
+})
+
+describe('sorting loose files', () => {
+  it('moves files lying in a module folder into their category', () => {
+    const base = 'Studium/Unterlagen'
+    const moves = planSort(
+      [
+        `${base}/Datenbanksysteme 2/DBS2-10_Anfrageverarbeitung.pdf`,
+        `${base}/Datenbanksysteme 2/DBS2_Praktikum_03.pdf`,
+        `${base}/Datenbanksysteme 2/DBS2 - Praktikum 01 - Vorbereitungsblatt (Notizen).md`,
+        `${base}/Datenbanksysteme 2/Vorlesung/DBS2-1.pdf`,
+        `${base}/Datenbanksysteme 2/MongoDB.pdf`,
+        `${base}/Orga/Fachschaft/Termine.pdf`,
+        `${base}/Prüfungsplan/plan.pdf`,
+      ],
+      base,
+    )
+    expect(moves).toEqual([
+      {
+        from: `${base}/Datenbanksysteme 2/DBS2-10_Anfrageverarbeitung.pdf`,
+        to: `${base}/Datenbanksysteme 2/Vorlesung/DBS2-10_Anfrageverarbeitung.pdf`,
+      },
+      {
+        from: `${base}/Datenbanksysteme 2/DBS2_Praktikum_03.pdf`,
+        to: `${base}/Datenbanksysteme 2/Praktikum & Übung/DBS2_Praktikum_03.pdf`,
+      },
+      {
+        from: `${base}/Datenbanksysteme 2/MongoDB.pdf`,
+        to: `${base}/Datenbanksysteme 2/Sonstiges/MongoDB.pdf`,
+      },
+      { from: `${base}/Orga/Fachschaft/Termine.pdf`, to: `${base}/Orga/Fachschaft/Sonstiges/Termine.pdf` },
+    ])
   })
 })

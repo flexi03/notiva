@@ -107,6 +107,8 @@ const OTHER_SECTION = /organisation|allgemein|informationen|klausur|prüfung|abs
 const CODE =
   /\.(sql|zip|tar|gz|java|py|ipynb|js|ts|html?|css|json|csv|xml|log|txt|c|cpp|h|kt|swift|r|m|sh|jar)$/i
 const SLIDES = /\.(pdf|pptx?|key|odp|mp4|mov|m4v)$/i
+// Slides named after the course code: "DBS2-10_Anfrageverarbeitung.pdf", "OOP2 - Vererbung.pptx".
+const COURSE_CODE = /^[A-Z]{2,6}\d{1,2}(?:\s*[-_]\s*|\s+)\S/
 
 /**
  * Lecture or lab/exercise? The file and activity name decide first ("OOP2 - P03 …", "Kapitel05a",
@@ -127,6 +129,7 @@ export function materialCategory(
   if (OTHER_SECTION.test(section)) return 'Sonstiges'
   const file = m.filename ?? m.title
   if (CODE.test(file)) return 'Praktikum & Übung'
+  if (SLIDES.test(file) && COURSE_CODE.test(file)) return 'Vorlesung'
   if (LECTURE_SECTION.test(section)) return 'Vorlesung'
   // A topic section without keywords ("Was guckst Du – Wahrnehmung"): slides are lecture material.
   if (SLIDES.test(file) && section && !/^(allgemein|material|unterlagen|dokumente)/i.test(section))

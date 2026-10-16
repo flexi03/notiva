@@ -3,6 +3,7 @@ import { announce, withProgress } from '@/app/progress'
 import {
   announceVersions,
   courseFolder,
+  materialFolder,
   moduleNamesOf,
   moveMaterials,
   pendingVersions,
@@ -12,7 +13,7 @@ import {
 } from '@/app/materials'
 import { useApp } from '@/app/store'
 import { t } from '@/i18n'
-import { planReindex } from '@/lib/materialVersions'
+import { planReindex, planSort } from '@/lib/materialVersions'
 import { electronBridge } from '@/lib/vault'
 import type { Workspace } from '@/lib/workspace'
 
@@ -24,17 +25,40 @@ const name = (path: string) => path.slice(path.lastIndexOf('/') + 1)
  * their module/category folder (notes go along), missing files and newer versions (saved next to
  * the current file, compared afterwards). Only the ticked ones happen, with a progress bar.
  */
-export async function reindexMaterials(ws: Workspace): Promise<number> {
-  const snapshot = (await useMoodle.getState().fetchNow()) ?? (await electronBridge()?.moodle?.snapshot())
-  if (!snapshot) return 0
-  const course = (id: string) => snapshot.courses.find((c) => c.id === id)?.name ?? ''
-  const moduleNames = await moduleNamesOf(ws, snapshot)
-  const plan = planReindex(
-    snapshot.materials ?? [],
-    await savedMaterials(ws),
-    (id) => courseFolder(ws, { id, name: course(id) || 'Kurs' }, moduleNames),
-    (p) => ws.has(p),
-  )
+export async function reindexMaterials(
+  ws: Workspace,
+  options: { moodle?: boolean; folder?: string } = {},
+): Promise<number> {
+  // Without Moodle (or not connected): only sorting the files that are already there.
+  const snapshot =
+    options.moodle === false
+      ? null
+      : ((await useMoodle.getState().fetchNow()) ?? (await electronBridge()?.moodle?.snapshot()) ?? null)
+  const course = (id: string) => snapshot?.courses.find((c) => c.id === id)?.name ?? ''
+  const moduleNames = snapshot ? await moduleNamesOf(ws, snapshot) : {}
+  const saved = await savedMaterials(ws)
+  const plan = snapshot
+    ? planReindex(
+        snapshot.materials ?? [],
+        saved,
+        (id) => courseFolder(ws, { id, name: course(id) || 'Kurs' }, moduleNames),
+        (p) => ws.has(p),
+      )
+    : { moves: [], missing: [], updated: [] }
+  // Files lying loose in a module folder: sorted by name (and Moodle section when known).
+  const idOf = new Map(Object.entries(saved).map(([id, e]) => [e.path, id]))
+  const sectionOf = (path: string) => {
+    const id = idOf.get(path)
+    return id ? snapshot?.materials?.find((m) => m.id === id)?.section : undefined
+  }
+  const planned = new Set(plan.moves.map((m) => m.from))
+  for (const m of planSort(
+    ws.assets().map((f) => f.path),
+    materialFolder(ws),
+    sectionOf,
+  ))
+    if (!planned.has(m.from)) plan.moves.push({ id: idOf.get(m.from) ?? '', ...m })
+  if (options.folder) plan.moves = plan.moves.filter((m) => m.from.startsWith(`${options.folder}/`))
   const waiting = new Set((await pendingVersions(ws)).map((v) => v.id))
   const updated = plan.updated.filter((u) => !waiting.has(u.material.id))
   const total = plan.moves.length + plan.missing.length + updated.length
@@ -48,9 +72,9 @@ export async function reindexMaterials(ws: Workspace): Promise<number> {
     confirmLabel: t('reindex.apply'),
     checklist: [
       ...plan.moves.map((m) => ({
-        value: `move:${m.id}`,
+        value: `move:${m.from}`,
         label: `${t('reindex.move')}: ${name(m.from)}`,
-        detail: `${dir(m.from)} → ${dir(m.to)}`,
+        detail: `${dir(m.from).split('/').slice(-2).join('/')} → ${dir(m.to).split('/').slice(-2).join('/')}`,
         checked: true,
       })),
       ...plan.missing.map((m) => ({
@@ -69,7 +93,7 @@ export async function reindexMaterials(ws: Workspace): Promise<number> {
   })
   if (picked === null) return 0
   const chosen = new Set(JSON.parse(picked) as string[])
-  const moves = plan.moves.filter((m) => chosen.has(`move:${m.id}`))
+  const moves = plan.moves.filter((m) => chosen.has(`move:${m.from}`))
   const missing = plan.missing.filter((m) => chosen.has(`missing:${m.id}`))
   const versions = updated.filter((u) => chosen.has(`updated:${u.material.id}`))
   const count = moves.length + missing.length + versions.length

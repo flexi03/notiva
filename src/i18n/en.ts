@@ -863,6 +863,8 @@ export const en: Record<MessageKey, string> = {
   'related.newSession': 'Add session',
   'related.findTimes': 'Find times',
   'related.session': 'Session',
+  'related.sort': 'Sort {count} files',
+  'related.sortHint': 'Sort loose files into Vorlesung, Praktikum & Übung and Sonstiges (notes move along) – you see the list first',
   'related.newNote': 'New note',
   'related.recent': 'Recently opened',
   'related.otherFiles': 'Other files',

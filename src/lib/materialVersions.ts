@@ -1,4 +1,4 @@
-import { materialCategory, type MoodleMaterial } from './moodle'
+import { MATERIAL_CATEGORIES, materialCategory, type MoodleMaterial } from './moodle'
 
 /**
  * "Unterlagen neu einlesen": what differs between Moodle and the vault – files in the wrong folder,
@@ -122,4 +122,33 @@ export function comparePdfText(oldPages: string[], newPages: string[]): PdfCompa
   }
   const removed = oldPages.map((_, j) => j + 1).filter((n) => !used.has(n - 1))
   return { pages, removed }
+}
+
+/**
+ * Files that lie directly in a module's folder ("Unterlagen/DBS 2/DBS2-3_SQL.pdf", e.g. from an
+ * older version) → into Vorlesung / Praktikum & Übung / Sonstiges by their name (and the Moodle
+ * section, when known). Notes pages ("… (Notizen).md") move with their file.
+ */
+export function planSort(
+  paths: string[],
+  /** "Studium/Unterlagen" */
+  base: string,
+  sectionOf: (path: string) => string | undefined = () => undefined,
+): Array<{ from: string; to: string }> {
+  const categories = new Set<string>(MATERIAL_CATEGORIES)
+  const moves: Array<{ from: string; to: string }> = []
+  for (const path of paths) {
+    if (!path.startsWith(`${base}/`) || /\.md$/i.test(path)) continue
+    const parts = path.slice(base.length + 1).split('/')
+    // <Modul>/<Datei> or Orga/<Kurs>/<Datei>
+    const depth = parts[0] === 'Orga' ? 3 : 2
+    if (parts.length !== depth || parts[0] === 'Prüfungsplan') continue
+    const parent = parts[depth - 2]!
+    if (categories.has(parent)) continue
+    const filename = parts[depth - 1]!
+    const section = sectionOf(path)
+    const category = materialCategory({ filename, title: filename, section: section ?? '' })
+    moves.push({ from: path, to: `${base}/${parts.slice(0, depth - 1).join('/')}/${category}/${filename}` })
+  }
+  return moves
 }
