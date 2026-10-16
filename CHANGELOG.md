@@ -52,6 +52,9 @@ Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und inst
 - **KI-Leuchtband** am unteren Fensterrand, solange eine KI arbeitet.
 - **Heute:** Tagesübersicht auf jeder Tagesnotiz – Vorlesungen, Prüfungen, Praktika, fällige und überfällige
   Aufgaben, Moodle-Fristen in zeitlicher Reihenfolge.
+- **Modulseite – Moodle nach Datum:** anstehende Fristen zuerst, dann Ankündigungen und Links, neueste
+  zuerst, mit Semester und Abschnitt. Geholte Repositories öffnen sich über den Link („Im Praktikum: …“).
+- **Heute – Demnächst:** Aufgaben, Praktika und Fristen der nächsten 7 Tage, Prüfungen der nächsten 14.
 - **Private Git-Projekte** mit Zugangstoken (verschlüsselt im Schlüsselbund, pro Server); Snippets werden über
   ihre Git-Adresse geholt.
 - **Erinnerungen** pro Aufgabe („2 Std. vorher“, „Keine“); Datumsfelder können eine Uhrzeit haben.
