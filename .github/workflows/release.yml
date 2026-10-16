@@ -69,6 +69,9 @@ jobs:
               if [ -n "$APPLE_API_KEY_P8" ]; then
                 printf '%s' "$APPLE_API_KEY_P8" > "$RUNNER_TEMP/notary.p8"
                 export APPLE_API_KEY="$RUNNER_TEMP/notary.p8"
+                # Pasted IDs sometimes carry spaces or a line break.
+                export APPLE_API_KEY_ID=$(printf '%s' "$APPLE_API_KEY_ID" | tr -d '[:space:]')
+                export APPLE_API_ISSUER=$(printf '%s' "$APPLE_API_ISSUER" | tr -d '[:space:]')
               else
                 echo "::warning::Signiert, aber nicht notarisiert: APPLE_API_KEY fehlt."
                 extra+=(-c.mac.notarize=false)
