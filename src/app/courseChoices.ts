@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { parseCourseChoices, type CourseChoice } from '@/lib/notifications'
 import type { Workspace } from '@/lib/workspace'
 
 /**
@@ -6,16 +7,15 @@ import type { Workspace } from '@/lib/workspace'
  * only) or "ignore" (not counted at all). Stored in the folder (.notiva/course-choices.json) and
  * used by the study sync (status, attendance), timetable suggestions and new materials.
  */
-export type CourseChoice = 'later' | 'ignore'
-const META = 'course-choices.json'
+export type { CourseChoice }
+/** Also read by the background check in the main process (lib/notifications: parseCourseChoices). */
+export const COURSE_CHOICES_META = 'course-choices.json'
+const META = COURSE_CHOICES_META
 
 export const useCourseChoices = create<Record<string, CourseChoice>>(() => ({}))
 
 export async function loadCourseChoices(ws: Workspace): Promise<void> {
-  const raw = await ws.readMeta<Record<string, unknown>>(META).catch(() => null)
-  const next: Record<string, CourseChoice> = {}
-  for (const [id, v] of Object.entries(raw ?? {})) if (v === 'later' || v === 'ignore') next[id] = v
-  useCourseChoices.setState(next, true)
+  useCourseChoices.setState(parseCourseChoices(await ws.readMeta<unknown>(META).catch(() => null)), true)
 }
 
 export async function setCourseChoice(ws: Workspace, id: string, choice: CourseChoice | null): Promise<void> {

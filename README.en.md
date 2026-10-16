@@ -180,7 +180,7 @@ Silicon, `.dmg`), Windows (`.exe`) or Linux (`.AppImage`).
 - **Windows:** Notiva is not signed for Windows. On first start: "Windows protected your PC" → **"More info" → "Run anyway"**.
 
 **Updates:** Notiva looks for new versions on start and every hour, tells you and installs them with one click
-("Update now"); manually via _Notiva → Nach Updates suchen …_. What's new: [CHANGELOG.md](CHANGELOG.md).
+("Update now"); manually via _Notiva → Nach Updates suchen …_. What's new: [CHANGELOG.en.md](CHANGELOG.en.md).
 
 **From source** (requires [Node.js](https://nodejs.org) 24 or newer):
 

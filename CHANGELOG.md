@@ -1,9 +1,32 @@
 # Changelog
 
+_English: [CHANGELOG.en.md](CHANGELOG.en.md)_
+
 Alle Versionen mit Downloads: [GitHub Releases](https://github.com/flexi03/notiva/releases).
 Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und installiert sie auf Wunsch selbst.
 
 ## 0.2.1 – noch nicht veröffentlicht
+
+- Behoben: Verschobene Moodle-Dateien galten danach als „neu“ (Notiva vergaß beim Verschieben, wo sie liegen).
+  Dadurch kamen z. B. „DBS2 - Vorlesung 00“ und andere schon vorhandene Skripte wieder als Vorschlag.
+- **Schon vorhandene Dateien zuordnen:** Liegt eine Moodle-Datei mit gleichem Namen und gleicher Größe schon in
+  deinem Ordner, schlägt Notiva „Zuordnen“ statt Herunterladen vor (in der Liste zum Abhaken). Gleicher Name, andere
+  Größe: als mögliche neue Version zum Vergleichen.
+- **Kurse auf „später“ oder „ignorieren“:** Aus ignorierten Kursen kommt gar nichts mehr (keine Dateien, Fristen,
+  Ankündigungen). Kurse für ein anderes Semester melden neue Dateien nur noch als graue Info „anderes Semester“ –
+  nie als Unterlagen-Vorschlag. Gilt auch für „Unterlagen neu einlesen“.
+- **Gelöschte Moodle-Dateien** werden nicht wieder vorgeschlagen.
+- **Seitenleiste:** mehrere Einträge mit ⌘/Strg (einzeln) oder Shift (Bereich) wählen, per Drag & Drop auf eine
+  Seite oder einen Ordner verschieben (Notizen und Moodle-Zuordnung wandern mit), mit Entf oder Rechtsklick
+  zusammen in den Papierkorb (mit Rückgängig).
+- **Git:** „Alle verwerfen“ bzw. „N verwerfen“ für die ausgewählten Änderungen. Neue Dateien kommen dabei in den
+  Papierkorb statt gelöscht zu werden – ein Klick holt sie zurück.
+- **Pfadleiste wie im Finder:** der ganze Pfad auch bei PDFs und anderen Dateien; jeder Ordner zeigt per Klick
+  seinen Inhalt, seine Ordnerseite, „Im Finder zeigen“ und „Ordnerpfad kopieren“.
+- **Ablage** unten in der linken Werkzeugleiste (eigener Platz), per Drag nach unten rechts verschiebbar.
+- **Modulstatus „Note ausstehend“:** Liegt die Prüfung eines Moduls in der Vergangenheit und ist noch keine Note
+  eingetragen, schlägt der Studium-Abgleich diesen Status vor (auch nach einem selbst gesetzten „Prüfung angemeldet“).
+- Changelog jetzt auch auf Englisch: [CHANGELOG.en.md](CHANGELOG.en.md).
 
 ## 0.2.0 – 2026-10-16
 
@@ -89,12 +112,10 @@ Größere Umstellung: Module statt Kurse, Unterlagen nach Aktuell/Archiv, Prakti
 - **PDF:** Der Seitenabstand bleibt beim Zoomen gleich, Zoomen ist flüssiger, ←/→ blättern genau eine Seite.
 - Behoben: „PDFWorker.create – the worker is being destroyed“ beim Öffnen mancher PDFs.
 - Behoben: Unter „Ungelesen“ verschwand eine Benachrichtigung beim Anklicken, bevor man die Details sah.
-
 - **README-Bilder** ohne „Demo“-Hinweise: eigener Screenshot-Build (`npm run screenshots`), normale Builds
   bleiben unverändert.
-- **macOS-Signierung vorbereitet:** Mit Developer-ID-Zertifikat und Notarisierungs-Schlüssel als GitHub-Secrets
-  baut der Release eine signierte, notarisierte App ([docs/SIGNIEREN.md](docs/SIGNIEREN.md)); ohne sie wie bisher
-  ad hoc signiert.
+- **macOS:** mit Developer ID signiert und von Apple notarisiert – öffnet ohne Nachfrage
+  ([docs/SIGNIEREN.md](docs/SIGNIEREN.md)).
 
 ## 0.1.3 – 2026-10-15
 

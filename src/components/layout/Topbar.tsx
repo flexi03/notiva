@@ -4,6 +4,11 @@ import {
   ArrowRight,
   Bell,
   ChevronRight,
+  Copy,
+  File,
+  FileText,
+  Folder,
+  FolderOpen,
   GitBranch,
   MoreHorizontal,
   PanelLeft,
@@ -15,19 +20,21 @@ import { unreadCount, useNotifications } from '@/app/notifications'
 import { saveAllNow, useApp, useWorkspace } from '@/app/store'
 import { usePageActions } from '@/app/hooks/usePageActions'
 import { t } from '@/i18n'
-import { cx, IconButton, MenuList, Popover } from '@/components/ui'
+import { cx, IconButton, MenuList, Popover, type MenuItem } from '@/components/ui'
+import { electronBridge } from '@/lib/vault'
 import { pageMenuItems } from './pageMenu'
 
 /** Top bar: sidebar toggle, breadcrumbs, page actions. */
 export function Topbar({ title, actions }: { title?: string; actions?: ReactNode }) {
   const ws = useWorkspace()
-  const { route, sidebarOpen, setSidebar, openPage } = useApp()
+  const { route, sidebarOpen, setSidebar } = useApp()
   const pageActions = usePageActions(ws)
   const [menu, setMenu] = useState(false)
   const moreRef = useRef<HTMLButtonElement>(null)
   const page = route.name === 'page' ? ws.get(route.path) : undefined
-  const crumbs = page ? ws.breadcrumbs(page.path) : []
   const currentPath = page?.path ?? (route.name === 'file' ? route.path : null)
+  // Every folder above the open page or file (PDFs too) – like the Finder's path bar.
+  const crumbs = currentPath ? ws.breadcrumbs(currentPath) : []
   const [editing, setEditing] = useState<string | null>(null)
 
   return (
@@ -71,19 +78,9 @@ export function Topbar({ title, actions }: { title?: string; actions?: ReactNode
               setEditing(currentPath)
           }}
         >
-          {crumbs.map((c, i) => (
-            <li key={i} className="flex min-w-0 items-center gap-0.5 max-sm:hidden">
-              {c.path ? (
-                <button
-                  type="button"
-                  className="truncate rounded px-1.5 py-0.5 hover:bg-hover hover:text-ink"
-                  onClick={() => openPage(c.path!)}
-                >
-                  {c.title}
-                </button>
-              ) : (
-                <span className="truncate px-1.5">{c.title}</span>
-              )}
+          {crumbs.map((c) => (
+            <li key={c.folder} className="flex min-w-0 items-center gap-0.5 max-sm:hidden">
+              <FolderCrumb folder={c.folder} title={c.title} page={c.path} />
               <ChevronRight size={13} className="shrink-0 text-ink-3" />
             </li>
           ))}
@@ -124,6 +121,62 @@ export function Topbar({ title, actions }: { title?: string; actions?: ReactNode
         </>
       )}
     </header>
+  )
+}
+
+/**
+ * One folder of the path: a click shows what it holds (open one directly), its page, the Finder and
+ * the folder path to copy.
+ */
+function FolderCrumb({ folder, title, page }: { folder: string; title: string; page: string | null }) {
+  const ws = useWorkspace()
+  const { openPage, navigate, showToast } = useApp()
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLButtonElement>(null)
+  const code = electronBridge()?.code
+  const items: Array<MenuItem | 'divider'> = [
+    ...ws.folderEntries(folder).map((n) => ({
+      label: n.title,
+      icon: n.file ? <FileText size={14} /> : n.page ? <File size={14} /> : <Folder size={14} />,
+      onSelect: () =>
+        n.page ? openPage(n.page.path) : n.file ? navigate({ name: 'file', path: n.file }) : undefined,
+      disabled: !n.page && !n.file,
+    })),
+    'divider',
+    ...(page
+      ? [{ label: t('path.openPage'), icon: <File size={14} />, onSelect: () => openPage(page) }]
+      : []),
+    ...(code
+      ? [
+          {
+            label: t('tree.showInFolder'),
+            icon: <FolderOpen size={14} />,
+            onSelect: () => void code.open(folder, 'finder'),
+          },
+        ]
+      : []),
+    {
+      label: t('path.copyFolder'),
+      icon: <Copy size={14} />,
+      onSelect: () => void navigator.clipboard.writeText(folder).then(() => showToast(t('path.copied'))),
+    },
+  ]
+  return (
+    <>
+      <button
+        ref={ref}
+        type="button"
+        title={folder}
+        aria-haspopup="menu"
+        className="truncate rounded px-1.5 py-0.5 hover:bg-hover hover:text-ink"
+        onClick={() => setOpen((o) => !o)}
+      >
+        {title}
+      </button>
+      <Popover anchor={ref} open={open} onClose={() => setOpen(false)} label={folder}>
+        <MenuList items={items} onDone={() => setOpen(false)} />
+      </Popover>
+    </>
   )
 }
 

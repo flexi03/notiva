@@ -409,7 +409,7 @@ test('schlägt neue Skripte vor und speichert sie nach Bestätigung – mit Fort
   await panel.getByRole('button', { name: 'Ansehen und entscheiden' }).first().click()
   const dialog = window.getByRole('dialog', { name: /neue Unterlagen in Moodle/ })
   await expect(dialog).toContainText('vl01.pdf')
-  await dialog.getByRole('button', { name: 'Speichern' }).click()
+  await dialog.getByRole('button', { name: 'Übernehmen' }).click()
   await expect.poll(() => existsSync(saved)).toBe(true)
   expect(readFileSync(saved).subarray(0, 4).toString()).toBe('%PDF')
   expect(existsSync(path.join(folder, 'Studium/Unterlagen/Lineare Algebra/Vorlesung/vl02.pdf'))).toBe(true)

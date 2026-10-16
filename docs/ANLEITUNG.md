@@ -14,11 +14,15 @@ _Hilfe → So funktioniert Notiva_ (bitte beides gemeinsam aktuell halten). Engl
 ## Studium
 
 - **Module** kommen aus der Prüfungsordnung (voreingestellt BMI, PO 2018 der HSD) oder aus deiner eigenen Liste in
-  `Studium/Hochschule.md`. Status, Versuche, Note und „Bestanden im“ füllt der eCampus-Abgleich.
+  `Studium/Hochschule.md`. Status, Versuche, Note und „Bestanden im“ füllt der eCampus-Abgleich. Liegt eine
+  Prüfung des Moduls (_Prüfungen_) in der Vergangenheit und fehlt die Note noch, schlägt er **Note ausstehend** vor.
 - **Belegung** schlägt Notiva aus Moodle und dem Semesterangebot vor; du kannst sie auf der Modulseite selbst setzen.
   Belegte Module erscheinen in _Mein Semester_.
 - **Unterlagen** aus Moodle landen in `Unterlagen/<Modul>/Vorlesung`, `Praktikum & Übung` oder `Sonstiges`. Neue
-  Unterlagen schlägt Notiva vor (Hinweis und Benachrichtigung), gespeichert wird nach deiner Bestätigung.
+  Unterlagen schlägt Notiva vor (Hinweis und Benachrichtigung), gespeichert wird nach deiner Bestätigung. Liegt eine
+  Datei mit gleichem Namen und gleicher Größe schon in deinem Ordner, steht sie als **Zuordnen** in der Liste:
+  Notiva merkt sich nur, wo sie liegt. Verschiebst oder löschst du Moodle-Dateien in Notiva, werden sie nicht wieder
+  als neu vorgeschlagen.
 - **Unterlagen neu einlesen** (_Moodle_): holt Moodle neu und listet zum Abhaken auf, was abweicht. Dazu gehören
   falsch einsortierte Dateien (die Notizseite wandert mit), fehlende Dateien und neuere Versionen.
 - **Neue Versionen** überschreiben nie deine Datei. Sie kommen als `<Name> (neu <Datum>).pdf` daneben. Unter
@@ -49,7 +53,8 @@ _Hilfe → So funktioniert Notiva_ (bitte beides gemeinsam aktuell halten). Engl
   Vorschau). Geholte Repositories haben eine eigene Seite: Beschreibung vom Server (nur lesen), Dateien, „Meine
   Notizen“; ihr Git steht unter _Änderungen → Praktikum-Repos_.
 - **Moodle-Kurse eines Moduls**: Auf der Modulseite wählst du pro Kurs „zählt jetzt“, „anderes Semester“ oder
-  „nicht berücksichtigen“ – z. B. für Kurse, in die du nur schon hineinschaust.
+  „nicht berücksichtigen“ – z. B. für Kurse, in die du nur schon hineinschaust. Aus „nicht berücksichtigen“ kommt
+  nichts mehr (keine Dateien, Fristen, Ankündigungen); „anderes Semester“ meldet neue Dateien nur als graue Info.
 - **Heute** (Seitenleiste) öffnet die Tagesnotiz mit der Tagesübersicht: Vorlesungen, Prüfungen, Praktika,
   fällige und überfällige Aufgaben, Moodle-Fristen – ein Klick öffnet den Eintrag bzw. das Modul.
 - **Private Repositories** (z. B. ProjectBase): Beim ersten Holen fragt Notiva nach einem Zugangstoken (Recht
@@ -58,6 +63,15 @@ _Hilfe → So funktioniert Notiva_ (bitte beides gemeinsam aktuell halten). Engl
 - **Hintergrund-Abrufe**: jede Quelle hat ein eigenes Intervall (_Einstellungen → Benachrichtigungen_).
 
 Andere Hochschule: [HOCHSCHULE.md](HOCHSCHULE.md) und [examples/Hochschule.md](../examples/Hochschule.md).
+
+## Seitenleiste und Pfad
+
+- **Mehrere Einträge**: ⌘/Strg-Klick wählt einzeln, Shift-Klick einen Bereich. Per Drag & Drop auf eine Seite oder
+  einen Ordner verschieben (Notizen und Moodle-Zuordnung wandern mit), mit Entf oder Rechtsklick zusammen in den
+  Papierkorb – mit Rückgängig.
+- **Pfad oben**: der ganze Pfad, auch bei PDFs. Ein Klick auf einen Ordner zeigt seinen Inhalt, seine Ordnerseite,
+  „Im Finder zeigen“ und „Ordnerpfad kopieren“. Ein Klick auf den Namen am Ende macht den Pfad editierbar.
+- **Ablage**: unten in der linken Werkzeugleiste; das Symbol lässt sich nach unten rechts ziehen.
 
 ## Statusleiste
 
@@ -144,7 +158,8 @@ Issue auf GitHub.
 
 Liegt dein Ordner in einem Git-Repository (oder _Git einrichten_), zeigt die Desktop-App rechts unter
 _Änderungen_ (`⌘/Strg ⇧ G`) alle neuen, geänderten und gelöschten Seiten mit +/− Zeilen, einen Diff
-(untereinander oder nebeneinander), Commit ausgewählter Dateien, Verwerfen, Verlauf und Push/Pull. Im Editor
+(untereinander oder nebeneinander), Commit ausgewählter Dateien, Verwerfen (einzeln oder **Alle verwerfen** für die
+ausgewählten; neue Dateien kommen in den Papierkorb), Verlauf und Push/Pull. Im Editor
 markiert ein farbiger Rand geänderte (blau), neue (grün) und gelöschte (rot) Stellen – wie in VS Code; der
 Seitenbaum zeigt `M`/`U`.
 

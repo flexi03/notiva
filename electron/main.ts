@@ -74,6 +74,7 @@ import {
   checkResult,
   deadlineReminders,
   moodleNews,
+  parseCourseChoices,
   type AppNotification,
   checkBody,
 } from '../src/lib/notifications'
@@ -293,22 +294,30 @@ async function pollMoodle(contents = true): Promise<MoodleSnapshot> {
   // The app saves new materials into the vault (its folder logic lives in the renderer).
   window?.webContents.send('moodle:polled')
   const now = new Date()
+  // The user's choice per course (in the folder): "ignore" – nothing from it, "later" – only a note.
+  const choices = vault
+    ? parseCourseChoices(await vault.read('.notiva/course-choices.json').then(JSON.parse, () => null))
+    : {}
+  const counted = <T>(info: Record<string, T> | undefined) =>
+    info && Object.fromEntries(Object.entries(info).filter(([id]) => choices[id] !== 'ignore'))
   const news = [
-    ...moodleNews(previous, snapshot, { now, locale: LOCALE() }),
+    ...moodleNews(previous, snapshot, { now, locale: LOCALE(), choice: (id) => choices[id] }),
     ...courseInfoNews(
-      previous?.info,
-      snapshot.info,
+      counted(previous?.info),
+      counted(snapshot.info),
       (id) => snapshot.courses.find((c) => c.id === id)?.name ?? 'Moodle',
       now,
     ),
     ...deadlineReminders(
-      snapshot.events.map((e) => ({
-        id: e.id,
-        title: e.title,
-        due: e.due,
-        ...(e.course ? { course: e.course.name } : {}),
-        ...(e.url ? { target: { type: 'url' as const, url: e.url } } : {}),
-      })),
+      snapshot.events
+        .filter((e) => !e.course?.id || choices[e.course.id] !== 'ignore')
+        .map((e) => ({
+          id: e.id,
+          title: e.title,
+          due: e.due,
+          ...(e.course ? { course: e.course.name } : {}),
+          ...(e.url ? { target: { type: 'url' as const, url: e.url } } : {}),
+        })),
       { now, locale: LOCALE() },
     ),
   ]

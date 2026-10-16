@@ -13,6 +13,8 @@ export const MODULE_STATUS = [
   'Geplant',
   'In Vorlesung',
   'Prüfung angemeldet',
+  /** Written, no grade yet (the exam date is past – see sync: awaitingGrade). */
+  'Note ausstehend',
   'Wiederholung',
   'Fehlt',
   'Bestanden',

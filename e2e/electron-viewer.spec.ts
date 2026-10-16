@@ -1,4 +1,11 @@
-import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test'
+import {
+  _electron as electron,
+  expect,
+  test,
+  type ElectronApplication,
+  type Locator,
+  type Page,
+} from '@playwright/test'
 import { copyFileSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -19,6 +26,9 @@ test.beforeAll(async () => {
   mkdirSync(path.join(folder, 'Skripte'))
   copyFileSync(PDF, path.join(folder, 'Skripte/Graphen.pdf'))
   copyFileSync(PDF, path.join(folder, 'Skripte/Graphen 2.pdf'))
+  copyFileSync(PDF, path.join(folder, 'Skripte/Blatt 3.pdf'))
+  copyFileSync(PDF, path.join(folder, 'Skripte/Blatt 4.pdf'))
+  writeFileSync(path.join(folder, 'Alt.md'), '# Alt\n')
   app = await electron.launch({
     args: ['.'],
     env: {
@@ -337,3 +347,59 @@ test('Seitenleiste: Notizen unter ihrer PDF, Dateien per Rechtsklick in den Papi
   await expect.poll(() => existsSync(path.join(folder, 'Skripte/Graphen 2.pdf'))).toBe(false)
   await expect(tree.getByRole('button', { name: 'Graphen 2.pdf' })).toHaveCount(0)
 })
+
+test('Seitenleiste: mehrere mit ⌘ wählen, auf einen Ordner ziehen, zusammen in den Papierkorb', async () => {
+  const tree = window.getByRole('tree', { name: 'Seiten' })
+  const mod = process.platform === 'darwin' ? 'Meta' : 'Control'
+  await tree.getByRole('button', { name: 'Blatt 3.pdf' }).click()
+  await tree.getByRole('button', { name: 'Blatt 4.pdf' }).click({ modifiers: [mod] })
+  await expect(tree.getByRole('treeitem', { selected: true })).toHaveCount(2)
+  // Both onto the page "Alt": they go into its folder.
+  await tree
+    .getByRole('button', { name: 'Blatt 4.pdf' })
+    .dragTo(tree.getByRole('button', { name: 'Alt', exact: true }))
+  await expect.poll(() => existsSync(path.join(folder, 'Alt/Blatt 3.pdf'))).toBe(true)
+  await expect.poll(() => existsSync(path.join(folder, 'Alt/Blatt 4.pdf'))).toBe(true)
+  expect(existsSync(path.join(folder, 'Skripte/Blatt 3.pdf'))).toBe(false)
+  await expect(window.getByText(/2 verschoben nach „Alt“/)).toBeVisible()
+
+  // Shift chooses the range; Delete asks once for all of them.
+  await expand(
+    tree
+      .getByRole('treeitem')
+      .filter({ has: window.getByRole('button', { name: 'Alt', exact: true }) })
+      .first(),
+  )
+  await tree.getByRole('button', { name: 'Blatt 3.pdf' }).click()
+  await tree.getByRole('button', { name: 'Blatt 4.pdf' }).click({ modifiers: ['Shift'] })
+  await window.keyboard.press('Delete')
+  const dialog = window.getByRole('dialog', { name: '2 Einträge in den Papierkorb?' })
+  await dialog.getByRole('button', { name: 'In den Papierkorb' }).click()
+  await expect.poll(() => existsSync(path.join(folder, 'Alt/Blatt 3.pdf'))).toBe(false)
+  await expect.poll(() => existsSync(path.join(folder, 'Alt/Blatt 4.pdf'))).toBe(false)
+})
+
+test('Pfadleiste: der ganze Pfad auch bei PDFs, jeder Ordner zeigt seinen Inhalt', async () => {
+  const tree = window.getByRole('tree', { name: 'Seiten' })
+  await expand(
+    tree
+      .getByRole('treeitem')
+      .filter({ has: window.getByRole('button', { name: 'Skripte', exact: true }) })
+      .first(),
+  )
+  await tree.getByRole('button', { name: 'Graphen.pdf', exact: true }).click()
+  const crumbs = window.getByRole('list', { name: 'Breadcrumb' })
+  await crumbs.getByRole('button', { name: 'Skripte' }).click()
+  const menu = window.getByRole('menu')
+  await expect(menu.getByRole('menuitem', { name: 'Graphen.pdf' })).toBeVisible()
+  await expect(menu.getByRole('menuitem', { name: 'Ordnerseite öffnen' })).toBeVisible()
+  await expect(menu.getByRole('menuitem', { name: 'Ordnerpfad kopieren' })).toBeVisible()
+  await menu.getByRole('menuitem', { name: 'Ordnerseite öffnen' }).click()
+  await expect(window.getByRole('heading', { name: 'Skripte', level: 1 }).first()).toBeVisible()
+})
+
+/** Opens a tree entry if it is closed (its own toggle, not one of its children's). */
+async function expand(item: Locator) {
+  if ((await item.getAttribute('aria-expanded')) === 'false')
+    await item.locator('> div').getByRole('button', { name: 'Aufklappen' }).click()
+}

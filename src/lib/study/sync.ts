@@ -53,6 +53,7 @@ const STATUS_COLORS: Record<string, string> = {
   Geplant: 'gray',
   'In Vorlesung': 'blue',
   'Prüfung angemeldet': 'purple',
+  'Note ausstehend': 'yellow',
   Wiederholung: 'orange',
   Fehlt: 'red',
   Bestanden: 'green',
@@ -196,7 +197,9 @@ function moduleChanges(current: FrontmatterData, wanted: FrontmatterData): Front
   const auto = current.statusAuto
   const userSet = current.Status && auto !== undefined && current.Status !== auto
   const legacy = current.Status === 'Laufend' || current.Status === 'Nicht bestanden'
-  if (!userSet || legacy || wanted.Status === 'Bestanden') {
+  // Written after registering: moves on from the user's own "Prüfung angemeldet" too.
+  const written = wanted.Status === 'Note ausstehend' && current.Status === 'Prüfung angemeldet'
+  if (!userSet || legacy || written || wanted.Status === 'Bestanden') {
     if (!same(current.Status, wanted.Status)) changes.Status = wanted.Status!
     if (!same(auto, wanted.Status)) changes.statusAuto = wanted.Status!
   }
@@ -227,7 +230,33 @@ export interface StudyPlan {
  * Compares the vault with the study state. `apply` writes it (pages first, so links resolve).
  * `folder` is the study folder ("Studium"), its databases are Module and Semester.
  */
-export function planStudySync(ws: Workspace, folder: string, state: StudyState): StudyPlan {
+/**
+ * Written, no grade yet: an exam of the module (database "Prüfungen") lies in the past, has no
+ * grade and is newer than the last result from eCampus (which lists such exams only later).
+ */
+export function awaitingGrade(
+  ws: Workspace,
+  folder: string,
+  modulePath: string,
+  lastResult: string | undefined,
+  today: string,
+): boolean {
+  const db = `${folder}/Prüfungen.md`
+  if (!ws.get(db)) return false
+  return ws.rows(db).some((r) => {
+    const date = String(r.data.Datum ?? '').slice(0, 10)
+    if (!date || date >= today || (lastResult && date <= lastResult)) return false
+    if (r.data.Note !== undefined && r.data.Note !== null && r.data.Note !== '') return false
+    const links = (Array.isArray(r.data.Modul) ? r.data.Modul : [r.data.Modul]).map(String)
+    return links.some((l) => {
+      const target = /\[\[([^\]|#]+)/.exec(l)?.[1]
+      return !!target && ws.resolveLink(target, r.path) === modulePath
+    })
+  })
+}
+
+export function planStudySync(ws: Workspace, folder: string, state: StudyState, now = new Date()): StudyPlan {
+  const today = now.toISOString().slice(0, 10)
   const changes: StudyChange[] = []
   const steps: Array<() => Promise<string | void>> = []
   const modulesDb = `${folder}/Module.md`
@@ -267,6 +296,13 @@ export function planStudySync(ws: Workspace, folder: string, state: StudyState):
   for (const m of state.modules) {
     const wanted = moduleValues(state, m)
     const row = moduleRow(m)
+    if (
+      row &&
+      wanted.Status !== 'Bestanden' &&
+      wanted.Status !== 'Endgültig nicht bestanden' &&
+      awaitingGrade(ws, folder, row.path, m.result?.date, today)
+    )
+      wanted.Status = 'Note ausstehend'
     if (row) {
       used.add(row.path)
       pathOf.set(m.module.nr, row.path)

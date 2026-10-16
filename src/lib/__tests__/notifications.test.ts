@@ -5,6 +5,7 @@ import {
   parseNotifications,
   checkResult,
   newsSummary,
+  parseCourseChoices,
 } from '../notifications'
 import type { MoodleSnapshot } from '../moodle'
 
@@ -191,5 +192,74 @@ describe('sign-in and suggestion entries', () => {
     const changed = mergeNotifications(same.list, [{ ...one, title: '2 neue', body: 'a, b' }])
     expect(changed.added).toHaveLength(1)
     expect(changed.list.filter((n) => n.id === 'suggest:materials')).toHaveLength(1)
+  })
+})
+
+describe('moodleNews with course choices', () => {
+  const twoCourses: MoodleSnapshot = {
+    ...base,
+    courses: [...base.courses, { id: 'course:99', name: 'DBS 2 – WiSe 25/26' }],
+  }
+  const next: MoodleSnapshot = {
+    ...twoCourses,
+    events: [
+      ...base.events,
+      {
+        id: 'event:9',
+        title: 'Abgabe alt',
+        due: '2026-11-01T10:00:00.000Z',
+        course: { id: 'course:99', name: 'DBS 2' },
+        kind: 'assign',
+      },
+    ],
+    materials: [
+      ...base.materials!,
+      {
+        id: 'file:1:a.pdf',
+        courseId: 'course:99',
+        title: 'A',
+        section: 'S',
+        filename: 'a.pdf',
+        kind: 'file',
+        url: 'u',
+      },
+      {
+        id: 'file:2:b.pdf',
+        courseId: 'course:99',
+        title: 'B',
+        section: 'S',
+        filename: 'b.pdf',
+        kind: 'file',
+        url: 'u',
+      },
+    ],
+  }
+
+  it('"later": one grey note per course instead of materials', () => {
+    const news = moodleNews(twoCourses, next, {
+      now,
+      choice: (id) => (id === 'course:99' ? 'later' : undefined),
+    })
+    expect(news.filter((n) => n.kind === 'material')).toEqual([])
+    const aside = news.filter((n) => n.kind === 'aside')
+    expect(aside).toHaveLength(1)
+    expect(aside[0]!.body).toBe('a.pdf, b.pdf')
+    expect(aside[0]!.target).toEqual({ type: 'course', courseId: 'course:99' })
+  })
+
+  it('"ignore": nothing at all – no files, no deadlines', () => {
+    const news = moodleNews(twoCourses, next, {
+      now,
+      choice: (id) => (id === 'course:99' ? 'ignore' : undefined),
+    })
+    expect(news).toEqual([])
+  })
+
+  it('parses stored choices and drops anything else', () => {
+    expect(parseCourseChoices({ 'course:1': 'later', 'course:2': 'ignore', 'course:3': 'yes' })).toEqual({
+      'course:1': 'later',
+      'course:2': 'ignore',
+    })
+    expect(parseCourseChoices('x')).toEqual({})
   })
 })

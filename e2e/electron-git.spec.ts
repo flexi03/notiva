@@ -115,6 +115,26 @@ test('verwirft neue Seiten nach Rückfrage', async () => {
   await expect(panel()).toContainText('Keine Änderungen')
 })
 
+test('verwirft alle Änderungen auf einmal – neue Dateien kommen in den Papierkorb', async () => {
+  writeFileSync(path.join(folder, 'Notiz.md'), '# Notiz\n\nGeändert\n')
+  writeFileSync(path.join(folder, 'Neu 1.md'), '# Neu 1\n')
+  writeFileSync(path.join(folder, 'Neu 2.md'), '# Neu 2\n')
+  await panel().getByRole('button', { name: 'Aktualisieren' }).first().click()
+  await expect(panel()).toContainText('Neu 2', { timeout: 10_000 })
+  await panel().getByRole('button', { name: 'Alle verwerfen' }).click()
+  await window
+    .getByRole('dialog', { name: '3 Änderungen verwerfen?' })
+    .getByRole('button', { name: 'Änderungen verwerfen' })
+    .click()
+  await expect(panel()).toContainText('Keine Änderungen', { timeout: 10_000 })
+  expect(readFileSync(path.join(folder, 'Notiz.md'), 'utf8')).not.toContain('Geändert')
+  expect(existsSync(path.join(folder, 'Neu 1.md'))).toBe(false)
+  // The new files are only in the trash: one click brings them back.
+  await window.getByRole('button', { name: '2 neue Dateien zurückholen' }).click()
+  await expect.poll(() => existsSync(path.join(folder, 'Neu 1.md'))).toBe(true)
+  await expect.poll(() => existsSync(path.join(folder, 'Neu 2.md'))).toBe(true)
+})
+
 test('legt einen Code-Ordner im Studium an – mit .gitignore, im selben Git', async () => {
   writeFileSync(path.join(folder, 'Datenbanken.md'), '# Datenbanken\n\n```notiva\ntype: related\n```\n')
   await window.waitForTimeout(800)

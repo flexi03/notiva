@@ -93,16 +93,23 @@ const DEFAULT_SIDES: Record<ViewId, Side> = {
   assistant: 'left',
   git: 'left',
   notifications: 'right',
-  shelf: 'right',
+  // At the bottom of the left bar (0.2.1); can be dragged to the bottom of the right one.
+  shelf: 'left',
   settings: 'right',
 }
+/** Saved layouts before this version had the shelf on the right by default – it moves left once. */
+const LAYOUT_VERSION = 2
 
 /** Device-local layout (like VS Code's workbench state); falls back to the defaults. */
 export function loadViewSides(): Record<ViewId, Side> {
   try {
-    const raw = JSON.parse(localStorage.getItem(LAYOUT_KEY) ?? '{}') as { sides?: Record<string, unknown> }
+    const raw = JSON.parse(localStorage.getItem(LAYOUT_KEY) ?? '{}') as {
+      sides?: Record<string, unknown>
+      v?: number
+    }
     const sides = { ...DEFAULT_SIDES }
     for (const view of VIEWS) {
+      if (view === 'shelf' && raw.v !== LAYOUT_VERSION) continue
       const side = raw.sides?.[view]
       if (side === 'left' || side === 'right') sides[view] = side
     }
@@ -114,7 +121,7 @@ export function loadViewSides(): Record<ViewId, Side> {
 
 function saveViewSides(sides: Record<ViewId, Side>): void {
   try {
-    localStorage.setItem(LAYOUT_KEY, JSON.stringify({ sides }))
+    localStorage.setItem(LAYOUT_KEY, JSON.stringify({ sides, v: LAYOUT_VERSION }))
   } catch {
     // Private mode etc.: the layout just isn't remembered.
   }

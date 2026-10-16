@@ -10,6 +10,7 @@ import {
   CheckCheck,
   FileText,
   FileUp,
+  Archive,
   GraduationCap,
   MessageSquare,
   Settings2,
@@ -34,6 +35,7 @@ const ICONS: Record<NotificationKind, typeof Bell> = {
   updated: FileText,
   notice: MessageSquare,
   grade: GraduationCap,
+  aside: Archive,
   check: RefreshCw,
 }
 
@@ -46,6 +48,7 @@ const COLORS: Record<NotificationKind, string> = {
   updated: 'blue',
   notice: 'purple',
   grade: 'pink',
+  aside: 'gray',
   check: 'gray',
 }
 export function notificationColor(n: AppNotification): string {

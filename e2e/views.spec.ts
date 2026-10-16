@@ -7,9 +7,15 @@ test.describe('KI und Änderungen links oder rechts', () => {
   test('stehen standardmäßig links statt der Seitenliste', async ({ page }) => {
     await openDemo(page)
     const left = page.getByRole('navigation', { name: 'Werkzeugleiste', exact: true })
-    // Right bar: notifications, then trash and settings.
+    // Right bar: notifications and settings; the shelf has its own place at the bottom left.
     const rightBar = page.getByRole('navigation', { name: 'Werkzeugleiste rechts' })
-    await expect(rightBar.getByRole('button')).toHaveCount(3)
+    await expect(rightBar.getByRole('button')).toHaveCount(2)
+    const shelf = left.getByTestId('shelf-left').getByRole('button', { name: 'Ablage' })
+    await expect(shelf).toBeVisible()
+    // At the bottom of the bar, below everything else.
+    const bar = await left.boundingBox()
+    const box = await shelf.boundingBox()
+    expect(bar!.y + bar!.height - (box!.y + box!.height)).toBeLessThan(24)
     await expect(rightBar.getByRole('button', { name: 'Einstellungen' })).toBeVisible()
     await expect(rightBar.getByRole('button', { name: 'Benachrichtigungen' })).toBeVisible()
     await left.getByRole('button', { name: /KI-Assistent/ }).click()

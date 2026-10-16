@@ -2,7 +2,11 @@ import { useMoodle } from '@/app/moodle'
 import { announce, withProgress } from '@/app/progress'
 import {
   announceVersions,
+  applyExisting,
   courseFolder,
+  existingChecklist,
+  planExisting,
+  removedMaterials,
   materialFolder,
   moduleNamesOf,
   moveMaterials,
@@ -11,6 +15,7 @@ import {
   saveNewVersion,
   savedMaterials,
 } from '@/app/materials'
+import { courseCounts } from '@/app/courseChoices'
 import { useApp } from '@/app/store'
 import { t } from '@/i18n'
 import { planArchive, planReindex, planSort } from '@/lib/materialVersions'
@@ -45,6 +50,15 @@ export async function reindexMaterials(
         (p) => ws.has(p),
       )
     : { moves: [], missing: [], updated: [] }
+  // Courses set aside ("später", "nicht berücksichtigen"): nothing is fetched from them.
+  // Thrown away by the user: not fetched again either.
+  const removed = new Set(await removedMaterials(ws))
+  plan.missing = plan.missing.filter((m) => courseCounts(m.courseId) && !removed.has(m.id))
+  // Missing files that are already in the folder under the same name: only assigned (after asking).
+  const existing = snapshot
+    ? planExisting(ws, plan.missing, snapshot)
+    : { same: [], versions: [], rest: plan.missing }
+  plan.missing = existing.rest
   // Files lying loose in a module folder: sorted by name (and Moodle section when known).
   const idOf = new Map(Object.entries(saved).map(([id, e]) => [e.path, id]))
   const sectionOf = (path: string) => {
@@ -67,7 +81,8 @@ export async function reindexMaterials(
   if (options.folder) plan.moves = plan.moves.filter((m) => m.from.startsWith(`${options.folder}/`))
   const waiting = new Set((await pendingVersions(ws)).map((v) => v.id))
   const updated = plan.updated.filter((u) => !waiting.has(u.material.id))
-  const total = plan.moves.length + plan.missing.length + updated.length
+  const total =
+    plan.moves.length + plan.missing.length + updated.length + existing.same.length + existing.versions.length
   if (!total) {
     announce(t('reindex.nothing'))
     return 0
@@ -83,6 +98,7 @@ export async function reindexMaterials(
         detail: `${dir(m.from).split('/').slice(-2).join('/')} → ${dir(m.to).split('/').slice(-2).join('/')}`,
         checked: true,
       })),
+      ...existingChecklist(existing),
       ...plan.missing.map((m) => ({
         value: `missing:${m.id}`,
         label: `${t('reindex.missing')}: ${m.filename ?? m.title}`,
@@ -102,8 +118,13 @@ export async function reindexMaterials(
   const moves = plan.moves.filter((m) => chosen.has(`move:${m.from}`))
   const missing = plan.missing.filter((m) => chosen.has(`missing:${m.id}`))
   const versions = updated.filter((u) => chosen.has(`updated:${u.material.id}`))
+  const matched = existing.same.length + existing.versions.length
   const count = moves.length + missing.length + versions.length
-  if (!count) return 0
+  if (!count && !matched) return 0
+  // Assigning is instant (only remembered); newer versions of them are saved next to the file.
+  const pairs = snapshot ? await applyExisting(ws, existing, chosen, snapshot, moduleNames) : null
+  if (pairs?.assigned) announce(t('materials.assigned', { count: pairs.assigned }))
+  if (!count) return (pairs?.assigned ?? 0) + (pairs?.versions ?? 0)
   return withProgress(
     t('reindex.running'),
     async (task) => {

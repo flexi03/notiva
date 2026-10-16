@@ -58,15 +58,23 @@ export function ActivityBar({ side }: { side: Side }) {
       )}
     >
       {side === 'left' && <PagesItem />}
-      {views.map((view) => (
-        <ViewItem key={view} view={view} side={side} />
-      ))}
+      {views
+        .filter((v) => v !== 'shelf')
+        .map((view) => (
+          <ViewItem key={view} view={view} side={side} />
+        ))}
       {/* Sync sits next to the notifications (desktop app). */}
       {electronBridge() && sides.notifications === side && <SyncButton />}
       {target && (
         <span className="mt-1 px-1 text-center text-[10px] leading-tight text-ink-3" aria-hidden>
           {t('views.dropHere')}
         </span>
+      )}
+      {/* The shelf has its own place at the bottom of its bar. */}
+      {views.includes('shelf') && (
+        <div className="mt-auto" data-testid={`shelf-${side}`}>
+          <ViewItem view="shelf" side={side} />
+        </div>
       )}
     </nav>
   )

@@ -106,8 +106,8 @@ describe('Workspace index', () => {
   it('builds breadcrumbs', async () => {
     const { ws } = await setup()
     expect(ws.breadcrumbs('Studium/Notizen/Idee.md')).toEqual([
-      { path: 'Studium.md', title: 'Studium' },
-      { path: null, title: 'Notizen' },
+      { path: 'Studium.md', title: 'Studium', folder: 'Studium' },
+      { path: null, title: 'Notizen', folder: 'Studium/Notizen' },
     ])
   })
 })

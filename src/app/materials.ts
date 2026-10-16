@@ -13,6 +13,7 @@ import { useMoodle } from '@/app/moodle'
 import { useCourseChoices } from '@/app/courseChoices'
 import { notesPathFor } from '@/lib/annotations'
 import { versionName } from '@/lib/materialVersions'
+import { matchExisting } from '@/lib/materialMatch'
 import { findStudyDashboard } from '@/lib/study/sync'
 import { electronBridge } from '@/lib/vault'
 import type { Workspace } from '@/lib/workspace'
@@ -26,6 +27,8 @@ export interface MaterialEntry {
 }
 
 const META = 'moodle-files.json'
+/** Moodle files the user threw away – never suggested again (.notiva/moodle-removed.json). */
+const REMOVED = 'moodle-removed.json'
 /** Newer versions downloaded next to the current file – waiting for "ersetzen" or "behalten". */
 const VERSIONS = 'moodle-versions.json'
 
@@ -104,21 +107,26 @@ export async function resolveVersion(ws: Workspace, id: string, choice: 'replace
   return path
 }
 
-/** Moves saved materials (and their notes page "<Name> (Notizen).md") – and remembers the new place. */
+/**
+ * Moves files (and their notes page "<Name> (Notizen).md") – Moodle materials among them keep their
+ * place in Notiva's list, so they are not offered again as "new".
+ */
 export async function moveMaterials(
   ws: Workspace,
-  moves: Array<{ id: string; from: string; to: string }>,
+  moves: Array<{ from: string; to: string }>,
 ): Promise<number> {
+  // Read before moving: afterwards the old paths are gone and their entries would be dropped.
+  const entries = await loadEntries(ws)
   const all = moves.flatMap((m) => {
     const notes = notesPathFor(m.from)
-    return ws.has(notes) ? [m, { id: '', from: notes, to: notesPathFor(m.to) }] : [m]
+    return ws.has(notes) ? [m, { from: notes, to: notesPathFor(m.to) }] : [m]
   })
   const done = await ws.moveFiles(all.map(({ from, to }) => ({ from, to })))
   const moved = new Map(done.map((d) => [d.from, d.to]))
-  const entries = await loadEntries(ws)
-  for (const m of moves) {
-    const to = moved.get(m.from)
-    if (to && entries[m.id]) entries[m.id] = { ...entries[m.id]!, path: to }
+  // One file can stand for several Moodle ids (the same script in two courses).
+  for (const [id, e] of Object.entries(entries)) {
+    const to = moved.get(e.path)
+    if (to) entries[id] = { ...e, path: to }
   }
   await ws.writeMeta(META, entries)
   const list = await pendingVersions(ws)
@@ -128,6 +136,25 @@ export async function moveMaterials(
       list.map((v) => ({ ...v, current: moved.get(v.current) ?? v.current })),
     )
   return moves.filter((m) => moved.has(m.from)).length
+}
+
+/**
+ * Files (or whole folders) going to the trash: their Moodle materials are remembered as removed, so
+ * the next check does not offer them again. Call before the files are gone.
+ */
+export async function forgetMaterials(ws: Workspace, paths: string[]): Promise<number> {
+  const inside = (p: string) => paths.some((x) => p === x || p.startsWith(`${x}/`))
+  const ids = Object.entries(await loadEntries(ws))
+    .filter(([, e]) => inside(e.path))
+    .map(([id]) => id)
+  if (!ids.length) return 0
+  await ws.writeMeta(REMOVED, [...new Set([...(await removedMaterials(ws)), ...ids])])
+  return ids.length
+}
+
+export async function removedMaterials(ws: Workspace): Promise<string[]> {
+  const raw = await ws.readMeta<unknown>(REMOVED)
+  return Array.isArray(raw) ? raw.filter((x): x is string => typeof x === 'string') : []
 }
 
 export async function savedMaterials(ws: Workspace): Promise<Record<string, MaterialEntry>> {
@@ -219,11 +246,88 @@ const MAX_SIZE = 100_000_000
 /** New or updated documents of the last fetch that are not in the vault yet. */
 export async function missingMaterials(ws: Workspace, snapshot: MoodleSnapshot): Promise<MoodleMaterial[]> {
   const entries = await loadEntries(ws)
+  const removed = new Set(await removedMaterials(ws))
   return (snapshot.materials ?? []).filter((m) => {
-    if (m.kind !== 'file' || !m.filename || (m.size ?? 0) > MAX_SIZE) return false
+    if (m.kind !== 'file' || !m.filename || (m.size ?? 0) > MAX_SIZE || removed.has(m.id)) return false
     const saved = entries[m.id]
     return !saved || (!!m.modified && !!saved.modified && m.modified > saved.modified)
   })
+}
+
+/**
+ * Moodle files that are already in the folder under the same name (saved by hand or by an older
+ * Notiva): `same` (same size – only to be remembered), `versions` (other size – a newer version to
+ * save next to it) and the `rest`, really new. Nothing happens before the user ticks them.
+ */
+export interface ExistingPlan {
+  same: Array<{ material: MoodleMaterial; path: string }>
+  versions: Array<{ material: MoodleMaterial; path: string }>
+  rest: MoodleMaterial[]
+}
+
+export function planExisting(
+  ws: Workspace,
+  materials: MoodleMaterial[],
+  snapshot: MoodleSnapshot,
+): ExistingPlan {
+  const course = (id: string) => snapshot.courses.find((c) => c.id === id)?.name || 'Kurs'
+  // Prefer the module's own material folder (its archive included).
+  const near = (m: MoodleMaterial) =>
+    courseFolder(ws, { id: m.courseId, name: course(m.courseId) }).split(`/${ARCHIVE_FOLDER}/`)[0]!
+  const matches = new Map(matchExisting(materials, ws.assets(), near).map((x) => [x.id, x]))
+  const plan: ExistingPlan = { same: [], versions: [], rest: [] }
+  for (const material of materials) {
+    const match = matches.get(material.id)
+    if (!match) plan.rest.push(material)
+    else (match.kind === 'same' ? plan.same : plan.versions).push({ material, path: match.path })
+  }
+  return plan
+}
+
+/** The pairs as entries of a checklist ("assign:<id>", "version:<id>"). */
+export function existingChecklist(plan: ExistingPlan) {
+  return [
+    ...plan.same.map(({ material: m, path }) => ({
+      value: `assign:${m.id}`,
+      label: `${t('materials.known')}: ${m.filename ?? m.title}`,
+      detail: t('materials.knownHint', { path }),
+      checked: true,
+    })),
+    ...plan.versions.map(({ material: m, path }) => ({
+      value: `version:${m.id}`,
+      label: `${t('materials.otherSize')}: ${m.filename ?? m.title}`,
+      detail: t('materials.otherSizeHint', { path }),
+      checked: true,
+    })),
+  ]
+}
+
+/**
+ * The ticked pairs: same files are only remembered (nothing downloaded or moved), other sizes are
+ * saved next to the user's file as a newer version to compare. Returns how many of each.
+ */
+export async function applyExisting(
+  ws: Workspace,
+  plan: ExistingPlan,
+  chosen: Set<string>,
+  snapshot: MoodleSnapshot,
+  moduleNames: Record<string, string> = {},
+): Promise<{ assigned: number; versions: number }> {
+  const same = plan.same.filter((x) => chosen.has(`assign:${x.material.id}`))
+  if (same.length) {
+    const entries = await loadEntries(ws)
+    for (const { material: m, path } of same)
+      entries[m.id] = { path, ...(m.modified ? { modified: m.modified } : {}) }
+    await ws.writeMeta(META, entries)
+  }
+  const course = (id: string) => snapshot.courses.find((c) => c.id === id)?.name || 'Kurs'
+  let versions = 0
+  for (const { material: m, path } of plan.versions.filter((x) => chosen.has(`version:${x.material.id}`))) {
+    await saveNewVersion(ws, m, path, { id: m.courseId, name: course(m.courseId) }, moduleNames)
+    versions++
+  }
+  if (versions) announceVersions(versions)
+  return { assigned: same.length, versions }
 }
 
 let running: Promise<number> | null = null
@@ -286,9 +390,21 @@ export async function moduleNamesOf(
 export async function suggestMaterials(ws: Workspace, snapshot: MoodleSnapshot): Promise<number> {
   // Courses taken later or not at all: nothing is suggested from them.
   const { courseCounts } = await import('@/app/courseChoices')
-  const todo = (await missingMaterials(ws, snapshot)).filter((m) => courseCounts(m.courseId))
-  if (!todo.length) return 0
+  const missing = (await missingMaterials(ws, snapshot)).filter((m) => courseCounts(m.courseId))
+  if (!missing.length) return 0
+  // Files already in the folder under the same name are not "new" – they are offered to assign.
+  const entries = await loadEntries(ws)
+  const plan = planExisting(
+    ws,
+    missing.filter((m) => !entries[m.id]),
+    snapshot,
+  )
+  const known = plan.same.length + plan.versions.length
+  const todo = missing.filter((m) => !plan.same.some((x) => x.material.id === m.id))
   const course = (id: string) => snapshot.courses.find((c) => c.id === id)?.name ?? ''
+  const title = known
+    ? t('materials.suggestedKnown', { count: missing.length - plan.same.length, known: plan.same.length })
+    : t('materials.suggested', { count: todo.length })
   const names = todo
     .slice(0, 3)
     .map((m) => `„${m.filename ?? m.title}“ (${course(m.courseId)})`)
@@ -298,19 +414,19 @@ export async function suggestMaterials(ws: Workspace, snapshot: MoodleSnapshot):
     {
       id: 'suggest:materials',
       kind: 'material',
-      title: t('materials.suggested', { count: todo.length }),
+      title,
       body: note,
       time: new Date().toISOString(),
       target: { type: 'review', what: 'materials' },
     },
   ])
-  announce(t('materials.suggested', { count: todo.length }), {
+  announce(title, {
     state: 'info',
     key: 'materials-suggestions',
     note,
     action: { label: t('materials.review'), run: () => void reviewMaterials(ws) },
   })
-  return todo.length
+  return missing.length
 }
 
 /** "Ansehen": the new materials to tick – the ticked ones are saved (with progress). */
@@ -318,23 +434,45 @@ export async function reviewMaterials(ws: Workspace): Promise<number> {
   const snapshot = await electronBridge()?.moodle?.snapshot()
   if (!snapshot) return 0
   const { courseCounts } = await import('@/app/courseChoices')
-  const todo = (await missingMaterials(ws, snapshot)).filter((m) => courseCounts(m.courseId))
-  if (!todo.length) return 0
+  const missing = (await missingMaterials(ws, snapshot)).filter((m) => courseCounts(m.courseId))
+  if (!missing.length) return 0
+  const entries = await loadEntries(ws)
+  // Updated files Notiva knows go through as before; unknown ones may already be in the folder.
+  const plan = planExisting(
+    ws,
+    missing.filter((m) => !entries[m.id]),
+    snapshot,
+  )
+  const todo = [...missing.filter((m) => entries[m.id]), ...plan.rest]
   const { useApp } = await import('@/app/store')
   const course = (id: string) => snapshot.courses.find((c) => c.id === id)?.name ?? ''
   const picked = await useApp.getState().ask({
-    title: t('materials.suggested', { count: todo.length }),
-    label: t('materials.reviewNote'),
-    confirmLabel: t('materials.save'),
-    checklist: todo.map((m) => ({
-      value: m.id,
-      label: m.filename ?? m.title,
-      detail: [course(m.courseId), m.section].filter(Boolean).join(' · '),
-      checked: true,
-    })),
+    title: t('materials.suggested', { count: missing.length }),
+    label:
+      plan.same.length + plan.versions.length ? t('materials.reviewKnownNote') : t('materials.reviewNote'),
+    confirmLabel: t('materials.apply'),
+    checklist: [
+      ...existingChecklist(plan),
+      ...todo.map((m) => ({
+        value: m.id,
+        label: m.filename ?? m.title,
+        detail: [course(m.courseId), m.section].filter(Boolean).join(' · '),
+        checked: true,
+      })),
+    ],
   })
   if (picked === null) return 0
-  return syncMaterials(ws, snapshot, new Set(JSON.parse(picked) as string[]))
+  const chosen = new Set(JSON.parse(picked) as string[])
+  const { assigned, versions } = await applyExisting(
+    ws,
+    plan,
+    chosen,
+    snapshot,
+    await moduleNamesOf(ws, snapshot),
+  )
+  if (assigned) announce(t('materials.assigned', { count: assigned }))
+  const ids = new Set(todo.filter((m) => chosen.has(m.id)).map((m) => m.id))
+  return assigned + versions + (ids.size ? await syncMaterials(ws, snapshot, ids) : 0)
 }
 
 /** "N neue Versionen – Vergleichen" (hint with a button to the comparison). */

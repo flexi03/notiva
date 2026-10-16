@@ -18,7 +18,9 @@ import {
   Sparkles,
   Undo2,
 } from 'lucide-react'
-import { gitAvailable, useGit } from '@/app/git'
+import { discardChanges, gitAvailable, useGit } from '@/app/git'
+import { restoreEntries } from '@/app/treeActions'
+import type { Workspace } from '@/lib/workspace'
 import { useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import { commitMessage } from '@/lib/commitMessage'
@@ -121,6 +123,7 @@ function GitError({ error, retry }: { error: string; retry: () => void }) {
 /** Source control view in the right side bar (like VS Code). */
 export function GitPanel() {
   const { state, loading, error, refresh, act, showDiff } = useGit()
+  const ws = useWorkspace()
   /** null = the automatic message (follows the selection); a string once the user edits it. */
   const [custom, setCustom] = useState<string | null>(null)
   /** the last message the local model wrote (to tell "KI" from "von dir bearbeitet") */
@@ -510,6 +513,29 @@ export function GitPanel() {
                         />
                       )}
                       {t('git.changes')} <span className="font-normal text-ink-3">{changes.length}</span>
+                      {changes.length > excluded.size && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="ml-auto"
+                          icon={<Undo2 size={13} />}
+                          onClick={async () => {
+                            const chosen = changes.filter((c) => !excluded.has(c.path))
+                            const ok = await useApp.getState().ask({
+                              title: t('git.discardMany', { count: chosen.length }),
+                              label: t('git.discardHint'),
+                              confirm: true,
+                              danger: true,
+                              confirmLabel: t('git.discard'),
+                            })
+                            if (ok !== null) await discardWithUndo(ws, chosen)
+                          }}
+                        >
+                          {excluded.size === 0
+                            ? t('git.discardAll')
+                            : t('git.discardSelected', { count: changes.length - excluded.size })}
+                        </Button>
+                      )}
                     </h3>
                     {changes.length === 0 ? (
                       <p className="px-1 text-[13px] text-ink-3">{t('git.noChanges')}</p>
@@ -568,7 +594,6 @@ function ChangeRow({
 }) {
   const ws = useWorkspace()
   const { openPage, ask } = useApp()
-  const act = useGit((s) => s.act)
   const page = ws.get(change.path)
   const folder = dirname(change.path)
   const name = page?.title ?? basename(change.path).replace(/\.md$/, '')
@@ -605,7 +630,7 @@ function ChangeRow({
               danger: true,
               confirmLabel: t('git.discard'),
             })
-            if (ok !== null) await act((git) => git.discard([change.path]))
+            if (ok !== null) await discardWithUndo(ws, [change])
           }}
         >
           <Undo2 size={13} />
@@ -780,5 +805,19 @@ function CommitRow({
         </ul>
       )}
     </li>
+  )
+}
+
+/** Discards the changes (new files into the trash) and offers to bring those files back. */
+async function discardWithUndo(ws: Workspace, changes: GitChange[]): Promise<void> {
+  const entries = await discardChanges(ws, changes)
+  useApp.getState().showToast(
+    t('git.discarded', { count: changes.length }),
+    entries.length
+      ? {
+          label: t('git.restoreNew', { count: entries.length }),
+          run: () => void restoreEntries(ws, entries),
+        }
+      : undefined,
   )
 }

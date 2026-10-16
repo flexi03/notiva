@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { create } from 'zustand'
 import { blockChanges, lineMarkers, type BlockChange } from '@/lib/diff'
 import { electronBridge, type GitBridge, type GitChange, type GitState } from '@/lib/vault'
-import type { Page } from '@/lib/workspace'
+import type { Page, TrashEntry, Workspace } from '@/lib/workspace'
 import { useApp } from './store'
 
 /** What the diff sheet shows: a file of the folder's Git (now / in a commit) or of a lab repository. */
@@ -153,4 +153,18 @@ export function usePageGitChanges(page: Page, blocks: string[]): PageGitChanges 
 
   if (!change || !texts || texts.key !== key) return null
   return blockChanges(lineMarkers(texts.head, texts.file), texts.file, page.body, blocks)
+}
+
+/**
+ * Throws away changes: changed files go back to the last commit, new files go to Notiva's trash
+ * (restorable) instead of being deleted. Returns the trash entries – for "Rückgängig".
+ */
+export async function discardChanges(ws: Workspace, changes: GitChange[]): Promise<TrashEntry[]> {
+  const fresh = changes.filter((c) => c.status === 'untracked' || c.status === 'added')
+  // Files made outside Notiva may not be read in yet – they must reach the trash too.
+  if (fresh.some((c) => !ws.has(c.path) && !ws.get(c.path))) await ws.reload()
+  const entries: TrashEntry[] = []
+  for (const c of fresh) if (ws.has(c.path) || ws.get(c.path)) entries.push(await ws.trashPath(c.path))
+  await useGit.getState().act((git) => git.discard(changes.map((c) => c.path)))
+  return entries
 }

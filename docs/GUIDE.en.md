@@ -13,11 +13,15 @@ Everything beyond the [README](../README.en.md). Deutsch: [ANLEITUNG.md](ANLEITU
 ## Studies
 
 - **Modules** come from the examination regulations (default: BMI, PO 2018 at HSD) or from your own list in
-  `Studium/Hochschule.md`. Status, attempts, grade and "passed in" are filled by the eCampus sync.
+  `Studium/Hochschule.md`. Status, attempts, grade and "passed in" are filled by the eCampus sync. When an exam of
+  the module (_Prüfungen_) lies in the past and the grade is still missing, it suggests **Note ausstehend**
+  (waiting for the grade).
 - **Belegung** (what you take) is suggested from Moodle and the term's offer; set it yourself on the module page.
   Modules you take appear in _My semester_.
 - **Materials** from Moodle go to `Unterlagen/<module>/Vorlesung`, `Praktikum & Übung` or `Sonstiges`. New
-  materials are suggested (hint and notification) and saved once you confirm.
+  materials are suggested (hint and notification) and saved once you confirm. A file with the same name and size
+  already in your folder is listed as **Assign**: Notiva only remembers where it is. Moodle files you move or delete
+  in Notiva are not suggested again as new.
 - **Re-read materials** (_Moodle_): fetches Moodle again and lists what differs for you to tick: misplaced files
   (their notes page moves along), missing files and newer versions.
 - **New versions** never overwrite your file. They go next to it as `<name> (neu <date>).pdf`. Under
@@ -45,7 +49,8 @@ Everything beyond the [README](../README.en.md). Deutsch: [ANLEITUNG.md](ANLEITU
   repositories have their own page: the server's description (read only), files, "My notes"; their Git is under
   _Changes → Lab repositories_.
 - **Moodle courses of a module**: on the module page choose per course "counts now", "another semester" or "not
-  counted" – e.g. for courses you only look into.
+  counted" – e.g. for courses you only look into. Nothing comes from "not counted" any more (no files, deadlines,
+  announcements); "another semester" reports new files only as a grey note.
 - **Today** (sidebar) opens the daily note with the day overview: sessions, exams, labs, tasks due and overdue,
   Moodle deadlines – a click opens the entry or the module.
 - **Private repositories** (e.g. ProjectBase): the first time Notiva asks for an access token (scope
@@ -54,6 +59,14 @@ Everything beyond the [README](../README.en.md). Deutsch: [ANLEITUNG.md](ANLEITU
 - **Background checks**: every source has its own interval (_Settings → Notifications_).
 
 Another university: [HOCHSCHULE.md](HOCHSCHULE.md) (German) and [examples/Hochschule.md](../examples/Hochschule.md).
+
+## Side bar and path
+
+- **Several entries**: ⌘/Ctrl-click chooses one by one, Shift-click a range. Drag them onto a page or folder (notes
+  and Moodle bookkeeping move along), or move them to the trash together with Delete or right click – with undo.
+- **Path at the top**: the whole path, PDFs included. A click on a folder shows what it holds, its folder page,
+  "Show in Finder" and "Copy folder path". A click on the name at the end makes the path editable.
+- **Shelf**: at the bottom of the left activity bar; drag its icon to the bottom right if you like.
 
 ## Status bar
 
@@ -128,8 +141,8 @@ again", "Try again"). The technical message stays visible below – helpful for 
 ## Git
 
 If your folder is a Git repository (or after _Set up Git_), the desktop app shows new, changed and deleted pages
-(`⌘/Ctrl ⇧ G`) with +/− lines, a diff (stacked or side by side), commit of selected files, discard, history and
-push/pull. The editor marks changed (blue), new (green) and deleted (red) lines like VS Code.
+(`⌘/Ctrl ⇧ G`) with +/− lines, a diff (stacked or side by side), commit of selected files, discard (one by one or
+**Discard all** for the chosen ones; new files go to the trash), history and push/pull. The editor marks changed (blue), new (green) and deleted (red) lines like VS Code.
 
 ### Connect with GitHub or GitLab
 

@@ -298,7 +298,10 @@ export class GitRepo {
       if (!change) continue
       if (change.status === 'untracked' || change.status === 'added') {
         await run(this.vault.root, ['rm', '--cached', '-q', '--ignore-unmatch', '--', spec(file)])
-        await this.vault.remove(file)
+        // Already moved to Notiva's trash by the app (restorable) – then there is nothing to delete.
+        await this.vault.remove(file).catch((e: NodeJS.ErrnoException) => {
+          if (e.code !== 'ENOENT') throw e
+        })
       } else {
         await run(this.vault.root, ['restore', '--source=HEAD', '--staged', '--worktree', '--', spec(file)])
         if (change.from)

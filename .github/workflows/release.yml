@@ -88,6 +88,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ inputs.tag || github.ref_name }}
         run: |
-          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "Notiva ${TAG#v}" --notes "Siehe CHANGELOG.md" || true
+          # Release notes: this version's section of both changelogs (English first, then German).
+          VER=${TAG#v}
+          section() { awk -v v="$VER" 'index($0, "## " v " ") == 1 { f = 1; next } /^## / { f = 0 } f' "$1"; }
+          { echo "## English"; section CHANGELOG.en.md; echo; echo "## Deutsch"; section CHANGELOG.md; } > "$RUNNER_TEMP/notes.md"
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "Notiva $VER" --notes-file "$RUNNER_TEMP/notes.md" || true
           shopt -s nullglob
           gh release upload "$TAG" release/Notiva-${TAG#v}-*.{dmg,zip,exe,AppImage} --clobber

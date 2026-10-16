@@ -364,15 +364,29 @@ export class Workspace {
   }
 
   /** Breadcrumb from the root to `path`. */
-  breadcrumbs(path: string): Array<{ path: string | null; title: string }> {
+  /** The folders above a page or file – each with its folder path and its page, if it has one. */
+  breadcrumbs(path: string): Array<{ path: string | null; title: string; folder: string }> {
     const parts = dirname(path).split('/').filter(Boolean)
-    const crumbs: Array<{ path: string | null; title: string }> = []
+    const crumbs: Array<{ path: string | null; title: string; folder: string }> = []
     for (let i = 0; i < parts.length; i++) {
       const folder = parts.slice(0, i + 1).join('/')
       const page = this.pages.get(`${folder}.md`)
-      crumbs.push({ path: page?.path ?? null, title: page?.title ?? parts[i]! })
+      crumbs.push({ path: page?.path ?? null, title: page?.title ?? parts[i]!, folder })
     }
     return crumbs
+  }
+
+  /** What a folder holds, as in the side bar (sub-folders, pages, documents). */
+  folderEntries(folder: string): TreeNode[] {
+    const find = (nodes: TreeNode[]): TreeNode | undefined => {
+      for (const n of nodes) {
+        if (n.id === folder || n.id === `${folder}.md`) return n
+        const inner = find(n.children)
+        if (inner) return inner
+      }
+      return undefined
+    }
+    return find(this.tree())?.children ?? []
   }
 
   databases(): Page[] {

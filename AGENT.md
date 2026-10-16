@@ -75,12 +75,13 @@ In der Demo liegt alles im Speicher: in Tests mit `go(page, '#/…')` navigieren
 ## Doku aktuell halten
 
 Jede Änderung, die Nutzer sehen, aktualisiert im selben Commit: `README.md` + `README.en.md`, `docs/ANLEITUNG.md` +
-`docs/GUIDE.en.md`, den Hilfe-Bildschirm (`src/screens/HelpScreen.tsx`) und `CHANGELOG.md`. Nach einem Release
+`docs/GUIDE.en.md`, den Hilfe-Bildschirm (`src/screens/HelpScreen.tsx`) und `CHANGELOG.md` + `CHANGELOG.en.md`. Nach einem Release
 sofort die Patch-Version in `package.json` erhöhen.
 
 ## Release
 
-1. Version in `package.json` erhöhen (SemVer), Eintrag in `CHANGELOG.md`.
+1. Version in `package.json` erhöhen (SemVer), Eintrag in `CHANGELOG.md` **und** `CHANGELOG.en.md` (Überschrift
+   `## X.Y.Z – JJJJ-MM-TT`). Daraus baut der Workflow die zweisprachigen Release-Notizen.
 2. Commit, dann `git tag vX.Y.Z && git push origin main vX.Y.Z`.
 3. `.github/workflows/release.yml` baut macOS (arm64), Windows und Linux und hängt die Dateien an das Release.
    Die App (`electron/updater.ts`) findet sie über die GitHub-API und aktualisiert sich selbst

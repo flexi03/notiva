@@ -213,6 +213,7 @@ const DE = {
         'Links (z. B. ProjectBase) öffnen im Browser – dort klappt die Anmeldung mit 2FA – oder in einem App-Fenster.',
         'Bei Git-Projekten holt „Repository ins Praktikum holen“ den Code in den Praktikumsordner (mit Fortschritt).',
         '„Unterlagen neu einlesen“ vergleicht Moodle mit deinem Ordner: falsch einsortierte Dateien (Notizen wandern mit), fehlende und neuere Versionen – nur Angehaktes passiert.',
+        'Liegt eine Datei schon in deinem Ordner (gleicher Name, gleiche Größe), heißt es „Zuordnen“ statt Herunterladen. Kurse auf „nicht berücksichtigen“ bleiben still, „anderes Semester“ meldet sich nur grau.',
       ],
       route: { name: 'moodle' },
     },
@@ -305,13 +306,14 @@ const DE = {
       details: [
         'Das lokale Modell fasst jede geänderte Datei zusammen und schlägt die Commit-Nachricht vor – du kannst sie ändern.',
         'Große Commits zeigen Fortschritt mit Anzahl und Restzeit.',
+        '„Alle verwerfen“ setzt die ausgewählten Änderungen zurück; neue Dateien kommen in den Papierkorb und lassen sich zurückholen.',
       ],
       view: 'git',
     },
     {
       icon: <Inbox size={18} />,
       title: 'Ablage',
-      where: 'Werkzeugleiste',
+      where: 'Werkzeugleiste, unten',
       what: 'Dateien und Text schnell ablegen; in Seiten ziehen, um sie zu verlinken.',
       details: ['Alles, was du hier ablegst, bleibt, bis du es in eine Seite ziehst oder löschst.'],
       view: 'shelf',
@@ -323,6 +325,8 @@ const DE = {
       what: 'Dein Ordner als Baum – alles normale Markdown-Dateien.',
       details: [
         'Zuletzt geöffnete Dateien stehen oben in der Seitenleiste.',
+        'Mehrere wählen mit ⌘/Strg- oder Shift-Klick, per Drag & Drop verschieben, mit Entf in den Papierkorb.',
+        'Oben steht der ganze Pfad; ein Klick auf einen Ordner zeigt seinen Inhalt.',
         'Seiten sind .md-Dateien; du kannst sie auch mit jedem anderen Editor bearbeiten.',
       ],
     },
@@ -390,6 +394,7 @@ const EN: typeof DE = {
         'Links (e.g. ProjectBase) open in the browser – sign-in with 2FA works there – or in an app window.',
         'For Git projects, "Get repository into the lab" clones the code into the lab folder (with progress).',
         '"Re-read materials" compares Moodle with your folder: misplaced files (notes move along), missing ones and newer versions – only what you tick happens.',
+        'A file already in your folder (same name, same size) is offered as "Assign" instead of a download. Courses set to "not counted" stay silent, "another semester" only reports in grey.',
       ],
     },
     {
@@ -477,12 +482,13 @@ const EN: typeof DE = {
       details: [
         'The local model summarises every changed file and suggests the commit message – you can edit it.',
         'Large commits show progress with count and time left.',
+        '"Discard all" resets the chosen changes; new files go to the trash and can be brought back.',
       ],
     },
     {
       ...DE.places[11]!,
       title: 'Shelf',
-      where: 'Tool bar',
+      where: 'Tool bar, at the bottom',
       what: 'Put files and text aside quickly; drag into pages to link them.',
       details: ['Everything you put here stays until you drag it into a page or delete it.'],
     },
@@ -493,6 +499,8 @@ const EN: typeof DE = {
       what: 'Your folder as a tree – all plain Markdown files.',
       details: [
         'Recently opened files are listed at the top of the sidebar.',
+        'Choose several with ⌘/Ctrl or Shift click, drag them to move, Delete puts them in the trash.',
+        'The whole path is at the top; a click on a folder shows what it holds.',
         'Pages are .md files; you can edit them with any other editor too.',
       ],
     },

@@ -13,6 +13,8 @@ export type NotificationKind =
   | 'notice'
   | 'grade'
   | 'reminder'
+  /** New files in a course set aside for another semester: only for information, nothing to save. */
+  | 'aside'
   /** Result of a check ("Moodle geprüft – nichts Neues"): one entry per source, replaced each time. */
   | 'check'
 
@@ -69,6 +71,21 @@ export interface NewsOptions {
   locale?: string
   /** Notiva pages per Moodle id (imported tasks) – news then opens the page. */
   pages?: Map<string, string>
+  /**
+   * The user's choice per Moodle course (.notiva/course-choices.json): "ignore" – nothing from it;
+   * "later" (another semester) – its new files as one grey note per course, never as materials.
+   */
+  choice?: (courseId: string) => CourseChoice | undefined
+}
+
+export type CourseChoice = 'later' | 'ignore'
+
+/** Validates the stored course choices (untrusted file). */
+export function parseCourseChoices(raw: unknown): Record<string, CourseChoice> {
+  const out: Record<string, CourseChoice> = {}
+  if (typeof raw !== 'object' || raw === null) return out
+  for (const [id, v] of Object.entries(raw)) if (v === 'later' || v === 'ignore') out[id] = v
+  return out
 }
 
 /**
@@ -78,7 +95,7 @@ export interface NewsOptions {
 export function moodleNews(
   previous: MoodleSnapshot | null,
   next: MoodleSnapshot,
-  { now = new Date(), locale = 'de-DE', pages = new Map() }: NewsOptions = {},
+  { now = new Date(), locale = 'de-DE', pages = new Map(), choice = () => undefined }: NewsOptions = {},
 ): AppNotification[] {
   if (!previous || previous.site !== next.site) return []
   const found = now.toISOString()
@@ -86,6 +103,7 @@ export function moodleNews(
   const oldEvents = new Map(previous.events.map((e) => [e.id, e]))
   for (const event of next.events) {
     if (new Date(event.due).getTime() < now.getTime()) continue
+    if (event.course?.id && choice(event.course.id) === 'ignore') continue
     const old = oldEvents.get(event.id)
     const target = eventTarget(event, pages)
     const course = event.course?.name
@@ -113,10 +131,17 @@ export function moodleNews(
   // Materials only if the previous fetch had them (older snapshots/calendar links don't).
   if (previous.materials && next.materials) {
     const oldMaterials = new Map(previous.materials.map((m) => [m.id, m]))
+    const aside = new Map<string, string[]>()
     for (const m of next.materials) {
       const old = oldMaterials.get(m.id)
       const changed = old && m.modified && old.modified && m.modified !== old.modified
       if (old && !changed) continue
+      const mode = choice(m.courseId)
+      if (mode === 'ignore') continue
+      if (mode === 'later') {
+        aside.set(m.courseId, [...(aside.get(m.courseId) ?? []), m.filename ?? m.title])
+        continue
+      }
       const course = courseName(next, m.courseId)
       news.push({
         id: `${changed ? 'updated' : 'material'}:${m.id}:${m.modified ?? ''}`,
@@ -126,6 +151,18 @@ export function moodleNews(
         ...(course ? { course } : {}),
         time: m.modified && !changed && Date.parse(m.modified) > now.getTime() - 7 * DAY ? m.modified : found,
         target: { type: 'material', id: m.id, courseId: m.courseId },
+      })
+    }
+    for (const [courseId, names] of aside) {
+      const course = courseName(next, courseId)
+      news.push({
+        id: `aside:${courseId}:${found}`,
+        kind: 'aside',
+        title: `${names.length} ${names.length === 1 ? 'Datei' : 'Dateien'} – anderes Semester, nicht übernommen`,
+        body: names.slice(0, 3).join(', ') + (names.length > 3 ? ` und ${names.length - 3} weitere` : ''),
+        ...(course ? { course } : {}),
+        time: found,
+        target: { type: 'course', courseId },
       })
     }
   }
@@ -223,6 +260,7 @@ export function parseNotifications(raw: unknown): AppNotification[] {
     'notice',
     'grade',
     'reminder',
+    'aside',
     'check',
   ]
   const str = (v: unknown, max = 500) => (typeof v === 'string' ? v.slice(0, max) : undefined)
@@ -302,6 +340,7 @@ const NEWS_WORDS: Partial<Record<NotificationKind, [string, string]>> = {
   notice: ['Mitteilung', 'Mitteilungen'],
   grade: ['neue Note', 'neue Noten'],
   reminder: ['Erinnerung', 'Erinnerungen'],
+  aside: ['Hinweis (anderes Semester)', 'Hinweise (anderes Semester)'],
 }
 
 /** "2 neue Termine · 1 Mitteilung" – or "nichts Neues". */
