@@ -55,6 +55,16 @@ Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und inst
 - **Modulseite – Moodle nach Datum:** anstehende Fristen zuerst, dann Ankündigungen und Links, neueste
   zuerst, mit Semester und Abschnitt. Geholte Repositories öffnen sich über den Link („Im Praktikum: …“).
 - **Heute – Demnächst:** Aufgaben, Praktika und Fristen der nächsten 7 Tage, Prüfungen der nächsten 14.
+- **Praktika:** eine Seite je Praktikum (P01, P02 …) mit Termin, Vorbereitung, Aufgaben- und
+  Vorbereitungsblatt, Repositories, Moodle-Links und eigenen Dateien. „Nach Praktika ordnen“ legt die Seiten an,
+  verschiebt Repositories und verbindet die Termine – nach Rückfrage. Neue Repositories fragen nach ihrem Praktikum.
+- **Moodle-Kurse pro Modul:** „zählt jetzt“, „anderes Semester (nur ansehen)“ oder „nicht berücksichtigen“ – wirkt
+  auf Studium-Abgleich, Stundenplan- und Unterlagen-Vorschläge. Links nach Moodle-Abschnitten.
+- **Stundenplan-Vorschläge** bleiben verworfen („Alle verwerfen“, auch beim Schließen des Hinweises).
+- **Git:** Herkunft der Commit-Nachricht (KI, Vorlage, von dir) mit Erklärung; Verlauf als Graph wie in VS Code;
+  eigener Reiter „Praktikum-Repos“; `.DS_Store` & Co. werden immer ignoriert.
+- Behoben: Absturz „t.map is not a function“ auf Seiten mit Verknüpfungen als Text; Links auf PDFs verloren die
+  Endung.
 - **Private Git-Projekte** mit Zugangstoken (verschlüsselt im Schlüsselbund, pro Server); Snippets werden über
   ihre Git-Adresse geholt.
 - **Erinnerungen** pro Aufgabe („2 Std. vorher“, „Keine“); Datumsfelder können eine Uhrzeit haben.

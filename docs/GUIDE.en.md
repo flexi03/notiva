@@ -40,6 +40,12 @@ Everything beyond the [README](../README.en.md). Deutsch: [ANLEITUNG.md](ANLEITU
   - It is added to _Aufgaben_ after a preview (with date, time and `Erinnerung`).
   - _Links from Moodle_ lists Git projects with "Get repository into the lab".
 - **Next** in the status bar opens the module. "For this session" there shows the most likely files.
+- **Labs**: in the lab folder every session has its own page (P01, P02 …) with date, preparation, sheets,
+  repositories and links. "Organise by session" brings an existing folder into this shape (with a preview). Got
+  repositories have their own page: the server's description (read only), files, "My notes"; their Git is under
+  _Changes → Lab repositories_.
+- **Moodle courses of a module**: on the module page choose per course "counts now", "another semester" or "not
+  counted" – e.g. for courses you only look into.
 - **Today** (sidebar) opens the daily note with the day overview: sessions, exams, labs, tasks due and overdue,
   Moodle deadlines – a click opens the entry or the module.
 - **Private repositories** (e.g. ProjectBase): the first time Notiva asks for an access token (scope
