@@ -86,12 +86,15 @@ assistant ([Another university?](#another-university)).
 
 - 📝 **Markdown editor** like Notion: `/` commands, `[[links]]`, tasks, callouts, math, code with a copy button.
 - 🎓 **Studies**: modules with status, attempts and grade, ECTS-weighted average, exams, timetable, a "now / next" badge.
-- 🗓️ **Timetable** as a week view in module colours – times from Moodle are suggested, never entered silently.
+- 🗓️ **Timetable** as a week view in module colours – times from Moodle and slides are suggested with their source,
+  never entered silently.
+- 📄 **New script versions** go next to your file and are compared page by page – you decide.
 - 🎙️ **Lecture mode**: records, transcribes locally with Whisper and follows the slides.
 - 🧠 **Local mini model** (llama.cpp + Qwen) for quick summaries like commit messages – offline.
 - 🤖 **AI assistant** with visible context (Claude Code, Codex, Ollama, your own keys) and an MCP server.
 - 🔔 **Notifications** for new materials, deadlines, grades and cancelled lectures.
-- 🌿 **Built-in Git**: changes, diff, commit, history, push/pull.
+- 🌿 **Built-in Git**: changes, diff, commit with an automatic summary, history, push/pull; get lab repositories
+  from Moodle links.
 - 📥 **Shelf** for files and text put aside quickly.
 - 🗂️ **Tables, boards and calendars** for tasks, exams and modules – every row is a Markdown file.
 

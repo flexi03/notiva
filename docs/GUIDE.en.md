@@ -16,17 +16,43 @@ Everything beyond the [README](../README.en.md). Deutsch: [ANLEITUNG.md](ANLEITU
   `Studium/Hochschule.md`. Status, attempts, grade and "passed in" are filled by the eCampus sync.
 - **Belegung** (what you take) is suggested from Moodle and the term's offer; set it yourself on the module page.
   Modules you take appear in _My semester_.
-- **Materials** from Moodle go to `Unterlagen/<course>/Vorlesung`, `Praktikum & Übung` or `Sonstiges`.
+- **Materials** from Moodle go to `Unterlagen/<module>/Vorlesung`, `Praktikum & Übung` or `Sonstiges`. New
+  materials are suggested (hint and notification) and saved once you confirm.
+- **Re-read materials** (_Moodle_): fetches Moodle again and lists what differs for you to tick: misplaced files
+  (their notes page moves along), missing files and newer versions.
+- **New versions** never overwrite your file. They go next to it as `<name> (neu <date>).pdf`. Under
+  _Moodle → N new version(s)_, Notiva compares both page by page: changed pages yellow, new ones green, removed
+  ones listed. Then you choose **Replace old** (name and notes stay) or **Keep both**.
+- **Links** in Moodle (e.g. ProjectBase) open in the browser, where sign-in with 2FA works. Alternatively they open
+  in an app window with the university sign-in. For Git projects, **Get repository into the lab** clones the code
+  into the lab folder with progress. If the server needs a login, use **Get it in the Terminal**.
 - **Everything hangs on the module**: its page shows materials, Moodle info, exams, tasks and notes. There are no
   separate course pages. Overview in the app: _Help → How Notiva works_.
 - **My semester**: one coloured card per module you take – next session, exam, open tasks, newest script, new
   materials, "Work on the lab".
-- **Timetable** (sidebar): week view in module colours. "Suggest times from Moodle" reads the course texts and asks
-  for each session whether to add it. If they differ from your own entries, Notiva asks.
+- **Timetable** (sidebar): week view in module colours. "Suggest times" reads the Moodle course texts and the first
+  pages of intro PDFs. For each session it asks whether to add it and names the source (course or slide and page,
+  with the matching sentence). The source stays in the "Quelle" column and shows on hover. If something differs
+  from your own entries, Notiva asks. The module page lists its sessions with "Add session" and "Find times".
 - **Exam schedule**: the faculty's newest PDF is read into _Prüfungen_.
 - **Background checks**: every source has its own interval (_Settings → Notifications_).
 
 Another university: [HOCHSCHULE.md](HOCHSCHULE.md) (German) and [examples/Hochschule.md](../examples/Hochschule.md).
+
+## Status bar
+
+At the bottom edge of the window (like VS Code):
+
+- **Left:** the next session and short confirmations ("Saved").
+- **Middle:** running tasks with a bar, count and time left. A click opens the list. Errors open it by themselves,
+  with a reason and a fix button.
+- **Right:**
+  - "N suggestions" (opens the notifications)
+  - Help
+  - Version (about and updates)
+  - "Report a problem"
+
+Background checks report in the notifications what they found and what of it is new.
 
 ## PDFs and lectures
 
@@ -38,7 +64,8 @@ Another university: [HOCHSCHULE.md](HOCHSCHULE.md) (German) and [examples/Hochsc
 ## Code folders
 
 A page with `code: true` gets a folder next to it: file list, editor, terminal (two side by side if you like), links
-and a web page beside it. Git commits with a progress display.
+and a web page beside it. Git commits with a progress display. Links to Git projects offer "Get repository into the
+lab" (`git clone` into the folder).
 
 ## AI
 
@@ -67,7 +94,8 @@ claude mcp add notiva -- node /path/to/notiva/dist-mcp/notiva-mcp.mjs /path/to/y
 For quick summaries without internet or account: _Settings → AI → Local mini model_. Notiva uses
 [llama.cpp](https://github.com/ggml-org/llama.cpp) (button "Install llama.cpp": Homebrew or winget) and a small
 Qwen 2.5 model (recommended 1.5 B, ~1.1 GB; small 0.5 B, ~0.5 GB), downloaded once with a progress bar and checked
-by checksum. In the Git panel ✨ then suggests a commit message. The model only listens on `127.0.0.1` and stops
+by checksum. In the Git panel it then summarises every changed file and suggests the commit message (automatically;
+you can edit it, ✨ asks again). The model only listens on `127.0.0.1` and stops
 after 5 idle minutes.
 
 ## Sign-in (Microsoft)

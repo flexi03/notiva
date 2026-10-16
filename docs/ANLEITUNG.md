@@ -17,18 +17,44 @@ _Hilfe → So funktioniert Notiva_ (bitte beides gemeinsam aktuell halten). Engl
   `Studium/Hochschule.md`. Status, Versuche, Note und „Bestanden im“ füllt der eCampus-Abgleich.
 - **Belegung** schlägt Notiva aus Moodle und dem Semesterangebot vor; du kannst sie auf der Modulseite selbst setzen.
   Belegte Module erscheinen in _Mein Semester_.
-- **Unterlagen** aus Moodle landen in `Unterlagen/<Kurs>/Vorlesung`, `Praktikum & Übung` oder `Sonstiges`.
+- **Unterlagen** aus Moodle landen in `Unterlagen/<Modul>/Vorlesung`, `Praktikum & Übung` oder `Sonstiges`. Neue
+  Unterlagen schlägt Notiva vor (Hinweis und Benachrichtigung), gespeichert wird nach deiner Bestätigung.
+- **Unterlagen neu einlesen** (_Moodle_): holt Moodle neu und listet zum Abhaken auf, was abweicht. Dazu gehören
+  falsch einsortierte Dateien (die Notizseite wandert mit), fehlende Dateien und neuere Versionen.
+- **Neue Versionen** überschreiben nie deine Datei. Sie kommen als `<Name> (neu <Datum>).pdf` daneben. Unter
+  _Moodle → N neue Version(en)_ vergleicht Notiva beide Seite für Seite: geänderte Seiten gelb, neue grün,
+  entfernte aufgezählt. Danach wählst du **Alte ersetzen** (Name und Notizen bleiben) oder **Beide behalten**.
+- **Links** in Moodle (z. B. ProjectBase) öffnen im Browser, dort klappt die Anmeldung mit 2FA. Alternativ öffnen
+  sie in einem App-Fenster mit der Uni-Anmeldung. Bei Git-Projekten holt **Repository ins Praktikum holen** den
+  Code mit Fortschritt in den Praktikumsordner. Verlangt der Server eine Anmeldung, hilft **Im Terminal holen**.
 - **Alles hängt am Modul**: Die Modulseite zeigt Unterlagen, Moodle-Infos, Prüfungen, Aufgaben und Mitschriften.
   Eigene Kursseiten gibt es nicht mehr. Überblick in der App: _Hilfe → So funktioniert Notiva_.
 - **Mein Semester**: eine farbige Karte je belegtem Modul – nächster Termin, Prüfung, offene Aufgaben, neuestes
   Skript, neue Unterlagen, „Praktikum bearbeiten“.
-- **Stundenplan** (Seitenleiste): Wochenansicht in Modulfarben. „Zeiten aus Moodle vorschlagen“ liest die Kurstexte
-  und fragt pro Termin, ob er übernommen werden soll. Weicht etwas von deinen eigenen Einträgen ab, fragt
-  Notiva nach.
+- **Stundenplan** (Seitenleiste): Wochenansicht in Modulfarben. „Zeiten vorschlagen“ liest die Moodle-Kurstexte
+  und die ersten Seiten der Einführungs-PDFs. Pro Termin fragt Notiva, ob er übernommen werden soll, und nennt die
+  Quelle (Kurs oder Folie und Seite, mit dem passenden Satz). Die Quelle bleibt in der Spalte „Quelle“ und erscheint
+  beim Darüberfahren. Weicht etwas von deinen eigenen Einträgen ab, fragt Notiva nach. Auf der Modulseite stehen
+  die Termine des Moduls mit „Termin hinzufügen“ und „Zeiten suchen“.
 - **Prüfungsplan**: die neueste PDF der Fakultät wird gelesen und in _Prüfungen_ eingetragen.
 - **Hintergrund-Abrufe**: jede Quelle hat ein eigenes Intervall (_Einstellungen → Benachrichtigungen_).
 
 Andere Hochschule: [HOCHSCHULE.md](HOCHSCHULE.md) und [examples/Hochschule.md](../examples/Hochschule.md).
+
+## Statusleiste
+
+Unten am Fensterrand (wie in VS Code):
+
+- **Links:** der nächste Termin und kurze Bestätigungen („Gespeichert“).
+- **Mitte:** laufende Aufgaben mit Balken, Anzahl und Restzeit. Ein Klick öffnet die Liste. Fehler öffnen sie
+  selbst, mit Grund und Knopf zum Beheben.
+- **Rechts:**
+  - „N Vorschläge“ (öffnet die Benachrichtigungen)
+  - Hilfe
+  - Version (Info und Updates)
+  - „Problem melden“
+
+Hintergrund-Prüfungen melden in den Benachrichtigungen, was sie gefunden haben und was davon neu ist.
 
 ## PDFs und Vorlesungen
 
@@ -40,7 +66,8 @@ Andere Hochschule: [HOCHSCHULE.md](HOCHSCHULE.md) und [examples/Hochschule.md](.
 ## Code-Ordner
 
 Eine Seite mit `code: true` bekommt einen Ordner daneben: Dateiliste, Editor, Terminal (auch zwei nebeneinander),
-Links und eine Webseite daneben. Git-Commits mit Fortschrittsanzeige.
+Links und eine Webseite daneben. Git-Commits mit Fortschrittsanzeige. Links auf Git-Projekte bieten
+„Repository ins Praktikum holen“ (`git clone` in den Ordner).
 
 ## KI nutzen
 
@@ -79,8 +106,8 @@ claude mcp add notiva -- node /pfad/zu/notiva/dist-mcp/notiva-mcp.mjs /pfad/zu/d
 Für schnelle Zusammenfassungen ohne Internet und ohne Konto: _Einstellungen → KI → Lokales Mini-Modell_.
 Notiva nutzt dafür [llama.cpp](https://github.com/ggml-org/llama.cpp) (Knopf „llama.cpp installieren“: Homebrew
 bzw. winget) und ein kleines Qwen-2.5-Modell (empfohlen 1,5 B, ~1,1 GB; klein 0,5 B, ~0,5 GB), das beim ersten Mal
-mit Fortschrittsbalken geladen und per Prüfsumme kontrolliert wird. Im Git-Panel schlägt ✨ dann eine
-Commit-Nachricht vor. Das Modell läuft nur auf `127.0.0.1` und beendet sich nach 5 Minuten ohne Anfrage.
+mit Fortschrittsbalken geladen und per Prüfsumme kontrolliert wird. Im Git-Panel fasst es dann jede geänderte
+Datei zusammen und schlägt die Commit-Nachricht vor (automatisch, du kannst sie ändern; ✨ fragt neu). Das Modell läuft nur auf `127.0.0.1` und beendet sich nach 5 Minuten ohne Anfrage.
 
 ## Anmeldung (Microsoft)
 

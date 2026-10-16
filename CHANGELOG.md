@@ -18,6 +18,25 @@ Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und inst
 - **Hilfe:** „So funktioniert Notiva“ in der App, Doku aktualisiert (#9).
 - **Auswahl** in Seiten- und Werkzeugleiste als Fläche statt Strich (#10).
 - **Einstellungen** neu gegliedert, mit Beschreibung je Bereich und „Über Notiva“ (#11).
+- **Statusleiste** unten wie in VS Code:
+  - nächster Termin, Bestätigungen und Fortschritt mit Anzahl und Restzeit;
+  - „N Vorschläge“, Hilfe, Version und „Problem melden“ (#7, #12, #22).
+- **KI-Kontext:** aktuelle Seite oder ganzes PDF per Umschalter (#13).
+- **Benachrichtigungen:** jede Prüfung meldet „gefunden – neu“, farbig nach Art. Neue Unterlagen werden vorgeschlagen
+  statt still gespeichert. Bestätigungen erscheinen in der Statusleiste statt über dem Inhalt (#14, #24).
+- **Git:** Das lokale Modell fasst jede geänderte Datei zusammen und schlägt die Commit-Nachricht automatisch vor (#15).
+- **Seitenleiste:** eine Breite für alle Ansichten, Gruppe „Studium“ zum Einklappen, bis zu 8 zuletzt geöffnete
+  Dateien (#16, #23).
+- **Hilfe:** Ein Klick auf einen Ort zeigt die ausführliche Erklärung und „Öffnen“ (#17).
+- **Stundenplan:**
+  - Vorschläge nennen ihre Quelle (Moodle-Kurs bzw. Folie und Seite) und werden auch in Einführungsfolien gesucht.
+  - Die Modulseite zeigt die Termine des Moduls (#18).
+- **Unterlagen neu einlesen:** umsortieren (Notizen wandern mit), Fehlendes laden, neuere Versionen daneben legen.
+  „Neue Versionen“ vergleicht sie Seite für Seite; danach entscheidest du: ersetzen oder beide behalten (#19).
+- **Stichwörter:** „VL“ und „P01“ werden als Vorlesung bzw. Praktikum erkannt (#20).
+- **Externe Links** (z. B. ProjectBase) öffnen im Browser oder im App-Fenster. Git-Projekte holt
+  „Repository ins Praktikum holen“ in den Praktikumsordner (#21).
+- Behoben: Die ganze Oberfläche ließ sich aus dem Fenster scrollen (#25).
 
 ## 0.1.3 – 2026-10-15
 

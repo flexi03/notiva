@@ -61,6 +61,8 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       type={type}
       aria-label={label}
       title={label}
+      // Toggle buttons (panel open, tool active) tell screen readers their state.
+      {...(active !== undefined ? { 'aria-pressed': active } : {})}
       className={cx(
         'inline-flex items-center justify-center rounded-control text-ink-2 hover:bg-hover hover:text-ink transition-colors shrink-0 disabled:opacity-40',
         size === 'sm' ? 'size-6' : 'size-8',

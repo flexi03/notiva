@@ -86,12 +86,15 @@ das den KI-Assistenten machen ([Andere Hochschule?](#andere-hochschule)).
 - 📝 **Markdown-Editor** wie Notion: `/`-Befehle, `[[Links]]`, Aufgaben, Callouts, Formeln, Code mit Kopier-Knopf.
 - 🎓 **Studium**: Module mit Status, Versuchen und Note, gewichteter Notenschnitt, ECTS, Prüfungen, Stundenplan,
   Anzeige „Jetzt / Als Nächstes“.
-- 🗓️ **Stundenplan** als Wochenansicht in Modulfarben – Zeiten aus Moodle werden vorgeschlagen, nicht still eingetragen.
+- 🗓️ **Stundenplan** als Wochenansicht in Modulfarben – Zeiten aus Moodle und Folien werden mit Quelle vorgeschlagen,
+  nicht still eingetragen.
+- 📄 **Neue Skript-Versionen** kommen neben deine Datei und werden Seite für Seite verglichen – du entscheidest.
 - 🎙️ **Vorlesungsmodus**: nimmt auf, schreibt lokal mit Whisper mit und folgt den Folien.
 - 🧠 **Lokales Mini-Modell** (llama.cpp + Qwen) für schnelle Zusammenfassungen wie Commit-Nachrichten – offline.
 - 🤖 **KI-Assistent** mit sichtbarem Kontext (Claude Code, Codex, Ollama, eigene Schlüssel) und MCP-Server.
 - 🔔 **Benachrichtigungen** für neue Unterlagen, Fristen, Noten und Ausfälle.
-- 🌿 **Git eingebaut**: Änderungen, Diff, Commit, Verlauf, Push/Pull.
+- 🌿 **Git eingebaut**: Änderungen, Diff, Commit mit automatischer Zusammenfassung, Verlauf, Push/Pull; Praktikums-Repos
+  aus Moodle-Links holen.
 - 📥 **Ablage** für schnell abgelegte Dateien und Texte.
 - 🗂️ **Tabellen, Boards und Kalender** für Aufgaben, Prüfungen und Module – jede Zeile ist eine Markdown-Datei.
 
