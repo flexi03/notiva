@@ -124,3 +124,13 @@ describe('clone progress', () => {
     expect(cloneProgress("Cloning into 'x'...")).toBeNull()
   })
 })
+
+describe('Finder files', () => {
+  it('are never changes', async () => {
+    const { isJunk } = await import('./git')
+    expect(isJunk('.DS_Store')).toBe(true)
+    expect(isJunk('Studium/Praktikum/.DS_Store')).toBe(true)
+    expect(isJunk('Studium/._Skript.pdf')).toBe(true)
+    expect(isJunk('Studium/DS_Store.md')).toBe(false)
+  })
+})

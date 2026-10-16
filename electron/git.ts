@@ -171,7 +171,7 @@ export class GitRepo {
       let from: string | undefined
       if (xy.includes('R') || xy.includes('C')) from = entries[++i]
       const path = this.toVault(repoPath)
-      if (path === null || path.startsWith('.notiva/trash/')) continue
+      if (path === null || path.startsWith('.notiva/trash/') || isJunk(path)) continue
       const status: GitStatus =
         xy === '??'
           ? 'untracked'
@@ -465,7 +465,7 @@ export async function cloneRepo(
     })
     child.once('close', (code) => {
       clearTimeout(timer)
-      if (code === 0) return resolve()
+      if (code === 0) return void excludeJunk(target).then(resolve, resolve)
       const last = err
         .split(/[\r\n]/)
         .filter((l) => /fatal|error|denied|not found|could not/i.test(l))
@@ -518,6 +518,21 @@ export function tokenEnv(url: string, token?: string): Record<string, string> {
   }
 }
 
+/** Finder's folder files: never a change, never committed. */
+export const isJunk = (p: string) => /(^|\/)(\.DS_Store|\._.*|Thumbs\.db|desktop\.ini)$/i.test(p)
+
+/** A got repository ignores Finder files locally (.git/info/exclude – not committed, not shared). */
+export async function excludeJunk(dir: string): Promise<void> {
+  const file = path.join(dir, '.git', 'info', 'exclude')
+  const current = await fs.readFile(file, 'utf8').catch(() => '')
+  if (/^\.DS_Store$/m.test(current)) return
+  await fs.mkdir(path.dirname(file), { recursive: true })
+  await fs.writeFile(
+    file,
+    `${current.trimEnd()}${current.trim() ? '\n' : ''}# Notiva\n.DS_Store\n._*\nThumbs.db\ndesktop.ini\n`,
+  )
+}
+
 const LOGIN =
   /redirection|authentication|could not read username|terminal prompts disabled|access denied|\b40[13]\b/i
 
@@ -555,10 +570,12 @@ export async function repoFetch(dir: string, token?: string): Promise<RepoUpdate
         .split('\n')
         .filter(Boolean)
     : []
+  await excludeJunk(dir)
   const dirty = (await run(dir, ['status', '--porcelain'], { allowFail: true })).stdout
     .split('\n')
     .filter(Boolean)
     .map((l) => l.slice(3))
+    .filter((p) => !isJunk(p))
   return { remote, commits, files, dirty }
 }
 
@@ -580,15 +597,19 @@ export async function repoStatus(dir: string): Promise<{
   behind: number
   changes: Array<{ path: string; status: GitStatus }>
 }> {
+  await excludeJunk(dir)
   const status = await run(dir, ['status', '--porcelain=v1', '-b', '--untracked-files=all'])
   const lines = status.stdout.split('\n').filter(Boolean)
   const head = /^## (?:No commits yet on )?([^.\s]+)(?:\.\.\.(\S+))?(?: \[(.*)\])?/.exec(lines[0] ?? '')
-  const changes = lines.slice(1).map((l) => {
-    const xy = l.slice(0, 2)
-    const status: GitStatus =
-      xy === '??' ? 'untracked' : xy.includes('D') ? 'deleted' : xy.includes('A') ? 'added' : 'modified'
-    return { path: l.slice(3).replace(/^"|"$/g, ''), status }
-  })
+  const changes = lines
+    .slice(1)
+    .filter((l) => !isJunk(l.slice(3).replace(/^"|"$/g, '')))
+    .map((l) => {
+      const xy = l.slice(0, 2)
+      const status: GitStatus =
+        xy === '??' ? 'untracked' : xy.includes('D') ? 'deleted' : xy.includes('A') ? 'added' : 'modified'
+      return { path: l.slice(3).replace(/^"|"$/g, ''), status }
+    })
   return {
     branch: head?.[1] ?? null,
     ahead: Number(/ahead (\d+)/.exec(head?.[3] ?? '')?.[1] ?? 0),
@@ -600,7 +621,8 @@ export async function repoStatus(dir: string): Promise<{
 /** Commit of everything changed in a got repository. */
 export async function repoCommit(dir: string, message: string): Promise<void> {
   if (!message.trim()) throw new GitError('Keine Nachricht')
-  await run(dir, ['add', '-A'])
+  await excludeJunk(dir)
+  await run(dir, ['add', '-A', '--', '.', ':(exclude,glob)**/.DS_Store', ':(exclude,glob)**/._*'])
   await run(dir, ['commit', '-q', '-m', message.slice(0, 5000)])
 }
 
