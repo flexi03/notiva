@@ -173,12 +173,10 @@ Die KI ist aus, bis du sie einschaltest – und zeigt vor dem Senden, was sie mi
 **Herunterladen:** die neueste Version unter [Releases](https://github.com/flexi03/notiva/releases/latest) –
 macOS (Apple Silicon, `.dmg`), Windows (`.exe`) oder Linux (`.AppImage`).
 
-Notiva ist kostenlos und deshalb nicht bei Apple oder Microsoft registriert. Beim ersten Start fragt das System nach:
-
-- **macOS:** Notiva in „Programme“ ziehen und öffnen. Kommt „Apple konnte nicht überprüfen …“: _Systemeinstellungen →
-  Datenschutz & Sicherheit_ → ganz unten **„Dennoch öffnen“**. Meldet macOS „beschädigt“ (Versionen bis 0.1.2), im
-  Terminal einmal `xattr -dr com.apple.quarantine /Applications/Notiva.app` ausführen.
-- **Windows:** „Der Computer wurde durch Windows geschützt“ → **„Weitere Informationen“ → „Trotzdem ausführen“**.
+- **macOS:** Notiva in „Programme“ ziehen und öffnen. Die App ist ab 0.2.0 mit einer Apple-Developer-ID signiert und
+  von Apple notarisiert – sie öffnet ohne Nachfrage. (Ältere Versionen: _Systemeinstellungen → Datenschutz &
+  Sicherheit_ → **„Dennoch öffnen“**.)
+- **Windows:** Notiva ist für Windows nicht signiert. Beim ersten Start: „Der Computer wurde durch Windows geschützt“ → **„Weitere Informationen“ → „Trotzdem ausführen“**.
 
 **Updates:** Notiva sieht beim Start und jede Stunde nach neuen Versionen, meldet sie und installiert sie mit einem
 Klick („Jetzt aktualisieren“); von Hand über _Notiva → Nach Updates suchen …_. Was neu ist: [CHANGELOG.md](CHANGELOG.md).
