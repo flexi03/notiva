@@ -1386,6 +1386,20 @@ export const de = {
   'labRepos.writeScope':
     'Der Server lässt nicht hochladen: Dem Token fehlt das Recht „write_repository“ – oder du darfst in dieses Projekt nicht schreiben (bei Snippets und Aufgaben-Repos der Dozierenden üblich).',
   'labRepos.open': 'Öffnen',
+  'git.notPushed': 'noch nicht hochgeladen',
+  'git.source.ai': 'KI · lokales Modell',
+  'git.source.user': 'Von dir bearbeitet',
+  'git.source.template': 'Vorlage aus den Dateinamen',
+  'git.rewrite': 'Neu schreiben',
+  'git.writeWithAi': 'Mit KI schreiben',
+  'git.backToSuggestion': 'Zurück zum Vorschlag',
+  'git.howTitle': 'Wie entsteht der Vorschlag?',
+  'git.how1':
+    'Verschobene, neue und gelöschte Dateien fasst Notiva selbst zusammen („17 Dateien … einsortiert“). Notiva-Daten stehen in einer eigenen Zeile.',
+  'git.how2':
+    'Geänderte Texte liest das lokale Mini-Modell Datei für Datei und schreibt je einen Satz, danach eine Betreffzeile über alles. Es läuft auf deinem Rechner, nichts geht ins Internet.',
+  'git.how3':
+    'Ohne Modell, oder wenn es nicht antwortet, entsteht die Nachricht aus einer Vorlage mit den Dateinamen. Lies sie vor dem Commit – du kannst sie jederzeit ändern.',
   'git.autoMessage': 'Vorschlag',
   'git.autoMessageHint': 'Automatische Nachricht mit allen Änderungen wiederherstellen',
   'git.commit': 'Commit ({count})',

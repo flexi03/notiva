@@ -77,6 +77,14 @@ test('schlägt eine Commit-Nachricht mit allen Änderungen vor', async () => {
   // Without the local model the template is the fallback – and says so, with the way to set it up.
   await expect(panel().getByTestId('commit-fallback')).toContainText('Nachricht aus der Vorlage')
   await expect(panel().getByRole('button', { name: 'Einrichten' })).toBeVisible()
+  // Where the message comes from – and how it is made, explained on request.
+  await expect(panel().getByTestId('commit-source')).toContainText('Vorlage aus den Dateinamen')
+  await panel().getByRole('button', { name: 'Wie entsteht der Vorschlag?' }).click()
+  await expect(panel().getByTestId('commit-explain')).toContainText('lokale Mini-Modell')
+  await field.fill('Eigene Nachricht')
+  await expect(panel().getByTestId('commit-source')).toContainText('Von dir bearbeitet')
+  await panel().getByRole('button', { name: 'Zurück zum Vorschlag' }).click()
+  await expect(field).toHaveValue('Notiz geändert\n\nGeändert:\n- Notiz.md (+1 −1)')
 })
 
 test('committet ausgewählte Änderungen', async () => {
@@ -85,8 +93,10 @@ test('committet ausgewählte Änderungen', async () => {
   await expect(panel()).toContainText('Keine Änderungen seit dem letzten Commit.')
   expect(git('log', '--format=%s', '-n1').trim()).toBe('Zeile ergänzt')
   await expect(window.locator('[data-change]')).toHaveCount(0)
-  await panel().getByRole('button', { name: 'Verlauf' }).click()
+  // The history is open, as a graph with the branch name.
   await expect(panel().getByRole('region', { name: 'Verlauf' })).toContainText('Zeile ergänzt')
+  await expect(panel().getByTestId('git-graph').locator('svg circle').first()).toBeVisible()
+  await expect(panel().getByTestId('git-graph')).toContainText('main')
   await expect(panel().getByRole('region', { name: 'Verlauf' })).toContainText('Start')
 })
 

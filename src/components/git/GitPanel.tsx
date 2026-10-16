@@ -1,6 +1,7 @@
 import { electronBridge } from '@/lib/vault'
 import { commitSummary, localModelAvailable } from '@/app/localModel'
 import { LabRepos } from './LabRepos'
+import { graphRows, type GraphRow } from '@/lib/gitGraph'
 import { explain } from '@/app/fixes'
 import { withProgress } from '@/app/progress'
 import { useEffect, useMemo, useState } from 'react'
@@ -121,6 +122,9 @@ export function GitPanel() {
   const { state, loading, error, refresh, act, showDiff } = useGit()
   /** null = the automatic message (follows the selection); a string once the user edits it. */
   const [custom, setCustom] = useState<string | null>(null)
+  /** the last message the local model wrote (to tell "KI" from "von dir bearbeitet") */
+  const [aiText, setAiText] = useState<string | null>(null)
+  const [explain, setExplain] = useState(false)
   const [excluded, setExcluded] = useState(new Set<string>())
   // Got lab repositories inside the vault have their own Git – tab "Praktikum", not here.
   const changes = useMemo(() => (state?.changes ?? []).filter((c) => !c.nested), [state])
@@ -143,6 +147,9 @@ export function GitPanel() {
   // Waiting for the model (also during the short pause before it starts).
   const pending = model && custom === null && selected.length > 0 && (summarizing || summarized !== signature)
   const message = custom ?? (pending ? '' : auto)
+  // Where the message comes from – shown above the field.
+  const source: 'ai' | 'user' | 'template' =
+    custom === null ? 'template' : aiText !== null && custom === aiText ? 'ai' : 'user'
   const summarize = async () => {
     if (summarizing || !selected.length) return
     setSummarized(signature)
@@ -162,8 +169,10 @@ export function GitPanel() {
         ),
         new Promise<string>((_, reject) => setTimeout(() => reject(new Error('timeout')), 90_000)),
       ])
-      if (text) setCustom(text)
-      else setFallback('failed')
+      if (text) {
+        setCustom(text)
+        setAiText(text)
+      } else setFallback('failed')
     } catch {
       setFallback('failed')
     } finally {
@@ -328,6 +337,64 @@ export function GitPanel() {
                     void commit()
                   }}
                 >
+                  {selected.length > 0 && !pending && (
+                    <div
+                      className="flex flex-wrap items-center gap-1.5 text-[12px]"
+                      data-testid="commit-source"
+                    >
+                      {source === 'ai' ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] px-2 py-0.5 font-semibold text-accent">
+                          <Sparkles size={11} /> {t('git.source.ai')}
+                        </span>
+                      ) : source === 'user' ? (
+                        <span className="rounded-full bg-hover px-2 py-0.5 font-semibold text-ink-2">
+                          {t('git.source.user')}
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-hover px-2 py-0.5 font-semibold text-ink-2">
+                          {t('git.source.template')}
+                        </span>
+                      )}
+                      {model && (
+                        <button
+                          type="button"
+                          className="font-semibold text-accent hover:underline"
+                          onClick={() => void summarize()}
+                        >
+                          {source === 'ai' ? t('git.rewrite') : t('git.writeWithAi')}
+                        </button>
+                      )}
+                      {source === 'user' && (
+                        <button
+                          type="button"
+                          className="text-ink-3 hover:text-ink hover:underline"
+                          onClick={() => setCustom(aiText)}
+                          title={t('git.autoMessageHint')}
+                        >
+                          {t('git.backToSuggestion')}
+                        </button>
+                      )}
+                      <span className="flex-1" />
+                      <button
+                        type="button"
+                        aria-expanded={explain}
+                        className="text-ink-3 hover:text-ink hover:underline"
+                        onClick={() => setExplain((v) => !v)}
+                      >
+                        {t('git.howTitle')}
+                      </button>
+                    </div>
+                  )}
+                  {explain && (
+                    <div
+                      className="space-y-1 rounded-control border border-line bg-sunken p-2.5 text-[12.5px] text-ink-2"
+                      data-testid="commit-explain"
+                    >
+                      <p>{t('git.how1')}</p>
+                      <p>{t('git.how2')}</p>
+                      <p>{t('git.how3')}</p>
+                    </div>
+                  )}
                   <div className="relative">
                     <AutoTextArea
                       value={message}
@@ -403,20 +470,6 @@ export function GitPanel() {
                         title={t('git.useTemplateHint')}
                       >
                         {t('git.useTemplate')}
-                      </Button>
-                    )}
-                    {model && selected.length > 0 && !pending && (
-                      <IconButton label={t('localModel.suggest')} onClick={() => void summarize()}>
-                        <Sparkles size={15} className={summarizing ? 'animate-pulse' : undefined} />
-                      </IconButton>
-                    )}
-                    {custom !== null && (
-                      <Button
-                        variant="ghost"
-                        onClick={() => setCustom(null)}
-                        title={t('git.autoMessageHint')}
-                      >
-                        {t('git.autoMessage')}
                       </Button>
                     )}
                   </div>
@@ -532,19 +585,24 @@ function ChangeRow({
 }
 
 function History() {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(true)
   const [commits, setCommits] = useState<GitCommit[] | null>(null)
   const head = useGit((s) => s.state?.head)
+  const upstream = useGit((s) => s.state?.upstream)
   const act = useGit((s) => s.act)
   useEffect(() => {
     if (!open) return
     let cancelled = false
-    void act((git) => git.log(50, null)).then((list) => !cancelled && setCommits(list ?? []))
+    void act((git) => git.log(100, null)).then((list) => !cancelled && setCommits(list ?? []))
     return () => {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, head])
+  const rows = commits ? graphRows(commits) : []
+  const width = Math.max(1, ...rows.map((r) => r.width))
+  // Commits above the upstream's position are not uploaded yet.
+  const pushedAt = upstream && commits ? commits.findIndex((c) => c.refs?.includes(upstream)) : -1
   return (
     <section aria-label={t('git.history')}>
       <button
@@ -557,10 +615,16 @@ function History() {
         {t('git.history')}
       </button>
       {open && (
-        <ul className="mt-1 space-y-0.5">
+        <ul className="mt-1" data-testid="git-graph">
           {commits?.length === 0 && <li className="px-1 text-[13px] text-ink-3">{t('git.historyEmpty')}</li>}
-          {commits?.map((c) => (
-            <CommitRow key={c.hash} commit={c} />
+          {commits?.map((c, i) => (
+            <CommitRow
+              key={c.hash}
+              commit={c}
+              row={rows[i]!}
+              width={width}
+              local={pushedAt > 0 && i < pushedAt}
+            />
           ))}
         </ul>
       )}
@@ -568,29 +632,100 @@ function History() {
   )
 }
 
-function CommitRow({ commit }: { commit: GitCommit }) {
+const LANE = 12
+const ROW = 30
+const LANE_COLORS = ['var(--accent)', '#d97706', '#7c3aed', '#db2777', '#059669', '#2563eb']
+const laneX = (i: number) => 7 + i * LANE
+
+/** One row of the graph: lines from the commits above, the dot, lines on to the parents. */
+function GraphCell({ row, width, merge }: { row: GraphRow; width: number; merge: boolean }) {
+  const mid = ROW / 2
+  const color = (i: number) => LANE_COLORS[i % LANE_COLORS.length]
+  return (
+    <svg width={laneX(width - 1) + 7} height={ROW} className="shrink-0" aria-hidden>
+      {row.top.map((l, k) => (
+        <path
+          key={`t${k}`}
+          d={`M${laneX(l.from)} 0 C${laneX(l.from)} ${mid / 2} ${laneX(l.to)} ${mid / 2} ${laneX(l.to)} ${mid}`}
+          stroke={color(l.from)}
+          strokeWidth={2}
+          fill="none"
+        />
+      ))}
+      {row.bottom.map((l, k) => (
+        <path
+          key={`b${k}`}
+          d={`M${laneX(l.from)} ${mid} C${laneX(l.from)} ${mid * 1.5} ${laneX(l.to)} ${mid * 1.5} ${laneX(l.to)} ${ROW}`}
+          stroke={color(l.to)}
+          strokeWidth={2}
+          fill="none"
+        />
+      ))}
+      <circle
+        cx={laneX(row.lane)}
+        cy={mid}
+        r={merge ? 3 : 4.5}
+        fill={merge ? 'var(--surface)' : color(row.lane)}
+        stroke={color(row.lane)}
+        strokeWidth={2}
+      />
+    </svg>
+  )
+}
+
+function CommitRow({
+  commit,
+  row,
+  width,
+  local,
+}: {
+  commit: GitCommit
+  row: GraphRow
+  width: number
+  local: boolean
+}) {
   const [files, setFiles] = useState<GitChange[] | null>(null)
   const { act, showDiff } = useGit()
   const date = new Date(commit.date)
+  const refs = (commit.refs ?? []).map((r) => r.replace(/^HEAD -> /, ''))
   return (
     <li>
       <button
         type="button"
         aria-expanded={files !== null}
+        title={`${commit.subject}\n${commit.author} · ${date.toLocaleString()} · ${commit.short}`}
         onClick={() =>
           files
             ? setFiles(null)
             : void act((git) => git.commitFiles(commit.hash)).then((f) => setFiles(f ?? []))
         }
-        className="flex w-full items-baseline gap-2 rounded-control px-1 py-1 text-left hover:bg-hover"
+        className="flex w-full items-center gap-2 rounded-control pr-1 text-left hover:bg-hover"
+        style={{ height: ROW }}
       >
+        <GraphCell row={row} width={width} merge={(commit.parents?.length ?? 0) > 1} />
         <span className="min-w-0 flex-1 truncate text-[13.5px]">{commit.subject}</span>
+        {refs.map((r) => (
+          <span
+            key={r}
+            className={cx(
+              'shrink-0 rounded-full border px-1.5 text-[11px]',
+              r.includes('/') ? 'border-line text-ink-3' : 'border-accent text-accent',
+            )}
+          >
+            {r}
+          </span>
+        ))}
+        {local && (
+          <span className="shrink-0 text-[11px] text-ink-3" title={t('git.notPushed')}>
+            ↑
+          </span>
+        )}
         <span className="shrink-0 text-[11.5px] text-ink-3 tabular-nums">
-          {date.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })} · {commit.short}
+          {date.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })}
         </span>
       </button>
       {files && (
-        <ul className="mb-1 ml-3 border-l border-line pl-2">
+        <ul className="mb-1 border-l border-line pl-2" style={{ marginLeft: laneX(row.lane) }}>
           {files.map((f) => (
             <li key={f.path}>
               <button

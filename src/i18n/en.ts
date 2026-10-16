@@ -1373,6 +1373,20 @@ export const en: Record<MessageKey, string> = {
   'labRepos.writeScope':
     'The server refuses the upload: the token lacks the “write_repository” scope – or you may not write to this project (usual for snippets and lecturers’ task repositories).',
   'labRepos.open': 'Open',
+  'git.notPushed': 'not uploaded yet',
+  'git.source.ai': 'AI · local model',
+  'git.source.user': 'Edited by you',
+  'git.source.template': 'Template from the file names',
+  'git.rewrite': 'Write again',
+  'git.writeWithAi': 'Write with AI',
+  'git.backToSuggestion': 'Back to the suggestion',
+  'git.howTitle': 'How is it made?',
+  'git.how1':
+    'Moved, new and deleted files are summarised by Notiva itself ("17 files … sorted"). Notiva data gets its own line.',
+  'git.how2':
+    'Changed texts are read by the local mini model file by file, one sentence each, then one subject line over all. It runs on your computer, nothing goes to the internet.',
+  'git.how3':
+    'Without a model, or if it does not answer, the message comes from a template with the file names. Read it before committing – you can always change it.',
   'git.autoMessage': 'Suggestion',
   'git.autoMessageHint': 'Restore the automatic message listing all changes',
   'git.commit': 'Commit ({count})',

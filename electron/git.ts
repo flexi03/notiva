@@ -36,6 +36,10 @@ export interface GitCommit {
   author: string
   date: string
   subject: string
+  /** parent hashes (two for a merge) – for the history graph */
+  parents?: string[]
+  /** branch names pointing here ("HEAD -> main", "origin/main") */
+  refs?: string[]
 }
 
 const HASH = /^[0-9a-f]{4,40}$/i
@@ -317,7 +321,11 @@ export class GitRepo {
       [
         'log',
         `-n${Math.min(200, Math.max(1, Number(limit) || 50))}`,
-        '--format=%H%x1f%h%x1f%an%x1f%aI%x1f%s%x1e',
+        '--format=%H%x1f%h%x1f%an%x1f%aI%x1f%s%x1f%P%x1f%D%x1e',
+        // The whole history: own branch, its upstream and other local branches (graph).
+        ...(relative === undefined || relative === null
+          ? ['--topo-order', '--branches', '--remotes', 'HEAD']
+          : []),
         '--',
         typeof relative === 'string' ? spec(relative) : '.',
       ],
@@ -329,8 +337,19 @@ export class GitRepo {
       .map((r) => r.trim())
       .filter(Boolean)
       .map((r) => {
-        const [hash, short, author, date, subject] = r.split('\x1f')
-        return { hash: hash!, short: short!, author: author!, date: date!, subject: subject ?? '' }
+        const [hash, short, author, date, subject, parents, refs] = r.split('\x1f')
+        return {
+          hash: hash!,
+          short: short!,
+          author: author!,
+          date: date!,
+          subject: subject ?? '',
+          parents: (parents ?? '').split(' ').filter(Boolean),
+          refs: (refs ?? '')
+            .split(',')
+            .map((x) => x.trim())
+            .filter((x) => x && !x.endsWith('/HEAD')),
+        }
       })
   }
 

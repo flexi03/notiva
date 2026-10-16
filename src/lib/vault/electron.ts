@@ -27,6 +27,8 @@ export interface GitCommit {
   author: string
   date: string
   subject: string
+  parents?: string[]
+  refs?: string[]
 }
 export interface GitBridge {
   state(): Promise<GitState>
