@@ -1391,6 +1391,14 @@ export const en: Record<MessageKey, string> = {
     'Changed texts are read by the local mini model file by file, one sentence each, then one subject line over all. It runs on your computer, nothing goes to the internet.',
   'git.how3':
     'Without a model, or if it does not answer, the message comes from a template with the file names. Read it before committing – you can always change it.',
+  'git.diffTooBig': 'The file is too big for a line comparison – open it directly.',
+  'git.binary.moved': 'Moved from “{from}” – the content stays the same when only the place is new.',
+  'git.binary.added': 'Newly added.',
+  'git.binary.deleted': 'Deleted.',
+  'git.binary.changed': 'Content changed.',
+  'git.binary.hint':
+    'PDFs, images and archives are not compared line by line – compare newer versions from Moodle under Moodle → New versions.',
+  'git.binary.open': 'Open file',
   'git.autoMessage': 'Suggestion',
   'git.autoMessageHint': 'Restore the automatic message listing all changes',
   'git.commit': 'Commit ({count})',

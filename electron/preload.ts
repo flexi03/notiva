@@ -150,6 +150,9 @@ contextBridge.exposeInMainWorld('notiva', {
     repoFetch: (folder: string) => invoke('code:repoFetch', folder),
     repoPull: (folder: string) => invoke<void>('code:repoPull', folder),
     repoStatus: (folder: string) => invoke('code:repoStatus', folder),
+    repoRoot: (file: string) => invoke<string | null>('code:repoRoot', file),
+    repoShow: (folder: string, rev: string, file: string) =>
+      invoke<string | null>('code:repoShow', folder, rev, file),
     repoCommit: (folder: string, message: string) => invoke<void>('code:repoCommit', folder, message),
     repoPush: (folder: string) => invoke<void>('code:repoPush', folder),
     tokenStatus: () => invoke('code:tokenStatus'),

@@ -35,6 +35,7 @@ import {
   repoFetch,
   repoPull,
   repoPush,
+  repoShow,
   repoStatus,
   installGit,
   setGitIdentity,
@@ -741,6 +742,19 @@ function registerIpc(): void {
     const host = remote && /^https?:/.test(remote) ? new URL(remote).host : ''
     return repoFetch(dir, (await loadGitTokens())[host])
   })
+  // The got repository a vault file belongs to (nearest folder with its own .git), null if none.
+  handle('code:repoRoot', async (p: unknown) => {
+    const vault = requireVault()
+    let rel = String(p)
+    while (rel.includes('/')) {
+      rel = rel.slice(0, rel.lastIndexOf('/'))
+      if (await fs.stat(path.join(await vault.resolve(rel), '.git')).catch(() => null)) return rel
+    }
+    return null
+  })
+  handle('code:repoShow', async (p: unknown, rev: unknown, file: unknown) =>
+    repoShow(await requireVault().resolve(p as string), String(rev), String(file)),
+  )
   handle('code:repoStatus', async (p: unknown) => repoStatus(await requireVault().resolve(p as string)))
   handle('code:repoCommit', async (p: unknown, message: unknown) =>
     repoCommit(await requireVault().resolve(p as string), String(message)),

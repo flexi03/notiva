@@ -658,3 +658,11 @@ export async function repoPush(dir: string, token?: string): Promise<void> {
   if (/403|not allowed|denied|permission|write_repository/i.test(text)) throw new GitError(`WRITE: ${text}`)
   throw new GitError(LOGIN.test(text) ? `LOGIN: ${text}` : text)
 }
+
+/** A file of a got repository at a revision ("HEAD"), null if it did not exist there. */
+export async function repoShow(dir: string, rev: string, relative: string): Promise<string | null> {
+  if (rev !== 'HEAD' && !HASH.test(rev.replace(/\^$/, ''))) throw new GitError('Ungültige Revision')
+  if (relative.includes('..') || relative.startsWith('/')) throw new GitError('Ungültiger Pfad')
+  const result = await run(dir, ['show', `${rev}:./${relative}`], { allowFail: true })
+  return result.code === 0 ? result.stdout : null
+}

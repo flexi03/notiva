@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Globe, SquareTerminal } from 'lucide-react'
 import { SideWeb } from '@/components/terminal/SideWeb'
 import { useAction, useWorkspace } from '@/app/store'
+import { useGit } from '@/app/git'
 import { t } from '@/i18n'
 import { workFolderFor } from '@/lib/codeFolders'
 import { electronBridge } from '@/lib/vault'
@@ -34,6 +35,25 @@ export function CodeFileView({ path, initial }: { path: string; initial: string 
     })
   }
   useEffect(() => () => clearTimeout(timer.current), [])
+  // The file as in Git – a got lab repository's own Git, else the folder's – for the markers.
+  const [base, setBase] = useState<string | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const code = electronBridge()?.code
+      const repo = (await code?.repoRoot?.(path).catch(() => null)) ?? null
+      const text = repo
+        ? await code?.repoShow?.(repo, 'HEAD', path.slice(repo.length + 1)).catch(() => null)
+        : await useGit
+            .getState()
+            .headText(path)
+            .catch(() => null)
+      if (!cancelled) setBase(text ?? null)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [path, ws, ws.version])
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -63,6 +83,7 @@ export function CodeFileView({ path, initial }: { path: string; initial: string 
           <CodeEditor
             path={path}
             value={initial}
+            base={base}
             onSave={save}
             onChange={(next) => {
               text.current = next

@@ -516,7 +516,13 @@ export function GitPanel() {
                               return next
                             })
                           }
-                          onShow={() => showDiff({ path: change.path })}
+                          onShow={() =>
+                            showDiff({
+                              path: change.path,
+                              status: change.status,
+                              ...(change.from ? { from: change.from } : {}),
+                            })
+                          }
                         />
                       ))}
                     </ul>
@@ -742,7 +748,14 @@ function CommitRow({
             <li key={f.path}>
               <button
                 type="button"
-                onClick={() => showDiff({ path: f.path, commit: commit.hash })}
+                onClick={() =>
+                  showDiff({
+                    path: f.path,
+                    commit: commit.hash,
+                    status: f.status,
+                    ...(f.from ? { from: f.from } : {}),
+                  })
+                }
                 className="flex w-full items-center gap-1.5 rounded-control px-1 py-0.5 text-left text-[13px] hover:bg-hover"
               >
                 <StatusLetter status={f.status} />

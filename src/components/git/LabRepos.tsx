@@ -4,6 +4,7 @@ import { labFoldersOf, loadClones, useClones } from '@/app/clones'
 import { hubsOf } from '@/app/labHubs'
 import { showLoginHint } from '@/app/clone'
 import { updateRepo } from '@/app/repoUpdate'
+import { useGit } from '@/app/git'
 import { announce, withProgress } from '@/app/progress'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
@@ -129,7 +130,7 @@ function Repo({ folder, name, remote }: { folder: string; name: string; remote: 
                 <button
                   type="button"
                   className="flex w-full items-center gap-2 rounded-control px-1 py-0.5 text-left font-code text-[12.5px] hover:bg-hover"
-                  onClick={() => navigate({ name: 'file', path: `${folder}/${c.path}` })}
+                  onClick={() => useGit.getState().showDiff({ repo: folder, path: c.path, status: c.status })}
                 >
                   <span className="w-4 shrink-0 text-ink-3">
                     {c.status === 'untracked' ? 'U' : c.status[0]!.toUpperCase()}

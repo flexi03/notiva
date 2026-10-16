@@ -5,6 +5,18 @@ import { electronBridge, type GitBridge, type GitChange, type GitState } from '@
 import type { Page } from '@/lib/workspace'
 import { useApp } from './store'
 
+/** What the diff sheet shows: a file of the folder's Git (now / in a commit) or of a lab repository. */
+export interface DiffTarget {
+  path: string
+  commit?: string
+  /** status in that change (binary files: what happened instead of a text diff) */
+  status?: string
+  /** renamed / moved from */
+  from?: string
+  /** a got lab repository's folder – `path` is relative to it */
+  repo?: string
+}
+
 interface GitStore {
   state: GitState | null
   loading: boolean
@@ -15,8 +27,8 @@ interface GitStore {
   refresh(): Promise<void>
   headText(path: string): Promise<string | null>
   /** File whose diff is shown: against HEAD, or the changes of one commit. */
-  diff: { path: string; commit?: string } | null
-  showDiff(target: { path: string; commit?: string } | null): void
+  diff: DiffTarget | null
+  showDiff(target: DiffTarget | null): void
   /** Runs a git action, shows errors as toast and refreshes afterwards. */
   act<T>(task: (git: GitBridge) => Promise<T>): Promise<T | undefined>
 }

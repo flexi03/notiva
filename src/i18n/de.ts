@@ -1404,6 +1404,14 @@ export const de = {
     'Geänderte Texte liest das lokale Mini-Modell Datei für Datei und schreibt je einen Satz, danach eine Betreffzeile über alles. Es läuft auf deinem Rechner, nichts geht ins Internet.',
   'git.how3':
     'Ohne Modell, oder wenn es nicht antwortet, entsteht die Nachricht aus einer Vorlage mit den Dateinamen. Lies sie vor dem Commit – du kannst sie jederzeit ändern.',
+  'git.diffTooBig': 'Die Datei ist zu groß für einen Zeilenvergleich – öffne sie direkt.',
+  'git.binary.moved': 'Verschoben von „{from}“ – der Inhalt ist gleich geblieben, wenn nur der Ort neu ist.',
+  'git.binary.added': 'Neu hinzugefügt.',
+  'git.binary.deleted': 'Gelöscht.',
+  'git.binary.changed': 'Inhalt geändert.',
+  'git.binary.hint':
+    'PDFs, Bilder und Archive vergleicht Notiva nicht Zeile für Zeile – neuere Fassungen aus Moodle vergleichst du unter Moodle → Neue Versionen.',
+  'git.binary.open': 'Datei öffnen',
   'git.autoMessage': 'Vorschlag',
   'git.autoMessageHint': 'Automatische Nachricht mit allen Änderungen wiederherstellen',
   'git.commit': 'Commit ({count})',

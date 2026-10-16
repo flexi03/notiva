@@ -232,6 +232,10 @@ export interface NotivaBridge {
       changes: Array<{ path: string; status: string }>
     }>
     repoCommit?(folder: string, message: string): Promise<void>
+    /** the got repository a vault file lies in (folder with its own .git) */
+    repoRoot?(file: string): Promise<string | null>
+    /** a file of the repository at a revision (null: not there) */
+    repoShow?(folder: string, rev: string, file: string): Promise<string | null>
     repoPush?(folder: string): Promise<void>
     /** do the stored tokens still work? */
     tokenStatus?(): Promise<

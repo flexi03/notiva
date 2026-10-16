@@ -2,6 +2,8 @@ import { Fragment, useEffect, useMemo, useState } from 'react'
 import { useGit } from '@/app/git'
 import { useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
+import { isTextFile } from '@/lib/codeFolders'
+import type { DiffTarget } from '@/app/git'
 import { diffLines, diffStats, inlineDiff, pairChanges, toHunks, type DiffLine } from '@/lib/diff'
 import { electronBridge } from '@/lib/vault'
 import { Button, cx, Segmented, Sheet } from '@/components/ui'
@@ -189,27 +191,48 @@ export function DiffSheet() {
   const showDiff = useGit((s) => s.showDiff)
   const ws = useWorkspace()
   const openPage = useApp((s) => s.openPage)
-  const key = target ? `${target.path}|${target.commit ?? ''}|${ws.version}` : ''
+  const key = target ? `${target.repo ?? ''}|${target.path}|${target.commit ?? ''}|${ws.version}` : ''
   const [loaded, setLoaded] = useState<{ key: string; old?: string; next?: string; error?: string } | null>(
     null,
   )
 
+  // PDFs, images, archives …: never compared as text (that took a minute and could crash) – the
+  // sheet says what happened (moved, new, deleted, changed) and shows the file.
+  const binary = !!target && !target.path.endsWith('.md') && !isTextFile(target.path)
   useEffect(() => {
     const git = electronBridge()?.git
-    if (!target || !git) return
+    const code = electronBridge()?.code
+    if (!target || binary) return
     let cancelled = false
     void (async () => {
       try {
-        const change = useGit.getState().state?.changes.find((c) => c.path === target.path)
-        const [old, next] = target.commit
-          ? await Promise.all([
-              git.show(`${target.commit}^`, target.path),
-              git.show(target.commit, target.path),
-            ])
-          : await Promise.all([
-              useGit.getState().headText(change?.from ?? target.path),
-              ws.vault.read(target.path).catch(() => null),
-            ])
+        let old: string | null
+        let next: string | null
+        if (target.repo) {
+          // A got lab repository: its own Git (HEAD) against the file now.
+          old =
+            (await code?.repoShow?.(
+              target.repo,
+              target.commit ? `${target.commit}^` : 'HEAD',
+              target.path,
+            )) ?? null
+          next = target.commit
+            ? ((await code?.repoShow?.(target.repo, target.commit, target.path)) ?? null)
+            : await ws.vault.read(`${target.repo}/${target.path}`).catch(() => null)
+        } else if (target.commit) {
+          ;[old, next] = await Promise.all([
+            git!.show(`${target.commit}^`, target.from ?? target.path),
+            git!.show(target.commit, target.path),
+          ])
+        } else {
+          const change = useGit.getState().state?.changes.find((c) => c.path === target.path)
+          ;[old, next] = await Promise.all([
+            useGit.getState().headText(change?.from ?? target.path),
+            ws.vault.read(target.path).catch(() => null),
+          ])
+        }
+        // Huge texts (data dumps): no line diff, it would block the app.
+        if ((old?.length ?? 0) + (next?.length ?? 0) > 2_000_000) throw new Error(t('git.diffTooBig'))
         if (!cancelled) setLoaded({ key, old: old ?? '', next: next ?? '' })
       } catch (e) {
         if (!cancelled) setLoaded({ key, error: e instanceof Error ? e.message : String(e) })
@@ -218,7 +241,7 @@ export function DiffSheet() {
     return () => {
       cancelled = true
     }
-  }, [key, target, ws])
+  }, [key, target, ws, binary])
 
   const texts =
     loaded?.key === key && loaded.error === undefined ? { old: loaded.old!, next: loaded.next! } : null
@@ -233,15 +256,28 @@ export function DiffSheet() {
       title={`${t('git.diffOf')} ${target.path}${target.commit ? ` @ ${target.commit.slice(0, 7)}` : ''}`}
       closeLabel={t('common.close')}
       actions={
-        page && (
+        page ? (
           <Button size="sm" variant="ghost" onClick={() => openPage(page.path)}>
             {t('git.openPage')}
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              showDiff(null)
+              openPage(target.repo ? `${target.repo}/${target.path}` : target.path)
+            }}
+          >
+            {t('git.binary.open')}
           </Button>
         )
       }
     >
       <div className="p-4 sm:p-6">
-        {error ? (
+        {binary ? (
+          <BinaryChange target={target} />
+        ) : error ? (
           <p role="alert" className="text-sm text-danger">
             {error}
           </p>
@@ -252,5 +288,40 @@ export function DiffSheet() {
         )}
       </div>
     </Sheet>
+  )
+}
+
+/** A binary file in a change: what happened – and the file itself (PDF in the viewer). */
+function BinaryChange({ target }: { target: DiffTarget }) {
+  const ws = useWorkspace()
+  const navigate = useApp((s) => s.navigate)
+  const showDiff = useGit((s) => s.showDiff)
+  const full = target.repo ? `${target.repo}/${target.path}` : target.path
+  const status = target.status ?? ''
+  const what =
+    /^r/i.test(status) || target.from
+      ? t('git.binary.moved', { from: target.from ?? '?' })
+      : /^(a|u|\?)/i.test(status)
+        ? t('git.binary.added')
+        : /^d/i.test(status)
+          ? t('git.binary.deleted')
+          : t('git.binary.changed')
+  const exists = ws.assets().some((f) => f.path === full)
+  return (
+    <div className="space-y-3" data-testid="binary-change">
+      <p className="text-sm">{what}</p>
+      <p className="text-[12.5px] text-ink-3">{t('git.binary.hint')}</p>
+      {exists && (
+        <Button
+          variant="primary"
+          onClick={() => {
+            showDiff(null)
+            navigate({ name: 'file', path: full })
+          }}
+        >
+          {t('git.binary.open')}
+        </Button>
+      )}
+    </div>
   )
 }
