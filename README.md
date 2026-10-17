@@ -90,6 +90,10 @@ das den KI-Assistenten machen ([Andere Hochschule?](#andere-hochschule)).
   nicht still eingetragen.
 - 📚 **Unterlagen je Modul:** der aktuelle Kurs vorne (Vorlesung, Praktikum & Übung, Sonstiges), ältere Semester im
   Archiv. Notizen zu einem PDF hängen in der Seitenleiste darunter.
+- 🔎 **Suche auch in PDFs:** ⌘K findet Text in allen Skripten und springt auf die Seite.
+- 🎯 **Prüfungsvorbereitung und Notenrechner:** Altklausuren und Übungsblätter mit Lösung je Modul zum Abhaken;
+  welche Note du für deinen Zielschnitt brauchst.
+- 💾 **Tägliche Sicherung** in einen eigenen Backup-Ordner, wie Time Machine.
 - 📅 **Heute:** Vorlesungen, Prüfungen, Praktika, fällige Aufgaben und Moodle-Fristen des Tages in einer Übersicht.
 - 📄 **Neue Skript-Versionen** kommen neben deine Datei und werden Seite für Seite verglichen – du entscheidest.
 - 🎙️ **Vorlesungsmodus**: nimmt auf, schreibt lokal mit Whisper mit und folgt den Folien.

@@ -90,6 +90,10 @@ assistant ([Another university?](#another-university)).
   never entered silently.
 - 📚 **Materials per module:** the current course up front (lecture, lab & exercise, other), older terms in the
   archive. Notes on a PDF sit right below it in the sidebar.
+- 🔎 **Search in PDFs too:** ⌘K finds text in all scripts and jumps to the page.
+- 🎯 **Exam preparation and grade calculator:** old exams and sheets with solutions per module to tick off; the grade
+  you need for your target average.
+- 💾 **Daily backup** into a backup folder of its own, like Time Machine.
 - 📅 **Today:** the day's lectures, exams, labs, due tasks and Moodle deadlines in one overview.
 - 📄 **New script versions** go next to your file and are compared page by page – you decide.
 - 🎙️ **Lecture mode**: records, transcribes locally with Whisper and follows the slides.

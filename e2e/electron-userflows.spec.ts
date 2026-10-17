@@ -46,6 +46,11 @@ test.beforeAll(async () => {
   pdf(`${U}/Praktikum & Übung/DBS_Praktikum_02.pdf`)
   pdf(`${U}/Praktikum & Übung/DBS - Praktikum 02 - Vorbereitungsblatt.pdf`)
   pdf(`${U}/Archiv/WiSe 25-26/Vorlesung/DBS-alt.pdf`)
+  // For the exam: a practice exam with its solution, an exercise sheet, the exam hints.
+  pdf(`${U}/Sonstiges/DBS_Probeklausur.pdf`)
+  pdf(`${U}/Sonstiges/DBS_Probeklausur_Musterlösung.pdf`)
+  pdf(`${U}/Praktikum & Übung/DBS_Uebung_3.pdf`)
+  pdf(`${U}/Sonstiges/Klausurhinweise_DBS.pdf`)
   // The lab folder with the repository link of P02.
   put(
     `${LAB}.md`,
@@ -108,6 +113,17 @@ test('Vorlesung: Heute → Modul → Skript → Notiz → Seitenleiste → Unter
   const current = window.getByTestId('files-current')
   await expect(current).toContainText('aktiv')
   await expect(window.getByTestId('files-archive')).not.toHaveAttribute('open', '')
+  // 7. Exam preparation: practice exam with its solution, sheets, hints – ticked off when done.
+  const prep = window.getByTestId('exam-prep')
+  await expect(prep).toContainText('Klausurhinweise_DBS.pdf')
+  await expect(prep.getByRole('listitem').filter({ hasText: 'DBS_Probeklausur.pdf' })).toContainText('Lösung')
+  await expect(prep).toContainText('DBS_Uebung_3.pdf')
+  await expect(prep.getByTestId('exam-prep-count')).toHaveText('0 von 2 bearbeitet')
+  await prep.getByLabel('„DBS_Probeklausur.pdf“ bearbeitet').check()
+  await expect(prep.getByTestId('exam-prep-count')).toHaveText('1 von 2 bearbeitet')
+  await expect
+    .poll(() => readFileSync(path.join(folder, 'Studium/Module/Datenbanken.md'), 'utf8'))
+    .toContain('DBS_Probeklausur.pdf')
 })
 
 test('Praktikum: planen → P02 → Vorbereitungsblatt → Repo holen → bearbeiten → committen', async () => {

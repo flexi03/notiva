@@ -14,6 +14,19 @@ contextBridge.exposeInMainWorld('notiva', {
   openInWindow: (url: string) => invoke<void>('app:openInWindow', url),
   openWithSystem: (path: string) => invoke<void>('vault:openWithSystem', path),
   microphone: () => invoke<boolean>('app:microphone'),
+  backup: {
+    status: () => invoke('backup:status'),
+    settings: (patch: object) => invoke('backup:settings', patch),
+    chooseFolder: () => invoke('backup:chooseFolder'),
+    run: () => invoke('backup:run'),
+    show: (name?: string) => invoke<void>('backup:show', name),
+    restore: (name: string) => invoke<string>('backup:restore', name),
+    onProgress(callback: (event: unknown) => void) {
+      const listener = (_e: unknown, p: unknown) => callback(p)
+      ipcRenderer.on('backup:progress', listener)
+      return () => ipcRenderer.removeListener('backup:progress', listener)
+    },
+  },
   update: {
     status: () => invoke('update:status'),
     check: () => invoke('update:check'),

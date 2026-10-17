@@ -238,6 +238,8 @@ const DE = {
         'Der Abgleich holt Module aus der Prüfungsordnung, Kurse aus Moodle und Noten/Prüfungen aus dem eCampus.',
         'Du siehst vorher, was sich ändert, und bestätigst – nichts passiert still.',
         'Andere Hochschule: Moodle-Adresse eintragen, Module selbst anlegen.',
+        'Auf jeder Modulseite: Prüfungsvorbereitung mit Altklausuren und Übungsblättern samt Lösung zum Abhaken.',
+        'Unter „Noten & Leistungen“: der Notenrechner – welche Note du für deinen Zielschnitt brauchst.',
       ],
       route: { name: 'settings', section: 'study' },
     },
@@ -326,6 +328,7 @@ const DE = {
       details: [
         'Zuletzt geöffnete Dateien stehen oben in der Seitenleiste.',
         'Mehrere wählen mit ⌘/Strg- oder Shift-Klick, per Drag & Drop verschieben, mit Entf in den Papierkorb.',
+        '⌘K sucht in allen Seiten und im Text der PDFs („In Skripten“, mit Seite).',
         'Oben steht der ganze Pfad; ein Klick auf einen Ordner zeigt seinen Inhalt.',
         'Seiten sind .md-Dateien; du kannst sie auch mit jedem anderen Editor bearbeiten.',
       ],
@@ -335,7 +338,10 @@ const DE = {
       title: 'Einstellungen',
       where: '⌘, oder Zahnrad',
       what: 'Allgemein, Studium, Benachrichtigungen, KI, Speicher – mit Erklärung bei jeder Option.',
-      details: ['Jede Option erklärt, was sie bewirkt.'],
+      details: [
+        'Jede Option erklärt, was sie bewirkt.',
+        'Speicher & Daten → Sicherung: tägliche Kopie deines Ordners in einen eigenen Backup-Ordner, wiederherstellbar.',
+      ],
       route: { name: 'settings' },
     },
   ] satisfies PlaceInfo[],
@@ -417,6 +423,8 @@ const EN: typeof DE = {
         'The sync takes modules from the examination regulations, courses from Moodle and grades/exams from eCampus.',
         'You see what changes first and confirm – nothing happens silently.',
         'Another university: enter the Moodle address, create modules yourself.',
+        'On every module page: exam preparation with old exams and exercise sheets and their solutions to tick off.',
+        'Under "Grades": the grade calculator – the grade you need for your target average.',
       ],
     },
     {
@@ -500,6 +508,7 @@ const EN: typeof DE = {
       details: [
         'Recently opened files are listed at the top of the sidebar.',
         'Choose several with ⌘/Ctrl or Shift click, drag them to move, Delete puts them in the trash.',
+        '⌘K searches all pages and the text of the PDFs ("In scripts", with the page).',
         'The whole path is at the top; a click on a folder shows what it holds.',
         'Pages are .md files; you can edit them with any other editor too.',
       ],
@@ -509,7 +518,10 @@ const EN: typeof DE = {
       title: 'Settings',
       where: '⌘, or gear',
       what: 'General, studies, notifications, AI, storage – with an explanation for every option.',
-      details: ['Every option explains what it does.'],
+      details: [
+        'Every option explains what it does.',
+        'Storage & data → Backup: a daily copy of your folder into a backup folder of its own, restorable.',
+      ],
     },
   ],
   askTitle: 'More questions?',

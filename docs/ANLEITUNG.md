@@ -52,6 +52,11 @@ _Hilfe → So funktioniert Notiva_ (bitte beides gemeinsam aktuell halten). Engl
   Blättern, Repositories und Links. „Nach Praktika ordnen“ bringt einen bestehenden Ordner in diese Form (mit
   Vorschau). Geholte Repositories haben eine eigene Seite: Beschreibung vom Server (nur lesen), Dateien, „Meine
   Notizen“; ihr Git steht unter _Änderungen → Praktikum-Repos_.
+- **Prüfungsvorbereitung** (Modulseite): Altklausuren, Probe- und Übungsklausuren und Übungsblätter aus den
+  Unterlagen, jeweils mit Lösung (erkannt am Dateinamen, z. B. `_Loesung`, `Musterlösung`), dazu Klausurhinweise
+  und die Tage bis zur Prüfung. Abgehakt wird in der Modulseite (`vorbereitet:`).
+- **Notenrechner** (_Noten & Leistungen_): Schnitt jetzt, mit erwarteten Noten und die nötige Note für einen
+  Zielschnitt – aus der Modul-Datenbank, Annahmen bleiben auf dem Gerät.
 - **Moodle-Kurse eines Moduls**: Auf der Modulseite wählst du pro Kurs „zählt jetzt“, „anderes Semester“ oder
   „nicht berücksichtigen“ – z. B. für Kurse, in die du nur schon hineinschaust. Aus „nicht berücksichtigen“ kommt
   nichts mehr (keine Dateien, Fristen, Ankündigungen); „anderes Semester“ meldet neue Dateien nur als graue Info.
@@ -63,6 +68,19 @@ _Hilfe → So funktioniert Notiva_ (bitte beides gemeinsam aktuell halten). Engl
 - **Hintergrund-Abrufe**: jede Quelle hat ein eigenes Intervall (_Einstellungen → Benachrichtigungen_).
 
 Andere Hochschule: [HOCHSCHULE.md](HOCHSCHULE.md) und [examples/Hochschule.md](../examples/Hochschule.md).
+
+## Suchen
+
+**⌘K** sucht in Titeln und Text deiner Seiten und – in der Desktop-App – im Text aller PDFs (Bereich „In Skripten“,
+mit Seite). Die PDFs liest Notiva einmal im Hintergrund und merkt sich den Text in `.notiva/cache/` (nicht im Git).
+
+## Sicherung
+
+_Einstellungen → Speicher & Daten → Sicherung_: einmal am Tag eine vollständige Kopie deines Ordners in einem eigenen
+Backup-Ordner (Standard `~/Documents/Notiva-Backups/<Ordnername>/<Datum Uhrzeit>`). Jede Sicherung ist ein normaler
+Ordner; unveränderte Dateien sind Hardlinks auf die vorige Sicherung und kosten keinen Platz. Es bleiben die letzten
+14 Tage und je eine pro Monat. **Wiederherstellen** legt den Stand als neuen Ordner neben deinen – nichts wird
+überschrieben. Den Git-Verlauf (`.git`) sicherst du auf Wunsch mit.
 
 ## Seitenleiste und Pfad
 

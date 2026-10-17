@@ -48,6 +48,11 @@ Everything beyond the [README](../README.en.md). Deutsch: [ANLEITUNG.md](ANLEITU
   repositories and links. "Organise by session" brings an existing folder into this shape (with a preview). Got
   repositories have their own page: the server's description (read only), files, "My notes"; their Git is under
   _Changes → Lab repositories_.
+- **Exam preparation** (module page): old, practice and sample exams and exercise sheets from the materials, each
+  with its solution (recognised by the file name, e.g. `_Loesung`, `Musterlösung`), exam hints and the days until
+  the exam. Ticks are kept in the module page (`vorbereitet:`).
+- **Grade calculator** (_Grades_): your average now, with expected grades and the grade needed for a target – from
+  the module database, guesses stay on the device.
 - **Moodle courses of a module**: on the module page choose per course "counts now", "another semester" or "not
   counted" – e.g. for courses you only look into. Nothing comes from "not counted" any more (no files, deadlines,
   announcements); "another semester" reports new files only as a grey note.
@@ -59,6 +64,18 @@ Everything beyond the [README](../README.en.md). Deutsch: [ANLEITUNG.md](ANLEITU
 - **Background checks**: every source has its own interval (_Settings → Notifications_).
 
 Another university: [HOCHSCHULE.md](HOCHSCHULE.md) (German) and [examples/Hochschule.md](../examples/Hochschule.md).
+
+## Search
+
+**⌘K** searches titles and text of your pages and – in the desktop app – the text of all PDFs ("In scripts", with
+the page). Notiva reads the PDFs once in the background and keeps the text in `.notiva/cache/` (not in Git).
+
+## Backup
+
+_Settings → Storage & data → Backup_: once a day a complete copy of your folder in a backup folder of its own
+(default `~/Documents/Notiva-Backups/<folder name>/<date time>`). Every backup is a normal folder; unchanged files are
+hard links to the previous one and take no space. The last 14 days and one per month are kept. **Restore** puts the
+state as a new folder next to yours – nothing is overwritten. Include the Git history (`.git`) if you like.
 
 ## Side bar and path
 

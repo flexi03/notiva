@@ -7,6 +7,18 @@ Notiva checks for a new version on start and every hour and installs it itself i
 
 ## 0.2.2 – not released yet
 
+- **Search in PDFs:** ⌘K now also finds text in your scripts and sheets – with file, page and a snippet; a click
+  opens the PDF on that page. Notiva reads the PDFs once in the background (with progress) and keeps the text in
+  `.notiva/cache/` (not in Git); after that only new or changed ones.
+- **Grade calculator** (_Grades_): your average now, with expected grades for open modules, and the grade you need
+  in the remaining ECTS for a target average. Works without eCampus too; your guesses stay on the device.
+- **Daily backup** (_Settings → Storage & data → Backup_): a complete copy of your folder every day in a backup folder
+  of its own (default `~/Documents/Notiva-Backups`), like Time Machine – unchanged files take no space. 14 days and
+  one per month are kept. "Back up now", show in Finder, restore as a new folder (nothing is overwritten). Git
+  history if you like.
+- **Exam preparation** on the module page: old, practice and sample exams and exercise sheets from the materials,
+  each with its solution, exam hints, days until the exam and "N of M done" to tick off.
+
 ## 0.2.1 – 2026-10-17
 
 - Fixed: moved Moodle files counted as "new" afterwards (Notiva forgot where they were when moving them). That

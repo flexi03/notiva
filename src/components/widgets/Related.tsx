@@ -9,6 +9,7 @@ import { reindexMaterials } from '@/app/reindex'
 import { planSort } from '@/lib/materialVersions'
 import { LAB_DATE, LAB_PREP } from '@/lib/labPlan'
 import { ModuleSchedule } from './ModuleSchedule'
+import { ExamPrepSection } from './ExamPrepSection'
 import { MATERIAL_CATEGORIES } from '@/lib/moodle'
 import {
   ARCHIVE_FOLDER,
@@ -84,6 +85,7 @@ export function Related({ from }: { from: string }) {
   return (
     <div className="related space-y-4 rounded-panel border border-line p-3" data-interactive>
       {isModule && <ModuleSchedule module={page} />}
+      {isModule && <ExamPrepSection module={page} files={moduleFiles.map((f) => f.path)} />}
       {moduleFiles.length > 0 && (
         <section aria-label={t('related.files')}>
           <div className="mb-1 flex items-center gap-2">

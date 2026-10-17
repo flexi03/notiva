@@ -6,7 +6,7 @@ import {
   type Locator,
   type Page,
 } from '@playwright/test'
-import { copyFileSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -396,6 +396,20 @@ test('Pfadleiste: der ganze Pfad auch bei PDFs, jeder Ordner zeigt seinen Inhalt
   await expect(menu.getByRole('menuitem', { name: 'Ordnerpfad kopieren' })).toBeVisible()
   await menu.getByRole('menuitem', { name: 'Ordnerseite öffnen' }).click()
   await expect(window.getByRole('heading', { name: 'Skripte', level: 1 }).first()).toBeVisible()
+})
+
+test('Suche findet Text in PDFs und öffnet die richtige Seite', async () => {
+  await window.keyboard.press('ControlOrMeta+k')
+  await window.getByRole('combobox').fill('Topologische')
+  const results = window.getByRole('listbox')
+  await expect(results).toContainText('In Skripten', { timeout: 15_000 })
+  const hit = results.getByRole('option').filter({ hasText: 'Graphen.pdf' }).first()
+  await expect(hit).toContainText('Seite 3')
+  await expect(hit).toContainText('Topologische Sortierung')
+  await hit.click()
+  await expect(window.locator('#pdf-page')).toHaveAttribute('placeholder', '3')
+  // Remembered outside Git: the text cache lies in .notiva/cache.
+  expect(readdirSync(path.join(folder, '.notiva/cache/pdf')).length).toBeGreaterThan(0)
 })
 
 /** Opens a tree entry if it is closed (its own toggle, not one of its children's). */

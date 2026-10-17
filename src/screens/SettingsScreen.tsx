@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { BackupSettings } from '@/components/settings/BackupSettings'
 import { Bell, Bot, Database, Info, Mic, Palette, PenLine, School } from 'lucide-react'
 import { useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
@@ -358,6 +359,9 @@ export function SettingsContent({ compact = false }: { compact?: boolean }) {
                       {t('settings.deletedPages')}
                     </Button>
                   </div>
+                </Section>
+                <Section title={t('backup.title')}>
+                  <BackupSettings />
                 </Section>
                 <Section title={t('settings.advanced')}>
                   <Field label={t('settings.customCss')} hint={t('settings.customCssHint')}>

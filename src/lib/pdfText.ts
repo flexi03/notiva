@@ -18,27 +18,43 @@ export async function pdfText(bytes: Uint8Array, maxPages = 60): Promise<{ text:
   })
   const doc = await task.promise
   try {
-    const parts: string[] = []
-    for (let n = 1; n <= Math.min(doc.numPages, maxPages); n++) {
-      const page = await doc.getPage(n)
-      const content = await page.getTextContent()
-      let line = ''
-      const lines: string[] = []
-      for (const item of content.items) {
-        if (!('str' in item)) continue
-        line += item.str
-        if (item.hasEOL) {
-          lines.push(line)
-          line = ''
-        }
-      }
-      if (line) lines.push(line)
-      parts.push(`--- Seite ${n} ---\n${lines.map((l) => l.trimEnd()).join('\n')}`)
-    }
+    const parts = (await pageTexts(doc, maxPages)).map((text, i) => `--- Seite ${i + 1} ---\n${text}`)
     return { text: parts.join('\n\n'), pages: doc.numPages }
   } finally {
     await task.destroy()
   }
+}
+
+/** The minimal part of a pdf.js document needed to read its text (viewer, AI tools, search). */
+export interface TextSource {
+  numPages: number
+  getPage(n: number): Promise<{
+    getTextContent(): Promise<{ items: Array<{ str?: string; hasEOL?: boolean } | object> }>
+  }>
+}
+
+/**
+ * The text of each page (lines kept), up to `maxPages`. `gap`: put between the text pieces of a
+ * line ('' keeps pdf.js' own spacing; ' ' helps parsers that look for separate words).
+ */
+export async function pageTexts(doc: TextSource, maxPages = Infinity, gap = ''): Promise<string[]> {
+  const pages: string[] = []
+  for (let n = 1; n <= Math.min(doc.numPages, maxPages); n++) {
+    const content = await (await doc.getPage(n)).getTextContent()
+    let line = ''
+    const lines: string[] = []
+    for (const item of content.items) {
+      if (!('str' in item) || typeof item.str !== 'string') continue
+      line += line && gap ? gap + item.str : item.str
+      if ('hasEOL' in item && item.hasEOL) {
+        lines.push(line)
+        line = ''
+      }
+    }
+    if (line) lines.push(line)
+    pages.push(lines.map((l) => l.trimEnd()).join('\n'))
+  }
+  return pages
 }
 
 export interface PdfTextItem {

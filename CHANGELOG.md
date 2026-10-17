@@ -7,6 +7,19 @@ Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und inst
 
 ## 0.2.2 – noch nicht veröffentlicht
 
+- **Suche in PDFs:** ⌘K findet jetzt auch Text in deinen Skripten und Blättern – mit Datei, Seite und
+  Textausschnitt; ein Klick öffnet das PDF auf dieser Seite. Notiva liest die PDFs einmal im Hintergrund (mit
+  Fortschritt) und merkt sich den Text in `.notiva/cache/` (nicht im Git); danach nur noch neue oder geänderte.
+- **Notenrechner** (_Noten & Leistungen_): Schnitt jetzt, mit erwarteten Noten für offene Module, und welche Note du
+  in den übrigen ECTS für einen Zielschnitt brauchst. Funktioniert auch ohne eCampus; deine Annahmen bleiben auf
+  dem Gerät.
+- **Tägliche Sicherung** (_Einstellungen → Speicher & Daten → Sicherung_): eine vollständige Kopie deines Ordners pro
+  Tag in einem eigenen Backup-Ordner (Standard `~/Documents/Notiva-Backups`), wie Time Machine – unveränderte
+  Dateien kosten keinen Platz. 14 Tage und je eine pro Monat bleiben. „Jetzt sichern“, im Finder zeigen,
+  Wiederherstellen als neuen Ordner (nichts wird überschrieben). Git-Verlauf auf Wunsch.
+- **Prüfungsvorbereitung** auf der Modulseite: Altklausuren, Probe- und Übungsklausuren und Übungsblätter aus den
+  Unterlagen, jeweils mit ihrer Lösung, Klausurhinweise, Tage bis zur Prüfung und „N von M bearbeitet“ zum Abhaken.
+
 ## 0.2.1 – 2026-10-17
 
 - Behoben: Verschobene Moodle-Dateien galten danach als „neu“ (Notiva vergaß beim Verschieben, wo sie liegen).

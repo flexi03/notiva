@@ -118,7 +118,7 @@ export class GitRepo {
     try {
       await vault.read('.gitignore')
     } catch {
-      await vault.write('.gitignore', '.notiva/trash/\n.DS_Store\n')
+      await vault.write('.gitignore', '.notiva/trash/\n.notiva/cache/\n.DS_Store\n')
     }
     const repo = await GitRepo.open(vault)
     if (!repo) throw new GitError('git init fehlgeschlagen')
@@ -175,7 +175,8 @@ export class GitRepo {
       let from: string | undefined
       if (xy.includes('R') || xy.includes('C')) from = entries[++i]
       const path = this.toVault(repoPath)
-      if (path === null || path.startsWith('.notiva/trash/') || isJunk(path)) continue
+      // Notiva's trash and caches (PDF texts for the search) are never changes to commit.
+      if (path === null || /^\.notiva\/(trash|cache)\//.test(path) || isJunk(path)) continue
       const status: GitStatus =
         xy === '??'
           ? 'untracked'

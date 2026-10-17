@@ -22,7 +22,7 @@ import {
   type ResolvedRow,
   type Row,
 } from './database'
-import { toPlainText } from './plainText'
+import { snippet, toPlainText } from './plainText'
 import { guardVault, type VaultAdapter, type VaultFile } from './vault'
 
 export const META_DIR = '.notiva'
@@ -848,8 +848,10 @@ export class Workspace {
     }
   }
 
-  writeMeta(name: string, value: unknown): Promise<void> {
-    return this.run(() => this.vault.write(`${META_DIR}/${name}`, `${JSON.stringify(value, null, 2)}\n`))
+  /** `compact`: one line (caches – many and large, nobody reads them). */
+  writeMeta(name: string, value: unknown, { compact = false } = {}): Promise<void> {
+    const text = compact ? JSON.stringify(value) : `${JSON.stringify(value, null, 2)}\n`
+    return this.run(() => this.vault.write(`${META_DIR}/${name}`, text))
   }
 
   /** Writes several new files at once (one reload). Fails without writing if any path exists. */
@@ -955,13 +957,3 @@ function mapStrings(data: FrontmatterData, fn: (value: string) => string): Front
   return changed ? out : data
 }
 
-function snippet(text: string, terms: string[]): string {
-  const lower = text.toLowerCase()
-  const index =
-    terms
-      .map((t) => lower.indexOf(t.toLowerCase()))
-      .filter((i) => i >= 0)
-      .sort((a, b) => a - b)[0] ?? 0
-  const start = Math.max(0, index - 40)
-  return `${start > 0 ? '…' : ''}${text.slice(start, start + 140)}${start + 140 < text.length ? '…' : ''}`
-}

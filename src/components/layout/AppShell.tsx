@@ -76,6 +76,26 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
   }, [ws])
   useEffect(() => {
+    // Today's backup (if due): a little after start, then checked every hour.
+    if (!electronBridge()?.backup) return
+    const due = () => void import('@/app/backup').then((m) => m.backupIfDue()).catch(() => undefined)
+    const first = setTimeout(due, 60_000)
+    const hourly = setInterval(due, 3_600_000)
+    return () => {
+      clearTimeout(first)
+      clearInterval(hourly)
+    }
+  }, [ws])
+  useEffect(() => {
+    // The PDFs' text for the search: read in the background a little after start (desktop app).
+    if (!electronBridge()) return
+    const timer = setTimeout(
+      () => void import('@/app/pdfIndex').then((m) => m.ensurePdfIndex(ws)).catch(() => undefined),
+      20_000,
+    )
+    return () => clearTimeout(timer)
+  }, [ws])
+  useEffect(() => {
     if (!moodleAvailable()) return
     void useMoodle.getState().refresh()
     void import('@/app/courseChoices').then((m) => m.loadCourseChoices(ws))

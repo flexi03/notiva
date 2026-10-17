@@ -7,6 +7,8 @@ so, wie er hier steht.
 
 Beispiel: Modul **Datenbanken** mit einer Vorlesung (heute) und einem Praktikum (P02).
 
+Suchen geht in beiden Abläufen jederzeit mit **⌘K** – auch im Text der PDFs (Bereich „In Skripten“, mit Seite).
+
 ## Entscheidungen (von dir, 16.10.2026)
 
 | Frage                          | Entscheidung                                                                                                                                                                                                                |
@@ -34,14 +36,15 @@ Studium/
 
 ## Ablauf 1: Vorlesung
 
-| #   | Ziel                | So geht's                                 | Was du siehst                                                                                             | Test                  |
-| --- | ------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------- | --------------------- |
-| 1   | Was ist heute dran? | Seitenleiste **Heute**                    | Tagesübersicht: „Datenbanken · Vorlesung“ mit Uhrzeit, darunter „Demnächst“                               | `Vorlesung` Schritt 1 |
-| 2   | Zur Vorlesung       | Klick auf den Termin                      | Modulseite **Datenbanken**, oben „Für diesen Termin“ mit dem passenden Skript (wahrscheinlichstes zuerst) | Schritt 2             |
-| 3   | Skript öffnen       | Klick auf das Skript                      | Das PDF, daneben Seitennotizen                                                                            | Schritt 3             |
-| 4   | Mitschreiben        | Text markieren, Notiz zur Seite schreiben | Markierung im PDF; gespeichert in `… (Notizen).md` neben dem PDF                                          | Schritt 4             |
-| 5   | Wiederfinden        | Seitenleiste: PDF aufklappen              | Die Notiz-Seite hängt **unter** ihrem PDF                                                                 | Schritt 5             |
-| 6   | Nur Aktuelles sehen | Modulseite → Unterlagen                   | „Aktuell“ (markiert, offen), „Archiv – ältere Semester“ (ausgegraut, zu)                                  | Schritt 6             |
+| #   | Ziel                   | So geht's                                 | Was du siehst                                                                                                       | Test                  |
+| --- | ---------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| 1   | Was ist heute dran?    | Seitenleiste **Heute**                    | Tagesübersicht: „Datenbanken · Vorlesung“ mit Uhrzeit, darunter „Demnächst“                                         | `Vorlesung` Schritt 1 |
+| 2   | Zur Vorlesung          | Klick auf den Termin                      | Modulseite **Datenbanken**, oben „Für diesen Termin“ mit dem passenden Skript (wahrscheinlichstes zuerst)           | Schritt 2             |
+| 3   | Skript öffnen          | Klick auf das Skript                      | Das PDF, daneben Seitennotizen                                                                                      | Schritt 3             |
+| 4   | Mitschreiben           | Text markieren, Notiz zur Seite schreiben | Markierung im PDF; gespeichert in `… (Notizen).md` neben dem PDF                                                    | Schritt 4             |
+| 5   | Wiederfinden           | Seitenleiste: PDF aufklappen              | Die Notiz-Seite hängt **unter** ihrem PDF                                                                           | Schritt 5             |
+| 6   | Nur Aktuelles sehen    | Modulseite → Unterlagen                   | „Aktuell“ (markiert, offen), „Archiv – ältere Semester“ (ausgegraut, zu)                                            | Schritt 6             |
+| 7   | Für die Prüfung lernen | Modulseite → Prüfungsvorbereitung         | Probeklausur mit „Lösung“, Übungsblätter, Klausurhinweise; abhaken → „1 von 2 bearbeitet“ (steht in der Modulseite) | Schritt 7             |
 
 ## Ablauf 2: Praktikum
 

@@ -25,6 +25,14 @@ import { watch, type FSWatcher, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { FsVault } from './vaultFs'
+import {
+  backupRoot,
+  createSnapshot,
+  listSnapshots,
+  restoreSnapshot,
+  type BackupSettings,
+  type Snapshot,
+} from './backup'
 import { parseAiRequest } from './aiRequest'
 import {
   cloneInTerminal,
@@ -147,6 +155,37 @@ let window: BrowserWindow | null = null
 interface AppConfig {
   lastFolder?: string
   notify?: NotifySettings
+  backup?: Partial<BackupSettings>
+}
+
+/** Daily backup next to the documents; off in tests unless a test asks for it. */
+async function backupSettings(): Promise<BackupSettings> {
+  const e2e = process.env.NOTIVA_E2E_USERDATA
+  const defaults: BackupSettings = {
+    enabled: !e2e || process.env.NOTIVA_E2E_BACKUP === '1',
+    folder: e2e ? path.join(e2e, 'Backups') : path.join(app.getPath('documents'), 'Notiva-Backups'),
+    withGit: false,
+  }
+  return { ...defaults, ...(await readConfig()).backup }
+}
+
+let backupRunning: Promise<Snapshot> | null = null
+
+async function backupStatus() {
+  const settings = await backupSettings()
+  const snapshots = vault ? await listSnapshots(backupRoot(settings, vault.root)) : []
+  return {
+    settings,
+    root: vault ? backupRoot(settings, vault.root) : null,
+    snapshots,
+    running: !!backupRunning,
+  }
+}
+
+async function snapshotNamed(name: unknown): Promise<Snapshot> {
+  const found = (await backupStatus()).snapshots.find((s) => s.name === name)
+  if (!found) throw new Error('Diese Sicherung gibt es nicht (mehr).')
+  return found
 }
 
 async function readConfig(): Promise<AppConfig> {
@@ -651,6 +690,56 @@ function registerIpc(): void {
   )
   handle('notifications:clear', async () => notifications.clear())
   handle('notifications:test', async () => testNotify())
+  handle('backup:status', async () => backupStatus())
+  handle('backup:settings', async (patch: unknown) => {
+    const p = (patch ?? {}) as Record<string, unknown>
+    const config = await readConfig()
+    const next = { ...config.backup }
+    if (typeof p.enabled === 'boolean') next.enabled = p.enabled
+    if (typeof p.withGit === 'boolean') next.withGit = p.withGit
+    await writeConfig({ ...config, backup: next })
+    return backupStatus()
+  })
+  handle('backup:chooseFolder', async () => {
+    const result = await dialog.showOpenDialog(window!, { properties: ['openDirectory', 'createDirectory'] })
+    const folder = result.filePaths[0]
+    if (!result.canceled && folder) {
+      const config = await readConfig()
+      await writeConfig({ ...config, backup: { ...config.backup, folder } })
+    }
+    return backupStatus()
+  })
+  // One snapshot at a time; progress (throttled) to the window.
+  handle('backup:run', async () => {
+    const root = requireVault().root
+    const settings = await backupSettings()
+    let last = 0
+    backupRunning ??= createSnapshot(root, backupRoot(settings, root), {
+      withGit: settings.withGit,
+      onProgress: (done, total, file) => {
+        if (done < total && Date.now() - last < 150) return
+        last = Date.now()
+        window?.webContents.send('backup:progress', { done, total, file })
+      },
+    }).finally(() => (backupRunning = null))
+    return backupRunning
+  })
+  handle('backup:show', async (name: unknown) => {
+    if (name === undefined) {
+      const { root } = await backupStatus()
+      if (!root) throw new Error('Kein Ordner geöffnet')
+      await fs.mkdir(root, { recursive: true })
+      const error = await shell.openPath(root)
+      if (error) throw new Error(error)
+    } else shell.showItemInFolder((await snapshotNamed(name)).path)
+  })
+  // Back as a new folder next to the vault – nothing is overwritten.
+  handle('backup:restore', async (name: unknown) => {
+    const target = await restoreSnapshot((await snapshotNamed(name)).path, requireVault().root)
+    // (Not in tests: no Finder windows popping up.)
+    if (!process.env.NOTIVA_E2E_USERDATA) shell.showItemInFolder(target)
+    return target
+  })
   handle('update:status', async () => updateStatus())
   handle('update:check', async () => checkForUpdate())
   handle('update:install', async () => installUpdate())

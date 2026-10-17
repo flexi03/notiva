@@ -317,6 +317,8 @@ export interface NotivaBridge {
   aiCli?: CliBridge
   /** Git for the open folder (desktop app only). */
   git?: GitBridge
+  /** Daily backups outside the folder (desktop app only). */
+  backup?: BackupBridge
   /** Self-update from GitHub releases (desktop app only). */
   update?: {
     status(): Promise<UpdateStatus>
@@ -364,4 +366,33 @@ export class ElectronVault implements VaultAdapter {
   write = (path: string, content: string | Uint8Array) => this.bridge.vault.write(path, content)
   remove = (path: string) => this.bridge.vault.remove(path)
   rename = (from: string, to: string) => this.bridge.vault.rename(from, to)
+}
+
+export interface BackupSnapshot {
+  name: string
+  path: string
+  date: string
+  files: number
+  bytes: number
+}
+
+export interface BackupStatus {
+  settings: { enabled: boolean; folder: string; withGit: boolean }
+  /** where this folder's snapshots go (null: no folder open) */
+  root: string | null
+  /** newest first */
+  snapshots: BackupSnapshot[]
+  running: boolean
+}
+
+export interface BackupBridge {
+  status(): Promise<BackupStatus>
+  settings(patch: { enabled?: boolean; withGit?: boolean }): Promise<BackupStatus>
+  chooseFolder(): Promise<BackupStatus>
+  run(): Promise<BackupSnapshot>
+  /** Shows a snapshot (or, without a name, the backup folder) in the Finder. */
+  show(name?: string): Promise<void>
+  /** Restores a snapshot as a new folder next to the vault; returns its path. */
+  restore(name: string): Promise<string>
+  onProgress(callback: (event: { done: number; total: number; file: string }) => void): () => void
 }

@@ -7,6 +7,7 @@ import { getLanguage, t } from '@/i18n'
 import { moduleResults, resultSummary, type ExamRecord, type ModuleResult } from '@/lib/ecampus'
 import { Button, cx, EmptyState } from '@/components/ui'
 import { StudySyncDialog } from '@/components/study/StudySyncDialog'
+import { GradeCalculator } from '@/components/study/GradeCalculator'
 import { Topbar } from '@/components/layout/Topbar'
 
 const STATUS_CLASS: Record<ExamRecord['status'] | ModuleResult['status'], string> = {
@@ -209,6 +210,7 @@ export function GradesScreen() {
             </div>
           </>
         )}
+        <GradeCalculator />
       </div>
       {importOpen && <StudySyncDialog onClose={() => setImportOpen(false)} />}
     </>
