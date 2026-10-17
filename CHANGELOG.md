@@ -7,6 +7,14 @@ Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und inst
 
 ## 0.2.3 – noch nicht veröffentlicht
 
+- **Lernplan rückwärts ab Prüfungsdatum** (Modulseite): verteilt die Vorlesungsfolien des aktuellen Kurses in ihrer
+  Reihenfolge auf deine Lerntage, die letzten Tage gehören Alt- und Probeklausuren. Lerntage wählst du selbst
+  (Mo–Fr, jeden Tag oder einzelne Wochentage, dazu freie Tage). Notiva rechnet jeden Tag neu: Verpasstes verteilt
+  sich auf die übrigen Tage. Abgehakt wird wie in der Prüfungsvorbereitung (gemeinsame Liste).
+- **„Lernen heute“** in der Tagesübersicht: die Portion jedes Lernplans, direkt abzuhaken.
+- **Empfehlung:** Ab 5 Wochen vor einer Prüfung schlägt Notiva einen Lernplan vor (Benachrichtigung und Hinweis);
+  auf der Modulseite: starten, „In 3 Tagen erinnern“ oder „Nicht für dieses Modul“.
+
 ## 0.2.2 – 2026-10-17
 
 - **Suche in PDFs:** ⌘K findet jetzt auch Text in deinen Skripten und Blättern – mit Datei, Seite und

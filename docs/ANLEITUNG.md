@@ -55,6 +55,10 @@ _Hilfe → So funktioniert Notiva_ (bitte beides gemeinsam aktuell halten). Engl
 - **Prüfungsvorbereitung** (Modulseite): Altklausuren, Probe- und Übungsklausuren und Übungsblätter aus den
   Unterlagen, jeweils mit Lösung (erkannt am Dateinamen, z. B. `_Loesung`, `Musterlösung`), dazu Klausurhinweise
   und die Tage bis zur Prüfung. Abgehakt wird in der Modulseite (`vorbereitet:`).
+- **Lernplan** (Modulseite): verteilt die Vorlesungsfolien (`Unterlagen/<Modul>/Vorlesung`) auf deine Lerntage bis
+  zur Prüfung, die letzten Tage für Altklausuren. Lerntage: Mo–Fr, jeden Tag oder einzelne Wochentage, dazu freie
+  Tage. Jeden Tag neu gerechnet – Verpasstes rutscht auf die übrigen Tage. Die Portion steht auch in **Heute**.
+  Ab 5 Wochen vor einer Prüfung schlägt Notiva den Plan vor (starten, später erinnern, nicht für dieses Modul).
 - **Notenrechner** (_Noten & Leistungen_): Schnitt jetzt, mit erwarteten Noten und die nötige Note für einen
   Zielschnitt – aus der Modul-Datenbank, Annahmen bleiben auf dem Gerät.
 - **Moodle-Kurse eines Moduls**: Auf der Modulseite wählst du pro Kurs „zählt jetzt“, „anderes Semester“ oder

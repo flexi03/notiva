@@ -58,6 +58,15 @@ Studium/
 | 6   | Sichern            | Git → **Praktikum-Repos** → Datei ansehen → Commit                                                    | Farbiger Vergleich; Commit im Repo (nicht im Ordner-Git)                         | Schritt 6             |
 | 7   | Alles an einem Ort | P02-Seite                                                                                             | Termin, Vorbereitung, Blätter, Repo zusammen                                     | Schritt 7             |
 
+## Ablauf 3: Auf die Prüfung lernen
+
+| #   | Ziel             | So geht's                                              | Was du siehst                                                                        | Test                 |
+| --- | ---------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------ | -------------------- |
+| 1   | Rechtzeitig dran | Modulseite (oder Benachrichtigung)                     | „Prüfung in 20 Tagen – ein Lernplan verteilt 2 Themen …“ mit Starten / Später / Nein | `Lernplan` Schritt 1 |
+| 2   | Später erinnern  | **In 3 Tagen erinnern**                                | Der Vorschlag ist weg, „Lernplan starten“ bleibt                                     | Schritt 2            |
+| 3   | Plan einrichten  | **Lernplan starten** → Lerntage wählen → **Speichern** | „1 von 2 Themen · noch N Lerntage“, heute: die Vorlesung                             | Schritt 3            |
+| 4   | Heute lernen     | **Heute** → „Lernen heute“ → abhaken                   | Haken in der Modulseite (gemeinsam mit der Prüfungsvorbereitung)                     | Schritt 4            |
+
 ## Was ausdrücklich nicht passiert
 
 - Notiva verschiebt oder löscht nichts ohne Liste und Bestätigung.

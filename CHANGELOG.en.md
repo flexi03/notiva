@@ -7,6 +7,14 @@ Notiva checks for a new version on start and every hour and installs it itself i
 
 ## 0.2.3 – not released yet
 
+- **Study plan backwards from the exam date** (module page): spreads the current course's lecture slides in their
+  order over your study days, the last days are for old and practice exams. You choose the study days (Mon–Fri,
+  every day or single weekdays, plus days off). Notiva recalculates every day: what you missed moves to the other
+  days. Ticks are shared with the exam preparation.
+- **"Study today"** in the day overview: every plan's portion, to tick off right there.
+- **Suggestion:** from 5 weeks before an exam Notiva suggests a study plan (notification and hint); on the module
+  page: start, "Remind me in 3 days" or "Not for this module".
+
 ## 0.2.2 – 2026-10-17
 
 - **Search in PDFs:** ⌘K now also finds text in your scripts and sheets – with file, page and a snippet; a click

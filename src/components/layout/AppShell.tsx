@@ -76,6 +76,27 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
   }, [ws])
   useEffect(() => {
+    // Study plans for exams coming up: suggested once a day (notification + hint), desktop app.
+    if (!electronBridge()) return
+    const KEY = 'notiva.studyPlan.suggested'
+    const check = () => {
+      const day = new Date().toISOString().slice(0, 10)
+      try {
+        if (localStorage.getItem(KEY) === day) return
+        localStorage.setItem(KEY, day)
+      } catch {
+        /* without storage: once per start */
+      }
+      void import('@/app/studyPlan').then((m) => m.suggestPlans(ws)).catch(() => undefined)
+    }
+    const first = setTimeout(check, 30_000)
+    const hourly = setInterval(check, 3_600_000)
+    return () => {
+      clearTimeout(first)
+      clearInterval(hourly)
+    }
+  }, [ws])
+  useEffect(() => {
     // Today's backup (if due): a little after start, then checked every hour.
     if (!electronBridge()?.backup) return
     const due = () => void import('@/app/backup').then((m) => m.backupIfDue()).catch(() => undefined)

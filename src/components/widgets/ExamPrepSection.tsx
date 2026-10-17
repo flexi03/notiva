@@ -1,6 +1,8 @@
-import { useState } from 'react'
 import { CheckCircle2, FileText, GraduationCap, Info } from 'lucide-react'
-import { useAction, useApp, useWorkspace } from '@/app/store'
+import { useApp, useWorkspace } from '@/app/store'
+import { useDone } from '@/app/hooks/useDone'
+import { nextExam, today } from '@/app/studyPlan'
+import { daysUntil } from '@/lib/studyPlan'
 import { getLanguage, t } from '@/i18n'
 import { examPrep, type PrepItem } from '@/lib/examPrep'
 import type { Page } from '@/lib/workspace'
@@ -15,35 +17,15 @@ const name = (path: string) => path.slice(path.lastIndexOf('/') + 1)
  */
 export function ExamPrepSection({ module, files }: { module: Page; files: string[] }) {
   const ws = useWorkspace()
-  const run = useAction()
   const navigate = useApp((s) => s.navigate)
-  const [override, setOverride] = useState<string[] | null>(null)
+  const { done, toggle: toggleKey } = useDone(module)
   const prep = examPrep(files)
   const items = [...prep.exams, ...prep.sheets]
   if (!items.length && !prep.hints.length) return null
-  const done = new Set(
-    override ?? (Array.isArray(module.data.vorbereitet) ? module.data.vorbereitet.map(String) : []),
-  )
   const count = items.filter((i) => done.has(name(i.path))).length
-  // The next exam of this module (database "Prüfungen").
-  const today = new Date().toISOString().slice(0, 10)
-  const exams = ws.findDatabase('Prüfungen', module.path)
-  const next = exams
-    ? ws
-        .backlinks(module.path)
-        .filter((p) => p.path.startsWith(`${ws.rowFolder(exams)}/`))
-        .map((p) => String(p.data.Datum ?? '').slice(0, 10))
-        .filter((d) => /^\d{4}-\d\d-\d\d$/.test(d) && d >= today)
-        .sort()[0]
-    : undefined
-  const days = next ? Math.round((Date.parse(next) - Date.parse(today)) / 86_400_000) : null
-  const toggle = (item: PrepItem) => {
-    const key = name(item.path)
-    const next = done.has(key) ? [...done].filter((k) => k !== key) : [...done, key]
-    // Ticks at once; the module page follows.
-    setOverride(next)
-    void run(() => ws.setProperty(module.path, 'vorbereitet', next)).finally(() => setOverride(null))
-  }
+  const next = nextExam(ws, module)
+  const days = next ? daysUntil(next, today()) : null
+  const toggle = (item: PrepItem) => toggleKey(name(item.path))
   const open = (path: string) => navigate({ name: 'file', path })
   const locale = getLanguage() === 'de' ? 'de-DE' : 'en-US'
 

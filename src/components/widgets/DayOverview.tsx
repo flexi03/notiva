@@ -19,6 +19,7 @@ import { DAYS } from '@/lib/schedule'
 import { findStudyDashboard } from '@/lib/study/sync'
 import type { Page } from '@/lib/workspace'
 import { cx } from '@/components/ui'
+import { StudyPlanDay } from './StudyPlanSection'
 
 type Kind = 'session' | 'exam' | 'lab' | 'prep' | 'task' | 'moodle'
 
@@ -266,6 +267,7 @@ export function DayOverview({ date }: { date: Date }) {
           {timed.length > 0 && <ul className="space-y-0.5">{timed.map(row)}</ul>}
         </>
       )}
+      <StudyPlanDay date={day} />
       {upcoming.length > 0 && (
         <div className="mt-3 border-t border-line pt-2" data-testid="day-upcoming">
           <h3 className="mb-1 px-2 text-[12.5px] font-semibold text-ink-2">{t('day.upcoming')}</h3>

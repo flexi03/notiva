@@ -51,6 +51,13 @@ test.beforeAll(async () => {
   pdf(`${U}/Sonstiges/DBS_Probeklausur_Musterlösung.pdf`)
   pdf(`${U}/Praktikum & Übung/DBS_Uebung_3.pdf`)
   pdf(`${U}/Sonstiges/Klausurhinweise_DBS.pdf`)
+  // An exam in 20 days (earlier than the one of the pack): a study plan is suggested.
+  const exam = new Date()
+  exam.setDate(exam.getDate() + 20)
+  put(
+    'Studium/Prüfungen/Nachklausur Datenbanken.md',
+    `---\nModul: ["[[Datenbanken]]"]\nDatum: ${exam.toISOString().slice(0, 10)}\nArt: Klausur\n---\n`,
+  )
   // The lab folder with the repository link of P02.
   put(
     `${LAB}.md`,
@@ -202,4 +209,38 @@ test('Praktikum: planen → P02 → Vorbereitungsblatt → Repo holen → bearbe
     .click()
   await window.getByTestId('nav-labs').getByRole('button', { name: 'P02', exact: true }).click()
   await expect(window.getByTestId('lab-hub')).toContainText('praktikum-2')
+})
+
+test('Lernplan: empfohlen → später erinnern → einrichten → heute abhaken', async () => {
+  await window.evaluate(
+    (h) => (location.hash = h),
+    `#/p/${encodeURIComponent('Studium/Module/Datenbanken.md')}`,
+  )
+  const plan = window.getByTestId('study-plan')
+  // Exam in 20 days: suggested, with the number of topics (1 lecture + 1 practice exam).
+  await expect(plan).toContainText('Prüfung in 20 Tagen')
+  await expect(plan).toContainText('2 Themen')
+  await plan.getByRole('button', { name: 'In 3 Tagen erinnern' }).click()
+  await expect(plan).not.toContainText('Prüfung in 20 Tagen')
+  // Started by hand anyway: every day, so today is a study day.
+  await plan.getByRole('button', { name: 'Lernplan starten' }).click()
+  const form = window.getByTestId('study-plan-form')
+  await form.getByRole('button', { name: 'Jeden Tag' }).click()
+  await expect(form.getByRole('button', { name: 'Sa' })).toHaveAttribute('aria-pressed', 'true')
+  await form.getByRole('button', { name: 'Speichern' }).click()
+  // The practice exam was ticked in the exam preparation already – one list of what is done.
+  await expect(plan.getByTestId('study-plan-progress')).toContainText('1 von 2 Themen')
+  await expect(plan.getByTestId('study-plan-today')).toContainText('DBS-03_SQL')
+  // Kept in the module page.
+  await expect
+    .poll(() => readFileSync(path.join(folder, 'Studium/Module/Datenbanken.md'), 'utf8'))
+    .toContain('lernplan:')
+  // "Heute" shows the portion too – ticked there.
+  await window.getByRole('navigation', { name: 'Seiten' }).getByRole('button', { name: 'Heute' }).click()
+  const study = window.getByTestId('day-study')
+  await expect(study).toContainText('DBS-03_SQL')
+  await study.getByLabel('„DBS-03_SQL.pdf“ gelernt').click()
+  await expect
+    .poll(() => readFileSync(path.join(folder, 'Studium/Module/Datenbanken.md'), 'utf8'))
+    .toContain('DBS-03_SQL.pdf')
 })

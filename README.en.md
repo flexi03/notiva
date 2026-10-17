@@ -91,6 +91,8 @@ assistant ([Another university?](#another-university)).
 - 📚 **Materials per module:** the current course up front (lecture, lab & exercise, other), older terms in the
   archive. Notes on a PDF sit right below it in the sidebar.
 - 🔎 **Search in PDFs too:** ⌘K finds text in all scripts and jumps to the page.
+- 🗓️ **Study plan backwards from the exam date:** lectures and old exams spread over your study days, the portion
+  is in "Today" – missed days move on by themselves.
 - 🎯 **Exam preparation and grade calculator:** old exams and sheets with solutions per module to tick off; the grade
   you need for your target average.
 - 💾 **Daily backup** into a backup folder of its own, like Time Machine.

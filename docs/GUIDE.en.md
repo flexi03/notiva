@@ -51,6 +51,10 @@ Everything beyond the [README](../README.en.md). Deutsch: [ANLEITUNG.md](ANLEITU
 - **Exam preparation** (module page): old, practice and sample exams and exercise sheets from the materials, each
   with its solution (recognised by the file name, e.g. `_Loesung`, `Musterlösung`), exam hints and the days until
   the exam. Ticks are kept in the module page (`vorbereitet:`).
+- **Study plan** (module page): spreads the lecture slides (`Unterlagen/<module>/Vorlesung`) over your study days
+  until the exam, the last days for old exams. Study days: Mon–Fri, every day or single weekdays, plus days off.
+  Recalculated every day – what you missed moves to the other days. The portion is in **Today** too. From 5 weeks
+  before an exam Notiva suggests the plan (start, remind later, not for this module).
 - **Grade calculator** (_Grades_): your average now, with expected grades and the grade needed for a target – from
   the module database, guesses stay on the device.
 - **Moodle courses of a module**: on the module page choose per course "counts now", "another semester" or "not
