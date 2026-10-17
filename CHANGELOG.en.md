@@ -5,7 +5,7 @@ _Deutsch: [CHANGELOG.md](CHANGELOG.md)_
 All versions with downloads: [GitHub Releases](https://github.com/flexi03/notiva/releases).
 Notiva checks for a new version on start and every hour and installs it itself if you like.
 
-## 0.2.4 – not released yet
+## 0.2.4 – 2026-10-17
 
 - **Calendar on the phone** (_Settings → Studies_): timetable (weekly until the end of the semester), exams,
   deadlines, labs and study plan as a calendar subscription, e.g. in Apple Calendar. Switch it on, scan the QR code
