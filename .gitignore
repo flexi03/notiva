@@ -23,3 +23,8 @@ ecampus-debug.json
 *.key
 .vscode/
 .idea/
+
+# iOS app (ios/): user state and build output of Xcode
+ios/**/xcuserdata/
+ios/build/
+*.xcuserstate

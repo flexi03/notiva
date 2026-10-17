@@ -1,0 +1,82 @@
+# Notiva for iPhone, iPhone Duo and iPad (docs/COMPANION.md).
+# The Xcode project is generated from this file: `cd ios && xcodegen` (brew install xcodegen).
+name: Notiva
+options:
+  bundleIdPrefix: io.github.flexi03
+  deploymentTarget:
+    iOS: "18.0"
+  developmentLanguage: de
+  createIntermediateGroups: true
+settings:
+  base:
+    DEVELOPMENT_TEAM: 6728DRMDL9
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+targets:
+  Notiva:
+    type: application
+    platform: iOS
+    sources:
+      - path: Notiva
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.flexi03.notiva.ios
+        PRODUCT_NAME: Notiva
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTS_MACCATALYST: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Notiva
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_NSCameraUsageDescription: "Notiva braucht die Kamera, um den QR-Code zum Koppeln mit deinem Mac zu scannen und Fotos (z. B. von der Tafel) abzulegen."
+        INFOPLIST_KEY_NSLocalNetworkUsageDescription: "Notiva verbindet sich in deinem WLAN mit der Notiva-App auf deinem Mac – verschlüsselt, ohne Cloud."
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+    info:
+      path: Notiva/Info.plist
+      properties:
+        NSBonjourServices:
+          - _notiva._tcp
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+  NotivaTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: NotivaTests
+    dependencies:
+      - target: Notiva
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.flexi03.notiva.ios.tests
+        GENERATE_INFOPLIST_FILE: YES
+  NotivaUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: NotivaUITests
+    dependencies:
+      - target: Notiva
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.flexi03.notiva.ios.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Notiva
+schemes:
+  Notiva:
+    build:
+      targets:
+        Notiva: all
+        NotivaTests: [test]
+        NotivaUITests: [test]
+    test:
+      targets:
+        - NotivaTests
+        - NotivaUITests
