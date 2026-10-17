@@ -1,6 +1,7 @@
 /**
- * A stand-in for the Mac in the iOS UI tests: the real sync server (electron/companion.ts) with a
- * fixed test device, answering from a small fixed folder. `npx tsx ios/scripts/fake-mac.ts`
+ * A stand-in for the Mac in the iOS UI tests and App Store screenshots: the real sync server
+ * (electron/companion.ts) with a fixed test device and a small, made-up semester (no real
+ * people). `PORT=47999 npx tsx ios/scripts/fake-mac.ts`
  */
 import { CompanionServer, type Device } from '../../electron/companion'
 
@@ -12,12 +13,86 @@ export const TEST_DEVICE: Device = {
   paired: true,
 }
 
+const pad = (n: number) => String(n).padStart(2, '0')
+const iso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+const inDays = (n: number) => {
+  const d = new Date()
+  d.setDate(d.getDate() + n)
+  return iso(d)
+}
+const DAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
+const today = DAYS[(new Date().getDay() + 6) % 7]!
+
+/** The week – today always has two sessions, so "Heute" is never empty. */
+const week = [
+  { weekday: today, time: '09:15', end: '10:45', title: 'Datenbanksysteme 2', type: 'Vorlesung', room: 'H3' },
+  { weekday: today, time: '14:00', end: '15:30', title: 'IT-Sicherheit', type: 'Übung', room: '5.E.001' },
+  ...[
+    { weekday: 'Mo', time: '08:15', end: '09:45', title: 'Mathematik 3', type: 'Vorlesung', room: 'H1' },
+    { weekday: 'Di', time: '12:00', end: '13:30', title: 'Software Engineering', type: 'Vorlesung', room: 'H2' },
+    { weekday: 'Mi', time: '10:00', end: '13:00', title: 'Datenbanksysteme 2', type: 'Praktikum', room: 'Labor 2' },
+    { weekday: 'Do', time: '16:00', end: '17:30', title: 'Digitale Bild- und Tontechnik', type: 'Vorlesung', room: 'H4' },
+    { weekday: 'Fr', time: '09:15', end: '10:45', title: 'IT-Sicherheit', type: 'Vorlesung', room: 'H3' },
+  ].filter((s) => s.weekday !== today),
+]
+
+/** What was ticked off – kept like the Mac keeps it in the module page. */
+const done = new Set(['DBS2 - Vorlesung 05 - Indexstrukturen.pdf'])
+
+function day(date: string) {
+  const weekday = DAYS[(new Date(`${date}T12:00:00`).getDay() + 6) % 7]
+  const sessions = week
+    .filter((s) => s.weekday === weekday)
+    .map((s, i) => ({ key: `session-${i}`, kind: 'session', time: s.time, end: s.end, title: s.title, sub: `${s.type} · ${s.room}`, room: s.room }))
+  const isToday = date === inDays(0)
+  return {
+    date,
+    items: [
+      ...sessions,
+      ...(isToday
+        ? [
+            { key: 'task-1', kind: 'moodle', time: '23:59', title: 'Übungsblatt 4 – Transaktionen', sub: 'Datenbanksysteme 2 · abgegeben', done: true },
+            { key: 'task-2', kind: 'task', title: 'Praktikum 3 vorbereiten', sub: 'Vorbereitung' },
+            { key: 'task-3', kind: 'task', title: 'Zusammenfassung Kapitel 5', sub: 'überfällig seit 14.10.', overdue: true },
+          ]
+        : []),
+    ],
+    upcoming: isToday
+      ? [
+          { key: 'up-1', kind: 'lab', date: inDays(2), time: '10:00', title: 'Datenbanksysteme 2 – P03 Praktikumstermin', sub: 'Praktikum' },
+          { key: 'up-2', kind: 'moodle', date: inDays(4), time: '23:59', title: 'Projektskizze abgeben', sub: 'Software Engineering · nicht abgegeben' },
+          { key: 'up-3', kind: 'exam', date: inDays(12), time: '10:00', title: 'Klausur Mathematik 3', sub: 'Prüfung · H1' },
+        ]
+      : [],
+    study: isToday
+      ? [
+          {
+            module: { path: 'Studium/Module/Datenbanksysteme 2.md', title: 'Datenbanksysteme 2' },
+            topics: [
+              { key: 'DBS2 - Vorlesung 05 - Indexstrukturen.pdf', path: 'x', kind: 'lecture' },
+              { key: 'DBS2 - Vorlesung 06 - Anfrageoptimierung.pdf', path: 'y', kind: 'lecture' },
+            ].map((t) => ({ ...t, done: done.has(t.key) })),
+          },
+        ]
+      : [],
+  }
+}
+
 const server = new CompanionServer(
   () => [TEST_DEVICE],
-  async (_device, method) => {
+  async (_device, method, params) => {
+    const p = (params ?? {}) as Record<string, unknown>
     if (method === 'hello') return { protocol: 1, vault: 'Studium', version: 'test' }
+    if (method === 'day') return day(typeof p.date === 'string' ? p.date : inDays(0))
+    if (method === 'week') return week
+    if (method === 'study.done') {
+      if (p.done === true) done.add(String(p.key))
+      else done.delete(String(p.key))
+      return { ok: true }
+    }
     throw Object.assign(new Error(`Unbekannte Anfrage: ${method}`), { code: 'unknown' })
   },
 )
-await server.start(Number(process.env.PORT ?? 47_999), '127.0.0.1')
+// All interfaces: newer simulators reach the Mac by its network address, not 127.0.0.1.
+await server.start(Number(process.env.PORT ?? 47_999), '0.0.0.0')
 console.log(`fake mac on ${server.port}`)

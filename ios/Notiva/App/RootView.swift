@@ -50,7 +50,7 @@ struct MainView: View {
             ForEach(AppSection.allCases) { section in
                 Tab(section.title, systemImage: section.symbol, value: section) {
                     NavigationStack {
-                        SectionPlaceholder(section: section)
+                        content(section)
                             .navigationTitle(section.title)
                             .navigationBarTitleDisplayMode(.large)
                             .toolbar {
@@ -60,8 +60,9 @@ struct MainView: View {
                                     }
                                 }
                             }
-                            .refreshable { await model.refresh() }
                     }
+                    // Connection state above the tab bar – the same in every section.
+                    .safeAreaInset(edge: .bottom) { ConnectionBanner().padding(.bottom, 4) }
                 }
             }
         }
@@ -70,13 +71,22 @@ struct MainView: View {
     }
 }
 
-/// Until the next steps fill them in (#45–#49): what the view will show.
+extension MainView {
+    @ViewBuilder func content(_ section: AppSection) -> some View {
+        switch section {
+        case .today: TodayView()
+        case .timetable: WeekView()
+        default: SectionPlaceholder(section: section)
+        }
+    }
+}
+
+/// Until the next steps fill them in (#46–#49): what the view will show.
 private struct SectionPlaceholder: View {
     let section: AppSection
 
     var body: some View {
         ScrollView {
-            ConnectionBanner()
             ContentUnavailableView {
                 Label(section.title, systemImage: section.symbol)
             } description: {
@@ -88,9 +98,8 @@ private struct SectionPlaceholder: View {
 
     private var description: LocalizedStringKey {
         switch section {
-        case .today: "Vorlesungen, Prüfungen, Fristen und „Lernen heute“ – kommt im nächsten Schritt."
-        case .timetable: "Deine Woche mit Zeiten und Räumen – kommt im nächsten Schritt."
-        case .tasks: "Aufgaben abhaken und anlegen – kommt bald."
+        case .today, .timetable: ""
+        case .tasks: "Aufgaben abhaken und anlegen – kommt im nächsten Schritt."
         case .shelf: "Foto, Text oder Datei schnell auf den Mac legen – kommt bald."
         case .pages: "Seiten lesen und bearbeiten, PDFs markieren – kommt bald."
         }

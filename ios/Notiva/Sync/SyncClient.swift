@@ -78,8 +78,12 @@ actor SyncClient {
             guard let (data, response) = try? await session.data(for: request),
                   let http = response as? HTTPURLResponse
             else { continue }
-            // A 404 from a Notiva port: the Mac answered, but not for this key.
-            if http.statusCode == 404 { refused = true; continue }
+            // A 404 from the paired Mac's address: it answered, but no longer knows this key. (From
+            // a Mac found by Bonjour it may simply be another Mac on the same Wi-Fi.)
+            if http.statusCode == 404 {
+                if pairing.hosts.contains(where: { host.hasPrefix("\($0):") }) { refused = true }
+                continue
+            }
             guard http.statusCode == 200,
                   let answer = try? JSONDecoder().decode(SyncCrypto.Sealed.self, from: data),
                   let opened = SyncCrypto.open(answer, key: key, additionalData: SyncCrypto.additionalData(.response, device: pairing.id, time: time))

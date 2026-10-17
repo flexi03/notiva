@@ -21,7 +21,7 @@ final class PairingUITests: XCTestCase {
 
     func testPairedAppShowsSectionsAndOfflineState() {
         let app = XCUIApplication()
-        let code = #"{"v":1,"id":"d","key":"BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc=","port":9,"hosts":["127.0.0.1"],"name":"Studium"}"#
+        let code = #"{"v":1,"id":"d","key":"BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc=","port":9,"hosts":[\#(FakeMac.hosts)],"name":"Studium"}"#
         app.launchArguments = ["-uitest", code]
         app.launch()
         XCTAssertTrue(app.otherElements["offline-banner"].waitForExistence(timeout: 20) || app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'nicht erreichbar'")).firstMatch.waitForExistence(timeout: 5))
@@ -34,7 +34,7 @@ final class PairingUITests: XCTestCase {
     /// Against the real sync server (ios/scripts/fake-mac.ts on port 47999): connected.
     func testConnectsToTheMac() throws {
         let app = XCUIApplication()
-        let code = #"{"v":1,"id":"uitest-device","key":"BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc=","port":47999,"hosts":["127.0.0.1"],"name":"Studium"}"#
+        let code = #"{"v":1,"id":"uitest-device","key":"BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc=","port":47999,"hosts":[\#(FakeMac.hosts)],"name":"Studium"}"#
         app.launchArguments = ["-uitest", code]
         app.launch()
         app.buttons["Einstellungen"].firstMatch.tap()
