@@ -7,30 +7,51 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0282DB500D2A8EFDE1EB4C2E /* ShelfItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C909FE991D0BAD3C1AFE0D /* ShelfItem.swift */; };
 		033244EA32E05192ED293158 /* OfflineStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22477D613E62E31500D7C8E8 /* OfflineStoreTests.swift */; };
+		0DECD0FA0D0ADB181C096772 /* Pairing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020120A2BD6D10E6BE2F8D98 /* Pairing.swift */; };
 		14028E3E9C2D43536B2CEA06 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B67DB63B328CEF85D0FAC983 /* Assets.xcassets */; };
 		1588CAEB4B4E47CDE8D09723 /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD0D2958D537BC77FA2C1C1E /* TodayView.swift */; };
+		1E04113F5A02B011FF1D0143 /* ShelfUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B340F014BBD86204C5222E8 /* ShelfUITests.swift */; };
 		26E26F65A818C2EFE0693AA4 /* TasksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7B2E8159034419EC2A1B7E6 /* TasksView.swift */; };
 		27FF95FD7A08C997E27B2459 /* Pairing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020120A2BD6D10E6BE2F8D98 /* Pairing.swift */; };
+		294B80277F982D31EA9D9053 /* ShareInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC11B8A7994F415BA3C104AF /* ShareInbox.swift */; };
 		340AE8624FF446CE9B462412 /* vector.json in Resources */ = {isa = PBXBuildFile; fileRef = 4DDCC0FD37570B278FA834E0 /* vector.json */; };
 		43DBB4A89646AE46C92C3B04 /* OfflineStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C03DF94F6B414C1A0CDEA9D4 /* OfflineStore.swift */; };
 		4776A30620BC0D30EA128FE7 /* WeekView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F9956C698BC3853754FF12 /* WeekView.swift */; };
 		5A74074F0E21B56B38FF874B /* PairingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BDFF836E2F053D6B661D596 /* PairingView.swift */; };
 		7C5B4BEBDFB8C07D565DF00D /* PairingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37E886AC89CBECDD853345CC /* PairingUITests.swift */; };
+		7DCFF7C96754F541FE2A525E /* NotivaShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D9C45B02E87B6B73F7AD9F27 /* NotivaShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		884112F603AE17502DEC5A91 /* TodayUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4956E3C677A3631C6F1E8F7 /* TodayUITests.swift */; };
 		90342469B6CA9FEC789A8DF1 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96AA92A1FF0F9DB7B4BB4C94 /* AppModel.swift */; };
 		9E81452799B56D810BC5E182 /* FakeMac.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B31E545718B484FF604F6A7 /* FakeMac.swift */; };
 		A01B8913080EACF5B34114A2 /* SyncCryptoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37A7A3C2618081A67BE41E48 /* SyncCryptoTests.swift */; };
+		B2ABDF7FACEA6EA0488A0AD2 /* ShelfItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C909FE991D0BAD3C1AFE0D /* ShelfItem.swift */; };
+		B3D79FECB4270175B89473EB /* ShelfItemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37C95321BE63D9F2347E3644 /* ShelfItemTests.swift */; };
+		B3E5F74CB53FFBE5A4A9E0EC /* ShareInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC11B8A7994F415BA3C104AF /* ShareInbox.swift */; };
+		B4C1B9403F4CA81BEBA072A4 /* SyncCrypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 943B6150265BD8AD18C16281 /* SyncCrypto.swift */; };
+		B8D70053D94505994218B44F /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3277215AD09EB0C76D9C58D /* ShareViewController.swift */; };
 		BF8850656960DD003508F805 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D21B5F067BFEFE129151B4A5 /* SettingsView.swift */; };
+		C0C52E7F4C935A5B7CEFD64C /* OfflineStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C03DF94F6B414C1A0CDEA9D4 /* OfflineStore.swift */; };
 		C5D3D8CF78AC0CAB631A4BD5 /* SyncCrypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 943B6150265BD8AD18C16281 /* SyncCrypto.swift */; };
 		C69FF5FA1C210B58D8ACA30E /* Study.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95B53DD3CDAA40762F1F8543 /* Study.swift */; };
+		D0B3873F385F0AB2DA566525 /* SyncClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7003F2D0D2DDE653DF7496D3 /* SyncClient.swift */; };
 		DB2337AF7B88BE6BE367ED82 /* SyncClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7003F2D0D2DDE653DF7496D3 /* SyncClient.swift */; };
+		DBAAF28CDA60482A32763EB8 /* ShelfView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5E0DDB6FD2A59D104D6D1C /* ShelfView.swift */; };
+		DD681AEA347278013467E1F3 /* PairingStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CDB899D6F22113B1140B0D3 /* PairingStoreTests.swift */; };
 		E1513366B7C7AE379F92F4FA /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB41C566D324362F49E4B375 /* RootView.swift */; };
 		E916B153D74EB7A6489B20B8 /* TasksUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F003D7A6C5FEFFB5F0E5C42 /* TasksUITests.swift */; };
 		F37C3DB24ABCE2C40B252A31 /* NotivaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80824A82F5CD47D002EB6427 /* NotivaApp.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		1EE5FF21B0D0273827240F95 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1D0992BEB3B639348614A5FF /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BDB7C475FC2C1E5B0F1B7C37;
+			remoteInfo = NotivaShare;
+		};
 		A483FF73B1BBB6A3F4458397 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 1D0992BEB3B639348614A5FF /* Project object */;
@@ -47,16 +68,34 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		954A7765258954C0792968CF /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				7DCFF7C96754F541FE2A525E /* NotivaShare.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		020120A2BD6D10E6BE2F8D98 /* Pairing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pairing.swift; sourceTree = "<group>"; };
 		1B31E545718B484FF604F6A7 /* FakeMac.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeMac.swift; sourceTree = "<group>"; };
 		22477D613E62E31500D7C8E8 /* OfflineStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineStoreTests.swift; sourceTree = "<group>"; };
 		2F003D7A6C5FEFFB5F0E5C42 /* TasksUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TasksUITests.swift; sourceTree = "<group>"; };
+		34757343BA13B6CC4712F08D /* NotivaShare.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NotivaShare.entitlements; sourceTree = "<group>"; };
 		36C7BCDF692D62A10EA869B2 /* NotivaTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = NotivaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		37A7A3C2618081A67BE41E48 /* SyncCryptoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCryptoTests.swift; sourceTree = "<group>"; };
+		37C95321BE63D9F2347E3644 /* ShelfItemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShelfItemTests.swift; sourceTree = "<group>"; };
 		37E886AC89CBECDD853345CC /* PairingUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairingUITests.swift; sourceTree = "<group>"; };
 		4BDFF836E2F053D6B661D596 /* PairingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairingView.swift; sourceTree = "<group>"; };
 		4DDCC0FD37570B278FA834E0 /* vector.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = vector.json; sourceTree = "<group>"; };
+		5CDB899D6F22113B1140B0D3 /* PairingStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairingStoreTests.swift; sourceTree = "<group>"; };
+		6B340F014BBD86204C5222E8 /* ShelfUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShelfUITests.swift; sourceTree = "<group>"; };
 		7003F2D0D2DDE653DF7496D3 /* SyncClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncClient.swift; sourceTree = "<group>"; };
 		710F30BA77A5ABBACA37ED44 /* Notiva.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Notiva.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7E01E960BA5E0544EABF67CC /* NotivaUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = NotivaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -65,12 +104,19 @@
 		943B6150265BD8AD18C16281 /* SyncCrypto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCrypto.swift; sourceTree = "<group>"; };
 		95B53DD3CDAA40762F1F8543 /* Study.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Study.swift; sourceTree = "<group>"; };
 		96AA92A1FF0F9DB7B4BB4C94 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		9F3953B0B2085041DC9D5D97 /* Notiva.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Notiva.entitlements; sourceTree = "<group>"; };
+		A9C909FE991D0BAD3C1AFE0D /* ShelfItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShelfItem.swift; sourceTree = "<group>"; };
+		AF5E0DDB6FD2A59D104D6D1C /* ShelfView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShelfView.swift; sourceTree = "<group>"; };
 		B67DB63B328CEF85D0FAC983 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BD0D2958D537BC77FA2C1C1E /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayView.swift; sourceTree = "<group>"; };
 		C03DF94F6B414C1A0CDEA9D4 /* OfflineStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineStore.swift; sourceTree = "<group>"; };
+		CC11B8A7994F415BA3C104AF /* ShareInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareInbox.swift; sourceTree = "<group>"; };
 		D1F9956C698BC3853754FF12 /* WeekView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeekView.swift; sourceTree = "<group>"; };
 		D21B5F067BFEFE129151B4A5 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		D3277215AD09EB0C76D9C58D /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		D7B2E8159034419EC2A1B7E6 /* TasksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TasksView.swift; sourceTree = "<group>"; };
+		D9C45B02E87B6B73F7AD9F27 /* NotivaShare.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = NotivaShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		E0C3A314300DF435994CBC2D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		E4956E3C677A3631C6F1E8F7 /* TodayUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayUITests.swift; sourceTree = "<group>"; };
 		FB41C566D324362F49E4B375 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -81,8 +127,10 @@
 			children = (
 				B67DB63B328CEF85D0FAC983 /* Assets.xcassets */,
 				81E93A2E18509CDCA140B867 /* Info.plist */,
+				9F3953B0B2085041DC9D5D97 /* Notiva.entitlements */,
 				33D6191EBD45E794D6219F89 /* App */,
 				3B835EC64165D030BA16EBE7 /* Models */,
+				17832EAA9132F4BCE8346EA6 /* Shared */,
 				0D9CF3976D5991303CD41078 /* Sync */,
 				80621D68C6377107DA69D0A0 /* Views */,
 			);
@@ -105,10 +153,19 @@
 			isa = PBXGroup;
 			children = (
 				0B07C5241C5104CC4AF56958 /* Notiva */,
+				B8A26B19DD9BFFACDAC3DE62 /* NotivaShare */,
 				57BB61ADFFFA30C1EF1CBD13 /* NotivaTests */,
 				36951786048C56C55141346F /* NotivaUITests */,
 				77C7CCD185E77D524F9F3A36 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		17832EAA9132F4BCE8346EA6 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				CC11B8A7994F415BA3C104AF /* ShareInbox.swift */,
+			);
+			path = Shared;
 			sourceTree = "<group>";
 		};
 		33D6191EBD45E794D6219F89 /* App */ = {
@@ -125,6 +182,7 @@
 			children = (
 				1B31E545718B484FF604F6A7 /* FakeMac.swift */,
 				37E886AC89CBECDD853345CC /* PairingUITests.swift */,
+				6B340F014BBD86204C5222E8 /* ShelfUITests.swift */,
 				2F003D7A6C5FEFFB5F0E5C42 /* TasksUITests.swift */,
 				E4956E3C677A3631C6F1E8F7 /* TodayUITests.swift */,
 			);
@@ -134,6 +192,7 @@
 		3B835EC64165D030BA16EBE7 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				A9C909FE991D0BAD3C1AFE0D /* ShelfItem.swift */,
 				95B53DD3CDAA40762F1F8543 /* Study.swift */,
 			);
 			path = Models;
@@ -143,6 +202,8 @@
 			isa = PBXGroup;
 			children = (
 				22477D613E62E31500D7C8E8 /* OfflineStoreTests.swift */,
+				5CDB899D6F22113B1140B0D3 /* PairingStoreTests.swift */,
+				37C95321BE63D9F2347E3644 /* ShelfItemTests.swift */,
 				37A7A3C2618081A67BE41E48 /* SyncCryptoTests.swift */,
 				4DDCC0FD37570B278FA834E0 /* vector.json */,
 			);
@@ -153,6 +214,7 @@
 			isa = PBXGroup;
 			children = (
 				710F30BA77A5ABBACA37ED44 /* Notiva.app */,
+				D9C45B02E87B6B73F7AD9F27 /* NotivaShare.appex */,
 				36C7BCDF692D62A10EA869B2 /* NotivaTests.xctest */,
 				7E01E960BA5E0544EABF67CC /* NotivaUITests.xctest */,
 			);
@@ -164,11 +226,22 @@
 			children = (
 				4BDFF836E2F053D6B661D596 /* PairingView.swift */,
 				D21B5F067BFEFE129151B4A5 /* SettingsView.swift */,
+				AF5E0DDB6FD2A59D104D6D1C /* ShelfView.swift */,
 				D7B2E8159034419EC2A1B7E6 /* TasksView.swift */,
 				BD0D2958D537BC77FA2C1C1E /* TodayView.swift */,
 				D1F9956C698BC3853754FF12 /* WeekView.swift */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		B8A26B19DD9BFFACDAC3DE62 /* NotivaShare */ = {
+			isa = PBXGroup;
+			children = (
+				E0C3A314300DF435994CBC2D /* Info.plist */,
+				34757343BA13B6CC4712F08D /* NotivaShare.entitlements */,
+				D3277215AD09EB0C76D9C58D /* ShareViewController.swift */,
+			);
+			path = NotivaShare;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -199,10 +272,12 @@
 			buildPhases = (
 				7E7049EC3C4AF8B8D9CF9E46 /* Sources */,
 				E58CFF6104FF8AE3979208F9 /* Resources */,
+				954A7765258954C0792968CF /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				58B27BF3A0DF9001E7E1DF2D /* PBXTargetDependency */,
 			);
 			name = Notiva;
 			packageProductDependencies = (
@@ -210,6 +285,23 @@
 			productName = Notiva;
 			productReference = 710F30BA77A5ABBACA37ED44 /* Notiva.app */;
 			productType = "com.apple.product-type.application";
+		};
+		BDB7C475FC2C1E5B0F1B7C37 /* NotivaShare */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D89543913F76FD61105221BA /* Build configuration list for PBXNativeTarget "NotivaShare" */;
+			buildPhases = (
+				ED4CF5EA20072421145D2C57 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NotivaShare;
+			packageProductDependencies = (
+			);
+			productName = NotivaShare;
+			productReference = D9C45B02E87B6B73F7AD9F27 /* NotivaShare.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 		FDB893A2EAC0571B2054FE4C /* NotivaUITests */ = {
 			isa = PBXNativeTarget;
@@ -246,6 +338,10 @@
 						DevelopmentTeam = 6728DRMDL9;
 						ProvisioningStyle = Automatic;
 					};
+					BDB7C475FC2C1E5B0F1B7C37 = {
+						DevelopmentTeam = 6728DRMDL9;
+						ProvisioningStyle = Automatic;
+					};
 					FDB893A2EAC0571B2054FE4C = {
 						DevelopmentTeam = 6728DRMDL9;
 						ProvisioningStyle = Automatic;
@@ -268,6 +364,7 @@
 			projectRoot = "";
 			targets = (
 				431AB0A463E03C4D84A47517 /* Notiva */,
+				BDB7C475FC2C1E5B0F1B7C37 /* NotivaShare */,
 				2F3F9C6E11EF3EB2A3A84051 /* NotivaTests */,
 				FDB893A2EAC0571B2054FE4C /* NotivaUITests */,
 			);
@@ -305,6 +402,9 @@
 				5A74074F0E21B56B38FF874B /* PairingView.swift in Sources */,
 				E1513366B7C7AE379F92F4FA /* RootView.swift in Sources */,
 				BF8850656960DD003508F805 /* SettingsView.swift in Sources */,
+				B3E5F74CB53FFBE5A4A9E0EC /* ShareInbox.swift in Sources */,
+				B2ABDF7FACEA6EA0488A0AD2 /* ShelfItem.swift in Sources */,
+				DBAAF28CDA60482A32763EB8 /* ShelfView.swift in Sources */,
 				C69FF5FA1C210B58D8ACA30E /* Study.swift in Sources */,
 				DB2337AF7B88BE6BE367ED82 /* SyncClient.swift in Sources */,
 				C5D3D8CF78AC0CAB631A4BD5 /* SyncCrypto.swift in Sources */,
@@ -319,6 +419,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				033244EA32E05192ED293158 /* OfflineStoreTests.swift in Sources */,
+				DD681AEA347278013467E1F3 /* PairingStoreTests.swift in Sources */,
+				B3D79FECB4270175B89473EB /* ShelfItemTests.swift in Sources */,
 				A01B8913080EACF5B34114A2 /* SyncCryptoTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -329,8 +431,23 @@
 			files = (
 				9E81452799B56D810BC5E182 /* FakeMac.swift in Sources */,
 				7C5B4BEBDFB8C07D565DF00D /* PairingUITests.swift in Sources */,
+				1E04113F5A02B011FF1D0143 /* ShelfUITests.swift in Sources */,
 				E916B153D74EB7A6489B20B8 /* TasksUITests.swift in Sources */,
 				884112F603AE17502DEC5A91 /* TodayUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		ED4CF5EA20072421145D2C57 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C0C52E7F4C935A5B7CEFD64C /* OfflineStore.swift in Sources */,
+				0DECD0FA0D0ADB181C096772 /* Pairing.swift in Sources */,
+				294B80277F982D31EA9D9053 /* ShareInbox.swift in Sources */,
+				B8D70053D94505994218B44F /* ShareViewController.swift in Sources */,
+				0282DB500D2A8EFDE1EB4C2E /* ShelfItem.swift in Sources */,
+				D0B3873F385F0AB2DA566525 /* SyncClient.swift in Sources */,
+				B4C1B9403F4CA81BEBA072A4 /* SyncCrypto.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -342,6 +459,11 @@
 			target = 431AB0A463E03C4D84A47517 /* Notiva */;
 			targetProxy = A483FF73B1BBB6A3F4458397 /* PBXContainerItemProxy */;
 		};
+		58B27BF3A0DF9001E7E1DF2D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BDB7C475FC2C1E5B0F1B7C37 /* NotivaShare */;
+			targetProxy = 1EE5FF21B0D0273827240F95 /* PBXContainerItemProxy */;
+		};
 		6B5560D59C4835B5CCEB44D9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 431AB0A463E03C4D84A47517 /* Notiva */;
@@ -350,6 +472,28 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		14875A9E8BCACB74FE2461B6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = NotivaShare/NotivaShare.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = NotivaShare/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Notiva;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Notiva verbindet sich in deinem WLAN mit der Notiva-App auf deinem Mac – verschlüsselt, ohne Cloud.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.flexi03.notiva.ios.share;
+				PRODUCT_NAME = NotivaShare;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		19B82DCDC7B8E33BB99CA79A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -470,6 +614,28 @@
 			};
 			name = Release;
 		};
+		7829E92E93969221C9266B05 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = NotivaShare/NotivaShare.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = NotivaShare/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Notiva;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Notiva verbindet sich in deinem WLAN mit der Notiva-App auf deinem Mac – verschlüsselt, ohne Cloud.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.flexi03.notiva.ios.share;
+				PRODUCT_NAME = NotivaShare;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
 		78FAE2574FC630809F5A0B80 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -554,6 +720,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Notiva/Notiva.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Notiva/Info.plist;
@@ -582,6 +749,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Notiva/Notiva.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Notiva/Info.plist;
@@ -640,6 +808,15 @@
 			buildConfigurations = (
 				B3C82952E9CA6FAB7AABE130 /* Debug */,
 				9052DAAFFCEC08BF92932160 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D89543913F76FD61105221BA /* Build configuration list for PBXNativeTarget "NotivaShare" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7829E92E93969221C9266B05 /* Debug */,
+				14875A9E8BCACB74FE2461B6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

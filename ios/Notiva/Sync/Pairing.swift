@@ -3,7 +3,8 @@ import Foundation
 import Security
 
 /// What the QR code on the Mac holds (Settings → iPhone & iPad): device id, its own key, how to
-/// reach the Mac. Kept in the keychain – only on this device, not in backups to other devices.
+/// reach the Mac. Kept in the keychain – only on this device, not in backups to other devices –
+/// in a group the share extension can read too.
 struct Pairing: Codable, Sendable, Equatable {
     let v: Int
     let id: String
@@ -30,14 +31,25 @@ struct Pairing: Codable, Sendable, Equatable {
 enum PairingStore {
     private static let service = "io.github.flexi03.notiva.pairing"
     private static let account = "mac"
+    /// "<team>.io.github.flexi03.notiva.shared" (Info.plist, from the entitlements' prefix)
+    private static var group: String? { Bundle.main.object(forInfoDictionaryKey: "NotivaKeychainGroup") as? String }
 
     static func load() -> Pairing? {
-        let query: [String: Any] = [
+        if let group, let pairing = read(group: group) { return pairing }
+        // Paired before the share extension: in the app's own group – moved to the shared one.
+        guard let pairing = read(group: nil) else { return nil }
+        if group != nil { try? save(pairing) }
+        return pairing
+    }
+
+    private static func read(group: String?) -> Pairing? {
+        var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
             kSecReturnData as String: true,
         ]
+        if let group { query[kSecAttrAccessGroup as String] = group }
         var result: CFTypeRef?
         guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
               let data = result as? Data
@@ -48,19 +60,21 @@ enum PairingStore {
     static func save(_ pairing: Pairing) throws {
         let data = try JSONEncoder().encode(pairing)
         delete()
-        let item: [String: Any] = [
+        var item: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
             kSecValueData as String: data,
             kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
         ]
+        if let group { item[kSecAttrAccessGroup as String] = group }
         let status = SecItemAdd(item as CFDictionary, nil)
         guard status == errSecSuccess else {
             throw NSError(domain: NSOSStatusErrorDomain, code: Int(status))
         }
     }
 
+    /// Removes it from every group (the old one included).
     static func delete() {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,

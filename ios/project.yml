@@ -39,13 +39,64 @@ targets:
         INFOPLIST_KEY_NSCameraUsageDescription: "Notiva braucht die Kamera, um den QR-Code zum Koppeln mit deinem Mac zu scannen und Fotos (z. B. von der Tafel) abzulegen."
         INFOPLIST_KEY_NSLocalNetworkUsageDescription: "Notiva verbindet sich in deinem WLAN mit der Notiva-App auf deinem Mac – verschlüsselt, ohne Cloud."
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        CODE_SIGN_ENTITLEMENTS: Notiva/Notiva.entitlements
+    dependencies:
+      - target: NotivaShare
+    entitlements:
+      path: Notiva/Notiva.entitlements
+      properties: &shared-entitlements
+        com.apple.security.application-groups:
+          - group.io.github.flexi03.notiva
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)io.github.flexi03.notiva.shared
     info:
       path: Notiva/Info.plist
-      properties:
+      properties: &network-info
         NSBonjourServices:
           - _notiva._tcp
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
+        NotivaKeychainGroup: $(AppIdentifierPrefix)io.github.flexi03.notiva.shared
+  # "Notiva" in the share sheet of other apps (photos, files, texts, links → shelf).
+  NotivaShare:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: NotivaShare
+      - path: Notiva/Sync/SyncCrypto.swift
+      - path: Notiva/Sync/Pairing.swift
+      - path: Notiva/Sync/SyncClient.swift
+      - path: Notiva/Sync/OfflineStore.swift
+      - path: Notiva/Models/ShelfItem.swift
+      - path: Notiva/Shared/ShareInbox.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.flexi03.notiva.ios.share
+        PRODUCT_NAME: NotivaShare
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Notiva
+        INFOPLIST_KEY_NSLocalNetworkUsageDescription: "Notiva verbindet sich in deinem WLAN mit der Notiva-App auf deinem Mac – verschlüsselt, ohne Cloud."
+        CODE_SIGN_ENTITLEMENTS: NotivaShare/NotivaShare.entitlements
+        # Same identity as the app (xcodegen sets it only for applications).
+        CODE_SIGN_IDENTITY: iPhone Developer
+        SKIP_INSTALL: YES
+    entitlements:
+      path: NotivaShare/NotivaShare.entitlements
+      properties: *shared-entitlements
+    info:
+      path: NotivaShare/Info.plist
+      properties:
+        <<: *network-info
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsImageWithMaxCount: 10
+              NSExtensionActivationSupportsFileWithMaxCount: 10
+              NSExtensionActivationSupportsText: true
+              NSExtensionActivationSupportsWebURLWithMaxCount: 1
   NotivaTests:
     type: bundle.unit-test
     platform: iOS

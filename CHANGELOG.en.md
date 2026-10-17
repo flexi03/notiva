@@ -11,7 +11,8 @@ Notiva checks for a new version on start and every hour and installs it itself i
   data → iPhone & iPad_ pairs a device by QR code (its own key per device). The desktop app then answers encrypted
   requests on your Wi-Fi or via Tailscale – day, timetable, tasks, shelf, pages, PDFs and their notes – with the same
   logic as "Today". Devices can be unpaired one by one. Tasks reach the device with module, kind and priority; new
-  tasks from the iPhone land in the tasks database with due date and module.
+  tasks from the iPhone land in the tasks database with due date and module. Files put on the shelf from the iPhone
+  may have up to 8 MB.
 
 ## 0.2.4 – 2026-10-17
 

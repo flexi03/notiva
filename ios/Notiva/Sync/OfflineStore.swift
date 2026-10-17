@@ -42,7 +42,23 @@ struct OfflineStore: Sendable {
         let label: String
         /// the last error (e.g. a conflict) – kept until the user decides
         var error: String?
+        /// A file sent with it (a photo for the shelf), kept apart from the queue: sent as
+        /// `data` (base64) in the params.
+        var blob: UUID?
     }
+
+    // MARK: Files waiting in the queue
+
+    private func blobURL(_ id: UUID) -> URL { folder.appendingPathComponent("blobs").appendingPathComponent(id.uuidString) }
+
+    func saveBlob(_ data: Data, id: UUID) throws {
+        try FileManager.default.createDirectory(at: blobURL(id).deletingLastPathComponent(), withIntermediateDirectories: true)
+        try data.write(to: blobURL(id), options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+    }
+
+    func blob(_ id: UUID) -> Data? { try? Data(contentsOf: blobURL(id)) }
+
+    func removeBlob(_ id: UUID) { try? FileManager.default.removeItem(at: blobURL(id)) }
 
     private var queueURL: URL { folder.appendingPathComponent("pending.json") }
 

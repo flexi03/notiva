@@ -13,7 +13,8 @@ import http from 'node:http'
 
 export const PROTOCOL = 'notiva/v1'
 const MAX_SKEW = 5 * 60_000
-const MAX_BODY = 8_000_000
+// A shelf file may have 8 MB; base64 inside the request and again around the ciphertext makes ~14 MB.
+const MAX_BODY = 16_000_000
 
 export interface Device {
   id: string

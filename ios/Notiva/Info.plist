@@ -27,5 +27,7 @@
 	<array>
 		<string>_notiva._tcp</string>
 	</array>
+	<key>NotivaKeychainGroup</key>
+	<string>$(AppIdentifierPrefix)io.github.flexi03.notiva.shared</string>
 </dict>
 </plist>

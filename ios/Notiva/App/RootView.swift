@@ -77,12 +77,13 @@ extension MainView {
         case .today: TodayView()
         case .timetable: WeekView()
         case .tasks: TasksView()
+        case .shelf: ShelfView()
         default: SectionPlaceholder(section: section)
         }
     }
 }
 
-/// Until the next steps fill them in (#47–#49): what the view will show.
+/// Until the next steps fill them in (#48–#49): what the view will show.
 private struct SectionPlaceholder: View {
     let section: AppSection
 
@@ -99,8 +100,7 @@ private struct SectionPlaceholder: View {
 
     private var description: LocalizedStringKey {
         switch section {
-        case .today, .timetable, .tasks: ""
-        case .shelf: "Foto, Text oder Datei schnell auf den Mac legen – kommt bald."
+        case .today, .timetable, .tasks, .shelf: ""
         case .pages: "Seiten lesen und bearbeiten, PDFs markieren – kommt bald."
         }
     }

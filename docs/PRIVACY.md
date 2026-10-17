@@ -10,7 +10,9 @@ _English below._
 - **iPhone-/iPad-App:** Sie spricht ausschließlich mit der Notiva-Desktop-App auf deinem eigenen Mac – im lokalen
   Netzwerk oder über Tailscale, verschlüsselt mit einem Schlüssel, der nur auf deinen beiden Geräten liegt. Der
   zuletzt geladene Stand wird auf dem Gerät gespeichert, damit die App offline funktioniert. Die Kamera wird nur zum
-  Scannen des Koppel-Codes und für Fotos genutzt, die du selbst ablegst.
+  Scannen des Koppel-Codes und für Fotos und Scans genutzt, die du selbst ablegst. Fotos, Dateien und Texte, die du
+  über „Teilen → Notiva“ ablegst, gehen nur an deinen Mac; bis er erreichbar ist, liegen sie verschlüsselt im
+  Speicher der App auf dem Gerät.
 - **Löschen:** „Entkoppeln“ in der App entfernt Schlüssel und gespeicherte Daten vom Gerät.
 
 Fragen: https://github.com/flexi03/notiva/issues
@@ -26,7 +28,9 @@ Fragen: https://github.com/flexi03/notiva/issues
   GitHub for updates).
 - **iPhone/iPad app:** it talks only to the Notiva desktop app on your own Mac – on the local network or via
   Tailscale, encrypted with a key that exists only on your two devices. The last loaded state is kept on the device so
-  the app works offline. The camera is used only to scan the pairing code and for photos you put on the shelf.
+  the app works offline. The camera is used only to scan the pairing code and for photos and scans you put on the shelf. Photos, files and
+  texts you share via "Share → Notiva" go only to your Mac; until it is reachable they wait, encrypted, in the app's
+  storage on the device.
 - **Deleting:** "Unpair" in the app removes the key and the stored data from the device.
 
 Questions: https://github.com/flexi03/notiva/issues

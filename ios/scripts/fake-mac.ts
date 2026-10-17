@@ -147,6 +147,9 @@ const tasks: Task[] = [
   },
 ]
 
+/** What was put on the shelf (name and size). */
+const shelf: Array<{ name: string; bytes: number }> = []
+
 function day(date: string) {
   const weekday = DAYS[(new Date(`${date}T12:00:00`).getDay() + 6) % 7]
   const sessions = week
@@ -257,6 +260,12 @@ const server = new CompanionServer(
         moodle: false,
       })
       return { path }
+    }
+    if (method === 'shelf.add') {
+      const name =
+        typeof p.name === 'string' ? p.name : `${inDays(0)} ${String(p.text ?? '').slice(0, 30)}.md`
+      shelf.push({ name, bytes: typeof p.data === 'string' ? Buffer.from(p.data, 'base64').length : 0 })
+      return { path: `Ablage/${name}` }
     }
     if (method === 'study.done') {
       if (p.done === true) done.add(String(p.key))
