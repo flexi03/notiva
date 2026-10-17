@@ -14,4 +14,11 @@ for (const size of [192, 512, 1024]) {
     omitBackground: true,
   })
 }
+// iOS (ios/Notiva/Assets.xcassets): a full square without transparency – iOS rounds it itself.
+const background = /<rect[^>]*fill="(#[0-9a-fA-F]{3,8})"/.exec(svg)?.[1] ?? '#2f5d50'
+const ios = await browser.newPage({ viewport: { width: 1024, height: 1024 } })
+await ios.setContent(
+  `<style>html,body{margin:0;background:${background}}</style>${svg.replace('<svg ', '<svg width="1024" height="1024" ')}`,
+)
+await ios.screenshot({ path: 'ios/Notiva/Assets.xcassets/AppIcon.appiconset/icon-1024.png', omitBackground: false })
 await browser.close()

@@ -20,7 +20,15 @@ cat > "$OUT/ExportOptions.plist" <<PLIST
 </dict></plist>
 PLIST
 xcodebuild -project Notiva.xcodeproj -scheme Notiva -configuration Release -destination 'generic/platform=iOS' \
-  -archivePath "$OUT/Notiva.xcarchive" -allowProvisioningUpdates archive | grep -E "error:|ARCHIVE"
+  -archivePath "$OUT/Notiva.xcarchive" -allowProvisioningUpdates archive > "$OUT/archive.log" 2>&1 \
+  || { grep -E "error:" "$OUT/archive.log"; echo "Archiv fehlgeschlagen – Log: $OUT/archive.log"; exit 1; }
 xcodebuild -exportArchive -archivePath "$OUT/Notiva.xcarchive" -exportOptionsPlist "$OUT/ExportOptions.plist" \
-  -exportPath "$OUT/export" -allowProvisioningUpdates | grep -E "error|Upload|EXPORT"
-echo "Hochgeladen – in ein paar Minuten in TestFlight."
+  -exportPath "$OUT/export" -allowProvisioningUpdates > "$OUT/export.log" 2>&1 || true
+# Only a real success counts (xcodebuild can end with 0 although the upload was refused).
+if grep -q "EXPORT SUCCEEDED" "$OUT/export.log"; then
+  echo "Hochgeladen – in ein paar Minuten in TestFlight."
+else
+  grep -E "error|Error" "$OUT/export.log" | head -5
+  echo "Upload fehlgeschlagen – Log: $OUT/export.log"
+  exit 1
+fi
