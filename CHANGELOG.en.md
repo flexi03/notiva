@@ -5,7 +5,7 @@ _Deutsch: [CHANGELOG.md](CHANGELOG.md)_
 All versions with downloads: [GitHub Releases](https://github.com/flexi03/notiva/releases).
 Notiva checks for a new version on start and every hour and installs it itself if you like.
 
-## 0.2.2 – not released yet
+## 0.2.2 – 2026-10-17
 
 - **Search in PDFs:** ⌘K now also finds text in your scripts and sheets – with file, page and a snippet; a click
   opens the PDF on that page. Notiva reads the PDFs once in the background (with progress) and keeps the text in
