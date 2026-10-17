@@ -64,6 +64,8 @@ _Hilfe → So funktioniert Notiva_ (bitte beides gemeinsam aktuell halten). Engl
 - **Moodle-Kurse eines Moduls**: Auf der Modulseite wählst du pro Kurs „zählt jetzt“, „anderes Semester“ oder
   „nicht berücksichtigen“ – z. B. für Kurse, in die du nur schon hineinschaust. Aus „nicht berücksichtigen“ kommt
   nichts mehr (keine Dateien, Fristen, Ankündigungen); „anderes Semester“ meldet neue Dateien nur als graue Info.
+- **Abgaben** aus Moodle zeigen in _Heute_ ihren Status („nicht abgegeben“, „abgegeben“, „bewertet 1,7“); eine neue
+  Bewertung kommt als Benachrichtigung mit Feedback.
 - **Heute** (Seitenleiste) öffnet die Tagesnotiz mit der Tagesübersicht: Vorlesungen, Prüfungen, Praktika,
   fällige und überfällige Aufgaben, Moodle-Fristen – ein Klick öffnet den Eintrag bzw. das Modul.
 - **Private Repositories** (z. B. ProjectBase): Beim ersten Holen fragt Notiva nach einem Zugangstoken (Recht
@@ -72,6 +74,15 @@ _Hilfe → So funktioniert Notiva_ (bitte beides gemeinsam aktuell halten). Engl
 - **Hintergrund-Abrufe**: jede Quelle hat ein eigenes Intervall (_Einstellungen → Benachrichtigungen_).
 
 Andere Hochschule: [HOCHSCHULE.md](HOCHSCHULE.md) und [examples/Hochschule.md](../examples/Hochschule.md).
+
+## Kalender aufs Handy
+
+_Einstellungen → Studium → Kalender aufs Handy_ einschalten und den QR-Code mit der Handy-Kamera scannen („Abonnieren“)
+– oder in Apple Kalender _Kalenderabonnement hinzufügen_ mit der kopierten Adresse. Drin sind Stundenplan (wöchentlich
+bis Semesterende, aus der Datenbank _Semester_), Prüfungen, Fristen, Praktika, Vorbereitungen und der Lernplan.
+Die Desktop-App stellt die Adresse mit geheimem Schlüssel in deinem WLAN bereit (mit Tailscale auch unterwegs);
+das Handy aktualisiert, solange der Mac an ist. **Neue Adresse** macht alte Abos ungültig. macOS fragt beim ersten
+Einschalten, ob Notiva eingehende Verbindungen annehmen darf – bitte erlauben.
 
 ## Suchen
 

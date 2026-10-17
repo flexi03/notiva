@@ -101,6 +101,21 @@ export function moodleNews(
   const found = now.toISOString()
   const news: AppNotification[] = []
   const oldEvents = new Map(previous.events.map((e) => [e.id, e]))
+  // An assignment graded since the last fetch: its grade and feedback.
+  for (const event of next.events) {
+    const old = oldEvents.get(event.id)
+    if (event.submission?.state !== 'graded' || !old || old.submission?.state === 'graded') continue
+    if (event.course?.id && choice(event.course.id) === 'ignore') continue
+    news.push({
+      id: `graded:${event.id}`,
+      kind: 'grade',
+      title: `Bewertet: ${event.title}${event.submission.grade ? ` – ${event.submission.grade}` : ''}`,
+      ...(event.submission.feedback ? { body: event.submission.feedback } : {}),
+      ...(event.course ? { course: event.course.name } : {}),
+      time: found,
+      ...(event.url ? { target: { type: 'url' as const, url: event.url } } : {}),
+    })
+  }
   for (const event of next.events) {
     if (new Date(event.due).getTime() < now.getTime()) continue
     if (event.course?.id && choice(event.course.id) === 'ignore') continue

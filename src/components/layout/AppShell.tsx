@@ -76,6 +76,20 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
   }, [ws])
   useEffect(() => {
+    // The calendar feed for the phone (if switched on): fresh at start, every 5 minutes, after Moodle.
+    if (!electronBridge()?.calendar) return
+    const publish = () =>
+      void import('@/app/calendarPublish').then((m) => m.publishCalendar(ws)).catch(() => undefined)
+    const first = setTimeout(publish, 5_000)
+    const timer = setInterval(publish, 300_000)
+    const off = electronBridge()?.moodle?.onPolled(publish)
+    return () => {
+      clearTimeout(first)
+      clearInterval(timer)
+      off?.()
+    }
+  }, [ws])
+  useEffect(() => {
     // Study plans for exams coming up: suggested once a day (notification + hint), desktop app.
     if (!electronBridge()) return
     const KEY = 'notiva.studyPlan.suggested'

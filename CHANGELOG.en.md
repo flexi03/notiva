@@ -7,6 +7,15 @@ Notiva checks for a new version on start and every hour and installs it itself i
 
 ## 0.2.4 – not released yet
 
+- **Calendar on the phone** (_Settings → Studies_): timetable (weekly until the end of the semester), exams,
+  deadlines, labs and study plan as a calendar subscription, e.g. in Apple Calendar. Switch it on, scan the QR code
+  with the camera, done. The desktop app offers the address with a secret key on your Wi-Fi or via Tailscale – no
+  cloud; "New address" stops old subscriptions. Off by default.
+- **Submission status from Moodle:** "Today" shows "not submitted", "draft", "submitted" or "graded 1.7" next to
+  assignments; submitted ones are faded. When an assignment is graded you get a notification with grade and
+  feedback.
+- "Today" and the calendar use the same list of dates – both always show the same.
+
 ## 0.2.3 – 2026-10-17
 
 - **Study plan backwards from the exam date** (module page): spreads the current course's lecture slides in their

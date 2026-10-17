@@ -7,6 +7,15 @@ Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und inst
 
 ## 0.2.4 – noch nicht veröffentlicht
 
+- **Kalender aufs Handy** (_Einstellungen → Studium_): Stundenplan (wöchentlich bis Semesterende), Prüfungen,
+  Fristen, Praktika und Lernplan als Kalender-Abo, z. B. in Apple Kalender. Einschalten, QR-Code mit der Kamera
+  scannen, fertig. Die Desktop-App stellt die Adresse mit geheimem Schlüssel im WLAN bzw. über Tailscale bereit –
+  keine Cloud; „Neue Adresse“ stoppt alte Abos. Standardmäßig aus.
+- **Abgabestatus aus Moodle:** In „Heute“ steht bei Abgaben „nicht abgegeben“, „Entwurf“, „abgegeben“ oder
+  „bewertet 1,7“; Abgegebenes wird blass. Wird eine Abgabe bewertet, kommt eine Benachrichtigung mit Note und
+  Feedback.
+- „Heute“ und der Kalender nutzen dieselbe Terminliste – beide zeigen immer dasselbe.
+
 ## 0.2.3 – 2026-10-17
 
 - **Lernplan rückwärts ab Prüfungsdatum** (Modulseite): verteilt die Vorlesungsfolien des aktuellen Kurses in ihrer

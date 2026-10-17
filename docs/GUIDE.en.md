@@ -60,6 +60,8 @@ Everything beyond the [README](../README.en.md). Deutsch: [ANLEITUNG.md](ANLEITU
 - **Moodle courses of a module**: on the module page choose per course "counts now", "another semester" or "not
   counted" – e.g. for courses you only look into. Nothing comes from "not counted" any more (no files, deadlines,
   announcements); "another semester" reports new files only as a grey note.
+- **Assignments** from Moodle show their state in _Today_ ("not submitted", "submitted", "graded 1.7"); a new grade
+  arrives as a notification with feedback.
 - **Today** (sidebar) opens the daily note with the day overview: sessions, exams, labs, tasks due and overdue,
   Moodle deadlines – a click opens the entry or the module.
 - **Private repositories** (e.g. ProjectBase): the first time Notiva asks for an access token (scope
@@ -68,6 +70,15 @@ Everything beyond the [README](../README.en.md). Deutsch: [ANLEITUNG.md](ANLEITU
 - **Background checks**: every source has its own interval (_Settings → Notifications_).
 
 Another university: [HOCHSCHULE.md](HOCHSCHULE.md) (German) and [examples/Hochschule.md](../examples/Hochschule.md).
+
+## Calendar on the phone
+
+Switch on _Settings → Studies → Calendar on the phone_ and scan the QR code with the phone camera ("Subscribe") – or
+in Apple Calendar _Add subscription calendar_ with the copied address. It holds the timetable (weekly until the end
+of the semester, from the _Semester_ database), exams, deadlines, labs, preparations and the study plan. The
+desktop app offers the address with a secret key on your Wi-Fi (with Tailscale also on the go); the phone updates
+while the Mac is on. **New address** makes old subscriptions invalid. On first use macOS asks whether Notiva may
+accept incoming connections – please allow it.
 
 ## Search
 

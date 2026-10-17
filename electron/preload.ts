@@ -14,6 +14,12 @@ contextBridge.exposeInMainWorld('notiva', {
   openInWindow: (url: string) => invoke<void>('app:openInWindow', url),
   openWithSystem: (path: string) => invoke<void>('vault:openWithSystem', path),
   microphone: () => invoke<boolean>('app:microphone'),
+  calendar: {
+    status: () => invoke('calendar:status'),
+    set: (enabled: boolean) => invoke('calendar:set', enabled),
+    newToken: () => invoke('calendar:newToken'),
+    publish: (text: string) => invoke<void>('calendar:publish', text),
+  },
   backup: {
     status: () => invoke('backup:status'),
     settings: (patch: object) => invoke('backup:settings', patch),

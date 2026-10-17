@@ -25,6 +25,7 @@ import { watch, type FSWatcher, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { FsVault } from './vaultFs'
+import { CalendarServer, newToken, reachableAddresses } from './calendarServer'
 import {
   backupRoot,
   createSnapshot,
@@ -156,6 +157,39 @@ interface AppConfig {
   lastFolder?: string
   notify?: NotifySettings
   backup?: Partial<BackupSettings>
+  calendar?: { enabled?: boolean; token?: string; port?: number }
+}
+
+/** The calendar feed for the phone (off by default – it opens a port on the local network). */
+const calendar = new CalendarServer()
+let calendarError: string | null = null
+/** (Tests: any free port.) */
+const CALENDAR_PORT = process.env.NOTIVA_E2E_USERDATA ? 0 : 47_811
+
+async function calendarStatus() {
+  const c = (await readConfig()).calendar ?? {}
+  const port = calendar.running ? calendar.port : (c.port ?? CALENDAR_PORT)
+  return {
+    enabled: !!c.enabled,
+    running: calendar.running,
+    port,
+    urls: c.token ? reachableAddresses().map((a) => `webcal://${a}:${port}/cal/${c.token}.ics`) : [],
+    error: calendarError,
+  }
+}
+
+async function startCalendar(): Promise<void> {
+  const c = (await readConfig()).calendar ?? {}
+  if (!c.enabled || !c.token) return void (await calendar.stop())
+  try {
+    await calendar.start(c.port ?? CALENDAR_PORT, c.token)
+    calendarError = null
+  } catch (e) {
+    calendarError =
+      (e as NodeJS.ErrnoException).code === 'EADDRINUSE'
+        ? `Port ${c.port ?? CALENDAR_PORT} ist schon belegt – ein anderes Programm nutzt ihn.`
+        : String((e as Error).message ?? e)
+  }
 }
 
 /** Daily backup next to the documents; off in tests unless a test asks for it. */
@@ -690,6 +724,29 @@ function registerIpc(): void {
   )
   handle('notifications:clear', async () => notifications.clear())
   handle('notifications:test', async () => testNotify())
+  handle('calendar:status', async () => calendarStatus())
+  handle('calendar:set', async (enabled: unknown) => {
+    const config = await readConfig()
+    const c = { ...config.calendar, enabled: enabled === true }
+    if (c.enabled && !c.token) c.token = newToken()
+    await writeConfig({ ...config, calendar: c })
+    await startCalendar()
+    return calendarStatus()
+  })
+  // A new secret: every phone subscribed so far stops getting updates.
+  handle('calendar:newToken', async () => {
+    const config = await readConfig()
+    await writeConfig({ ...config, calendar: { ...config.calendar, token: newToken() } })
+    await calendar.stop()
+    await startCalendar()
+    return calendarStatus()
+  })
+  handle('calendar:publish', async (text: unknown) => {
+    if (typeof text !== 'string' || text.length > 5_000_000 || !text.startsWith('BEGIN:VCALENDAR'))
+      throw new Error('Invalid calendar')
+    calendar.setFeed(text)
+    if (!calendar.running) await startCalendar()
+  })
   handle('backup:status', async () => backupStatus())
   handle('backup:settings', async (patch: unknown) => {
     const p = (patch ?? {}) as Record<string, unknown>

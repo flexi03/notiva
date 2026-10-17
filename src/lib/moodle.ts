@@ -29,6 +29,44 @@ export interface MoodleEvent {
   course?: { id?: string; name: string }
   kind: 'assign' | 'quiz' | 'other'
   url?: string
+  /** An assignment's own state (mod_assign_get_submission_status), when Moodle tells it. */
+  submission?: Submission
+}
+
+export interface Submission {
+  state: 'open' | 'draft' | 'submitted' | 'graded'
+  /** as Moodle shows it ("1,7", "bestanden", "8,00 / 10,00") */
+  grade?: string
+  /** the teacher's comment (plain text, shortened) */
+  feedback?: string
+}
+
+/** Reads mod_assign_get_submission_status (untrusted). */
+export function parseSubmission(raw: unknown): Submission | undefined {
+  if (!isObject(raw)) return undefined
+  const attempt = isObject(raw.lastattempt) ? raw.lastattempt : {}
+  const submission = isObject(attempt.submission)
+    ? attempt.submission
+    : isObject(attempt.teamsubmission)
+      ? attempt.teamsubmission
+      : {}
+  const status = text(submission.status)
+  const feedback = isObject(raw.feedback) ? raw.feedback : {}
+  const grade = plain(feedback.gradefordisplay)
+  const comments = (Array.isArray(feedback.plugins) ? feedback.plugins : [])
+    .filter(isObject)
+    .flatMap((p) => (Array.isArray(p.editorfields) ? p.editorfields : []))
+    .filter(isObject)
+    .map((f) => plain(f.text))
+    .filter(Boolean)
+    .join(' ')
+  const graded = !!grade || text(attempt.gradingstatus) === 'graded'
+  if (!status && !graded) return undefined
+  return {
+    state: graded ? 'graded' : status === 'submitted' ? 'submitted' : status === 'draft' ? 'draft' : 'open',
+    ...(grade ? { grade } : {}),
+    ...(comments ? { feedback: comments.slice(0, 300) } : {}),
+  }
 }
 
 /** A course material: an uploaded file (script, slides …), a link or a Moodle page. */
@@ -279,6 +317,8 @@ export function snapshotFromWebService(
     pages?: unknown
     /** announcement discussions per course id */
     discussions?: Record<string, unknown>
+    /** mod_assign_get_submission_status per event id (assignments) */
+    submissions?: Record<string, unknown>
   },
   now = new Date(),
 ): MoodleSnapshot {
@@ -305,6 +345,7 @@ export function snapshotFromWebService(
       const courseId = courseRef.id !== undefined ? `course:${text(courseRef.id)}` : undefined
       const courseName = byId.get(courseId ?? '')?.name ?? plain(courseRef.fullname)
       const url = text(e.url)
+      const submission = parseSubmission(raw.submissions?.[text(e.id)])
       return {
         id: `event:${text(e.id)}`,
         title: cleanEventTitle(plain(e.activityname) || plain(e.name)),
@@ -312,6 +353,7 @@ export function snapshotFromWebService(
         ...(courseName ? { course: { ...(courseId ? { id: courseId } : {}), name: courseName } } : {}),
         kind: kindOf(text(e.modulename)),
         ...(/^https?:/i.test(url) ? { url } : {}),
+        ...(submission ? { submission } : {}),
       }
     })
   const gradeList = isObject(raw.grades) && Array.isArray(raw.grades.grades) ? raw.grades.grades : []

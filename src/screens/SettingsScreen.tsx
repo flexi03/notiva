@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { CalendarSettings } from '@/components/settings/CalendarSettings'
 import { BackupSettings } from '@/components/settings/BackupSettings'
 import { Bell, Bot, Database, Info, Mic, Palette, PenLine, School } from 'lucide-react'
 import { useApp, useWorkspace } from '@/app/store'
@@ -299,6 +300,9 @@ export function SettingsContent({ compact = false }: { compact?: boolean }) {
               <div role="tabpanel" id="settings-study" aria-labelledby="settings-tab-study">
                 <Section title={t('study.settings')}>
                   <StudySettingsSection />
+                </Section>
+                <Section title={t('calendarFeed.title')}>
+                  <CalendarSettings />
                 </Section>
                 <Section title={t('settings.moodle')}>
                   <MoodleSection />

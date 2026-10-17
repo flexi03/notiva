@@ -313,9 +313,24 @@ export class MoodleClient {
         if (lists.length) discussions[id] = lists
       }),
     )
+    // Each assignment's own state: open, submitted, graded (optional – a Moodle may not allow it).
+    const submissions: Record<string, unknown> = {}
+    const assignments = (
+      (events as { events?: Array<{ id?: unknown; modulename?: unknown; instance?: unknown }> } | null)
+        ?.events ?? []
+    )
+      .filter((e) => e.modulename === 'assign' && e.instance)
+      .slice(0, 30)
+    await Promise.all(
+      assignments.map(async (e) => {
+        submissions[String(e.id)] = await this.call(site, secret, 'mod_assign_get_submission_status', {
+          assignid: Number(e.instance),
+        }).catch(() => null)
+      }),
+    )
     const snapshot = snapshotFromWebService(
       site,
-      { siteInfo, courses, events, grades, contents, notices, pages, discussions },
+      { siteInfo, courses, events, grades, contents, notices, pages, discussions, submissions },
       now,
     )
     if (options.contents === false && options.previous) {

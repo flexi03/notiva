@@ -7,6 +7,7 @@ import {
   newsSummary,
   parseCourseChoices,
 } from '../notifications'
+import { parseSubmission } from '../moodle'
 import type { MoodleSnapshot } from '../moodle'
 
 const now = new Date('2026-10-14T10:00:00Z')
@@ -261,5 +262,42 @@ describe('moodleNews with course choices', () => {
       'course:2': 'ignore',
     })
     expect(parseCourseChoices('x')).toEqual({})
+  })
+})
+
+describe('assignment submissions', () => {
+  it("reads Moodle's submission status: open, submitted, graded with feedback", () => {
+    expect(parseSubmission({ lastattempt: { submission: { status: 'new' } } })).toEqual({ state: 'open' })
+    expect(parseSubmission({ lastattempt: { submission: { status: 'submitted' } } })).toEqual({
+      state: 'submitted',
+    })
+    expect(
+      parseSubmission({
+        lastattempt: { submission: { status: 'submitted' }, gradingstatus: 'graded' },
+        feedback: {
+          gradefordisplay: '<b>1,7</b>',
+          plugins: [{ editorfields: [{ text: '<p>Gut gelöst!</p>' }] }],
+        },
+      }),
+    ).toEqual({ state: 'graded', grade: '1,7', feedback: 'Gut gelöst!' })
+    expect(parseSubmission(null)).toBeUndefined()
+  })
+
+  it('reports an assignment graded since the last fetch – once', () => {
+    const before: MoodleSnapshot = {
+      ...base,
+      events: [{ ...base.events[0]!, submission: { state: 'submitted' } }],
+    }
+    const after: MoodleSnapshot = {
+      ...base,
+      events: [
+        { ...base.events[0]!, submission: { state: 'graded', grade: '1,7', feedback: 'Gut gelöst!' } },
+      ],
+    }
+    const graded = moodleNews(before, after, { now }).filter((n) => n.id.startsWith('graded:'))
+    expect(graded).toEqual([
+      expect.objectContaining({ kind: 'grade', title: 'Bewertet: Blatt 5 – 1,7', body: 'Gut gelöst!' }),
+    ])
+    expect(moodleNews(after, after, { now }).filter((n) => n.id.startsWith('graded:'))).toEqual([])
   })
 })

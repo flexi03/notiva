@@ -95,6 +95,8 @@ das den KI-Assistenten machen ([Andere Hochschule?](#andere-hochschule)).
   Portion steht in „Heute“ – Verpasstes rutscht automatisch nach.
 - 🎯 **Prüfungsvorbereitung und Notenrechner:** Altklausuren und Übungsblätter mit Lösung je Modul zum Abhaken;
   welche Note du für deinen Zielschnitt brauchst.
+- 📱 **Kalender aufs Handy:** Stundenplan, Prüfungen, Fristen und Lernplan als Abo per QR-Code – über deinen Mac,
+  ohne Cloud.
 - 💾 **Tägliche Sicherung** in einen eigenen Backup-Ordner, wie Time Machine.
 - 📅 **Heute:** Vorlesungen, Prüfungen, Praktika, fällige Aufgaben und Moodle-Fristen des Tages in einer Übersicht.
 - 📄 **Neue Skript-Versionen** kommen neben deine Datei und werden Seite für Seite verglichen – du entscheidest.

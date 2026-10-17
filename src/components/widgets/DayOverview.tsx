@@ -9,14 +9,11 @@ import {
   School,
 } from 'lucide-react'
 import { useMoodle } from '@/app/moodle'
-import { timetableRows } from '@/app/schedule'
+import { studyEvents, type StudyEvent } from '@/app/calendarEvents'
 import { useSessionFocus } from '@/app/sessionFocus'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { getLanguage, t } from '@/i18n'
-import { LAB_DATE, LAB_PREP } from '@/lib/labPlan'
-import { importTargets } from '@/lib/moodle'
 import { DAYS } from '@/lib/schedule'
-import { findStudyDashboard } from '@/lib/study/sync'
 import type { Page } from '@/lib/workspace'
 import { cx } from '@/components/ui'
 import { StudyPlanDay } from './StudyPlanSection'
@@ -47,7 +44,6 @@ const ICONS: Record<Kind, typeof CalendarClock> = {
   moodle: AlarmClock,
 }
 
-const str = (v: unknown) => (typeof v === 'string' ? v : '')
 const pad = (n: number) => String(n).padStart(2, '0')
 const isoDay = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 
@@ -70,7 +66,6 @@ export function DayOverview({ date }: { date: Date }) {
   const day = isoDay(date)
   const today = isoDay(now) === day
   const weekday = DAYS[(date.getDay() + 6) % 7]
-  const dash = findStudyDashboard(ws)
   const items: Item[] = []
   // "Demnächst": what is due in the next days (tasks, labs, deadlines a week, exams two weeks).
   const upcoming: Array<Item & { date: string }> = []
@@ -81,119 +76,66 @@ export function DayOverview({ date }: { date: Date }) {
   }
   const soon = (iso: string, days: number) => iso > day && iso <= until(days)
 
-  if (dash) {
-    const modules = ws.get(`${dash.folder}/Module.md`)?.database ? ws.rows(`${dash.folder}/Module.md`) : []
-    for (const r of timetableRows(ws, dash.folder)) {
-      if (r.day !== weekday || !r.start) continue
-      const module = modules.find((m) => m.title === r.module)
-      const [h, m] = r.start.split(':').map(Number)
+  const openOf = (ev: StudyEvent) => (e: React.MouseEvent) =>
+    ev.url ? void run(() => useMoodle.getState().open(ev.url!, false)) : ev.path && openEntry(ev.path, e)
+  for (const ev of studyEvents(ws, snapshot)) {
+    if (ev.kind === 'session') {
+      if (ev.weekday !== weekday) continue
+      const [h, m] = (ev.time ?? '').split(':').map(Number)
       const start = new Date(date)
       start.setHours(h ?? 0, m ?? 0, 0, 0)
       items.push({
-        key: r.path,
+        key: ev.key,
         kind: 'session',
-        time: r.start,
-        ...(r.end ? { end: r.end } : {}),
-        title: r.module ?? r.title,
-        sub: [r.type, r.room].filter(Boolean).join(' · '),
+        time: ev.time,
+        ...(ev.end ? { end: ev.end } : {}),
+        title: ev.title,
+        sub: ev.sub ?? '',
+        // A lecture opens its module with the files for that session.
         open: (e) => {
-          if (!module) return openEntry(r.path, e)
+          if (!ev.module) return openOf(ev)(e)
           useSessionFocus.setState({
-            module: module.path,
-            source: r.path,
+            module: ev.module,
+            source: ev.path!,
             start: start.getTime(),
-            ...(r.type ? { type: r.type } : {}),
+            ...(ev.type ? { type: ev.type } : {}),
           })
-          navigate({ name: 'page', path: module.path })
+          navigate({ name: 'page', path: ev.module })
         },
       })
+      continue
     }
-    const exams = `${dash.folder}/Prüfungen.md`
-    if (ws.get(exams)?.database)
-      for (const e of ws.rows(exams)) {
-        if (soon(str(e.data.Datum).slice(0, 10), 14))
-          upcoming.push({
-            key: e.path,
-            kind: 'exam',
-            date: str(e.data.Datum).slice(0, 10),
-            ...(str(e.data.Beginn) ? { time: str(e.data.Beginn) } : {}),
-            title: e.title,
-            sub: [t('semester.exam'), str(e.data.Raum)].filter(Boolean).join(' · '),
-            open: (ev) => openEntry(e.path, ev),
-          })
-        if (str(e.data.Datum).slice(0, 10) === day)
-          items.push({
-            key: e.path,
-            kind: 'exam',
-            ...(str(e.data.Beginn) ? { time: str(e.data.Beginn) } : {}),
-            title: e.title,
-            sub: [t('semester.exam'), str(e.data.Raum)].filter(Boolean).join(' · '),
-            open: (ev) => openEntry(e.path, ev),
-          })
-      }
-  }
-
-  // Tasks of every task database (Aufgaben): due this day – and, today, the overdue ones.
-  const imported = new Set<string>()
-  for (const target of importTargets(ws)) {
-    if (!target.tasks || !ws.get(target.tasks)?.database) continue
-    for (const p of ws.rows(target.tasks) as Page[]) {
-      const due = str(p.data.Fällig)
-      if (typeof p.data.moodle === 'string') imported.add(p.data.moodle)
-      if (!due) continue
-      const done = p.data.Status === 'Erledigt'
-      const overdue = today && due.slice(0, 10) < day && !done
-      const time = /T(\d{2}:\d{2})/.exec(due)?.[1]
-      const kind = p.data.Art === LAB_DATE ? 'lab' : p.data.Art === LAB_PREP ? 'prep' : 'task'
-      if (!done && soon(due.slice(0, 10), 7))
-        upcoming.push({
-          key: p.path,
-          kind,
-          date: due.slice(0, 10),
-          ...(time ? { time } : {}),
-          title: p.title,
-          sub: str(p.data.Art),
-          open: (e) => openEntry(p.path, e),
-        })
-      if (due.slice(0, 10) !== day && !overdue) continue
+    const evDay = ev.date!
+    const base = { key: ev.key, kind: ev.kind, title: ev.title, open: openOf(ev) }
+    // An assignment's state next to its course: "abgegeben", "bewertet: 1,7" …
+    const state = ev.submission
+      ? t(`submission.${ev.submission.state}`, { grade: ev.submission.grade ?? '' })
+      : ''
+    const subOf = (s?: string) => [s, state].filter(Boolean).join(' · ')
+    if (ev.kind === 'exam') {
+      const sub = [t('semester.exam'), ev.room].filter(Boolean).join(' · ')
+      if (soon(evDay, 14)) upcoming.push({ ...base, date: evDay, ...(ev.time ? { time: ev.time } : {}), sub })
+      if (evDay === day) items.push({ ...base, ...(ev.time ? { time: ev.time } : {}), sub })
+    } else if (ev.kind === 'moodle') {
+      if (soon(evDay, 7))
+        upcoming.push({ ...base, date: evDay, time: ev.time, sub: subOf(ev.sub), done: !!ev.done })
+      if (evDay === day) items.push({ ...base, time: ev.time, sub: subOf(ev.sub), done: !!ev.done })
+    } else {
+      // Tasks: due this day – and, today, the overdue ones.
+      const overdue = today && evDay < day && !ev.done
+      if (!ev.done && soon(evDay, 7))
+        upcoming.push({ ...base, date: evDay, ...(ev.time ? { time: ev.time } : {}), sub: subOf(ev.sub) })
+      if (evDay !== day && !overdue) continue
       items.push({
-        key: p.path,
-        kind: p.data.Art === LAB_DATE ? 'lab' : p.data.Art === LAB_PREP ? 'prep' : 'task',
-        ...(time && !overdue ? { time } : {}),
-        title: p.title,
+        ...base,
+        ...(ev.time && !overdue ? { time: ev.time } : {}),
         sub: overdue
-          ? t('day.overdue', { date: due.slice(8, 10) + '.' + due.slice(5, 7) + '.' })
-          : str(p.data.Art),
+          ? t('day.overdue', { date: evDay.slice(8, 10) + '.' + evDay.slice(5, 7) + '.' })
+          : subOf(ev.sub),
         overdue,
-        done,
-        open: (e) => openEntry(p.path, e),
+        done: !!ev.done,
       })
     }
-  }
-
-  // Moodle deadlines not imported as tasks.
-  for (const ev of snapshot?.events ?? []) {
-    const due = new Date(ev.due)
-    if (imported.has(ev.id)) continue
-    if (soon(isoDay(due), 7))
-      upcoming.push({
-        key: ev.id,
-        kind: 'moodle',
-        date: isoDay(due),
-        time: `${pad(due.getHours())}:${pad(due.getMinutes())}`,
-        title: ev.title,
-        sub: ev.course?.name ?? 'Moodle',
-        open: () => ev.url && void run(() => useMoodle.getState().open(ev.url!, false)),
-      })
-    if (isoDay(due) !== day) continue
-    items.push({
-      key: ev.id,
-      kind: 'moodle',
-      time: `${pad(due.getHours())}:${pad(due.getMinutes())}`,
-      title: ev.title,
-      sub: ev.course?.name ?? 'Moodle',
-      open: () => ev.url && void run(() => useMoodle.getState().open(ev.url!, false)),
-    })
   }
 
   const timed = items.filter((i) => i.time).sort((a, b) => a.time!.localeCompare(b.time!))

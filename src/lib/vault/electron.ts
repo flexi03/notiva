@@ -319,6 +319,8 @@ export interface NotivaBridge {
   git?: GitBridge
   /** Daily backups outside the folder (desktop app only). */
   backup?: BackupBridge
+  /** Calendar feed for the phone (desktop app only). */
+  calendar?: CalendarBridge
   /** Self-update from GitHub releases (desktop app only). */
   update?: {
     status(): Promise<UpdateStatus>
@@ -395,4 +397,24 @@ export interface BackupBridge {
   /** Restores a snapshot as a new folder next to the vault; returns its path. */
   restore(name: string): Promise<string>
   onProgress(callback: (event: { done: number; total: number; file: string }) => void): () => void
+}
+
+export interface CalendarStatus {
+  /** switched on in the settings */
+  enabled: boolean
+  /** the server answers */
+  running: boolean
+  port: number
+  /** webcal:// addresses (Tailscale first, then the local network) */
+  urls: string[]
+  error: string | null
+}
+
+export interface CalendarBridge {
+  status(): Promise<CalendarStatus>
+  set(enabled: boolean): Promise<CalendarStatus>
+  /** A new secret – old subscriptions stop working. */
+  newToken(): Promise<CalendarStatus>
+  /** Hands over the current feed (iCalendar text). */
+  publish(text: string): Promise<void>
 }

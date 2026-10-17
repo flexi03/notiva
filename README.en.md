@@ -95,6 +95,8 @@ assistant ([Another university?](#another-university)).
   is in "Today" – missed days move on by themselves.
 - 🎯 **Exam preparation and grade calculator:** old exams and sheets with solutions per module to tick off; the grade
   you need for your target average.
+- 📱 **Calendar on the phone:** timetable, exams, deadlines and study plan as a subscription via QR code – through
+  your Mac, no cloud.
 - 💾 **Daily backup** into a backup folder of its own, like Time Machine.
 - 📅 **Today:** the day's lectures, exams, labs, due tasks and Moodle deadlines in one overview.
 - 📄 **New script versions** go next to your file and are compared page by page – you decide.

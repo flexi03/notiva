@@ -161,6 +161,13 @@ function fakeMoodle(): Promise<{ server: Server; url: string; calls: string[] }>
                 ]
               : [],
           })
+        // Blatt 5 is handed in already.
+        if (fn === 'mod_assign_get_submission_status')
+          return send(
+            body.get('assignid') === '9001'
+              ? { lastattempt: { submission: { status: 'submitted' }, gradingstatus: 'notgraded' } }
+              : { lastattempt: { submission: { status: 'new' } } },
+          )
         if (fn === 'core_calendar_get_action_events_by_timesort')
           return send({
             events: [
@@ -181,6 +188,7 @@ function fakeMoodle(): Promise<{ server: Server; url: string; calls: string[] }>
                 name: 'Blatt 5 ist fällig',
                 activityname: 'Blatt 5',
                 modulename: 'assign',
+                instance: 9001,
                 timesort: now + 6 * day,
                 course: { id: 42 },
               },
@@ -387,6 +395,10 @@ test('meldet Neuigkeiten aus Moodle im Benachrichtigungscenter', async () => {
   // A second check finds nothing new.
   await window.getByRole('button', { name: 'Aktualisieren' }).click()
   await expect(bell).not.toContainText('5')
+  // "Heute" knows what is handed in already (Moodle's submission status).
+  await window.getByRole('navigation', { name: 'Seiten' }).getByRole('button', { name: 'Heute' }).click()
+  const soon = window.getByTestId('day-upcoming')
+  await expect(soon.getByRole('listitem').filter({ hasText: 'Blatt 5' }).first()).toContainText('abgegeben')
 })
 
 test('schlägt neue Skripte vor und speichert sie nach Bestätigung – mit Fortschritt', async () => {
