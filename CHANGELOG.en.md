@@ -5,7 +5,7 @@ _Deutsch: [CHANGELOG.md](CHANGELOG.md)_
 All versions with downloads: [GitHub Releases](https://github.com/flexi03/notiva/releases).
 Notiva checks for a new version on start and every hour and installs it itself if you like.
 
-## 0.2.5 – not released yet
+## 0.2.5 – 2026-10-17
 
 - **Updates in the settings** (_Settings → About_): installed version, update state with "Install" and "Check for
   updates", plus every published version with date and "What's new". Any version can be installed, older ones after
