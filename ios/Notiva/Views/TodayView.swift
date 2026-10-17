@@ -80,9 +80,22 @@ struct TodayView: View {
     private func load() async {
         loading = true
         let result = await model.load("day", ["date": key], key: "day-\(key)", as: Day.self)
-        day = result.value
+        day = result.value.map(withWaiting)
         cached = result.cached && result.value != nil
         loading = false
+    }
+
+    /// Ticks not sent yet, laid over the loaded day.
+    private func withWaiting(_ day: Day) -> Day {
+        var day = day
+        for change in model.waiting("study.done", as: StudyDone.self) {
+            for g in day.study.indices where day.study[g].module.path == change.module {
+                for t in day.study[g].topics.indices where day.study[g].topics[t].key == change.key {
+                    day.study[g].topics[t].done = change.done
+                }
+            }
+        }
+        return day
     }
 
     /// Ticks at once; sent now or as soon as the Mac is reachable.

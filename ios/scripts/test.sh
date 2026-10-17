@@ -10,14 +10,16 @@ OUT=${TMPDIR:-/tmp}/notiva-ios-test
 rm -rf "$OUT" && mkdir -p "$OUT"
 xcodegen >/dev/null
 if (( $# )); then DEVICES=("$@"); else DEVICES=("iPhone 18 Pro Max" "iPhone Duo" "iPad Pro 13-inch (M5)"); fi
-(cd .. && PORT=47999 npx tsx ios/scripts/fake-mac.ts > "$OUT/fake-mac.log" 2>&1) &
-FAKE=$!
-trap 'kill $FAKE 2>/dev/null; pkill -f "ios/scripts/fake-mac.ts" 2>/dev/null || true' EXIT
-sleep 3
+stop_fake() { pkill -f "ios/scripts/fake-mac.ts" 2>/dev/null || true; }
+trap stop_fake EXIT
 HOST=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo "")
 failed=0
 for device in "${DEVICES[@]}"; do
   slug=${device//[^A-Za-z0-9]/}
+  # A fresh stand-in Mac per device: what one device's tests change is not in the next one's screenshots.
+  stop_fake
+  (cd .. && PORT=47999 npx tsx ios/scripts/fake-mac.ts > "$OUT/fake-mac-$slug.log" 2>&1) &
+  sleep 3
   xcrun simctl boot "$device" 2>/dev/null || true
   # A clean status bar for the screenshots (9:41, full battery).
   xcrun simctl status_bar "$device" override --time 9:41 --batteryState charged --batteryLevel 100 --wifiBars 3 --cellularBars 4 2>/dev/null || true

@@ -40,16 +40,17 @@ iPhone / iPad (SwiftUI)                          Mac (Notiva-Desktop-App)
 
 ## Schnittstelle (v1)
 
-| Anfrage                       | Inhalt                                                                |
-| ----------------------------- | --------------------------------------------------------------------- |
-| `hello`                       | Name des Ordners, Version, ob die Kopplung gilt                       |
-| `day` (Datum)                 | Einträge des Tages + „Demnächst“ + Lernplan-Portionen                 |
-| `week`                        | Stundenplan der Woche                                                 |
-| `tasks` / `task.set`          | Aufgaben; abhaken, anlegen                                            |
-| `shelf.add`                   | Text oder Datei (Foto) in die Ablage                                  |
-| `pages` / `page` / `page.put` | Seitenliste, Seite lesen, Seite schreiben (mit Stand gegen Konflikte) |
-| `file`                        | Datei (PDF) in Stücken                                                |
-| `notes` / `notes.put`         | Markierungen und Notizen eines PDFs                                   |
+| Anfrage                           | Inhalt                                                                |
+| --------------------------------- | --------------------------------------------------------------------- |
+| `hello`                           | Name des Ordners, Version, ob die Kopplung gilt                       |
+| `day` (Datum)                     | Einträge des Tages + „Demnächst“ + Lernplan-Portionen                 |
+| `week`                            | Stundenplan der Woche                                                 |
+| `tasks` / `task.set` / `task.add` | Aufgaben (mit Modul, Art, Priorität); abhaken, anlegen                |
+| `modules`                         | Module (für neue Aufgaben)                                            |
+| `shelf.add`                       | Text oder Datei (Foto) in die Ablage                                  |
+| `pages` / `page` / `page.put`     | Seitenliste, Seite lesen, Seite schreiben (mit Stand gegen Konflikte) |
+| `file`                            | Datei (PDF) in Stücken                                                |
+| `notes` / `notes.put`             | Markierungen und Notizen eines PDFs                                   |
 
 ## Schritte (je ein Issue)
 

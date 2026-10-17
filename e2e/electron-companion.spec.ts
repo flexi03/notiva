@@ -64,10 +64,24 @@ test('iPhone koppeln: verschlüsselt Tag lesen, abhaken, ablegen, Seite bearbeit
 
   const day = (await call('day')) as { ok: boolean; r: { items: unknown[] } }
   expect(day.ok).toBe(true)
-  const tasks = (await call('tasks')).r as Array<{ path: string; title: string }>
+  const tasks = (await call('tasks')).r as Array<{
+    path: string
+    title: string
+    module: { title: string } | null
+  }>
   const task = tasks.find((x) => x.title === 'Übungsblatt 3 LA')!
+  expect(task.module?.title).toBe('Lineare Algebra')
   expect((await call('task.set', { path: task.path, done: true })).ok).toBe(true)
   await expect.poll(() => readFileSync(path.join(folder, task.path), 'utf8')).toContain('Status: Erledigt')
+  const modules = (await call('modules')).r as Array<{ path: string; title: string }>
+  const algebra = modules.find((m) => m.title === 'Lineare Algebra')!
+  const added = (await call('task.add', { title: 'Vom iPhone', due: '2030-01-15', module: algebra.path }))
+    .r as {
+    path: string
+  }
+  await expect
+    .poll(() => readFileSync(path.join(folder, added.path), 'utf8'))
+    .toMatch(/Fällig: 2030-01-15[\s\S]*Lineare Algebra|Lineare Algebra[\s\S]*Fällig: 2030-01-15/)
 
   expect(
     (await call('shelf.add', { name: 'Tafel.jpg', data: Buffer.from('jpeg').toString('base64') })).ok,

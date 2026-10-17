@@ -10,7 +10,8 @@ Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und inst
 - **Vorbereitung für die iPhone-/iPad-App** ([#42](https://github.com/flexi03/notiva/issues/42)): _Einstellungen →
   Speicher & Daten → iPhone & iPad_ koppelt ein Gerät per QR-Code (eigener Schlüssel pro Gerät). Die Desktop-App
   beantwortet dann verschlüsselte Anfragen im WLAN bzw. über Tailscale – Tag, Stundenplan, Aufgaben, Ablage, Seiten,
-  PDFs und ihre Notizen – mit derselben Logik wie „Heute“. Geräte einzeln entkoppelbar.
+  PDFs und ihre Notizen – mit derselben Logik wie „Heute“. Geräte einzeln entkoppelbar. Aufgaben kommen mit Modul, Art und Priorität aufs
+  Gerät; neue Aufgaben vom iPhone landen mit Fälligkeit und Modul in der Aufgaben-Datenbank.
 
 ## 0.2.4 – 2026-10-17
 

@@ -36,6 +36,9 @@ Die Portion für heute aus deinen Lernplänen – abhaken, auch offline. Notiva 
 STUNDENPLAN
 Deine Woche mit Zeiten und Räumen; auf dem iPad alle Tage nebeneinander.
 
+AUFGABEN
+Überfällig, heute, morgen, nächste 7 Tage – mit Modul und Art. Abhaken per Tipp oder Wischen, neue Aufgaben mit Fälligkeit und Modul anlegen.
+
 PRIVAT
 Dein iPhone verbindet sich direkt mit deinem Mac – im WLAN oder über Tailscale. Jede Verbindung ist verschlüsselt, mit einem eigenen Schlüssel pro Gerät. Keine Cloud, kein Konto, keine Werbung, keine Analyse.
 
@@ -46,7 +49,7 @@ Voraussetzung: die kostenlose Notiva-Desktop-App auf deinem Mac (github.com/flex
 
 **Schlüsselwörter (100):** Studium,Stundenplan,Moodle,Uni,Hochschule,Lernplan,Prüfung,Vorlesung,Notizen,Markdown,Semester
 
-**Neu in dieser Version:** Heute und Stundenplan – mit Lernplan zum Abhaken.
+**Neu in dieser Version:** Aufgaben – nach Fälligkeit sortiert, abhaken und neu anlegen, auch offline.
 
 ## English
 
@@ -69,6 +72,9 @@ Today's portion of your study plans – tick it off, offline too. Notiva on the 
 TIMETABLE
 Your week with times and rooms; on the iPad all days side by side.
 
+TASKS
+Overdue, today, tomorrow, next 7 days – with module and kind. Tick off with a tap or a swipe, create new tasks with due date and module.
+
 PRIVATE
 Your iPhone connects straight to your Mac – on your Wi-Fi or via Tailscale. Every connection is encrypted, with its own key per device. No cloud, no account, no ads, no analytics.
 
@@ -79,11 +85,17 @@ Requires the free Notiva desktop app on your Mac (github.com/flexi03/notiva).
 
 **Keywords (100):** studies,timetable,Moodle,university,college,study plan,exam,lecture,notes,markdown,semester
 
-**What's new:** Today and timetable – with your study plan to tick off.
+**What's new:** Tasks – sorted by due date, tick off and create, offline too.
 
 ## TestFlight
 
 **Beta-App-Beschreibung:** Notiva fürs iPhone und iPad: dein Studium aus der Notiva-Desktop-App – Heute, Stundenplan, Lernplan. Verbindung verschlüsselt über WLAN oder Tailscale.
+
+**Was testen (Build mit Aufgaben):**
+1. „Aufgaben“: stimmen die Aufgaben mit der Aufgaben-Datenbank am Mac überein (überfällig rot, Modul darunter)?
+2. Eine abhaken (Tippen oder nach rechts wischen) – am Mac steht „Erledigt“. Menü oben → „Erledigte zeigen“.
+3. „+“ → Titel, Datum (optional mit Uhrzeit), Modul → „Hinzufügen“; die Seite erscheint am Mac in der Datenbank.
+4. Mac zuklappen, abhaken und anlegen – bleibt sichtbar und wird übertragen, sobald der Mac wieder da ist.
 
 **Was testen (Build mit Heute & Stundenplan):**
 1. Am Mac Notiva öffnen → Einstellungen → Speicher & Daten → iPhone & iPad → „iPhone oder iPad koppeln“, QR-Code scannen.

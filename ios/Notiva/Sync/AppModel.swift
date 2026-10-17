@@ -133,6 +133,13 @@ final class AppModel {
         }
     }
 
+    /// The params of the changes still waiting for `method` – views lay them over the last state,
+    /// so what was done offline stays visible after a reload.
+    func waiting<P: Decodable>(_ method: String, as type: P.Type) -> [P] {
+        pending.filter { $0.method == method && $0.error == nil }
+            .compactMap { try? JSONDecoder().decode(P.self, from: $0.params) }
+    }
+
     func discard(_ item: OfflineStore.Pending) {
         pending.removeAll { $0.id == item.id }
         store.setPending(pending)

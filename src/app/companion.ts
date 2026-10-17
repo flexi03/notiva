@@ -48,6 +48,14 @@ function taskDatabases(ws: Workspace): string[] {
     .filter((p): p is string => !!p && !!ws.get(p)?.database)
 }
 
+/** The page a relation value (`["[[Mathe 1]]"]` or `"[[Mathe 1]]"`) points to first. */
+function firstLink(ws: Workspace, value: unknown, from: string) {
+  const first = Array.isArray(value) ? value[0] : value
+  const target = typeof first === 'string' ? first.replace(/^\[\[|\]\]$/g, '') : ''
+  const path = target ? ws.resolveLink(target, from) : null
+  return path ? ws.get(path) : undefined
+}
+
 export async function companionAnswer(ws: Workspace, method: string, params: unknown): Promise<unknown> {
   const p = obj(params)
   switch (method) {
@@ -104,14 +112,23 @@ export async function companionAnswer(ws: Workspace, method: string, params: unk
     case 'tasks':
       return taskDatabases(ws)
         .flatMap((db) => ws.rows(db))
-        .map((r) => ({
-          path: r.path,
-          title: r.title,
-          due: str(r.data.Fällig) || null,
-          status: str(r.data.Status) || 'Offen',
-          art: str(r.data.Art) || null,
-        }))
+        .map((r) => {
+          const module = firstLink(ws, r.data.Modul, r.path)
+          return {
+            path: r.path,
+            title: r.title,
+            due: str(r.data.Fällig) || null,
+            status: str(r.data.Status) || 'Offen',
+            art: str(r.data.Art) || null,
+            priority: str(r.data.Priorität) || null,
+            module: module ? { path: module.path, title: module.title } : null,
+            moodle: typeof r.data.moodle === 'string',
+          }
+        })
         .sort((a, b) => (a.due ?? '9999').localeCompare(b.due ?? '9999'))
+
+    case 'modules':
+      return modulePages(ws).map((m) => ({ path: m.path, title: m.title }))
 
     case 'task.set': {
       const path = safePath(ws, p.path, 'page')

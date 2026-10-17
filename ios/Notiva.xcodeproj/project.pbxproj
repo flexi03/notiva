@@ -10,6 +10,7 @@
 		033244EA32E05192ED293158 /* OfflineStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22477D613E62E31500D7C8E8 /* OfflineStoreTests.swift */; };
 		14028E3E9C2D43536B2CEA06 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B67DB63B328CEF85D0FAC983 /* Assets.xcassets */; };
 		1588CAEB4B4E47CDE8D09723 /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD0D2958D537BC77FA2C1C1E /* TodayView.swift */; };
+		26E26F65A818C2EFE0693AA4 /* TasksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7B2E8159034419EC2A1B7E6 /* TasksView.swift */; };
 		27FF95FD7A08C997E27B2459 /* Pairing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020120A2BD6D10E6BE2F8D98 /* Pairing.swift */; };
 		340AE8624FF446CE9B462412 /* vector.json in Resources */ = {isa = PBXBuildFile; fileRef = 4DDCC0FD37570B278FA834E0 /* vector.json */; };
 		43DBB4A89646AE46C92C3B04 /* OfflineStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C03DF94F6B414C1A0CDEA9D4 /* OfflineStore.swift */; };
@@ -25,6 +26,7 @@
 		C69FF5FA1C210B58D8ACA30E /* Study.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95B53DD3CDAA40762F1F8543 /* Study.swift */; };
 		DB2337AF7B88BE6BE367ED82 /* SyncClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7003F2D0D2DDE653DF7496D3 /* SyncClient.swift */; };
 		E1513366B7C7AE379F92F4FA /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB41C566D324362F49E4B375 /* RootView.swift */; };
+		E916B153D74EB7A6489B20B8 /* TasksUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F003D7A6C5FEFFB5F0E5C42 /* TasksUITests.swift */; };
 		F37C3DB24ABCE2C40B252A31 /* NotivaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80824A82F5CD47D002EB6427 /* NotivaApp.swift */; };
 /* End PBXBuildFile section */
 
@@ -49,6 +51,7 @@
 		020120A2BD6D10E6BE2F8D98 /* Pairing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pairing.swift; sourceTree = "<group>"; };
 		1B31E545718B484FF604F6A7 /* FakeMac.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FakeMac.swift; sourceTree = "<group>"; };
 		22477D613E62E31500D7C8E8 /* OfflineStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineStoreTests.swift; sourceTree = "<group>"; };
+		2F003D7A6C5FEFFB5F0E5C42 /* TasksUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TasksUITests.swift; sourceTree = "<group>"; };
 		36C7BCDF692D62A10EA869B2 /* NotivaTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = NotivaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		37A7A3C2618081A67BE41E48 /* SyncCryptoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCryptoTests.swift; sourceTree = "<group>"; };
 		37E886AC89CBECDD853345CC /* PairingUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairingUITests.swift; sourceTree = "<group>"; };
@@ -67,6 +70,7 @@
 		C03DF94F6B414C1A0CDEA9D4 /* OfflineStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineStore.swift; sourceTree = "<group>"; };
 		D1F9956C698BC3853754FF12 /* WeekView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeekView.swift; sourceTree = "<group>"; };
 		D21B5F067BFEFE129151B4A5 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		D7B2E8159034419EC2A1B7E6 /* TasksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TasksView.swift; sourceTree = "<group>"; };
 		E4956E3C677A3631C6F1E8F7 /* TodayUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayUITests.swift; sourceTree = "<group>"; };
 		FB41C566D324362F49E4B375 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -121,6 +125,7 @@
 			children = (
 				1B31E545718B484FF604F6A7 /* FakeMac.swift */,
 				37E886AC89CBECDD853345CC /* PairingUITests.swift */,
+				2F003D7A6C5FEFFB5F0E5C42 /* TasksUITests.swift */,
 				E4956E3C677A3631C6F1E8F7 /* TodayUITests.swift */,
 			);
 			path = NotivaUITests;
@@ -159,6 +164,7 @@
 			children = (
 				4BDFF836E2F053D6B661D596 /* PairingView.swift */,
 				D21B5F067BFEFE129151B4A5 /* SettingsView.swift */,
+				D7B2E8159034419EC2A1B7E6 /* TasksView.swift */,
 				BD0D2958D537BC77FA2C1C1E /* TodayView.swift */,
 				D1F9956C698BC3853754FF12 /* WeekView.swift */,
 			);
@@ -302,6 +308,7 @@
 				C69FF5FA1C210B58D8ACA30E /* Study.swift in Sources */,
 				DB2337AF7B88BE6BE367ED82 /* SyncClient.swift in Sources */,
 				C5D3D8CF78AC0CAB631A4BD5 /* SyncCrypto.swift in Sources */,
+				26E26F65A818C2EFE0693AA4 /* TasksView.swift in Sources */,
 				1588CAEB4B4E47CDE8D09723 /* TodayView.swift in Sources */,
 				4776A30620BC0D30EA128FE7 /* WeekView.swift in Sources */,
 			);
@@ -322,6 +329,7 @@
 			files = (
 				9E81452799B56D810BC5E182 /* FakeMac.swift in Sources */,
 				7C5B4BEBDFB8C07D565DF00D /* PairingUITests.swift in Sources */,
+				E916B153D74EB7A6489B20B8 /* TasksUITests.swift in Sources */,
 				884112F603AE17502DEC5A91 /* TodayUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

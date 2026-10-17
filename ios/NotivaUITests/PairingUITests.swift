@@ -24,7 +24,8 @@ final class PairingUITests: XCTestCase {
         let code = #"{"v":1,"id":"d","key":"BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc=","port":9,"hosts":[\#(FakeMac.hosts)],"name":"Studium"}"#
         app.launchArguments = ["-uitest", code]
         app.launch()
-        XCTAssertTrue(app.otherElements["offline-banner"].waitForExistence(timeout: 20) || app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'nicht erreichbar'")).firstMatch.waitForExistence(timeout: 5))
+        // Unreachable or unknown to the Mac – either way the hint above the tab bar.
+        XCTAssertTrue(app.descendants(matching: .any)["offline-banner"].firstMatch.waitForExistence(timeout: 20))
         for name in ["Heute", "Stundenplan", "Aufgaben", "Ablage", "Seiten"] {
             XCTAssertTrue(app.buttons[name].firstMatch.exists || app.staticTexts[name].firstMatch.exists, name)
         }

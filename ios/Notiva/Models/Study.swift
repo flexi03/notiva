@@ -96,3 +96,31 @@ enum DayFormat {
         return Session.weekdays[index]
     }
 }
+
+/// A row of the tasks database (`tasks`).
+struct TaskItem: Codable, Sendable, Equatable, Identifiable {
+    struct Module: Codable, Sendable, Equatable {
+        let path: String
+        let title: String
+    }
+
+    let path: String
+    let title: String
+    /// "2026-10-20" or "2026-10-20T10:00"
+    var due: String?
+    var status: String
+    var art: String?
+    var priority: String?
+    var module: Module?
+    var moodle: Bool?
+    var id: String { path }
+
+    var done: Bool { status == "Erledigt" }
+    var dueDay: String? { due.map { String($0.prefix(10)) } }
+    var dueTime: String? { (due?.count ?? 0) > 10 ? due.map { String($0.suffix(5)) } : nil }
+    /// Made on this device, not on the Mac yet.
+    var isNew: Bool { path.hasPrefix("neu:") }
+}
+
+/// A module page (`modules`) – to give a new task its module.
+typealias ModuleRef = TaskItem.Module
