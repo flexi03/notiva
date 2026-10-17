@@ -5,7 +5,7 @@ _Deutsch: [CHANGELOG.md](CHANGELOG.md)_
 All versions with downloads: [GitHub Releases](https://github.com/flexi03/notiva/releases).
 Notiva checks for a new version on start and every hour and installs it itself if you like.
 
-## 0.2.1 – not released yet
+## 0.2.1 – 2026-10-17
 
 - Fixed: moved Moodle files counted as "new" afterwards (Notiva forgot where they were when moving them). That
   is why e.g. "DBS2 - Vorlesung 00" and other scripts you already had were suggested again.
