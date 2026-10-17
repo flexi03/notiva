@@ -5,7 +5,7 @@ _English: [CHANGELOG.en.md](CHANGELOG.en.md)_
 Alle Versionen mit Downloads: [GitHub Releases](https://github.com/flexi03/notiva/releases).
 Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und installiert sie auf Wunsch selbst.
 
-## 0.2.7 – noch nicht veröffentlicht
+## 0.2.7 – 2026-10-18
 
 - **PDFs auf dem iPhone/iPad** ([#49](https://github.com/flexi03/notiva/issues/49)): Die Desktop-App liefert die PDFs
   des Ordners und ihre Markierungen und Seitennotizen. Änderungen vom iPhone werden in dieselbe „… (Notizen).md“
@@ -13,6 +13,12 @@ Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und inst
   Überschreiben.
 - Text direkt auf einer PDF-Seite behält beim Speichern seine Breite und Schriftgröße (fiel vorher auf den Standard
   zurück).
+- **Lokales Mini-Modell unter Linux und Windows**: „llama.cpp installieren“ nutzt dort jetzt den offiziellen
+  Installer von llama.app (ohne Homebrew, ohne Administratorrechte). Notiva erkennt auch ein schon so installiertes
+  `llama` (in `~/.local/bin`) – vorher wurde nur `llama-server` gesucht und die Einstellungen meldeten weiter
+  „llama.cpp fehlt“. Unter Windows wird es jetzt ohne Neustart von Notiva gefunden.
+- **Transkription unter Linux und Windows**: whisper.cpp lässt sich dort mit einem Klick installieren (das offizielle
+  Programm von GitHub, per Prüfsumme kontrolliert) – vorher ging das nur mit Homebrew.
 - **Linux auf ARM**: Neben x86_64 gibt es jetzt auch ein AppImage für ARM64 (z. B. Raspberry Pi 5, ARM-Laptops,
   Linux-VMs auf Apple Silicon); das Update wählt die passende Datei.
 

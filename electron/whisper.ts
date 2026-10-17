@@ -1,15 +1,21 @@
 /**
  * Local, free speech to text with whisper.cpp (main process). Notiva finds `whisper-server`
- * (Homebrew: `whisper-cpp`), downloads a model into the app profile (checked by SHA-256) and runs the
+ * (Homebrew `whisper-cpp` on macOS, the official build on Linux/Windows – see nativeTools), downloads a model into the app profile (checked by SHA-256) and runs the
  * server on 127.0.0.1 only while it is needed. Nothing leaves the computer.
  */
 import { spawn, type ChildProcess } from 'node:child_process'
-import { createHash } from 'node:crypto'
-import { createWriteStream, promises as fs } from 'node:fs'
+import { promises as fs } from 'node:fs'
 import { createServer } from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
-import { which } from './shellPath'
+import {
+  downloadVerified,
+  findWhisperServer,
+  installWhisper,
+  whisperInstallVia,
+  type InstallVia,
+  type Progress,
+} from './nativeTools'
 
 export interface WhisperModel {
   id: string
@@ -43,18 +49,11 @@ export const WHISPER_MODELS: WhisperModel[] = [
 export interface WhisperStatus {
   /** Path of whisper-server, null if not installed. */
   server: string | null
-  /** Homebrew is available for a one-click install. */
-  brew: boolean
+  /** how a click installs it (null: by hand) */
+  via: InstallVia
   models: Array<{ id: string; label: string; size: number; downloaded: boolean }>
   running: boolean
 }
-
-type Progress = (event: {
-  kind: 'install' | 'download'
-  text?: string
-  done?: number
-  total?: number
-}) => void
 
 export class WhisperEngine {
   private process: ChildProcess | null = null
@@ -66,6 +65,8 @@ export class WhisperEngine {
   constructor(
     private readonly modelDir: string,
     private readonly fetchFn: (url: string, init?: RequestInit) => Promise<Response>,
+    /** where Notiva unpacks whisper.cpp on Linux/Windows */
+    private readonly binDir: string,
   ) {}
 
   modelPath(id: string): string {
@@ -82,78 +83,29 @@ export class WhisperEngine {
       })),
     )
     return {
-      server: await which('whisper-server'),
-      brew: !!(await which('brew')),
+      server: await findWhisperServer(this.binDir),
+      via: await whisperInstallVia(),
       models,
       running: !!this.process,
     }
   }
 
-  /** `brew install whisper-cpp` – only when the user clicks "Installieren". */
-  async install(onProgress: Progress): Promise<void> {
-    const brew = await which('brew')
-    if (!brew) throw new Error('Homebrew fehlt – siehe brew.sh, oder whisper.cpp selbst installieren.')
-    await new Promise<void>((resolve, reject) => {
-      const child = spawn(brew, ['install', 'whisper-cpp'], {
-        env: { ...process.env, HOMEBREW_NO_AUTO_UPDATE: '1' },
-      })
-      const forward = (chunk: Buffer) =>
-        chunk
-          .toString()
-          .split('\n')
-          .filter((l) => l.trim())
-          .forEach((text) => onProgress({ kind: 'install', text: text.slice(0, 300) }))
-      child.stdout.on('data', forward)
-      child.stderr.on('data', forward)
-      child.on('error', reject)
-      child.on('close', (code) =>
-        code === 0 ? resolve() : reject(new Error(`Installation fehlgeschlagen (Code ${code})`)),
-      )
-    })
+  /** Installs whisper.cpp (see nativeTools: Homebrew or the official build) – only on click. */
+  install(onProgress: Progress): Promise<void> {
+    return installWhisper(this.binDir, this.fetchFn, onProgress)
   }
 
   /** Downloads a model with progress; verified by size and SHA-256 before it is used. */
   async download(id: string, onProgress: Progress): Promise<void> {
     const model = WHISPER_MODELS.find((m) => m.id === id)
     if (!model) throw new Error('Unbekanntes Modell')
-    await fs.mkdir(this.modelDir, { recursive: true })
-    const target = this.modelPath(id)
-    const part = `${target}.part`
-    const response = await this.fetchFn(
+    await downloadVerified(
+      this.fetchFn,
       `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-${id}.bin`,
-      {
-        redirect: 'follow',
-      },
+      this.modelPath(id),
+      model,
+      onProgress,
     )
-    if (!response.ok || !response.body) throw new Error(`Download fehlgeschlagen (${response.status})`)
-    const hash = createHash('sha256')
-    const out = createWriteStream(part)
-    let done = 0
-    let lastReport = 0
-    const reader = response.body.getReader()
-    try {
-      for (;;) {
-        const { value, done: finished } = await reader.read()
-        if (finished) break
-        hash.update(value)
-        done += value.length
-        if (done > model.size) throw new Error('Datei größer als erwartet')
-        if (!out.write(value)) await new Promise((r) => out.once('drain', r))
-        if (Date.now() - lastReport > 250) {
-          lastReport = Date.now()
-          onProgress({ kind: 'download', done, total: model.size })
-        }
-      }
-      await new Promise<void>((resolve, reject) => out.end((e?: Error | null) => (e ? reject(e) : resolve())))
-      if (done !== model.size || hash.digest('hex') !== model.sha256)
-        throw new Error('Modell beschädigt (Prüfsumme stimmt nicht)')
-      await fs.rename(part, target)
-      onProgress({ kind: 'download', done, total: model.size })
-    } catch (error) {
-      out.destroy()
-      await fs.rm(part, { force: true })
-      throw error
-    }
   }
 
   async removeModel(id: string): Promise<void> {
@@ -168,7 +120,7 @@ export class WhisperEngine {
     if (this.starting) return this.starting
     this.stop()
     this.starting = (async () => {
-      const server = await which('whisper-server')
+      const server = await findWhisperServer(this.binDir)
       if (!server) throw new Error('whisper.cpp ist nicht installiert (Einstellungen → Transkription).')
       const file = this.modelPath(model)
       if (!(await fs.stat(file).catch(() => null)))

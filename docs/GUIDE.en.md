@@ -120,7 +120,8 @@ Background checks report in the notifications what they found and what of it is 
 - `⌘/Ctrl F` searches the PDF, `←/→` turns pages, zoom with pinch or `+`/`−`.
 - Highlight, comment, add page notes; select, move and delete with the pointer; `⌘Z` undoes.
 - **Lecture mode** (right column): records, transcribes locally with Whisper (the model downloads on first use) and
-  follows the slides. Afterwards the AI can summarize.
+  follows the slides. _Settings → Transcription_ installs the whisper.cpp program in one click: Homebrew on a Mac, the
+  official program from GitHub on Linux and Windows (verified, into the app profile). Afterwards the AI can summarize.
 
 ## Code folders
 
@@ -153,7 +154,9 @@ claude mcp add notiva -- node /path/to/notiva/dist-mcp/notiva-mcp.mjs /path/to/y
 ## Local mini model
 
 For quick summaries without internet or account: _Settings → AI → Local mini model_. Notiva uses
-[llama.cpp](https://github.com/ggml-org/llama.cpp) (button "Install llama.cpp": Homebrew or winget) and a small
+[llama.cpp](https://github.com/ggml-org/llama.cpp) (button "Install llama.cpp": Homebrew on a Mac, otherwise the
+official installer from [llama.app](https://llama.app) – into your user folder, no admin rights; an installed
+`llama-server` or `llama` is detected) and a small
 Qwen 2.5 model (recommended 1.5 B, ~1.1 GB; small 0.5 B, ~0.5 GB), downloaded once with a progress bar and checked
 by checksum. In the Git panel it then summarises every changed file and suggests the commit message (automatically;
 you can edit it, ✨ asks again). The model only listens on `127.0.0.1` and stops

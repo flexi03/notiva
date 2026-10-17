@@ -88,7 +88,7 @@ contextBridge.exposeInMainWorld('notiva', {
   },
   localModel: {
     status: () => invoke('localModel:status'),
-    install: () => invoke<'installed' | 'started'>('localModel:install'),
+    install: () => invoke<void>('localModel:install'),
     download: (id: string) => invoke<void>('localModel:download', id),
     remove: (id: string) => invoke<void>('localModel:remove', id),
     complete: (

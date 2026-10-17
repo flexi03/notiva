@@ -601,7 +601,11 @@ async function pollEcampus(): Promise<ExamSnapshot> {
 }
 
 /** Local speech to text (whisper.cpp) – models live in the app profile. */
-const whisper = new WhisperEngine(userFile('whisper-models'), (url, init) => net.fetch(url, init))
+const whisper = new WhisperEngine(
+  userFile('whisper-models'),
+  (url, init) => net.fetch(url, init),
+  userFile('whisper-bin'),
+)
 /** Small local language model for quick summaries (llama.cpp) – models in the app profile. */
 const localModel = new LocalModel(userFile('local-models'), (url, init) => net.fetch(url, init))
 const localModelProgress = (event: object) => window?.webContents.send('localModel:progress', event)

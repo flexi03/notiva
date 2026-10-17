@@ -126,7 +126,8 @@ Hintergrund-Prüfungen melden in den Benachrichtigungen, was sie gefunden haben 
 - `⌘/Strg F` sucht im PDF, `←/→` blättert, Zoom per Pinch oder `⌘ +/−`.
 - Markieren, kommentieren, Seitennotizen; mit dem Zeiger auswählen, verschieben, löschen; `⌘Z` macht rückgängig.
 - **Vorlesungsmodus** (rechte Spalte): nimmt auf, transkribiert lokal mit Whisper (das Modell lädt beim ersten Start)
-  und folgt den Folien. Danach fasst die KI auf Wunsch zusammen.
+  und folgt den Folien. Das Programm whisper.cpp installiert _Einstellungen → Transkription_ mit einem Klick: auf dem
+  Mac mit Homebrew, unter Linux und Windows das offizielle Programm von GitHub (geprüft, ins App-Profil). Danach fasst die KI auf Wunsch zusammen.
 
 ## Code-Ordner
 
@@ -169,8 +170,9 @@ claude mcp add notiva -- node /pfad/zu/notiva/dist-mcp/notiva-mcp.mjs /pfad/zu/d
 ## Lokales Mini-Modell
 
 Für schnelle Zusammenfassungen ohne Internet und ohne Konto: _Einstellungen → KI → Lokales Mini-Modell_.
-Notiva nutzt dafür [llama.cpp](https://github.com/ggml-org/llama.cpp) (Knopf „llama.cpp installieren“: Homebrew
-bzw. winget) und ein kleines Qwen-2.5-Modell (empfohlen 1,5 B, ~1,1 GB; klein 0,5 B, ~0,5 GB), das beim ersten Mal
+Notiva nutzt dafür [llama.cpp](https://github.com/ggml-org/llama.cpp) (Knopf „llama.cpp installieren“: auf dem Mac
+mit Homebrew, sonst mit dem offiziellen Installer von [llama.app](https://llama.app) – in den Benutzerordner, ohne
+Administratorrechte; ein schon installiertes `llama-server` oder `llama` wird erkannt) und ein kleines Qwen-2.5-Modell (empfohlen 1,5 B, ~1,1 GB; klein 0,5 B, ~0,5 GB), das beim ersten Mal
 mit Fortschrittsbalken geladen und per Prüfsumme kontrolliert wird. Im Git-Panel fasst es dann jede geänderte
 Datei zusammen und schlägt die Commit-Nachricht vor (automatisch, du kannst sie ändern; ✨ fragt neu). Das Modell läuft nur auf `127.0.0.1` und beendet sich nach 5 Minuten ohne Anfrage.
 

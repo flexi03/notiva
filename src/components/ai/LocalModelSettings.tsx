@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Cpu, Download, Trash2 } from 'lucide-react'
 import { downloadLocalModel, localModelChoice, setLocalModelChoice } from '@/app/localModel'
+import { withProgress } from '@/app/progress'
 import { useAction } from '@/app/store'
 import { t } from '@/i18n'
 import { electronBridge } from '@/lib/vault'
@@ -38,14 +39,28 @@ export function LocalModelSettings() {
             icon={<Download size={14} />}
             onClick={() =>
               void run(async () => {
-                const result = await bridge.install()
-                if (result === 'started') alertAfterInstall()
-                refresh()
+                await withProgress(
+                  t('localModel.installing'),
+                  async (task) => {
+                    const off = bridge.onProgress(
+                      (e) => e.kind === 'install' && e.text && task.detail(e.text),
+                    )
+                    try {
+                      await bridge.install()
+                    } finally {
+                      off()
+                    }
+                  },
+                  { success: () => t('localModel.ready') },
+                ).finally(refresh)
               })
             }
           >
             {t('localModel.install')}
           </Button>
+          <p className="text-[13px] text-ink-3">
+            {t(status.via === 'brew' ? 'localModel.viaBrew' : 'localModel.viaScript')}
+          </p>
         </div>
       ) : (
         <p className="flex items-center gap-1.5 text-[13px] text-ink-2">
@@ -106,15 +121,5 @@ export function LocalModelSettings() {
         ))}
       </ul>
     </div>
-  )
-}
-
-function alertAfterInstall() {
-  void import('@/app/progress').then(({ announce }) =>
-    announce(t('localModel.installing'), {
-      state: 'info',
-      sticky: true,
-      note: t('localModel.installingNote'),
-    }),
   )
 }

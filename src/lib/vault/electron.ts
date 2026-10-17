@@ -161,9 +161,12 @@ export interface EcampusBridge {
   onPolled(callback: () => void): () => void
 }
 
+/** How a click installs a local engine on this system (null: by hand). */
+export type InstallVia = 'brew' | 'script' | 'download' | null
+
 export interface WhisperStatus {
   server: string | null
-  brew: boolean
+  via: InstallVia
   models: Array<{ id: string; label: string; size: number; downloaded: boolean }>
   running: boolean
 }
@@ -283,10 +286,11 @@ export interface NotivaBridge {
   localModel?: {
     status(): Promise<{
       server: string | null
+      via: InstallVia
       models: Array<{ id: string; label: string; size: number; downloaded: boolean }>
       running: string | null
     }>
-    install(): Promise<'installed' | 'started'>
+    install(): Promise<void>
     download(id: string): Promise<void>
     remove(id: string): Promise<void>
     complete(

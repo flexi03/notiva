@@ -4,12 +4,17 @@
  * engine: models live in the app profile (verified by size and SHA-256), the server starts on
  * demand on 127.0.0.1 and stops after 5 idle minutes. Nothing leaves the computer.
  */
-import { spawn, type ChildProcess } from 'node:child_process'
-import { createHash } from 'node:crypto'
-import { createWriteStream, promises as fs } from 'node:fs'
+import { type ChildProcess } from 'node:child_process'
+import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { which } from './shellPath'
+import {
+  downloadVerified,
+  findLlamaServer,
+  installLlama,
+  llamaInstallVia,
+  type InstallVia,
+} from './nativeTools'
 import { freePort, spawnTied } from './whisper'
 
 export const LOCAL_MODELS = [
@@ -30,7 +35,7 @@ export const LOCAL_MODELS = [
 ] as const
 
 export type LocalModelId = (typeof LOCAL_MODELS)[number]['id']
-type Progress = (event: {
+export type Progress = (event: {
   kind: 'download' | 'install' | 'start'
   done?: number
   total?: number
@@ -40,6 +45,7 @@ type Fetch = (url: string, init?: RequestInit) => Promise<Response>
 
 export interface LocalModelStatus {
   server: string | null
+  via: InstallVia
   models: Array<{ id: string; label: string; size: number; downloaded: boolean }>
   running: string | null
 }
@@ -70,94 +76,23 @@ export class LocalModel {
       })),
     )
     return {
-      server: await which(process.platform === 'win32' ? 'llama-server.exe' : 'llama-server'),
+      server: (await findLlamaServer())?.command ?? null,
+      via: await llamaInstallVia(),
       models,
       running: this.running,
     }
   }
 
-  /** One-click install of llama.cpp: Homebrew (macOS/Linux) or winget (Windows), visible to the user. */
-  async install(onProgress: Progress): Promise<'installed' | 'started'> {
-    if (process.platform === 'win32') {
-      spawn(
-        'cmd.exe',
-        [
-          '/c',
-          'start',
-          '"llama.cpp installieren"',
-          'cmd',
-          '/k',
-          'winget install --id ggml.llamacpp -e --accept-package-agreements --accept-source-agreements',
-        ],
-        {
-          detached: true,
-          stdio: 'ignore',
-        },
-      ).unref()
-      return 'started'
-    }
-    const brew = await which('brew')
-    if (!brew)
-      throw new Error(
-        'Homebrew fehlt – siehe brew.sh, oder llama.cpp selbst installieren (github.com/ggml-org/llama.cpp).',
-      )
-    await new Promise<void>((resolve, reject) => {
-      const child = spawn(brew, ['install', 'llama.cpp'], {
-        env: { ...process.env, HOMEBREW_NO_AUTO_UPDATE: '1' },
-      })
-      const forward = (chunk: Buffer) =>
-        chunk
-          .toString()
-          .split('\n')
-          .filter((l) => l.trim())
-          .forEach((text) => onProgress({ kind: 'install', text: text.slice(0, 300) }))
-      child.stdout.on('data', forward)
-      child.stderr.on('data', forward)
-      child.on('error', reject)
-      child.on('close', (code) =>
-        code === 0 ? resolve() : reject(new Error(`Installation fehlgeschlagen (Code ${code})`)),
-      )
-    })
-    return 'installed'
+  /** One-click install of llama.cpp (see nativeTools: Homebrew or llama.app's installer). */
+  install(onProgress: Progress): Promise<void> {
+    return installLlama(onProgress)
   }
 
   /** Downloads a model with progress; verified by size and SHA-256 before it is used. */
   async download(id: string, onProgress: Progress): Promise<void> {
     const model = LOCAL_MODELS.find((m) => m.id === id)
     if (!model) throw new Error('Unbekanntes Modell')
-    await fs.mkdir(this.modelDir, { recursive: true })
-    const target = this.modelPath(id)
-    const part = `${target}.part`
-    const response = await this.fetchFn(model.url, { redirect: 'follow' })
-    if (!response.ok || !response.body) throw new Error(`Download fehlgeschlagen (${response.status})`)
-    const hash = createHash('sha256')
-    const out = createWriteStream(part)
-    let done = 0
-    let last = 0
-    const reader = response.body.getReader()
-    try {
-      for (;;) {
-        const { value, done: finished } = await reader.read()
-        if (finished) break
-        hash.update(value)
-        done += value.length
-        if (done > model.size) throw new Error('Datei größer als erwartet')
-        if (!out.write(value)) await new Promise((r) => out.once('drain', r))
-        if (Date.now() - last > 250) {
-          last = Date.now()
-          onProgress({ kind: 'download', done, total: model.size })
-        }
-      }
-      await new Promise<void>((resolve, reject) => out.end((e?: Error | null) => (e ? reject(e) : resolve())))
-      if (done !== model.size || hash.digest('hex') !== model.sha256)
-        throw new Error('Modell beschädigt (Prüfsumme stimmt nicht)')
-      await fs.rename(part, target)
-      onProgress({ kind: 'download', done, total: model.size })
-    } catch (error) {
-      out.destroy()
-      await fs.rm(part, { force: true })
-      throw error
-    }
+    await downloadVerified(this.fetchFn, model.url, this.modelPath(id), model, onProgress)
   }
 
   async remove(id: string): Promise<void> {
@@ -171,7 +106,7 @@ export class LocalModel {
     if (this.starting) return this.starting
     this.stop()
     this.starting = (async () => {
-      const server = await which(process.platform === 'win32' ? 'llama-server.exe' : 'llama-server')
+      const server = await findLlamaServer()
       if (!server)
         throw new Error('llama.cpp ist nicht installiert (Einstellungen → KI → Lokales Mini-Modell).')
       const file = this.modelPath(id)
@@ -180,7 +115,8 @@ export class LocalModel {
       onProgress?.({ kind: 'start', text: 'Lokales Modell startet …' })
       const port = await freePort()
       const threads = Math.max(2, Math.min(8, os.cpus().length - 2))
-      const child = spawnTied(server, [
+      const child = spawnTied(server.command, [
+        ...server.args,
         '-m',
         file,
         '--host',

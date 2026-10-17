@@ -118,7 +118,7 @@ export function TranscriptionSettingsSection() {
   )
 }
 
-/** whisper.cpp: install with Homebrew, download a model – with progress. */
+/** whisper.cpp: install (Homebrew or the official build), download a model – with progress. */
 function LocalWhisper({ model, onModel }: { model: string; onModel: (model: string) => void }) {
   const bridge = electronBridge()?.whisper
   const [status, setStatus] = useState<WhisperStatus | null>(null)
@@ -159,7 +159,7 @@ function LocalWhisper({ model, onModel }: { model: string; onModel: (model: stri
           <span className="flex items-center gap-1 text-sm text-accent">
             <CheckCircle2 size={15} /> {t('transcribe.installed')}
           </span>
-        ) : status.brew ? (
+        ) : status.via ? (
           <Button
             size="sm"
             variant="primary"
@@ -169,7 +169,15 @@ function LocalWhisper({ model, onModel }: { model: string; onModel: (model: stri
                 withProgress(
                   t('transcribe.installing'),
                   async (task) => {
-                    const off = bridge.onProgress((e) => e.text && task.detail(e.text))
+                    const off = bridge.onProgress((e) =>
+                      e.kind === 'download' && e.total
+                        ? task.update(
+                            e.done ?? 0,
+                            e.total,
+                            `${Math.round((e.done ?? 0) / 1e6)} / ${Math.round(e.total / 1e6)} MB`,
+                          )
+                        : e.text && task.detail(e.text),
+                    )
                     try {
                       await bridge.install()
                     } finally {
@@ -185,6 +193,11 @@ function LocalWhisper({ model, onModel }: { model: string; onModel: (model: stri
           </Button>
         ) : (
           <span className="text-sm text-ink-3">{t('transcribe.noBrew')}</span>
+        )}
+        {!status.server && status.via && (
+          <span className="text-[13px] text-ink-3">
+            {t(status.via === 'brew' ? 'transcribe.viaBrew' : 'transcribe.viaDownload')}
+          </span>
         )}
       </div>
       <div className="space-y-1.5">
