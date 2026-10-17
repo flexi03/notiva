@@ -179,7 +179,7 @@ Die KI ist aus, bis du sie einschaltest – und zeigt vor dem Senden, was sie mi
 ## Installieren und starten
 
 **Herunterladen:** die neueste Version unter [Releases](https://github.com/flexi03/notiva/releases/latest) –
-macOS (Apple Silicon, `.dmg`), Windows (`.exe`) oder Linux (`.AppImage`).
+macOS (Apple Silicon, `.dmg`), Windows (`.exe`) oder Linux (`.AppImage`, x86_64 und ARM64).
 
 - **macOS:** Notiva in „Programme“ ziehen und öffnen. Die App ist ab 0.2.0 mit einer Apple-Developer-ID signiert und
   von Apple notarisiert – sie öffnet ohne Nachfrage. (Ältere Versionen: _Systemeinstellungen → Datenschutz &

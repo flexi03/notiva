@@ -180,7 +180,7 @@ Property names in the study template are German (`Note`, `Belegung`, `Prüfungen
 ## Install and run
 
 **Download:** the latest version from [Releases](https://github.com/flexi03/notiva/releases/latest) – macOS (Apple
-Silicon, `.dmg`), Windows (`.exe`) or Linux (`.AppImage`).
+Silicon, `.dmg`), Windows (`.exe`) or Linux (`.AppImage`, x86_64 and ARM64).
 
 - **macOS:** drag Notiva to Applications and open it. From 0.2.0 the app is signed with an Apple Developer ID and
   notarized by Apple – it opens without asking. (Older versions: _System Settings → Privacy & Security_ →

@@ -11,6 +11,8 @@ Notiva checks for a new version on start and every hour and installs it itself i
   PDFs with their highlights and page notes. Changes from the iPhone go into the same "… (Notizen).md" – highlights
   are merged, only the same page note gets a hint instead of being overwritten.
 - Text written directly on a PDF page keeps its box width and font size when saved (fell back to the default before).
+- **Linux on ARM**: besides x86_64 there is now an AppImage for ARM64 (e.g. Raspberry Pi 5, ARM laptops, Linux VMs on
+  Apple Silicon); updates pick the matching file.
 
 ## 0.2.6 – 2026-10-17
 

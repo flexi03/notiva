@@ -14,6 +14,7 @@ describe('update', () => {
       'Notiva-1.1.0-mac-arm64.dmg',
       'Notiva-1.1.0-mac-arm64.zip',
       'Notiva-1.1.0-win-x64.exe',
+      'Notiva-1.1.0-linux-arm64.AppImage',
       'Notiva-1.1.0-linux-x86_64.AppImage',
       'latest-mac.yml',
     ].map((name) => ({ name, url: `https://x/${name}`, size: 1 }))
@@ -21,6 +22,7 @@ describe('update', () => {
     expect(pickAsset(assets, 'darwin', 'x64')).toBeUndefined()
     expect(pickAsset(assets, 'win32', 'x64')?.name).toBe('Notiva-1.1.0-win-x64.exe')
     expect(pickAsset(assets, 'linux', 'x64')?.name).toBe('Notiva-1.1.0-linux-x86_64.AppImage')
+    expect(pickAsset(assets, 'linux', 'arm64')?.name).toBe('Notiva-1.1.0-linux-arm64.AppImage')
   })
 })
 

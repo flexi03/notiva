@@ -13,6 +13,8 @@ Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und inst
   Überschreiben.
 - Text direkt auf einer PDF-Seite behält beim Speichern seine Breite und Schriftgröße (fiel vorher auf den Standard
   zurück).
+- **Linux auf ARM**: Neben x86_64 gibt es jetzt auch ein AppImage für ARM64 (z. B. Raspberry Pi 5, ARM-Laptops,
+  Linux-VMs auf Apple Silicon); das Update wählt die passende Datei.
 
 ## 0.2.6 – 2026-10-17
 

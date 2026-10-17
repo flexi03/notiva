@@ -1,6 +1,6 @@
 name: Release
 
-# A tag like v1.2.3 builds the apps for macOS, Windows and Linux and attaches them to the GitHub
+# A tag like v1.2.3 builds the apps for macOS, Windows and Linux (x64 and ARM) and attaches them to the GitHub
 # release of that tag. Notiva checks these releases and updates itself.
 on:
   push:
@@ -26,7 +26,10 @@ jobs:
           - os: windows-latest
             target: --win
           - os: ubuntu-latest
-            target: --linux
+            target: --linux --x64
+          # Its own ARM runner: native modules (node-pty) must match the architecture.
+          - os: ubuntu-24.04-arm
+            target: --linux --arm64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
