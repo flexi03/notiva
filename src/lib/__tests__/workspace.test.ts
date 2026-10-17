@@ -209,6 +209,14 @@ describe('Workspace writes', () => {
     expect(await ws.readMeta('settings.json')).toEqual({ theme: 'dark' })
     expect(ws.get('.notiva/settings.json')).toBeUndefined()
   })
+
+  it('does not try to read meta files that are not there (no error in the log)', async () => {
+    const { vault, ws } = await setup({ '.notiva/old.json': '{"a":1}' })
+    const read = vi.spyOn(vault, 'read')
+    expect(await ws.readMeta('moodle-removed.json')).toBeNull()
+    expect(read).not.toHaveBeenCalled()
+    expect(await ws.readMeta('old.json')).toEqual({ a: 1 })
+  })
 })
 
 describe('saves keep the file format (small Git diffs)', () => {

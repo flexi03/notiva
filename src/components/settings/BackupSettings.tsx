@@ -5,6 +5,7 @@ import { useAction, useApp } from '@/app/store'
 import { getLanguage, t } from '@/i18n'
 import { electronBridge, type BackupStatus } from '@/lib/vault'
 import { Button, IconButton, Switch } from '@/components/ui'
+import { Row } from '@/screens/settingsLayout'
 
 /**
  * Settings → Speicher → Sicherung: daily snapshots outside the folder (where, with Git or not),
@@ -29,16 +30,20 @@ export function BackupSettings() {
   return (
     <div className="space-y-3" data-testid="backup-settings">
       <p className="text-sm text-ink-2">{t('backup.explain')}</p>
-      <Switch
-        label={t('backup.enabled')}
-        checked={status.settings.enabled}
-        onChange={(enabled) => void backup.settings({ enabled }).then(setStatus)}
-      />
-      <Switch
-        label={t('backup.withGit')}
-        checked={status.settings.withGit}
-        onChange={(withGit) => void backup.settings({ withGit }).then(setStatus)}
-      />
+      <Row label={t('backup.enabled')} hint={t('backup.enabledHint')}>
+        <Switch
+          label={t('backup.enabled')}
+          checked={status.settings.enabled}
+          onChange={(enabled) => void backup.settings({ enabled }).then(setStatus)}
+        />
+      </Row>
+      <Row label={t('backup.withGit')} hint={t('backup.withGitHint')}>
+        <Switch
+          label={t('backup.withGit')}
+          checked={status.settings.withGit}
+          onChange={(withGit) => void backup.settings({ withGit }).then(setStatus)}
+        />
+      </Row>
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <HardDrive size={15} className="text-ink-3" />
         <span

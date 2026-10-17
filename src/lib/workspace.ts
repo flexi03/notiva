@@ -841,8 +841,11 @@ export class Workspace {
 
   /** Reads a JSON file in .notiva/ (settings etc.). Returns null if missing or invalid. */
   async readMeta<T>(name: string): Promise<T | null> {
+    const path = `${META_DIR}/${name}`
+    // Not there yet (e.g. nothing removed so far): no read – a missing file is no error.
+    if (!this.has(path)) return null
     try {
-      return JSON.parse(await this.vault.read(`${META_DIR}/${name}`)) as T
+      return JSON.parse(await this.vault.read(path)) as T
     } catch {
       return null
     }
@@ -851,7 +854,11 @@ export class Workspace {
   /** `compact`: one line (caches – many and large, nobody reads them). */
   writeMeta(name: string, value: unknown, { compact = false } = {}): Promise<void> {
     const text = compact ? JSON.stringify(value) : `${JSON.stringify(value, null, 2)}\n`
-    return this.run(() => this.vault.write(`${META_DIR}/${name}`, text))
+    const path = `${META_DIR}/${name}`
+    return this.run(async () => {
+      await this.vault.write(path, text)
+      if (!this.has(path)) this.files.push({ path, mtime: Date.now(), size: text.length })
+    })
   }
 
   /** Writes several new files at once (one reload). Fails without writing if any path exists. */
@@ -956,4 +963,3 @@ function mapStrings(data: FrontmatterData, fn: (value: string) => string): Front
   for (const [k, v] of Object.entries(data)) out[k] = visit(v)
   return changed ? out : data
 }
-

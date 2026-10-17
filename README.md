@@ -187,7 +187,9 @@ macOS (Apple Silicon, `.dmg`), Windows (`.exe`) oder Linux (`.AppImage`).
 - **Windows:** Notiva ist für Windows nicht signiert. Beim ersten Start: „Der Computer wurde durch Windows geschützt“ → **„Weitere Informationen“ → „Trotzdem ausführen“**.
 
 **Updates:** Notiva sieht beim Start und jede Stunde nach neuen Versionen, meldet sie und installiert sie mit einem
-Klick („Jetzt aktualisieren“); von Hand über _Notiva → Nach Updates suchen …_. Was neu ist: [CHANGELOG.md](CHANGELOG.md).
+Klick („Jetzt aktualisieren“); von Hand über _Notiva → Nach Updates suchen …_. Unter _Einstellungen → Über_ stehen die
+installierte Version, der Update-Stand und alle Versionen mit ihren Neuerungen – jede lässt sich dort installieren
+(ältere nach einer Warnung). Was neu ist: [CHANGELOG.md](CHANGELOG.md).
 
 **Aus dem Quelltext** (Voraussetzung: [Node.js](https://nodejs.org) 24 oder neuer):
 

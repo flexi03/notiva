@@ -30,6 +30,11 @@ test('sichert den Ordner in einen eigenen Backup-Ordner und stellt ihn als neuen
   await window.evaluate(() => (location.hash = '#/settings/vault'))
   const section = window.getByTestId('backup-settings')
   await expect(section).toContainText('Noch keine Sicherung')
+  // The switches say what they do.
+  await expect(section.getByText('Täglich automatisch sichern')).toBeVisible()
+  await expect(section.getByText('Git-Verlauf mitsichern', { exact: true })).toBeVisible()
+  await expect(section.getByText(/Ist die letzte Sicherung einen Tag alt/)).toBeVisible()
+  await section.screenshot({ path: test.info().outputPath('sicherung.png') })
   await section.getByRole('button', { name: 'Jetzt sichern' }).click()
   await expect(section.getByTestId('backup-last')).toContainText('Letzte Sicherung', { timeout: 15_000 })
   // A normal folder outside the vault, one per snapshot.

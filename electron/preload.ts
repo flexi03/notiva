@@ -53,7 +53,8 @@ contextBridge.exposeInMainWorld('notiva', {
   update: {
     status: () => invoke('update:status'),
     check: () => invoke('update:check'),
-    install: () => invoke<void>('update:install'),
+    install: (version?: string) => invoke<void>('update:install', version),
+    releases: () => invoke('update:releases'),
     onStatus(callback: (status: unknown) => void) {
       const listener = (_e: unknown, s: unknown) => callback(s)
       ipcRenderer.on('update:status', listener)

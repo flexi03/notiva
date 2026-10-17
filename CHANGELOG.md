@@ -7,6 +7,13 @@ Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und inst
 
 ## 0.2.5 – noch nicht veröffentlicht
 
+- **Updates in den Einstellungen** (_Einstellungen → Über_): installierte Version, Update-Stand mit „Installieren“
+  und „Nach Updates suchen“, dazu alle veröffentlichten Versionen mit Datum und „Was ist neu“. Jede Version lässt
+  sich installieren, ältere nach einer Warnung.
+- Die Schalter unter _Sicherung_ und _Kalender aufs Handy_ zeigen jetzt, wofür sie sind (mit kurzer Erklärung).
+- Keine Fehlermeldungen mehr im Log, wenn Notiva eine eigene Hilfsdatei sucht, die es noch nicht gibt (z. B.
+  `moodle-removed.json`).
+
 - **Vorbereitung für die iPhone-/iPad-App** ([#42](https://github.com/flexi03/notiva/issues/42)): _Einstellungen →
   Speicher & Daten → iPhone & iPad_ koppelt ein Gerät per QR-Code (eigener Schlüssel pro Gerät). Die Desktop-App
   beantwortet dann verschlüsselte Anfragen im WLAN bzw. über Tailscale – Tag, Stundenplan, Aufgaben, Ablage, Seiten,

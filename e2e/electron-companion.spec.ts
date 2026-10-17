@@ -40,8 +40,12 @@ interface Pairing {
 }
 
 test('iPhone koppeln: verschlüsselt Tag lesen, abhaken, ablegen, Seite bearbeiten, entkoppeln', async () => {
-  await window.evaluate(() => (location.hash = '#/settings/vault'))
   const section = window.getByTestId('companion-settings')
+  // Opening the folder may still navigate to its start page: until the settings stay.
+  await expect(async () => {
+    await window.evaluate(() => (location.hash = '#/settings/vault'))
+    await expect(section).toBeVisible({ timeout: 2_000 })
+  }).toPass({ timeout: 20_000 })
   await section.getByLabel('Name des Geräts').fill('Test-iPhone')
   await section.getByRole('button', { name: 'iPhone oder iPad koppeln' }).click()
   await expect(section.getByRole('img', { name: 'QR-Code zum Koppeln' })).toBeVisible()

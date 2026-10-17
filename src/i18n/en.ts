@@ -30,6 +30,21 @@ export const en: Record<MessageKey, string> = {
   'update.installing': 'Downloading Notiva {version} …',
   'update.restarting': 'Notiva is restarting …',
   'update.none': 'Notiva {version} is up to date',
+  'update.checking': 'Checking for updates …',
+  'update.downloading': 'Downloading … {done} / {total} MB',
+  'update.upToDate': 'Up to date – last checked {date}. Notiva checks on start and every hour by itself.',
+  'update.notChecked': 'Notiva checks for updates on start and every hour by itself.',
+  'update.installNamed': 'Install {version}',
+  'update.versions': 'All versions',
+  'update.versionsFailed': 'Could not load the versions ({message}).',
+  'update.installed': 'installed',
+  'update.newer': 'newer',
+  'update.installVersion': 'Install',
+  'update.onGitHub': 'View on GitHub',
+  'update.notes': "What's new",
+  'update.olderTitle': 'Install the older version {version}?',
+  'update.olderHint':
+    'You have {current}. Features added later will be missing; your files stay as they are. Notiva downloads the version and restarts.',
   'update.failed': 'Could not check for updates',
   'semester.today': 'today',
   'semester.tomorrow': 'tomorrow',
@@ -322,7 +337,11 @@ export const en: Record<MessageKey, string> = {
   'backup.explain':
     'Once a day a complete copy of your folder in a backup folder of its own – every backup is a normal folder. Unchanged files take no extra space. The last 14 days and one per month are kept.',
   'backup.enabled': 'Back up automatically every day',
-  'backup.withGit': 'Include the Git history (.git, can be large)',
+  'backup.enabledHint':
+    'When the last backup is a day old, Notiva makes a new one in the backup folder below by itself (while Notiva runs). Off: only "Back up now".',
+  'backup.withGit': 'Include the Git history',
+  'backup.withGitHint':
+    'Also copies the hidden .git folder with all earlier versions. Only needed if you want the history even after a disk failure – can be large.',
   'backup.chooseFolder': 'Change …',
   'backup.openFolder': 'Show in Finder',
   'backup.now': 'Back up now',
@@ -387,6 +406,8 @@ export const en: Record<MessageKey, string> = {
   'calendarFeed.explain':
     'Timetable, exams, deadlines, labs and study plan as a calendar subscription – e.g. in Apple Calendar. Notiva offers a secret address on your Wi-Fi (and via Tailscale); the phone fetches the dates while the Mac is on and shows the last state otherwise. Nothing goes to a cloud.',
   'calendarFeed.enabled': 'Share the calendar on the network',
+  'calendarFeed.enabledHint':
+    'On: the QR code and address appear below. Off: subscriptions get no new dates.',
   'calendarFeed.how':
     'Scan the QR code with the phone camera and tap "Subscribe" – or in Apple Calendar: Calendars → Add subscription calendar → paste the address.',
   'calendarFeed.qr': 'QR code of the calendar address',

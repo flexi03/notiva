@@ -5,8 +5,11 @@ import { t } from '@/i18n'
 import type { UpdateStatus } from '@/lib/update'
 import { electronBridge } from '@/lib/vault'
 
-/** Downloads and installs the update (with progress); the app restarts by itself. */
-export function installUpdate(latest: string): Promise<void> {
+/**
+ * Downloads and installs the update – or `version` from the versions list – with progress; the
+ * app restarts by itself.
+ */
+export function installUpdate(latest: string, version?: string): Promise<void> {
   const bridge = electronBridge()?.update
   if (!bridge) return Promise.resolve()
   return withProgress(t('update.installing', { version: latest }), async (task) => {
@@ -18,7 +21,7 @@ export function installUpdate(latest: string): Promise<void> {
     try {
       // Nothing unsaved gets lost: the app quits right after the download.
       await useApp.getState().ws?.saveAll()
-      await bridge.install()
+      await bridge.install(version)
     } finally {
       off()
     }

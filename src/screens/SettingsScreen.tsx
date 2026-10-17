@@ -19,7 +19,7 @@ import { NotificationSettingsSection } from '@/components/notifications/Notifica
 import { PromptEditor } from '@/components/ai/PromptEditor'
 import { StudySettingsSection } from '@/components/study/StudySettings'
 import { LocalModelSettings } from '@/components/ai/LocalModelSettings'
-import { checkUpdatesNow } from '@/app/update'
+import { UpdateSettings } from '@/components/settings/UpdateSettings'
 import { electronBridge } from '@/lib/vault'
 
 function Swatches<T extends string>({
@@ -413,11 +413,12 @@ function AboutSection() {
   return (
     <Section title={t('settings.tab.about')}>
       <p className="text-sm text-ink-2">{t('settings.about')}</p>
-      {version && <p className="text-sm">{t('settings.version', { version })}</p>}
+      {electronBridge()?.update ? (
+        <UpdateSettings />
+      ) : (
+        version && <p className="text-sm">{t('settings.version', { version })}</p>
+      )}
       <div className="flex flex-wrap gap-2">
-        {electronBridge()?.update && (
-          <Button onClick={() => void checkUpdatesNow()}>{t('settings.checkUpdates')}</Button>
-        )}
         <Button variant="ghost" onClick={() => useApp.getState().navigate({ name: 'help' })}>
           {t('help.open')}
         </Button>

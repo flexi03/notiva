@@ -70,7 +70,7 @@ import { WhisperEngine } from './whisper'
 import { buildMenu } from './menu'
 import { systemNotify, testNotify } from './systemNotify'
 import { LocalModel } from './localModel'
-import { checkForUpdate, installUpdate, onUpdateStatus, updateStatus } from './updater'
+import { checkForUpdate, installUpdate, listReleases, onUpdateStatus, updateStatus } from './updater'
 import { Terminals } from './terminal'
 import { Ecampus, NeedsLogin } from './ecampus'
 import { examNews, type ExamSnapshot } from '../src/lib/ecampus'
@@ -965,7 +965,10 @@ function registerIpc(): void {
   })
   handle('update:status', async () => updateStatus())
   handle('update:check', async () => checkForUpdate())
-  handle('update:install', async () => installUpdate())
+  handle('update:install', async (version: unknown) =>
+    installUpdate(typeof version === 'string' && /^\d+\.\d+\.\d+$/.test(version) ? version : undefined),
+  )
+  handle('update:releases', async () => listReleases())
   // When each source is checked next (ms timestamps; null = only by hand).
   handle('sync:schedule', async () => {
     const { intervals } = parseNotifySettings((await readConfig()).notify)

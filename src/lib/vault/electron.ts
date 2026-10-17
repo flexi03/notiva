@@ -1,4 +1,4 @@
-import type { UpdateStatus } from '../update'
+import type { ReleaseInfo, UpdateStatus } from '../update'
 import type { MoodleSnapshot } from '../moodle'
 import type { AppNotification } from '../notifications'
 import type { ExamSnapshot } from '../ecampus'
@@ -327,7 +327,10 @@ export interface NotivaBridge {
   update?: {
     status(): Promise<UpdateStatus>
     check(): Promise<UpdateStatus>
-    install(): Promise<void>
+    /** the found update – or `version`, any published one */
+    install(version?: string): Promise<void>
+    /** all published versions, newest first */
+    releases(): Promise<ReleaseInfo[]>
     onStatus(callback: (status: UpdateStatus) => void): () => void
   }
   /** Notification center storage and system banners (desktop app only). */

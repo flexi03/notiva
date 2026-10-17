@@ -110,7 +110,7 @@ At the bottom edge of the window (like VS Code):
 - **Right:**
   - "N suggestions" (opens the notifications)
   - Help
-  - Version (about and updates)
+  - Version (about and updates – _Settings → About_ also lists every version to install)
   - "Report a problem"
 
 Background checks report in the notifications what they found and what of it is new.

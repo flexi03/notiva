@@ -31,6 +31,21 @@ export const de = {
   'update.restarting': 'Notiva startet neu …',
   'update.none': 'Notiva {version} ist aktuell',
   'update.failed': 'Updates konnten nicht geprüft werden',
+  'update.checking': 'Suche nach Updates …',
+  'update.downloading': 'Wird geladen … {done} / {total} MB',
+  'update.upToDate': 'Aktuell – zuletzt geprüft {date}. Notiva sucht beim Start und jede Stunde selbst.',
+  'update.notChecked': 'Notiva sucht beim Start und jede Stunde selbst nach Updates.',
+  'update.installNamed': '{version} installieren',
+  'update.versions': 'Alle Versionen',
+  'update.versionsFailed': 'Versionen konnten nicht geladen werden ({message}).',
+  'update.installed': 'installiert',
+  'update.newer': 'neuer',
+  'update.installVersion': 'Installieren',
+  'update.onGitHub': 'Auf GitHub ansehen',
+  'update.notes': 'Was ist neu',
+  'update.olderTitle': 'Ältere Version {version} installieren?',
+  'update.olderHint':
+    'Du hast {current}. Funktionen, die erst später dazukamen, fehlen dann; deine Dateien bleiben unverändert. Notiva lädt die Version und startet neu.',
   'semester.today': 'heute',
   'semester.tomorrow': 'morgen',
   'semester.next': 'Nächster Termin',
@@ -323,7 +338,11 @@ export const de = {
   'backup.explain':
     'Einmal am Tag eine vollständige Kopie deines Ordners in einem eigenen Backup-Ordner – jede Sicherung ist ein normaler Ordner. Unveränderte Dateien kosten keinen zusätzlichen Platz. Es bleiben die letzten 14 Tage und je eine pro Monat.',
   'backup.enabled': 'Täglich automatisch sichern',
-  'backup.withGit': 'Git-Verlauf mitsichern (.git, kann groß sein)',
+  'backup.enabledHint':
+    'Ist die letzte Sicherung einen Tag alt, legt Notiva von selbst eine neue im Backup-Ordner unten an (solange Notiva läuft). Aus: nur noch „Jetzt sichern“.',
+  'backup.withGit': 'Git-Verlauf mitsichern',
+  'backup.withGitHint':
+    'Kopiert auch den versteckten Ordner .git mit allen früheren Ständen. Nur nötig, wenn du den Verlauf auch nach einem Festplattenschaden brauchst – kann groß sein.',
   'backup.chooseFolder': 'Ändern …',
   'backup.openFolder': 'Im Finder zeigen',
   'backup.now': 'Jetzt sichern',
@@ -388,6 +407,8 @@ export const de = {
   'calendarFeed.explain':
     'Stundenplan, Prüfungen, Fristen, Praktika und Lernplan als Kalender-Abo – z. B. in Apple Kalender. Notiva stellt dafür eine geheime Adresse in deinem WLAN (und über Tailscale) bereit; das Handy holt sich die Termine, solange der Mac an ist, und zeigt sonst den letzten Stand. Nichts geht in eine Cloud.',
   'calendarFeed.enabled': 'Kalender im Netzwerk freigeben',
+  'calendarFeed.enabledHint':
+    'An: QR-Code und Adresse erscheinen unten. Aus: Abos bekommen keine neuen Termine mehr.',
   'calendarFeed.how':
     'Mit der Handy-Kamera den QR-Code scannen und „Abonnieren“ – oder in Apple Kalender: Kalender → Kalenderabonnement hinzufügen → Adresse einfügen.',
   'calendarFeed.qr': 'QR-Code der Kalender-Adresse',

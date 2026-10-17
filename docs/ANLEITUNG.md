@@ -116,7 +116,7 @@ Unten am Fensterrand (wie in VS Code):
 - **Rechts:**
   - „N Vorschläge“ (öffnet die Benachrichtigungen)
   - Hilfe
-  - Version (Info und Updates)
+  - Version (Info und Updates – unter _Einstellungen → Über_ auch alle Versionen zum Installieren)
   - „Problem melden“
 
 Hintergrund-Prüfungen melden in den Benachrichtigungen, was sie gefunden haben und was davon neu ist.

@@ -2,7 +2,8 @@
  * Self-update from GitHub releases – done by Notiva itself (versions up to 0.1.x were not signed,
  * Windows still is not): look up the latest release (on start and hourly), tell the user, download the
  * file for this system and swap the app after it quit (macOS: replace the .app, Windows: run the
- * installer, Linux: replace the AppImage), then start again. Only in the packaged app.
+ * installer, Linux: replace the AppImage), then start again. Only in the packaged app. Any
+ * published version can be installed the same way (Settings → Über → Versionen).
  */
 import { spawn } from 'node:child_process'
 import { createWriteStream, promises as fs } from 'node:fs'
@@ -13,7 +14,10 @@ import {
   compareVersions,
   pickAsset,
   RELEASES_REPO,
+  toReleases,
+  type GitHubRelease,
   type ReleaseAsset,
+  type ReleaseInfo,
   type UpdateStatus,
 } from '../src/lib/update'
 
@@ -74,9 +78,24 @@ export async function checkForUpdate(): Promise<UpdateStatus> {
   return status
 }
 
-async function download(): Promise<string> {
-  if (status.state !== 'available' || !asset) throw new Error('Kein Update verfügbar')
-  const { version, latest } = status
+/** All published versions, newest first (with the file for this system, if there is one). */
+export async function listReleases(): Promise<ReleaseInfo[]> {
+  // E2E tests (unpackaged only): made-up releases instead of GitHub.
+  if (!app.isPackaged && process.env.NOTIVA_E2E_RELEASES)
+    return toReleases(
+      JSON.parse(await fs.readFile(process.env.NOTIVA_E2E_RELEASES, 'utf8')) as GitHubRelease[],
+      process.platform,
+      process.arch,
+    )
+  const res = await net.fetch(`https://api.github.com/repos/${RELEASES_REPO}/releases?per_page=100`, {
+    headers: { accept: 'application/vnd.github+json', 'user-agent': `Notiva/${app.getVersion()}` },
+  })
+  if (!res.ok) throw new Error(`GitHub: ${res.status}`)
+  return toReleases((await res.json()) as GitHubRelease[], process.platform, process.arch)
+}
+
+async function download(asset: ReleaseAsset, latest: string): Promise<string> {
+  const version = app.getVersion()
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'notiva-update-'))
   const file = path.join(dir, asset.name)
   const res = await net.fetch(asset.url)
@@ -107,14 +126,26 @@ const appBundle = () => {
   return i > 0 ? process.execPath.slice(0, i + 4) : null
 }
 
-/** Downloads the update and swaps the app after it quit; starts the new version. */
-export async function installUpdate(): Promise<void> {
+/**
+ * Downloads the update – or `version`, any published one, older ones too – and swaps the app
+ * after it quit; starts the new version.
+ */
+export async function installUpdate(version?: string): Promise<void> {
   if (!app.isPackaged) throw new Error('Nur in der installierten App')
-  const current = status
-  if (current.state !== 'available') throw new Error('Kein Update verfügbar')
+  const current = { version: app.getVersion() }
+  let chosen: { latest: string; asset: ReleaseAsset }
+  if (version) {
+    const release = (await listReleases()).find((r) => r.version === version)
+    if (!release?.asset) throw new Error(`Keine Datei von Notiva ${version} für dieses System`)
+    chosen = { latest: release.version, asset: release.asset }
+  } else if (status.state === 'available' && asset) {
+    chosen = { latest: status.latest, asset }
+  } else {
+    throw new Error('Kein Update verfügbar')
+  }
   try {
-    downloaded = await download()
-    set({ state: 'ready', version: current.version, latest: current.latest })
+    downloaded = await download(chosen.asset, chosen.latest)
+    set({ state: 'ready', version: current.version, latest: chosen.latest })
     const pid = String(process.pid)
     if (process.platform === 'darwin') {
       const target = appBundle()

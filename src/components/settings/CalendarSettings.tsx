@@ -6,6 +6,7 @@ import { useAction, useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
 import { electronBridge, type CalendarStatus } from '@/lib/vault'
 import { Button, IconButton, Switch } from '@/components/ui'
+import { Row } from '@/screens/settingsLayout'
 
 /**
  * Settings → Studium → Kalender aufs Handy: switch the feed on, scan the QR code with the phone
@@ -41,11 +42,13 @@ export function CalendarSettings() {
   return (
     <div className="space-y-3" data-testid="calendar-settings">
       <p className="text-sm text-ink-2">{t('calendarFeed.explain')}</p>
-      <Switch
-        label={t('calendarFeed.enabled')}
-        checked={status.enabled}
-        onChange={(on) => apply(bridge.set(on))}
-      />
+      <Row label={t('calendarFeed.enabled')} hint={t('calendarFeed.enabledHint')}>
+        <Switch
+          label={t('calendarFeed.enabled')}
+          checked={status.enabled}
+          onChange={(on) => apply(bridge.set(on))}
+        />
+      </Row>
       {status.error && (
         <p role="alert" className="text-sm text-danger">
           {status.error}
