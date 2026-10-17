@@ -22,10 +22,12 @@ import {
   type IpcMainInvokeEvent,
 } from 'electron'
 import { watch, type FSWatcher, promises as fs } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { FsVault } from './vaultFs'
 import { CalendarServer, newToken, reachableAddresses } from './calendarServer'
+import { CompanionServer, newDevice, type Device } from './companion'
 import {
   backupRoot,
   createSnapshot,
@@ -175,6 +177,129 @@ async function calendarStatus() {
     port,
     urls: c.token ? reachableAddresses().map((a) => `webcal://${a}:${port}/cal/${c.token}.ics`) : [],
     error: calendarError,
+  }
+}
+
+/* ---------- iPhone/iPad app (docs/COMPANION.md) ---------- */
+
+const COMPANION = () => userFile('companion.bin')
+const COMPANION_PORT = process.env.NOTIVA_E2E_USERDATA ? 0 : 47_812
+/** A pairing nobody used within 10 minutes is dropped. */
+const PAIRING_TTL = 10 * 60_000
+let devices: Device[] = []
+let devicesLoaded = false
+
+async function loadDevices(): Promise<Device[]> {
+  if (devicesLoaded) return devices
+  devicesLoaded = true
+  try {
+    const raw = await fs.readFile(COMPANION())
+    const json = plainSecrets() ? raw.toString('utf8') : safeStorage.decryptString(raw)
+    const list = JSON.parse(json) as unknown
+    devices = Array.isArray(list)
+      ? list.filter(
+          (d): d is Device =>
+            typeof d === 'object' && d !== null && typeof d.id === 'string' && typeof d.key === 'string',
+        )
+      : []
+  } catch {
+    devices = []
+  }
+  return devices
+}
+
+async function saveDevices(): Promise<void> {
+  const json = JSON.stringify(devices)
+  await fs.mkdir(path.dirname(COMPANION()), { recursive: true })
+  // The keys stay in the keychain (encrypted), like the Moodle access.
+  await fs.writeFile(COMPANION(), plainSecrets() ? json : safeStorage.encryptString(json), { mode: 0o600 })
+}
+
+const activeDevices = () =>
+  devices.filter((d) => d.paired || Date.now() - Date.parse(d.created) < PAIRING_TTL)
+
+/** Requests are answered by the app window (same logic as "Heute"); here only waiting for it. */
+let companionCounter = 0
+const companionWaiting = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>()
+
+const companion = new CompanionServer(
+  activeDevices,
+  (device, method, params) =>
+    new Promise((resolve, reject) => {
+      if (!window || !vault) return reject(new Error('Notiva hat gerade keinen Ordner offen'))
+      const id = ++companionCounter
+      const timer = setTimeout(() => {
+        companionWaiting.delete(id)
+        reject(new Error('Notiva antwortet nicht'))
+      }, 20_000)
+      companionWaiting.set(id, {
+        resolve: (v) => (clearTimeout(timer), resolve(v)),
+        reject: (e) => (clearTimeout(timer), reject(e)),
+      })
+      window.webContents.send('companion:request', { id, method, params, device: device.name })
+    }),
+  (device) => {
+    // First use of a pairing makes it permanent; remember when each device was last here.
+    const d = devices.find((x) => x.id === device.id)
+    if (!d) return
+    const first = !d.paired
+    d.paired = true
+    d.lastSeen = new Date().toISOString()
+    if (first) {
+      void saveDevices()
+      window?.webContents.send('companion:paired', d.name)
+    }
+  },
+)
+let bonjour: ChildProcess | null = null
+let companionError: string | null = null
+
+async function startCompanion(): Promise<void> {
+  await loadDevices()
+  if (!activeDevices().length) return stopCompanion()
+  try {
+    await companion.start(COMPANION_PORT)
+    companionError = null
+  } catch (e) {
+    companionError =
+      (e as NodeJS.ErrnoException).code === 'EADDRINUSE'
+        ? `Port ${COMPANION_PORT} ist schon belegt – ein anderes Programm nutzt ihn.`
+        : String((e as Error).message ?? e)
+    return
+  }
+  // Findable on the Wi-Fi (Bonjour), in case the address changes – macOS's own dns-sd.
+  if (!bonjour && process.platform === 'darwin' && !process.env.NOTIVA_E2E_USERDATA) {
+    bonjour = spawn(
+      '/usr/bin/dns-sd',
+      [
+        '-R',
+        `Notiva ${os.hostname().replace(/\.local$/, '')}`,
+        '_notiva._tcp',
+        'local',
+        String(companion.port),
+      ],
+      { stdio: 'ignore' },
+    )
+    bonjour.on('exit', () => (bonjour = null))
+  }
+}
+
+async function stopCompanion(): Promise<void> {
+  bonjour?.kill()
+  bonjour = null
+  await companion.stop()
+}
+
+async function companionStatus() {
+  await loadDevices()
+  return {
+    running: companion.running,
+    port: companion.port || COMPANION_PORT,
+    hosts: reachableAddresses(),
+    devices: devices
+      .filter((d) => d.paired)
+      .map(({ id, name, created, lastSeen }) => ({ id, name, created, ...(lastSeen ? { lastSeen } : {}) })),
+    error: companionError,
   }
 }
 
@@ -724,6 +849,47 @@ function registerIpc(): void {
   )
   handle('notifications:clear', async () => notifications.clear())
   handle('notifications:test', async () => testNotify())
+  // A new device: its own key, shown once as a QR code (address, port, key).
+  handle('companion:pair', async (name: unknown) => {
+    await loadDevices()
+    devices = devices.filter((d) => d.paired || Date.now() - Date.parse(d.created) < PAIRING_TTL)
+    const device = newDevice(typeof name === 'string' ? name : 'iPhone')
+    devices.push(device)
+    await saveDevices()
+    await startCompanion()
+    const status = await companionStatus()
+    return {
+      ...status,
+      pairing: JSON.stringify({
+        v: 1,
+        id: device.id,
+        key: device.key,
+        port: status.port,
+        hosts: status.hosts,
+        name: vault ? path.basename(vault.root) : 'Notiva',
+      }),
+    }
+  })
+  handle('companion:status', async () => companionStatus())
+  handle('companion:remove', async (id: unknown) => {
+    await loadDevices()
+    devices = devices.filter((d) => d.id !== id)
+    await saveDevices()
+    if (!activeDevices().length) await stopCompanion()
+    return companionStatus()
+  })
+  ipcMain.handle('companion:respond', (event, id: unknown, result: unknown, error: unknown) => {
+    if (!trusted(event)) throw new Error('Untrusted sender')
+    const waiting = companionWaiting.get(Number(id))
+    if (!waiting) return
+    companionWaiting.delete(Number(id))
+    if (error) {
+      const e = error as { message?: unknown; code?: unknown; detail?: unknown }
+      waiting.reject(
+        Object.assign(new Error(String(e.message ?? 'Fehler')), { code: e.code, detail: e.detail }),
+      )
+    } else waiting.resolve(result)
+  })
   handle('calendar:status', async () => calendarStatus())
   handle('calendar:set', async (enabled: unknown) => {
     const config = await readConfig()
@@ -1298,6 +1464,8 @@ app.whenReady().then(async () => {
   registerProtocol()
   registerIpc()
   createWindow()
+  // Paired iPhones/iPads can reach the Mac as soon as Notiva runs.
+  void startCompanion().catch(() => undefined)
   // Check Moodle shortly after start, then regularly – and after waking from sleep.
   void schedulePolling(20_000)
   scheduleUpdateChecks()
@@ -1330,6 +1498,7 @@ function scheduleUpdateChecks(): void {
 }
 
 app.on('will-quit', () => {
+  bonjour?.kill()
   whisper.stop()
   localModel.stop()
 })

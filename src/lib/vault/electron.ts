@@ -321,6 +321,8 @@ export interface NotivaBridge {
   backup?: BackupBridge
   /** Calendar feed for the phone (desktop app only). */
   calendar?: CalendarBridge
+  /** Sync with the iPhone/iPad app (desktop app only). */
+  companion?: CompanionBridge
   /** Self-update from GitHub releases (desktop app only). */
   update?: {
     status(): Promise<UpdateStatus>
@@ -417,4 +419,32 @@ export interface CalendarBridge {
   newToken(): Promise<CalendarStatus>
   /** Hands over the current feed (iCalendar text). */
   publish(text: string): Promise<void>
+}
+
+export interface CompanionDevice {
+  id: string
+  name: string
+  created: string
+  lastSeen?: string
+}
+
+export interface CompanionStatus {
+  running: boolean
+  port: number
+  /** addresses the phone can reach (Tailscale first) */
+  hosts: string[]
+  devices: CompanionDevice[]
+  error: string | null
+}
+
+export interface CompanionBridge {
+  status(): Promise<CompanionStatus>
+  /** A new device: the status plus the QR code's content (address, port, its own key). */
+  pair(name: string): Promise<CompanionStatus & { pairing: string }>
+  remove(id: string): Promise<CompanionStatus>
+  respond(id: number, result: unknown, error: unknown): Promise<void>
+  onRequest(
+    callback: (request: { id: number; method: string; params: unknown; device: string }) => void,
+  ): () => void
+  onPaired(callback: (name: string) => void): () => void
 }

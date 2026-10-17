@@ -4,8 +4,8 @@ import { useDone } from '@/app/hooks/useDone'
 import {
   declinePlan,
   moduleFiles,
-  modulePages,
   modulePlan,
+  portionsFor,
   nextExam,
   planSuggestions,
   remindLater,
@@ -362,14 +362,7 @@ function PlanForm({
 /** "Heute": the portion of every study plan for that day, to tick off right there. */
 export function StudyPlanDay({ date }: { date: string }) {
   const ws = useWorkspace()
-  const day = today()
-  if (date < day) return null
-  const plans = modulePages(ws).flatMap((module) => {
-    const plan = modulePlan(ws, module)
-    if (!plan) return []
-    const portion = planFrom(plan.topics, plan.done, plan.settings, day).find((d) => d.date === date)
-    return portion?.topics.length ? [{ module, topics: portion.topics }] : []
-  })
+  const plans = portionsFor(ws, date)
   if (!plans.length) return null
   return (
     <div className="mt-3 border-t border-line pt-2" data-testid="day-study">

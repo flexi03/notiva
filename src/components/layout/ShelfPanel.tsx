@@ -2,7 +2,8 @@ import { useState, type ClipboardEvent, type DragEvent } from 'react'
 import { Copy, File, FileText, Inbox, Trash2 } from 'lucide-react'
 import { useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
-import { freeShelfPath, SHELF_FOLDER, textItemName } from '@/lib/shelf'
+import { SHELF_FOLDER } from '@/lib/shelf'
+import { addShelfFile, addShelfText } from '@/app/shelf'
 import { AutoTextArea, Button, cx, EmptyState, IconButton } from '@/components/ui'
 import { SidePanel } from './SidePanel'
 
@@ -48,17 +49,11 @@ export function ShelfPanel() {
   ].sort((a, b) => b.mtime - a.mtime)
 
   const addText = async (value: string) => {
-    const body = value.trim()
-    if (!body) return
-    const path = freeShelfPath(`${textItemName(body, new Date())}.md`, (p) => ws.has(p))
-    await ws.writeFile(path, `${body}\n`)
+    if (!(await addShelfText(ws, value))) return
     setText('')
   }
   const addFiles = async (files: File[]) => {
-    for (const file of files) {
-      const path = freeShelfPath(file.name, (p) => ws.has(p))
-      await ws.writeFile(path, new Uint8Array(await file.arrayBuffer()))
-    }
+    for (const file of files) await addShelfFile(ws, file.name, new Uint8Array(await file.arrayBuffer()))
     if (files.length) showToast(t('shelf.added', { count: files.length }))
   }
   const onDrop = (e: DragEvent) => {

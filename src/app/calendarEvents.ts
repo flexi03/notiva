@@ -1,4 +1,6 @@
 import { timetableRows } from '@/app/schedule'
+import { t } from '@/i18n'
+import { DAYS } from '@/lib/schedule'
 import { LAB_DATE, LAB_PREP } from '@/lib/labPlan'
 import { importTargets, type MoodleSnapshot, type Submission } from '@/lib/moodle'
 import { findStudyDashboard } from '@/lib/study/sync'
@@ -131,4 +133,84 @@ export function studyEvents(ws: Workspace, snapshot: MoodleSnapshot | null | und
     })
   }
   return out
+}
+
+export interface AgendaItem {
+  key: string
+  kind: EventKind
+  time?: string
+  end?: string
+  title: string
+  sub: string
+  overdue?: boolean
+  done?: boolean
+  event: StudyEvent
+}
+
+/**
+ * One day of `events`: what is on that day (lectures of its weekday, exams, tasks, deadlines –
+ * today also the overdue tasks) and "Demnächst" (tasks, labs and deadlines of the next 7 days,
+ * exams of the next 14). Used by "Heute" and the iPhone app.
+ */
+export function dayAgenda(
+  events: StudyEvent[],
+  day: string,
+  isToday: boolean,
+): { items: AgendaItem[]; upcoming: Array<AgendaItem & { date: string }> } {
+  const weekday = DAYS[(new Date(`${day}T12:00:00`).getDay() + 6) % 7]
+  const until = (n: number) => {
+    const d = new Date(`${day}T12:00:00`)
+    d.setDate(d.getDate() + n)
+    return isoDay(d)
+  }
+  const soon = (iso: string, n: number) => iso > day && iso <= until(n)
+  const items: AgendaItem[] = []
+  const upcoming: Array<AgendaItem & { date: string }> = []
+  for (const ev of events) {
+    if (ev.kind === 'session') {
+      if (ev.weekday === weekday)
+        items.push({
+          key: ev.key,
+          kind: 'session',
+          time: ev.time,
+          ...(ev.end ? { end: ev.end } : {}),
+          title: ev.title,
+          sub: ev.sub ?? '',
+          event: ev,
+        })
+      continue
+    }
+    const evDay = ev.date!
+    const base = { key: ev.key, kind: ev.kind, title: ev.title, event: ev }
+    // An assignment's state next to its course: "abgegeben", "bewertet 1,7" …
+    const state = ev.submission
+      ? t(`submission.${ev.submission.state}`, { grade: ev.submission.grade ?? '' })
+      : ''
+    const subOf = (s?: string) => [s, state].filter(Boolean).join(' · ')
+    if (ev.kind === 'exam') {
+      const sub = [t('semester.exam'), ev.room].filter(Boolean).join(' · ')
+      if (soon(evDay, 14)) upcoming.push({ ...base, date: evDay, ...(ev.time ? { time: ev.time } : {}), sub })
+      if (evDay === day) items.push({ ...base, ...(ev.time ? { time: ev.time } : {}), sub })
+    } else if (ev.kind === 'moodle') {
+      if (soon(evDay, 7))
+        upcoming.push({ ...base, date: evDay, time: ev.time, sub: subOf(ev.sub), done: !!ev.done })
+      if (evDay === day) items.push({ ...base, time: ev.time, sub: subOf(ev.sub), done: !!ev.done })
+    } else {
+      // Tasks: due this day – and, today, the overdue ones.
+      const overdue = isToday && evDay < day && !ev.done
+      if (!ev.done && soon(evDay, 7))
+        upcoming.push({ ...base, date: evDay, ...(ev.time ? { time: ev.time } : {}), sub: subOf(ev.sub) })
+      if (evDay !== day && !overdue) continue
+      items.push({
+        ...base,
+        ...(ev.time && !overdue ? { time: ev.time } : {}),
+        sub: overdue
+          ? t('day.overdue', { date: `${evDay.slice(8, 10)}.${evDay.slice(5, 7)}.` })
+          : subOf(ev.sub),
+        overdue,
+        done: !!ev.done,
+      })
+    }
+  }
+  return { items, upcoming }
 }

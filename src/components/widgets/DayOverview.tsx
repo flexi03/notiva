@@ -9,11 +9,10 @@ import {
   School,
 } from 'lucide-react'
 import { useMoodle } from '@/app/moodle'
-import { studyEvents, type StudyEvent } from '@/app/calendarEvents'
+import { dayAgenda, studyEvents, type StudyEvent } from '@/app/calendarEvents'
 import { useSessionFocus } from '@/app/sessionFocus'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { getLanguage, t } from '@/i18n'
-import { DAYS } from '@/lib/schedule'
 import type { Page } from '@/lib/workspace'
 import { cx } from '@/components/ui'
 import { StudyPlanDay } from './StudyPlanSection'
@@ -65,78 +64,29 @@ export function DayOverview({ date }: { date: Date }) {
   }, [])
   const day = isoDay(date)
   const today = isoDay(now) === day
-  const weekday = DAYS[(date.getDay() + 6) % 7]
-  const items: Item[] = []
-  // "Demnächst": what is due in the next days (tasks, labs, deadlines a week, exams two weeks).
-  const upcoming: Array<Item & { date: string }> = []
-  const until = (days: number) => {
-    const d = new Date(date)
-    d.setDate(d.getDate() + days)
-    return isoDay(d)
-  }
-  const soon = (iso: string, days: number) => iso > day && iso <= until(days)
-
   const openOf = (ev: StudyEvent) => (e: React.MouseEvent) =>
     ev.url ? void run(() => useMoodle.getState().open(ev.url!, false)) : ev.path && openEntry(ev.path, e)
-  for (const ev of studyEvents(ws, snapshot)) {
-    if (ev.kind === 'session') {
-      if (ev.weekday !== weekday) continue
-      const [h, m] = (ev.time ?? '').split(':').map(Number)
-      const start = new Date(date)
-      start.setHours(h ?? 0, m ?? 0, 0, 0)
-      items.push({
-        key: ev.key,
-        kind: 'session',
-        time: ev.time,
-        ...(ev.end ? { end: ev.end } : {}),
-        title: ev.title,
-        sub: ev.sub ?? '',
-        // A lecture opens its module with the files for that session.
-        open: (e) => {
-          if (!ev.module) return openOf(ev)(e)
-          useSessionFocus.setState({
-            module: ev.module,
-            source: ev.path!,
-            start: start.getTime(),
-            ...(ev.type ? { type: ev.type } : {}),
-          })
-          navigate({ name: 'page', path: ev.module })
-        },
-      })
-      continue
-    }
-    const evDay = ev.date!
-    const base = { key: ev.key, kind: ev.kind, title: ev.title, open: openOf(ev) }
-    // An assignment's state next to its course: "abgegeben", "bewertet: 1,7" …
-    const state = ev.submission
-      ? t(`submission.${ev.submission.state}`, { grade: ev.submission.grade ?? '' })
-      : ''
-    const subOf = (s?: string) => [s, state].filter(Boolean).join(' · ')
-    if (ev.kind === 'exam') {
-      const sub = [t('semester.exam'), ev.room].filter(Boolean).join(' · ')
-      if (soon(evDay, 14)) upcoming.push({ ...base, date: evDay, ...(ev.time ? { time: ev.time } : {}), sub })
-      if (evDay === day) items.push({ ...base, ...(ev.time ? { time: ev.time } : {}), sub })
-    } else if (ev.kind === 'moodle') {
-      if (soon(evDay, 7))
-        upcoming.push({ ...base, date: evDay, time: ev.time, sub: subOf(ev.sub), done: !!ev.done })
-      if (evDay === day) items.push({ ...base, time: ev.time, sub: subOf(ev.sub), done: !!ev.done })
-    } else {
-      // Tasks: due this day – and, today, the overdue ones.
-      const overdue = today && evDay < day && !ev.done
-      if (!ev.done && soon(evDay, 7))
-        upcoming.push({ ...base, date: evDay, ...(ev.time ? { time: ev.time } : {}), sub: subOf(ev.sub) })
-      if (evDay !== day && !overdue) continue
-      items.push({
-        ...base,
-        ...(ev.time && !overdue ? { time: ev.time } : {}),
-        sub: overdue
-          ? t('day.overdue', { date: evDay.slice(8, 10) + '.' + evDay.slice(5, 7) + '.' })
-          : subOf(ev.sub),
-        overdue,
-        done: !!ev.done,
-      })
-    }
+  /** A lecture opens its module with the files for that session; the rest opens its page. */
+  const openItem = (ev: StudyEvent) => (e: React.MouseEvent) => {
+    if (ev.kind !== 'session' || !ev.module) return openOf(ev)(e)
+    const [h, m] = (ev.time ?? '').split(':').map(Number)
+    const start = new Date(date)
+    start.setHours(h ?? 0, m ?? 0, 0, 0)
+    useSessionFocus.setState({
+      module: ev.module,
+      source: ev.path!,
+      start: start.getTime(),
+      ...(ev.type ? { type: ev.type } : {}),
+    })
+    navigate({ name: 'page', path: ev.module })
   }
+  const agenda = dayAgenda(studyEvents(ws, snapshot), day, today)
+  const items: Item[] = agenda.items.map((i) => ({ ...i, open: openItem(i.event) }))
+  // "Demnächst": what is due in the next days (tasks, labs, deadlines a week, exams two weeks).
+  const upcoming: Array<Item & { date: string }> = agenda.upcoming.map((i) => ({
+    ...i,
+    open: openItem(i.event),
+  }))
 
   const timed = items.filter((i) => i.time).sort((a, b) => a.time!.localeCompare(b.time!))
   const allDay = items.filter((i) => !i.time).sort((a, b) => Number(!!b.overdue) - Number(!!a.overdue))

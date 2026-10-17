@@ -6,6 +6,7 @@ import {
   daysUntil,
   isoDate,
   parsePlanSettings,
+  planFrom,
   planTopics,
   type StudyPlanSettings,
   type Topic,
@@ -156,4 +157,19 @@ export async function suggestPlans(ws: Workspace): Promise<number> {
     },
   })
   return list.length
+}
+
+/** Every study plan's portion for `date` (from today on; past days have none). */
+export function portionsFor(
+  ws: Workspace,
+  date: string,
+): Array<{ module: ModuleRef; topics: Topic[]; done: Set<string> }> {
+  const day = today()
+  if (date < day) return []
+  return modulePages(ws).flatMap((module) => {
+    const plan = modulePlan(ws, module)
+    if (!plan) return []
+    const portion = planFrom(plan.topics, plan.done, plan.settings, day).find((d) => d.date === date)
+    return portion?.topics.length ? [{ module, topics: portion.topics, done: plan.done }] : []
+  })
 }

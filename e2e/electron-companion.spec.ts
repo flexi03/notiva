@@ -1,0 +1,97 @@
+import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { companionCall } from '../electron/companion'
+import { studyPack } from '../src/lib/packs/study'
+import { expandPack } from '../src/lib/templates'
+
+let app: ElectronApplication
+let window: Page
+let folder: string
+
+test.beforeAll(async () => {
+  folder = path.join(mkdtempSync(path.join(os.tmpdir(), 'notiva-e2e-companion-')), 'Studium')
+  for (const file of expandPack(studyPack, '', {}).files) {
+    mkdirSync(path.dirname(path.join(folder, file.path)), { recursive: true })
+    writeFileSync(path.join(folder, file.path), file.content)
+  }
+  app = await electron.launch({
+    args: ['.'],
+    env: {
+      ...process.env,
+      NOTIVA_E2E_FOLDER: folder,
+      NOTIVA_E2E_USERDATA: mkdtempSync(path.join(os.tmpdir(), 'notiva-e2e-user-')),
+    },
+  })
+  window = await app.firstWindow()
+  await window.getByRole('button', { name: 'Ordner wählen' }).click()
+})
+
+test.afterAll(async () => {
+  await app?.close()
+})
+
+interface Pairing {
+  id: string
+  key: string
+  port: number
+  hosts: string[]
+}
+
+test('iPhone koppeln: verschlüsselt Tag lesen, abhaken, ablegen, Seite bearbeiten, entkoppeln', async () => {
+  await window.evaluate(() => (location.hash = '#/settings/vault'))
+  const section = window.getByTestId('companion-settings')
+  await section.getByLabel('Name des Geräts').fill('Test-iPhone')
+  await section.getByRole('button', { name: 'iPhone oder iPad koppeln' }).click()
+  await expect(section.getByRole('img', { name: 'QR-Code zum Koppeln' })).toBeVisible()
+  // What the QR code holds (the app scans it): taken the same way the settings do.
+  const pairing = JSON.parse(
+    await window.evaluate(async () => {
+      const bridge = (
+        window as unknown as { notiva: { companion: { pair(n: string): Promise<{ pairing: string }> } } }
+      ).notiva.companion
+      return (await bridge.pair('Test-iPhone')).pairing
+    }),
+  ) as Pairing
+  const url = `http://127.0.0.1:${pairing.port}`
+  const call = (method: string, params: unknown = {}) => companionCall(url, pairing, method, params)
+
+  expect(await call('hello')).toMatchObject({ ok: true, r: { protocol: 1, vault: 'Studium' } })
+  // The first request makes the pairing permanent: the QR code disappears, the device is listed.
+  await expect(section.getByRole('img', { name: 'QR-Code zum Koppeln' })).toHaveCount(0)
+  await expect(section.getByRole('list', { name: 'Gekoppelte Geräte' })).toContainText('Test-iPhone')
+
+  const day = (await call('day')) as { ok: boolean; r: { items: unknown[] } }
+  expect(day.ok).toBe(true)
+  const tasks = (await call('tasks')).r as Array<{ path: string; title: string }>
+  const task = tasks.find((x) => x.title === 'Übungsblatt 3 LA')!
+  expect((await call('task.set', { path: task.path, done: true })).ok).toBe(true)
+  await expect.poll(() => readFileSync(path.join(folder, task.path), 'utf8')).toContain('Status: Erledigt')
+
+  expect(
+    (await call('shelf.add', { name: 'Tafel.jpg', data: Buffer.from('jpeg').toString('base64') })).ok,
+  ).toBe(true)
+  await expect.poll(() => existsSync(path.join(folder, 'Ablage/Tafel.jpg'))).toBe(true)
+
+  const page = (await call('page', { path: 'Willkommen.md' })).r as
+    { body: string; mtime: number } | undefined
+  const target = page ? 'Willkommen.md' : 'Studium.md'
+  const current = (await call('page', { path: target })).r as { body: string; mtime: number }
+  expect(
+    (await call('page.put', { path: target, body: `${current.body}\nVom iPhone\n`, base: current.mtime })).ok,
+  ).toBe(true)
+  await expect.poll(() => readFileSync(path.join(folder, target), 'utf8')).toContain('Vom iPhone')
+  // An old state is not written over the newer one.
+  const conflict = await call('page.put', { path: target, body: 'alt', base: current.mtime })
+  expect(conflict).toMatchObject({ ok: false, code: 'conflict' })
+  // Hidden folders stay out of reach.
+  expect((await call('page', { path: '.notiva/settings.json' })).ok).toBe(false)
+
+  // Unpaired: the Mac does not answer the device any more.
+  await section.getByRole('button', { name: 'Test-iPhone“ entkoppeln', exact: false }).first().click()
+  await window.getByRole('dialog').getByRole('button', { name: 'Entkoppeln' }).click()
+  await expect(section.getByRole('list', { name: 'Gekoppelte Geräte' })).toHaveCount(0)
+  await expect(call('hello')).rejects.toThrow()
+  expect(readdirSync(folder)).toContain('Ablage')
+})

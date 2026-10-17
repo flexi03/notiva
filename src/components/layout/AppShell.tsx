@@ -76,6 +76,31 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
   }, [ws])
   useEffect(() => {
+    // The iPhone/iPad app asks; the answers come from the same logic as "Heute" (app/companion).
+    const bridge = electronBridge()?.companion
+    if (!bridge) return
+    const offRequest = bridge.onRequest((req) => {
+      void import('@/app/companion')
+        .then((m) => m.companionAnswer(ws, req.method, req.params))
+        .then(
+          (result) => bridge.respond(req.id, result ?? null, null),
+          (e: unknown) => {
+            const err = e as { message?: string; code?: string; detail?: unknown }
+            return bridge.respond(req.id, null, {
+              message: err.message ?? String(e),
+              code: err.code ?? 'error',
+              detail: err.detail,
+            })
+          },
+        )
+    })
+    const offPaired = bridge.onPaired((name) => useApp.getState().showToast(t('companion.paired', { name })))
+    return () => {
+      offRequest()
+      offPaired()
+    }
+  }, [ws])
+  useEffect(() => {
     // The calendar feed for the phone (if switched on): fresh at start, every 5 minutes, after Moodle.
     if (!electronBridge()?.calendar) return
     const publish = () =>

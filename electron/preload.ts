@@ -14,6 +14,23 @@ contextBridge.exposeInMainWorld('notiva', {
   openInWindow: (url: string) => invoke<void>('app:openInWindow', url),
   openWithSystem: (path: string) => invoke<void>('vault:openWithSystem', path),
   microphone: () => invoke<boolean>('app:microphone'),
+  companion: {
+    status: () => invoke('companion:status'),
+    pair: (name: string) => invoke('companion:pair', name),
+    remove: (id: string) => invoke('companion:remove', id),
+    respond: (id: number, result: unknown, error: unknown) =>
+      invoke<void>('companion:respond', id, result, error),
+    onRequest(callback: (request: unknown) => void) {
+      const listener = (_e: unknown, r: unknown) => callback(r)
+      ipcRenderer.on('companion:request', listener)
+      return () => ipcRenderer.removeListener('companion:request', listener)
+    },
+    onPaired(callback: (name: string) => void) {
+      const listener = (_e: unknown, name: string) => callback(name)
+      ipcRenderer.on('companion:paired', listener)
+      return () => ipcRenderer.removeListener('companion:paired', listener)
+    },
+  },
   calendar: {
     status: () => invoke('calendar:status'),
     set: (enabled: boolean) => invoke('calendar:set', enabled),

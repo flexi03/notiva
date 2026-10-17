@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { CompanionSettings } from '@/components/settings/CompanionSettings'
 import { CalendarSettings } from '@/components/settings/CalendarSettings'
 import { BackupSettings } from '@/components/settings/BackupSettings'
 import { Bell, Bot, Database, Info, Mic, Palette, PenLine, School } from 'lucide-react'
@@ -363,6 +364,9 @@ export function SettingsContent({ compact = false }: { compact?: boolean }) {
                       {t('settings.deletedPages')}
                     </Button>
                   </div>
+                </Section>
+                <Section title={t('companion.title')}>
+                  <CompanionSettings />
                 </Section>
                 <Section title={t('backup.title')}>
                   <BackupSettings />

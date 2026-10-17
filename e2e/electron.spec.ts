@@ -43,6 +43,7 @@ test('Renderer ist abgeschottet (kein Node, nur die Notiva-Brücke)', async () =
       'backup',
       'calendar',
       'code',
+      'companion',
       'ecampus',
       'examPlan',
       'git',

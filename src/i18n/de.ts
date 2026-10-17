@@ -399,6 +399,25 @@ export const de = {
   'submission.draft': 'Entwurf, noch nicht abgegeben',
   'submission.submitted': 'abgegeben',
   'submission.graded': 'bewertet {grade}',
+  'companion.title': 'iPhone & iPad',
+  'companion.explain':
+    'Die Notiva-App auf iPhone und iPad arbeitet mit diesem Ordner – über dein WLAN oder Tailscale, verschlüsselt, ohne Cloud. Jedes Gerät bekommt beim Koppeln einen eigenen Schlüssel.',
+  'companion.name': 'Name des Geräts',
+  'companion.pair': 'iPhone oder iPad koppeln',
+  'companion.qr': 'QR-Code zum Koppeln',
+  'companion.scan': 'In der Notiva-App auf dem iPhone oder iPad: „Mit Mac koppeln“ und diesen Code scannen.',
+  'companion.qrHint':
+    'Der Code enthält den Schlüssel für dieses Gerät und gilt 10 Minuten. Zeig ihn niemandem sonst; nach dem Koppeln verschwindet er.',
+  'companion.devices': 'Gekoppelte Geräte',
+  'companion.lastSeen': 'zuletzt {date}',
+  'companion.never': 'noch nie verbunden',
+  'companion.remove': '„{name}“ entkoppeln',
+  'companion.removeTitle': '„{name}“ entkoppeln?',
+  'companion.removeHint':
+    'Das Gerät kann danach nicht mehr auf diesen Ordner zugreifen. Neu koppeln geht jederzeit.',
+  'companion.removeShort': 'Entkoppeln',
+  'companion.paired': '„{name}“ ist gekoppelt',
+  'companion.desktopOnly': 'Koppeln geht in der Desktop-App.',
   'search.title': 'Suche',
 
   'templates.title': 'Vorlagen',
