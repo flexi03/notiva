@@ -5,6 +5,13 @@ _Deutsch: [CHANGELOG.md](CHANGELOG.md)_
 All versions with downloads: [GitHub Releases](https://github.com/flexi03/notiva/releases).
 Notiva checks for a new version on start and every hour and installs it itself if you like.
 
+## 0.2.7 – not released yet
+
+- **PDFs on the iPhone/iPad** ([#49](https://github.com/flexi03/notiva/issues/49)): the desktop app sends the folder's
+  PDFs with their highlights and page notes. Changes from the iPhone go into the same "… (Notizen).md" – highlights
+  are merged, only the same page note gets a hint instead of being overwritten.
+- Text written directly on a PDF page keeps its box width and font size when saved (fell back to the default before).
+
 ## 0.2.6 – 2026-10-17
 
 - **Pages on the iPhone/iPad** ([#48](https://github.com/flexi03/notiva/issues/48)): the desktop app sends pages

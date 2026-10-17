@@ -1,9 +1,10 @@
 import SwiftUI
 
-/// The folder's pages: last changed, then folder by folder (like Files); search over all.
+/// The folder's pages and PDFs: last changed, then folder by folder (like Files); search over all.
 struct PagesView: View {
     @Environment(AppModel.self) private var model
     @State private var pages: [PageRef] = []
+    @State private var pdfs: [PdfRef] = []
     @State private var loaded = false
     @State private var cached = false
     @State private var query = ""
@@ -16,17 +17,21 @@ struct PagesView: View {
                 ContentUnavailableView("Keine Seiten", systemImage: "doc.text",
                                        description: Text("Sobald der Mac erreichbar ist, erscheinen hier die Seiten deines Ordners."))
             } else if !query.isEmpty {
-                List(found) { PageLink(page: $0, showFolder: true) }
-                    .overlay { if found.isEmpty { ContentUnavailableView.search(text: query) } }
+                List {
+                    ForEach(found) { PageLink(page: $0, showFolder: true) }
+                    ForEach(foundPdfs) { PdfLink(pdf: $0, showFolder: true) }
+                }
+                .overlay { if found.isEmpty && foundPdfs.isEmpty { ContentUnavailableView.search(text: query) } }
             } else {
-                FolderList(pages: pages, folder: "", recent: Array(pages.sorted { $0.mtime > $1.mtime }.prefix(5)), cached: cached)
+                FolderList(pages: pages, pdfs: pdfs, folder: "", recent: Array(pages.sorted { $0.mtime > $1.mtime }.prefix(5)), cached: cached)
             }
         }
         .accessibilityIdentifier("pages")
         .searchable(text: $query, prompt: "Seiten durchsuchen")
         .navigationDestination(for: PageRef.self) { PageView(path: $0.path, title: $0.title) }
+        .navigationDestination(for: PdfRef.self) { PdfScreen(pdf: $0) }
         .navigationDestination(for: FolderRoute.self) { route in
-            FolderList(pages: pages, folder: route.path, recent: [], cached: cached)
+            FolderList(pages: pages, pdfs: pdfs, folder: route.path, recent: [], cached: cached)
                 .navigationTitle(route.name)
         }
         .task { await load() }
@@ -46,8 +51,15 @@ struct PagesView: View {
             }
     }
 
+    private var foundPdfs: [PdfRef] {
+        let q = query.lowercased()
+        return pdfs.filter { $0.path.lowercased().contains(q) }
+            .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+    }
+
     private func load() async {
         let result = await model.load("pages", Empty(), key: "pages", as: [PageRef].self)
+        pdfs = await model.load("pdfs", Empty(), key: "pdfs", as: [PdfRef].self).value ?? pdfs
         pages = result.value ?? []
         cached = result.cached && result.value != nil
         loaded = true
@@ -59,9 +71,10 @@ struct FolderRoute: Hashable {
     var name: String { path.split(separator: "/").last.map(String.init) ?? path }
 }
 
-/// One folder level: its subfolders, then its pages.
+/// One folder level: its subfolders, then its pages and PDFs.
 private struct FolderList: View {
     let pages: [PageRef]
+    let pdfs: [PdfRef]
     let folder: String
     let recent: [PageRef]
     let cached: Bool
@@ -87,6 +100,11 @@ private struct FolderList: View {
                     ForEach(here) { PageLink(page: $0, showFolder: false) }
                 }
             }
+            if !herePdfs.isEmpty {
+                SwiftUI.Section("PDFs") {
+                    ForEach(herePdfs) { PdfLink(pdf: $0, showFolder: false) }
+                }
+            }
             if cached {
                 Text("Letzter Stand – der Mac ist gerade nicht erreichbar.")
                     .font(.footnote).foregroundStyle(.secondary)
@@ -99,12 +117,16 @@ private struct FolderList: View {
         pages.filter { $0.folder == folder }.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
     }
 
-    /// Folders directly below this one that hold pages (somewhere further down).
+    private var herePdfs: [PdfRef] {
+        pdfs.filter { $0.folder == folder }.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+    }
+
+    /// Folders directly below this one that hold pages or PDFs (somewhere further down).
     private var subfolders: [String] {
         let prefix = folder.isEmpty ? "" : folder + "/"
-        let names = Set(pages.compactMap { page -> String? in
-            guard page.folder.hasPrefix(prefix), page.folder != folder else { return nil }
-            let rest = page.folder.dropFirst(prefix.count)
+        let names = Set((pages.map(\.folder) + pdfs.map(\.folder)).compactMap { sub -> String? in
+            guard sub.hasPrefix(prefix), sub != folder else { return nil }
+            let rest = sub.dropFirst(prefix.count)
             return prefix + (rest.split(separator: "/").first.map(String.init) ?? "")
         })
         return names.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
@@ -133,4 +155,25 @@ private struct PageLink: View {
         }
         .accessibilityIdentifier("page-\(page.title)")
     }
+}
+
+private struct PdfLink: View {
+    let pdf: PdfRef
+    let showFolder: Bool
+
+    var body: some View {
+        NavigationLink(value: pdf) {
+            HStack(spacing: 12) {
+                Image(systemName: "doc.richtext").foregroundStyle(.red).frame(width: 24)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(pdf.title).lineLimit(1)
+                    Text(showFolder && !pdf.folder.isEmpty ? "\(pdf.folder) · \(size)" : size)
+                        .font(.footnote).foregroundStyle(.secondary).lineLimit(1)
+                }
+            }
+        }
+        .accessibilityIdentifier("pdf-\(pdf.title)")
+    }
+
+    private var size: String { ByteCountFormatter.string(fromByteCount: Int64(pdf.size), countStyle: .file) }
 }

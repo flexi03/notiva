@@ -2,7 +2,8 @@ import { dayAgenda, studyEvents } from '@/app/calendarEvents'
 import { useMoodle } from '@/app/moodle'
 import { addShelfFile, addShelfText } from '@/app/shelf'
 import { modulePages, portionsFor, setDone } from '@/app/studyPlan'
-import { notesPathFor } from '@/lib/annotations'
+import { readAnnotations, writeAnnotations, writePageNote } from '@/app/annotations'
+import { notedPages, notesPathFor, pageNote, parseAnnotations } from '@/lib/annotations'
 import { renderMarkdown } from '@/lib/markdown'
 import { importTargets } from '@/lib/moodle'
 import { isoDate } from '@/lib/studyPlan'
@@ -55,6 +56,18 @@ function firstLink(ws: Workspace, value: unknown, from: string) {
   const target = typeof first === 'string' ? first.replace(/^\[\[|\]\]$/g, '') : ''
   const path = target ? ws.resolveLink(target, from) : null
   return path ? ws.get(path) : undefined
+}
+
+/** A PDF's annotations and page notes ({"3": "…"}), with the notes page's state. */
+function pdfNotes(ws: Workspace, pdf: string) {
+  const page = ws.get(notesPathFor(pdf))
+  const body = page?.body ?? ''
+  return {
+    pdf,
+    annotations: readAnnotations(ws, pdf),
+    notes: Object.fromEntries(notedPages(body).map((n) => [String(n), pageNote(body, n)])),
+    mtime: page?.mtime ?? null,
+  }
 }
 
 export async function companionAnswer(ws: Workspace, method: string, params: unknown): Promise<unknown> {
@@ -234,26 +247,52 @@ export async function companionAnswer(ws: Workspace, method: string, params: unk
       return { path, size: bytes.length, offset, data: btoa(binary) }
     }
 
-    case 'notes': {
-      const pdf = safePath(ws, p.pdf, 'file')
-      const notes = notesPathFor(pdf)
-      const page = ws.get(notes)
-      return page
-        ? { path: notes, text: await ws.vault.read(notes), mtime: page.mtime }
-        : { path: notes, text: null, mtime: null }
-    }
+    case 'pdfs':
+      return ws
+        .assets()
+        .filter((f) => /\.pdf$/i.test(f.path) && !f.path.split('/').some((part) => part.startsWith('.')))
+        .map((f) => ({ path: f.path, size: f.size, mtime: f.mtime }))
+
+    case 'notes':
+      return pdfNotes(ws, safePath(ws, p.pdf, 'file'))
 
     case 'notes.put': {
+      // Changes, not the whole file: merged into what the Mac has – annotations by id (added,
+      // replaced, removed), page notes against the text the phone started from.
       const pdf = safePath(ws, p.pdf, 'file')
-      const notes = notesPathFor(pdf)
-      const page = ws.get(notes)
-      if (page && typeof p.base === 'number' && p.base !== page.mtime)
-        throw new CompanionError('Die Notizen wurden inzwischen am Mac geändert', 'conflict', {
-          text: await ws.vault.read(notes),
-          mtime: page.mtime,
-        })
-      await ws.writeFile(notes, str(p.text, 2_000_000))
-      return { path: notes, mtime: ws.get(notes)?.mtime ?? Date.now() }
+      const current = pdfNotes(ws, pdf)
+      const notes = Array.isArray(p.notes) ? p.notes.map(obj).slice(0, 500) : []
+      for (const n of notes) {
+        const page = Math.floor(Number(n.page))
+        const now = current.notes[String(page)] ?? ''
+        if (typeof n.base === 'string' && n.base !== now && str(n.text, 100_000) !== now)
+          throw new CompanionError('Die Notiz zu dieser Seite wurde inzwischen am Mac geändert', 'conflict', {
+            page,
+            text: now,
+          })
+      }
+      // Ink from the phone may carry its points as pairs – stored as "x,y x,y" like on the Mac.
+      const asStored = (x: unknown) => {
+        const a = obj(x)
+        return Array.isArray(a.points)
+          ? { ...a, points: a.points.map((pt) => (Array.isArray(pt) ? pt.join(',') : '')).join(' ') }
+          : a
+      }
+      const changed = parseAnnotations(
+        [...(Array.isArray(p.add) ? p.add : []), ...(Array.isArray(p.update) ? p.update : [])].map(asStored),
+      )
+      const removed = new Set(Array.isArray(p.remove) ? p.remove.map((id) => str(id, 40)) : [])
+      if (changed.length || removed.size) {
+        const byId = new Map(current.annotations.map((x) => [x.id, x]))
+        for (const id of removed) byId.delete(id)
+        for (const x of changed) byId.set(x.id, x)
+        await writeAnnotations(ws, pdf, [...byId.values()])
+      }
+      for (const n of notes) {
+        const page = Math.floor(Number(n.page))
+        if (page >= 1) await writePageNote(ws, pdf, page, str(n.text, 100_000))
+      }
+      return pdfNotes(ws, pdf)
     }
 
     default:

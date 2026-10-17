@@ -10,9 +10,49 @@ import {
   type Annotation,
 } from '@/lib/annotations'
 import { basename, dirname } from '@/lib/path'
+import type { Workspace } from '@/lib/workspace'
 
 /** Notes pages being created – two quick edits must not create the page twice. */
 const creating = new Map<string, Promise<string>>()
+
+/** The PDF's notes page – created on the first change ("<Name> (Notizen).md" next to it). */
+export function ensureNotesPage(ws: Workspace, pdfPath: string): Promise<string> {
+  const notesPath = notesPathFor(pdfPath)
+  if (ws.get(notesPath)) return Promise.resolve(notesPath)
+  let pending = creating.get(notesPath)
+  if (!pending) {
+    pending = ws
+      .createPage({
+        folder: dirname(pdfPath),
+        title: basename(notesPath, '.md'),
+        data: notesPageData(pdfPath),
+        body: `Notizen zu [[${basename(pdfPath)}]].\n`,
+      })
+      .finally(() => creating.delete(notesPath))
+    creating.set(notesPath, pending)
+  }
+  return pending
+}
+
+/** The PDF's annotations as stored (none without a notes page). */
+export function readAnnotations(ws: Workspace, pdfPath: string): Annotation[] {
+  return parseAnnotations(ws.get(notesPathFor(pdfPath))?.data.annotations)
+}
+
+export async function writeAnnotations(ws: Workspace, pdfPath: string, list: Annotation[]): Promise<void> {
+  const path = await ensureNotesPage(ws, pdfPath)
+  await ws.setProperty(path, 'annotations', serializeAnnotations(list))
+}
+
+export async function writePageNote(
+  ws: Workspace,
+  pdfPath: string,
+  pageNumber: number,
+  text: string,
+): Promise<void> {
+  const path = await ensureNotesPage(ws, pdfPath)
+  await ws.save(path, { body: setPageNote(ws.get(path)?.body ?? '', pageNumber, text) })
+}
 
 /**
  * Annotations and page notes of a PDF, stored in its notes page (created on the first change).
@@ -27,30 +67,7 @@ export function useAnnotations(pdfPath: string) {
   const annotations = parseAnnotations(page?.data.annotations)
   const body = page?.body ?? ''
 
-  const ensurePage = useCallback(async () => {
-    if (ws.get(notesPath)) return notesPath
-    let pending = creating.get(notesPath)
-    if (!pending) {
-      pending = ws
-        .createPage({
-          folder: dirname(pdfPath),
-          title: basename(notesPath, '.md'),
-          data: notesPageData(pdfPath),
-          body: `Notizen zu [[${basename(pdfPath)}]].\n`,
-        })
-        .finally(() => creating.delete(notesPath))
-      creating.set(notesPath, pending)
-    }
-    return pending
-  }, [ws, notesPath, pdfPath])
-
-  const write = useCallback(
-    async (next: Annotation[]) => {
-      const path = await ensurePage()
-      await ws.setProperty(path, 'annotations', serializeAnnotations(next))
-    },
-    [ws, ensurePage],
-  )
+  const write = useCallback((next: Annotation[]) => writeAnnotations(ws, pdfPath, next), [ws, pdfPath])
   // Undo/redo of highlights, ink, notes, moves (per PDF, this session).
   const history = histories.get(pdfPath) ?? { past: [], future: [] }
   histories.set(pdfPath, history)
@@ -79,12 +96,8 @@ export function useAnnotations(pdfPath: string) {
   const remove = (id: string) => save(annotations.filter((a) => a.id !== id))
 
   const setNote = useCallback(
-    async (pageNumber: number, text: string) => {
-      const path = await ensurePage()
-      const current = ws.get(path)?.body ?? ''
-      await ws.save(path, { body: setPageNote(current, pageNumber, text) })
-    },
-    [ws, ensurePage],
+    (pageNumber: number, text: string) => writePageNote(ws, pdfPath, pageNumber, text),
+    [ws, pdfPath],
   )
 
   return {

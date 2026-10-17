@@ -107,7 +107,7 @@ final class AppModel {
     }
 
     /// A file of the folder (an image, a PDF) – in 512 KB pieces from the Mac, kept for offline.
-    func file(_ path: String) async throws -> Data {
+    func file(_ path: String, progress: ((_ done: Int, _ total: Int) -> Void)? = nil) async throws -> Data {
         let key = "file-\(path)"
         if let client {
             do {
@@ -118,6 +118,7 @@ final class AppModel {
                     guard let bytes = Data(base64Encoded: part.data), !bytes.isEmpty || part.size == 0 else { throw SyncClient.SyncError.invalid }
                     size = part.size
                     data.append(bytes)
+                    progress?(data.count, size)
                     if bytes.isEmpty { break }
                 }
                 store.save(data, for: key)

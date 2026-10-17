@@ -42,6 +42,9 @@ AUFGABEN
 SEITEN
 Alle Seiten deines Ordners: Ordner für Ordner, zuletzt geändert oder per Suche. Dargestellt wie am Mac – mit Eigenschaften, Tabellen, Bildern und Links zu anderen Seiten. Bearbeiten als Markdown, auch offline; wurde die Seite inzwischen am Mac geändert, wird nichts überschrieben.
 
+SKRIPTE UND PDFS
+Vorlesungsfolien lesen, Text markieren (fünf Farben) und kommentieren, eine Notiz zu jeder Seite. Alles landet in derselben Notizseite wie am Mac – beide sehen dasselbe. Einmal geöffnet, bleibt ein PDF offline verfügbar.
+
 SCHNELL ABLEGEN
 Tafel fotografieren, ein Blatt als PDF scannen, Bilder, Dateien oder eine Notiz – landet sofort in der Ablage auf deinem Mac. Auch aus Safari, Fotos, Mail und jeder anderen App über „Teilen → Notiva“.
 
@@ -55,7 +58,7 @@ Voraussetzung: die kostenlose Notiva-Desktop-App auf deinem Mac (github.com/flex
 
 **Schlüsselwörter (100):** Studium,Stundenplan,Moodle,Uni,Hochschule,Lernplan,Prüfung,Vorlesung,Notizen,Markdown,Semester
 
-**Neu in dieser Version:** Seiten – durchsuchen, lesen wie am Mac und bearbeiten; bei Änderungen am Mac bleiben beide Fassungen.
+**Neu in dieser Version:** PDFs – Skripte lesen, Text markieren und kommentieren, Notizen zu jeder Seite; dieselben Notizen wie am Mac.
 
 ## English
 
@@ -84,6 +87,9 @@ Overdue, today, tomorrow, next 7 days – with module and kind. Tick off with a 
 PAGES
 Every page of your folder: folder by folder, recently changed or by search. Shown as on the Mac – with properties, tables, images and links to other pages. Edit as Markdown, offline too; if the page was changed on the Mac meanwhile, nothing is overwritten.
 
+SLIDES AND PDFS
+Read your lecture slides, highlight text (five colors) and comment on it, a note for every page. Everything goes into the same notes page as on the Mac – both see the same. Once opened, a PDF stays available offline.
+
 QUICK CAPTURE
 Snap the blackboard, scan a sheet as PDF, pictures, files or a note – straight into the shelf on your Mac. From Safari, Photos, Mail and any other app too, via "Share → Notiva".
 
@@ -97,11 +103,17 @@ Requires the free Notiva desktop app on your Mac (github.com/flexi03/notiva).
 
 **Keywords (100):** studies,timetable,Moodle,university,college,study plan,exam,lecture,notes,markdown,semester
 
-**What's new:** Pages – search, read as on the Mac and edit; if the Mac changed one meanwhile, both versions stay.
+**What's new:** PDFs – read your slides, highlight and comment text, a note for every page; the same notes as on the Mac.
 
 ## TestFlight
 
 **Beta-App-Beschreibung:** Notiva fürs iPhone und iPad: dein Studium aus der Notiva-Desktop-App – Heute, Stundenplan, Lernplan, Aufgaben, Ablage. Verbindung verschlüsselt über WLAN oder Tailscale.
+
+**Was testen (Build mit PDFs):**
+1. „Seiten“ → Ordner mit Unterlagen → ein PDF öffnen: lädt mit Fortschritt; Markierungen vom Mac sind zu sehen.
+2. Text lange drücken und Auswahl ziehen → „Markieren“ (Farbe unten links). Eine Markierung antippen → Kommentar, Farbe, Löschen.
+3. Notiz-Knopf unten rechts: Notiz zur aktuellen Seite; Listen-Knopf: alle Notizen und Markierungen, Tippen springt hin.
+4. Am Mac im selben PDF nachsehen: alles da (in „… (Notizen).md“). Danach offline öffnen – das PDF ist noch da.
 
 **Was testen (Build mit Seiten):**
 1. „Seiten“: Ordner durchblättern, oben „Zuletzt geändert“, Suche über alle Seiten.

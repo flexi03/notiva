@@ -216,6 +216,70 @@ const html = (page: FakePage) =>
         : `<a class="wikilink wikilink-missing" href="#">${name}</a>`
     })
 
+/** A real two-page PDF with selectable text (Helvetica), made here – no file in the repo. */
+function makePdf(pages: string[][]): Buffer {
+  const objects: string[] = []
+  const add = (body: string) => objects.push(body) // object n = index + 1
+  add('<< /Type /Catalog /Pages 2 0 R >>')
+  add('') // pages, filled in below
+  add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>')
+  const kids: number[] = []
+  for (const lines of pages) {
+    const text = lines
+      .map((line, i) => `BT /F1 ${i === 0 ? 30 : 18} Tf 60 ${720 - i * 48} Td (${line}) Tj ET`)
+      .join('\n')
+    add(`<< /Length ${Buffer.byteLength(text, 'latin1')} >>\nstream\n${text}\nendstream`)
+    add(
+      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents ${objects.length} 0 R >>`,
+    )
+    kids.push(objects.length)
+  }
+  objects[1] = `<< /Type /Pages /Kids [${kids.map((k) => `${k} 0 R`).join(' ')}] /Count ${kids.length} >>`
+  let out = '%PDF-1.4\n'
+  const offsets: number[] = []
+  objects.forEach((body, i) => {
+    offsets.push(Buffer.byteLength(out, 'latin1'))
+    out += `${i + 1} 0 obj\n${body}\nendobj\n`
+  })
+  const xref = Buffer.byteLength(out, 'latin1')
+  out += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`
+  for (const o of offsets) out += `${String(o).padStart(10, '0')} 00000 n \n`
+  out += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`
+  return Buffer.from(out, 'latin1')
+}
+
+const SKRIPT = makePdf([
+  [
+    'Indexstrukturen',
+    'B-Baeume halten die Daten sortiert.',
+    'Suche, Einfuegen und Loeschen in O(log n).',
+    'Jeder Knoten hat zwischen k und 2k Schluessel.',
+  ],
+  ['Hashing', 'Statisches und dynamisches Hashing.', 'Lineares Hashing teilt Buckets nacheinander.'],
+])
+const pdfs = [
+  {
+    path: 'Studium/Unterlagen/DBS2 - Vorlesung 05 - Indexstrukturen.pdf',
+    size: SKRIPT.length,
+    mtime: Date.now() - 8e6,
+  },
+]
+/** Its notes page – one highlight on page 1 already, a page note on page 2. */
+const pdfState = {
+  annotations: [
+    {
+      id: 'm1',
+      type: 'highlight',
+      page: 1,
+      color: 'green',
+      rects: [[60, 107, 290, 22]],
+      text: 'B-Baeume halten die Daten sortiert.',
+      comment: 'Klausur!',
+    },
+  ] as Array<Record<string, unknown> & { id: string }>,
+  notes: { '2': 'Lineares Hashing nochmal nachlesen.' } as Record<string, string>,
+}
+
 /** What was put on the shelf (name and size). */
 const shelf: Array<{ name: string; bytes: number }> = []
 
@@ -371,10 +435,47 @@ const server = new CompanionServer(
       return { path: page.path, mtime: page.mtime }
     }
     if (method === 'file') {
-      if (p.path !== 'Studium/Notizen/Tafel.png')
-        throw Object.assign(new Error('Nicht gefunden'), { code: 'notFound' })
-      const bytes = Buffer.from(TAFEL, 'base64')
-      return { path: p.path, size: bytes.length, offset: 0, data: TAFEL }
+      const bytes =
+        p.path === 'Studium/Notizen/Tafel.png'
+          ? Buffer.from(TAFEL, 'base64')
+          : p.path === pdfs[0]!.path
+            ? SKRIPT
+            : null
+      if (!bytes) throw Object.assign(new Error('Nicht gefunden'), { code: 'notFound' })
+      // In pieces like the Mac (small ones here, so the app's loop is used).
+      const offset = Number(p.offset ?? 0)
+      const part = bytes.subarray(offset, offset + 1024)
+      return { path: p.path, size: bytes.length, offset, data: part.toString('base64') }
+    }
+    if (method === 'pdfs') return pdfs
+    if (method === 'notes' || method === 'notes.put') {
+      if (p.pdf !== pdfs[0]!.path) throw Object.assign(new Error('Nicht gefunden'), { code: 'notFound' })
+      if (method === 'notes.put') {
+        const notes = Array.isArray(p.notes)
+          ? (p.notes as Array<{ page: number; text: string; base?: string }>)
+          : []
+        for (const n of notes) {
+          const now = pdfState.notes[String(n.page)] ?? ''
+          if (typeof n.base === 'string' && n.base !== now && n.text !== now)
+            throw Object.assign(new Error('Die Notiz zu dieser Seite wurde inzwischen am Mac geändert'), {
+              code: 'conflict',
+            })
+        }
+        const removed = new Set((p.remove as string[] | undefined) ?? [])
+        const changed = [
+          ...((p.add as typeof pdfState.annotations) ?? []),
+          ...((p.update as typeof pdfState.annotations) ?? []),
+        ]
+        pdfState.annotations = pdfState.annotations.filter(
+          (a) => !removed.has(a.id) && !changed.some((c) => c.id === a.id),
+        )
+        pdfState.annotations.push(...changed)
+        for (const n of notes) {
+          if (n.text) pdfState.notes[String(n.page)] = n.text
+          else delete pdfState.notes[String(n.page)]
+        }
+      }
+      return { pdf: p.pdf, ...pdfState, mtime: Date.now() }
     }
     if (method === 'study.done') {
       if (p.done === true) done.add(String(p.key))

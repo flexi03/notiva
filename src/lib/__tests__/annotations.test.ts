@@ -57,6 +57,14 @@ describe('annotations', () => {
     ])
   })
 
+  it('keeps the box width and font size of text on the page', () => {
+    const list: Annotation[] = [
+      { id: 't1', type: 'text', page: 1, x: 50, y: 60, w: 320, size: 18, text: 'Wichtig', color: 'red' },
+    ]
+    const file = serializeMarkdown({ data: { annotations: serializeAnnotations(list) }, body: '' })
+    expect(parseAnnotations(parseMarkdown(file).data.annotations)).toEqual(list)
+  })
+
   it('skips broken entries', () => {
     expect(
       parseAnnotations([

@@ -16,6 +16,8 @@ test.beforeAll(async () => {
     mkdirSync(path.dirname(path.join(folder, file.path)), { recursive: true })
     writeFileSync(path.join(folder, file.path), file.content)
   }
+  mkdirSync(path.join(folder, 'Unterlagen'), { recursive: true })
+  writeFileSync(path.join(folder, 'Unterlagen/Skript.pdf'), '%PDF-1.4 test')
   app = await electron.launch({
     args: ['.'],
     env: {
@@ -111,6 +113,37 @@ test('iPhone koppeln: verschlüsselt Tag lesen, abhaken, ablegen, Seite bearbeit
   expect(copy.path).toMatch(/\(iPhone .+\)\.md$/)
   await expect.poll(() => readFileSync(path.join(folder, copy.path), 'utf8')).toContain('Fassung vom iPhone')
   expect(readFileSync(path.join(folder, target), 'utf8')).toContain('Vom iPhone')
+  // PDFs: changes merged by id into the notes page next to the PDF; page notes against their start.
+  expect(((await call('pdfs')).r as Array<{ path: string }>).map((x) => x.path)).toContain(
+    'Unterlagen/Skript.pdf',
+  )
+  const highlight = {
+    id: 'ip1',
+    type: 'highlight',
+    page: 2,
+    color: 'green',
+    rects: [[10, 20, 100, 12]],
+    text: 'B-Baum',
+  }
+  const put = (params: object) => call('notes.put', { pdf: 'Unterlagen/Skript.pdf', ...params })
+  expect((await put({ add: [highlight], notes: [{ page: 2, text: 'Klausurrelevant', base: '' }] })).ok).toBe(
+    true,
+  )
+  const notesFile = path.join(folder, 'Unterlagen/Skript (Notizen).md')
+  await expect.poll(() => existsSync(notesFile) && readFileSync(notesFile, 'utf8')).toContain('B-Baum')
+  expect(readFileSync(notesFile, 'utf8')).toContain('## Seite 2\n\nKlausurrelevant')
+  // The same note changed elsewhere meanwhile: no overwriting.
+  expect(await put({ notes: [{ page: 2, text: 'Andere Fassung', base: '' }] })).toMatchObject({
+    ok: false,
+    code: 'conflict',
+  })
+  const after = (await put({ remove: ['ip1'] })).r as {
+    annotations: unknown[]
+    notes: Record<string, string>
+  }
+  expect(after.annotations).toEqual([])
+  expect(after.notes).toEqual({ '2': 'Klausurrelevant' })
+
   // Rendered like on the Mac.
   const rendered = (await call('page', { path: target })).r as { html: string }
   expect(rendered.html).toContain('<p>')

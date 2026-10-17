@@ -40,17 +40,17 @@ iPhone / iPad (SwiftUI)                          Mac (Notiva-Desktop-App)
 
 ## Schnittstelle (v1)
 
-| Anfrage                                     | Inhalt                                                                                                           |
-| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `hello`                                     | Name des Ordners, Version, ob die Kopplung gilt                                                                  |
-| `day` (Datum)                               | Einträge des Tages + „Demnächst“ + Lernplan-Portionen                                                            |
-| `week`                                      | Stundenplan der Woche                                                                                            |
-| `tasks` / `task.set` / `task.add`           | Aufgaben (mit Modul, Art, Priorität); abhaken, anlegen                                                           |
-| `modules`                                   | Module (für neue Aufgaben)                                                                                       |
-| `shelf.add`                                 | Text oder Datei (Foto, Scan, bis 8 MB) in die Ablage – auch über „Teilen“                                        |
-| `pages` / `page` / `page.put` / `page.copy` | Seitenliste, Seite (Markdown + HTML wie am Mac), schreiben (mit Stand gegen Konflikte), eigene Fassung als Kopie |
-| `file`                                      | Datei (PDF) in Stücken                                                                                           |
-| `notes` / `notes.put`                       | Markierungen und Notizen eines PDFs                                                                              |
+| Anfrage                                     | Inhalt                                                                                                                                       |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `hello`                                     | Name des Ordners, Version, ob die Kopplung gilt                                                                                              |
+| `day` (Datum)                               | Einträge des Tages + „Demnächst“ + Lernplan-Portionen                                                                                        |
+| `week`                                      | Stundenplan der Woche                                                                                                                        |
+| `tasks` / `task.set` / `task.add`           | Aufgaben (mit Modul, Art, Priorität); abhaken, anlegen                                                                                       |
+| `modules`                                   | Module (für neue Aufgaben)                                                                                                                   |
+| `shelf.add`                                 | Text oder Datei (Foto, Scan, bis 8 MB) in die Ablage – auch über „Teilen“                                                                    |
+| `pages` / `page` / `page.put` / `page.copy` | Seitenliste, Seite (Markdown + HTML wie am Mac), schreiben (mit Stand gegen Konflikte), eigene Fassung als Kopie                             |
+| `file`                                      | Datei (PDF, Bild) in Stücken von 512 KB                                                                                                      |
+| `pdfs` / `notes` / `notes.put`              | PDFs des Ordners; Markierungen und Seitennotizen eines PDFs; Änderungen (hinzu/ändern/löschen nach ID, Seitennotiz gegen ihren Ausgangstext) |
 
 ## Schritte (je ein Issue)
 

@@ -164,6 +164,8 @@ export function serializeAnnotations(list: Annotation[]): FrontmatterValue {
       color: a.color,
       x: round(a.x),
       y: round(a.y),
+      // Text on the page keeps its box width and font size.
+      ...(a.type === 'text' ? { w: round(a.w), size: round(a.size) } : {}),
       text: a.text,
     }
   }) as unknown as FrontmatterValue

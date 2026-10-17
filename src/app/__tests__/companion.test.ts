@@ -72,8 +72,32 @@ describe('companion answers', () => {
     const first = (await companionAnswer(ws, 'file', { path: pdf })) as { size: number; data: string }
     expect(first.size).toBe(1_200_000)
     expect(atob(first.data).length).toBe(512 * 1024)
-    await companionAnswer(ws, 'notes.put', { pdf, text: '---\npdf: DB-01.pdf\n---\nNotiz\n' })
-    expect(((await companionAnswer(ws, 'notes', { pdf })) as { text: string }).text).toContain('Notiz')
+    const mark = { id: 'm1', type: 'highlight', page: 1, color: 'blue', rects: [[1, 2, 30, 10]], text: 'SQL' }
+    await companionAnswer(ws, 'notes.put', {
+      pdf,
+      add: [mark],
+      notes: [{ page: 1, text: 'Notiz', base: '' }],
+    })
+    const notes = (await companionAnswer(ws, 'notes', { pdf })) as {
+      annotations: Array<{ id: string }>
+      notes: Record<string, string>
+    }
+    expect(notes.annotations.map((x) => x.id)).toEqual(['m1'])
+    expect(notes.notes).toEqual({ '1': 'Notiz' })
+    // Ink from the phone may come as point pairs.
+    const ink = {
+      id: 'k1',
+      type: 'ink',
+      page: 1,
+      color: 'red',
+      width: 2,
+      points: [
+        [1, 2],
+        [3, 4],
+      ],
+    }
+    const after = (await companionAnswer(ws, 'notes.put', { pdf, add: [ink] })) as { annotations: unknown[] }
+    expect(after.annotations).toHaveLength(2)
   })
 
   it('refuses hidden folders, traversal, unknown paths and methods', async () => {
