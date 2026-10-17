@@ -1,6 +1,6 @@
 {
   "name": "notiva",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": true,
   "description": "Notiva – freie, lokale Notion-Alternative auf Markdown-Basis: Seiten, Datenbanken, Kacheln, Vorlagen",
   "author": "flexi03",
