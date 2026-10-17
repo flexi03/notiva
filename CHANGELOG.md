@@ -5,7 +5,7 @@ _English: [CHANGELOG.en.md](CHANGELOG.en.md)_
 Alle Versionen mit Downloads: [GitHub Releases](https://github.com/flexi03/notiva/releases).
 Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und installiert sie auf Wunsch selbst.
 
-## 0.2.3 – noch nicht veröffentlicht
+## 0.2.3 – 2026-10-17
 
 - **Lernplan rückwärts ab Prüfungsdatum** (Modulseite): verteilt die Vorlesungsfolien des aktuellen Kurses in ihrer
   Reihenfolge auf deine Lerntage, die letzten Tage gehören Alt- und Probeklausuren. Lerntage wählst du selbst
