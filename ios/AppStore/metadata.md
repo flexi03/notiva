@@ -39,6 +39,9 @@ Deine Woche mit Zeiten und Räumen; auf dem iPad alle Tage nebeneinander.
 AUFGABEN
 Überfällig, heute, morgen, nächste 7 Tage – mit Modul und Art. Abhaken per Tipp oder Wischen, neue Aufgaben mit Fälligkeit und Modul anlegen.
 
+SEITEN
+Alle Seiten deines Ordners: Ordner für Ordner, zuletzt geändert oder per Suche. Dargestellt wie am Mac – mit Eigenschaften, Tabellen, Bildern und Links zu anderen Seiten. Bearbeiten als Markdown, auch offline; wurde die Seite inzwischen am Mac geändert, wird nichts überschrieben.
+
 SCHNELL ABLEGEN
 Tafel fotografieren, ein Blatt als PDF scannen, Bilder, Dateien oder eine Notiz – landet sofort in der Ablage auf deinem Mac. Auch aus Safari, Fotos, Mail und jeder anderen App über „Teilen → Notiva“.
 
@@ -52,7 +55,7 @@ Voraussetzung: die kostenlose Notiva-Desktop-App auf deinem Mac (github.com/flex
 
 **Schlüsselwörter (100):** Studium,Stundenplan,Moodle,Uni,Hochschule,Lernplan,Prüfung,Vorlesung,Notizen,Markdown,Semester
 
-**Neu in dieser Version:** Ablage – Foto, Scan, Bilder, Dateien und Text direkt auf den Mac, auch über „Teilen“ aus anderen Apps.
+**Neu in dieser Version:** Seiten – durchsuchen, lesen wie am Mac und bearbeiten; bei Änderungen am Mac bleiben beide Fassungen.
 
 ## English
 
@@ -78,6 +81,9 @@ Your week with times and rooms; on the iPad all days side by side.
 TASKS
 Overdue, today, tomorrow, next 7 days – with module and kind. Tick off with a tap or a swipe, create new tasks with due date and module.
 
+PAGES
+Every page of your folder: folder by folder, recently changed or by search. Shown as on the Mac – with properties, tables, images and links to other pages. Edit as Markdown, offline too; if the page was changed on the Mac meanwhile, nothing is overwritten.
+
 QUICK CAPTURE
 Snap the blackboard, scan a sheet as PDF, pictures, files or a note – straight into the shelf on your Mac. From Safari, Photos, Mail and any other app too, via "Share → Notiva".
 
@@ -91,11 +97,17 @@ Requires the free Notiva desktop app on your Mac (github.com/flexi03/notiva).
 
 **Keywords (100):** studies,timetable,Moodle,university,college,study plan,exam,lecture,notes,markdown,semester
 
-**What's new:** Shelf – photo, scan, pictures, files and text straight to your Mac, also via "Share" from other apps.
+**What's new:** Pages – search, read as on the Mac and edit; if the Mac changed one meanwhile, both versions stay.
 
 ## TestFlight
 
 **Beta-App-Beschreibung:** Notiva fürs iPhone und iPad: dein Studium aus der Notiva-Desktop-App – Heute, Stundenplan, Lernplan, Aufgaben, Ablage. Verbindung verschlüsselt über WLAN oder Tailscale.
+
+**Was testen (Build mit Seiten):**
+1. „Seiten“: Ordner durchblättern, oben „Zuletzt geändert“, Suche über alle Seiten.
+2. Eine Seite öffnen: sieht sie aus wie am Mac (Eigenschaften, Tabellen, Bilder)? Wiki-Link antippen → die verlinkte Seite öffnet sich.
+3. „Bearbeiten“ → Text ändern → „Sichern“: am Mac ist die Änderung da.
+4. Konflikt: dieselbe Seite am Mac ändern und speichern, dann am iPhone (ohne neu zu laden) bearbeiten und sichern → Hinweis, „Als Kopie speichern“ legt deine Fassung daneben.
 
 **Was testen (Build mit Ablage):**
 1. „Ablage“ → „Foto“ (Tafel), „Scannen“ (ein Blatt – wird ein PDF), „Fotos“, „Datei“, „Text“: alles landet am Mac in der Ablage und steht unter „Zuletzt abgelegt“.

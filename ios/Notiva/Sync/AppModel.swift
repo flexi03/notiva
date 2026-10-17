@@ -106,6 +106,41 @@ final class AppModel {
         return ((try? JSONDecoder().decode(SyncReply<R>.self, from: data))?.r, true)
     }
 
+    /// A file of the folder (an image, a PDF) – in 512 KB pieces from the Mac, kept for offline.
+    func file(_ path: String) async throws -> Data {
+        let key = "file-\(path)"
+        if let client {
+            do {
+                var data = Data()
+                var size = Int.max
+                while data.count < size {
+                    let part: FilePart = try await client.call("file", FileRequest(path: path, offset: data.count))
+                    guard let bytes = Data(base64Encoded: part.data), !bytes.isEmpty || part.size == 0 else { throw SyncClient.SyncError.invalid }
+                    size = part.size
+                    data.append(bytes)
+                    if bytes.isEmpty { break }
+                }
+                store.save(data, for: key)
+                return data
+            } catch {
+                if let data = store.load(key) { return data }
+                throw error
+            }
+        }
+        guard let data = store.load(key) else { throw SyncClient.SyncError.notReachable }
+        return data
+    }
+
+    private struct FileRequest: Codable, Sendable {
+        let path: String
+        let offset: Int
+    }
+
+    private struct FilePart: Codable, Sendable {
+        let size: Int
+        let data: String
+    }
+
     // MARK: Writing – sent now, or queued while the Mac is away
 
     /// Queues a change and sends what waits. `attachment` (a file) is stored apart and goes out as
@@ -176,6 +211,7 @@ final class AppModel {
                 } else if let index = pending.firstIndex(where: { $0.id == item.id }) {
                     // E.g. a conflict: kept and shown – never overwritten silently.
                     pending[index].error = reply.e ?? "Fehler"
+                    pending[index].code = reply.code
                 }
                 store.setPending(pending)
             } catch {

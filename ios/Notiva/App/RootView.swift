@@ -78,30 +78,7 @@ extension MainView {
         case .timetable: WeekView()
         case .tasks: TasksView()
         case .shelf: ShelfView()
-        default: SectionPlaceholder(section: section)
-        }
-    }
-}
-
-/// Until the next steps fill them in (#48–#49): what the view will show.
-private struct SectionPlaceholder: View {
-    let section: AppSection
-
-    var body: some View {
-        ScrollView {
-            ContentUnavailableView {
-                Label(section.title, systemImage: section.symbol)
-            } description: {
-                Text(description)
-            }
-            .padding(.top, 40)
-        }
-    }
-
-    private var description: LocalizedStringKey {
-        switch section {
-        case .today, .timetable, .tasks, .shelf: ""
-        case .pages: "Seiten lesen und bearbeiten, PDFs markieren – kommt bald."
+        case .pages: PagesView()
         }
     }
 }
@@ -113,7 +90,17 @@ struct ConnectionBanner: View {
     var body: some View {
         switch model.connection {
         case .online:
-            if !model.pending.isEmpty { banner("arrow.triangle.2.circlepath", "\(model.pending.count) Änderungen warten", .orange) }
+            let open = model.pending.filter { $0.error == nil }.count
+            let stuck = model.pending.count - open
+            if stuck == 1 {
+                banner("exclamationmark.triangle", "1 Änderung braucht deine Entscheidung", .orange)
+            } else if stuck > 1 {
+                banner("exclamationmark.triangle", "\(stuck) Änderungen brauchen deine Entscheidung", .orange)
+            } else if open == 1 {
+                banner("arrow.triangle.2.circlepath", "1 Änderung wird übertragen …", .secondary)
+            } else if open > 1 {
+                banner("arrow.triangle.2.circlepath", "\(open) Änderungen werden übertragen …", .secondary)
+            }
         case .connecting:
             banner("antenna.radiowaves.left.and.right", "Verbinde mit dem Mac …", .secondary)
         case let .offline(reason):

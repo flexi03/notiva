@@ -103,6 +103,17 @@ test('iPhone koppeln: verschlüsselt Tag lesen, abhaken, ablegen, Seite bearbeit
   // An old state is not written over the newer one.
   const conflict = await call('page.put', { path: target, body: 'alt', base: current.mtime })
   expect(conflict).toMatchObject({ ok: false, code: 'conflict' })
+  // …the phone's version goes next to it instead – both stay.
+  const copy = (await call('page.copy', { path: target, body: 'Fassung vom iPhone', device: 'iPhone' }))
+    .r as {
+    path: string
+  }
+  expect(copy.path).toMatch(/\(iPhone .+\)\.md$/)
+  await expect.poll(() => readFileSync(path.join(folder, copy.path), 'utf8')).toContain('Fassung vom iPhone')
+  expect(readFileSync(path.join(folder, target), 'utf8')).toContain('Vom iPhone')
+  // Rendered like on the Mac.
+  const rendered = (await call('page', { path: target })).r as { html: string }
+  expect(rendered.html).toContain('<p>')
   // Hidden folders stay out of reach.
   expect((await call('page', { path: '.notiva/settings.json' })).ok).toBe(false)
 

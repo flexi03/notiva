@@ -5,6 +5,12 @@ _Deutsch: [CHANGELOG.md](CHANGELOG.md)_
 All versions with downloads: [GitHub Releases](https://github.com/flexi03/notiva/releases).
 Notiva checks for a new version on start and every hour and installs it itself if you like.
 
+## 0.2.6 – not released yet
+
+- **Pages on the iPhone/iPad** ([#48](https://github.com/flexi03/notiva/issues/48)): the desktop app sends pages
+  rendered as on the Mac (with icons in the list). If the iPhone edits a page that was changed on the Mac meanwhile,
+  nothing is overwritten – its version goes next to it as a copy if you like ("<title> (iPhone …)").
+
 ## 0.2.5 – 2026-10-17
 
 - **Updates in the settings** (_Settings → About_): installed version, update state with "Install" and "Check for

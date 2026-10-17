@@ -3,6 +3,7 @@
  * (electron/companion.ts) with a fixed test device and a small, made-up semester (no real
  * people). `PORT=47999 npx tsx ios/scripts/fake-mac.ts`
  */
+import MarkdownIt from 'markdown-it'
 import { CompanionServer, type Device } from '../../electron/companion'
 
 export const TEST_DEVICE: Device = {
@@ -147,6 +148,74 @@ const tasks: Task[] = [
   },
 ]
 
+/** Pages – "Gruppenarbeit" is open on the Mac: it changes after every read (conflicts on save). */
+type FakePage = {
+  path: string
+  title: string
+  icon?: string
+  body: string
+  data: Record<string, unknown>
+  mtime: number
+}
+const pages: FakePage[] = [
+  {
+    path: 'Willkommen.md',
+    title: 'Willkommen',
+    icon: '👋',
+    body: '# Willkommen\n\nDein Studium in Notiva. Start: [[Datenbanksysteme 2]].',
+    data: {},
+    mtime: Date.now() - 9e7,
+  },
+  {
+    path: 'Studium/Module/Datenbanksysteme 2.md',
+    title: 'Datenbanksysteme 2',
+    icon: '🗄️',
+    body: '## Überblick\n\nB-Bäume, Hashing, Anfrageoptimierung und Transaktionen.\n\n- [x] Vorlesung 05 nacharbeiten\n- [ ] Übungsblatt 4\n\nNotizen: [[Vorlesung 05 – Indexstrukturen]]',
+    data: { Status: 'Laufend', ECTS: 5, Semester: '[[WiSe 26/27]]', lernplan: 'hidden' },
+    mtime: Date.now() - 36e5,
+  },
+  {
+    path: 'Studium/Module/Mathematik 3.md',
+    title: 'Mathematik 3',
+    icon: '📐',
+    body: 'Differentialgleichungen und Fourier.',
+    data: { Status: 'Laufend', ECTS: 5 },
+    mtime: Date.now() - 7e7,
+  },
+  {
+    path: 'Studium/Notizen/Vorlesung 05 – Indexstrukturen.md',
+    title: 'Vorlesung 05 – Indexstrukturen',
+    body: '# Indexstrukturen\n\n> Ein B+-Baum hält alle Daten in den Blättern.\n\n![Tafel](Tafel.png)\n\n| Struktur | Suche |\n| --- | --- |\n| B+-Baum | O(log n) |\n| Hash | O(1) |',
+    data: { Modul: '[[Datenbanksysteme 2]]' },
+    mtime: Date.now() - 6e6,
+  },
+  {
+    path: 'Studium/Notizen/Gruppenarbeit.md',
+    title: 'Gruppenarbeit',
+    body: 'Wer macht was – gerade am Mac offen.',
+    data: {},
+    mtime: Date.now() - 5e6,
+  },
+]
+// A small green square ("the blackboard").
+const TAFEL =
+  'iVBORw0KGgoAAAANSUhEUgAAAGAAAAAwCAIAAABhdOiYAAAAZUlEQVR4nO3QMQ0AIADAMBxhBQP4t4EDONnRZAKWjrmXLo3vB/EAAQIECFA4QIAAAQIUDhAgQIAAhQMECBAgQOEAAQIECFA4QIAAAQIUDhAgQIAAhQMECBAgQOEAAQIECFA4QI8OtA944vTdcx4AAAAASUVORK5CYII='
+const markdown = new MarkdownIt()
+const html = (page: FakePage) =>
+  markdown
+    .render(page.body)
+    // Task lists as on the Mac (markdown-it alone leaves "[x]").
+    .replace(
+      /<li>\[( |x)\] /g,
+      (_, x: string) => `<li><input type="checkbox" disabled${x === 'x' ? ' checked' : ''}> `,
+    )
+    .replace(/\[\[([^\]]+)\]\]/g, (_, name: string) => {
+      const target = pages.find((p) => p.title === name)
+      return target
+        ? `<a class="wikilink" href="#/p/${encodeURIComponent(target.path)}">${name}</a>`
+        : `<a class="wikilink wikilink-missing" href="#">${name}</a>`
+    })
+
 /** What was put on the shelf (name and size). */
 const shelf: Array<{ name: string; bytes: number }> = []
 
@@ -266,6 +335,46 @@ const server = new CompanionServer(
         typeof p.name === 'string' ? p.name : `${inDays(0)} ${String(p.text ?? '').slice(0, 30)}.md`
       shelf.push({ name, bytes: typeof p.data === 'string' ? Buffer.from(p.data, 'base64').length : 0 })
       return { path: `Ablage/${name}` }
+    }
+    if (method === 'pages')
+      return pages.map(({ path, title, icon, mtime }) => ({ path, title, mtime, ...(icon ? { icon } : {}) }))
+    if (method === 'page' || method === 'page.put' || method === 'page.copy') {
+      const page = pages.find((x) => x.path === p.path)
+      if (!page) throw Object.assign(new Error('Nicht gefunden'), { code: 'notFound' })
+      if (method === 'page') {
+        const answer = {
+          path: page.path,
+          title: page.title,
+          body: page.body,
+          data: page.data,
+          mtime: page.mtime,
+          html: html(page),
+        }
+        if (page.title === 'Gruppenarbeit') page.mtime += 1000
+        return answer
+      }
+      if (method === 'page.copy') {
+        const copy = {
+          ...page,
+          path: page.path.replace(/\.md$/, ' (iPhone).md'),
+          title: `${page.title} (iPhone)`,
+          body: String(p.body),
+          mtime: Date.now(),
+        }
+        pages.push(copy)
+        return { path: copy.path }
+      }
+      if (typeof p.base === 'number' && p.base !== page.mtime)
+        throw Object.assign(new Error('Die Seite wurde inzwischen am Mac geändert'), { code: 'conflict' })
+      page.body = String(p.body)
+      page.mtime = Date.now()
+      return { path: page.path, mtime: page.mtime }
+    }
+    if (method === 'file') {
+      if (p.path !== 'Studium/Notizen/Tafel.png')
+        throw Object.assign(new Error('Nicht gefunden'), { code: 'notFound' })
+      const bytes = Buffer.from(TAFEL, 'base64')
+      return { path: p.path, size: bytes.length, offset: 0, data: TAFEL }
     }
     if (method === 'study.done') {
       if (p.done === true) done.add(String(p.key))

@@ -3,6 +3,7 @@ import { useMoodle } from '@/app/moodle'
 import { addShelfFile, addShelfText } from '@/app/shelf'
 import { modulePages, portionsFor, setDone } from '@/app/studyPlan'
 import { notesPathFor } from '@/lib/annotations'
+import { renderMarkdown } from '@/lib/markdown'
 import { importTargets } from '@/lib/moodle'
 import { isoDate } from '@/lib/studyPlan'
 import type { Workspace } from '@/lib/workspace'
@@ -174,11 +175,19 @@ export async function companionAnswer(ws: Workspace, method: string, params: unk
       return ws
         .all()
         .filter((x) => !x.path.split('/').some((part) => part.startsWith('.')))
-        .map((x) => ({ path: x.path, title: x.title, mtime: x.mtime }))
+        .map((x) => ({ path: x.path, title: x.title, mtime: x.mtime, ...(x.icon ? { icon: x.icon } : {}) }))
 
     case 'page': {
       const page = ws.get(safePath(ws, p.path, 'page'))!
-      return { path: page.path, title: page.title, body: page.body, data: page.data, mtime: page.mtime }
+      return {
+        path: page.path,
+        title: page.title,
+        body: page.body,
+        data: page.data,
+        mtime: page.mtime,
+        // Shown as on the Mac: wiki links as "#/p/<path>", images relative to the page.
+        html: renderMarkdown(page.body, { resolveLink: (target) => ws.resolveLink(target, page.path) }),
+      }
     }
 
     case 'page.put': {
@@ -192,6 +201,22 @@ export async function companionAnswer(ws: Workspace, method: string, params: unk
         })
       await ws.save(path, { body: str(p.body, 2_000_000) })
       return { path, mtime: ws.get(path)?.mtime ?? Date.now() }
+    }
+
+    case 'page.copy': {
+      // A conflict on the phone: its version next to the page – both stay.
+      const path = safePath(ws, p.path, 'page')
+      const page = ws.get(path)!
+      const stamp = new Date()
+        .toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })
+        .replace(':', '.')
+      const copy = await ws.createPage({
+        folder: path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '',
+        title: `${page.title} (${str(p.device, 40) || 'iPhone'} ${stamp})`,
+        data: Object.fromEntries(Object.entries(page.data).filter(([key]) => key !== 'title')),
+        body: str(p.body, 2_000_000),
+      })
+      return { path: copy }
     }
 
     case 'file': {

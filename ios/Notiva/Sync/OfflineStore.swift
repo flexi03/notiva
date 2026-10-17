@@ -42,6 +42,8 @@ struct OfflineStore: Sendable {
         let label: String
         /// the last error (e.g. a conflict) – kept until the user decides
         var error: String?
+        /// the Mac's code for it ("conflict" …)
+        var code: String?
         /// A file sent with it (a photo for the shelf), kept apart from the queue: sent as
         /// `data` (base64) in the params.
         var blob: UUID?
