@@ -1,6 +1,6 @@
 {
   "name": "notiva",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "private": true,
   "description": "Notiva – freie, lokale Notion-Alternative auf Markdown-Basis: Seiten, Datenbanken, Kacheln, Vorlagen",
   "author": "flexi03",
@@ -63,6 +63,7 @@
     "markdown-it": "^15.0.2",
     "minisearch": "^7.2.0",
     "pdfjs-dist": "6.3.289",
+    "qrcode": "1.5.4",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "yaml": "^2.9.1",
@@ -79,6 +80,7 @@
     "@testing-library/user-event": "^14.6.8",
     "@types/katex": "^0.16.8",
     "@types/node": "^26.6.5",
+    "@types/qrcode": "1.5.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",

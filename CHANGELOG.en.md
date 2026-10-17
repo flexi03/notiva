@@ -5,6 +5,8 @@ _Deutsch: [CHANGELOG.md](CHANGELOG.md)_
 All versions with downloads: [GitHub Releases](https://github.com/flexi03/notiva/releases).
 Notiva checks for a new version on start and every hour and installs it itself if you like.
 
+## 0.2.4 – not released yet
+
 ## 0.2.3 – 2026-10-17
 
 - **Study plan backwards from the exam date** (module page): spreads the current course's lecture slides in their
