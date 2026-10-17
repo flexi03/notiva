@@ -153,14 +153,7 @@
       ]
     },
     "linux": {
-      "target": [
-        {
-          "target": "AppImage",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
+      "target": "AppImage",
       "category": "Office"
     },
     "extraResources": [

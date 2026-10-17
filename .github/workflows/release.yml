@@ -26,10 +26,10 @@ jobs:
           - os: windows-latest
             target: --win
           - os: ubuntu-latest
-            target: --linux --x64
+            target: --linux AppImage --x64
           # Its own ARM runner: native modules (node-pty) must match the architecture.
           - os: ubuntu-24.04-arm
-            target: --linux --arm64
+            target: --linux AppImage --arm64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
