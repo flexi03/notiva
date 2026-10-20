@@ -5,7 +5,7 @@ _English: [CHANGELOG.en.md](CHANGELOG.en.md)_
 Alle Versionen mit Downloads: [GitHub Releases](https://github.com/flexi03/notiva/releases).
 Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und installiert sie auf Wunsch selbst.
 
-## 0.2.8 – noch nicht veröffentlicht
+## 0.2.8 – 2026-10-20
 
 - **Moodle meldet sich nur noch für deine Module** – nach dem Status deiner Modulseiten: Kurse von Modulen, die du
   gerade machst (belegt, geplant, Praktikum offen, Wiederholung), melden alles wie bisher. Bestandene Module und
