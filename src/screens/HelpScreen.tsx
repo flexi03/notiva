@@ -287,6 +287,7 @@ const DE = {
       details: [
         'Jede Prüfung meldet, was sie gefunden hat und was davon neu ist – farbig nach Art.',
         'Vorschläge (Studium, Stundenplan, Unterlagen) warten hier, bis du sie ansiehst und entscheidest.',
+        'Moodle meldet nur Kurse deiner aktuellen Module laut; bestandene Module nur Foren und Noten, alles andere kommt stumm als „Nur zur Info“.',
         'Sync-Symbol: wann zuletzt und als Nächstes geprüft wird.',
       ],
       view: 'notifications',
@@ -472,6 +473,7 @@ const EN: typeof DE = {
       details: [
         'Every check says what it found and what of it is new – coloured by kind.',
         'Suggestions (studies, timetable, materials) wait here until you look at them and decide.',
+        'Moodle notifies only for courses of your current modules; passed modules only for forums and grades, everything else arrives quietly as "Nur zur Info".',
         'Sync icon: last and next check.',
       ],
     },

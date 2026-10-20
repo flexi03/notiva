@@ -94,8 +94,10 @@ export class NotificationStore {
     if (incoming.length === 0) return []
     const parsed = parseNotifications(incoming)
     const { list, added } = mergeNotifications(await this.all(), parsed)
-    // Check results ("Moodle geprüft") change the list without being news.
-    if (added.length === 0 && !parsed.some((n) => n.kind === 'check')) return []
+    // Check results ("Moodle geprüft") and quiet notes change the list without being news.
+    const known = new Set((await this.all()).map((n) => n.id))
+    if (added.length === 0 && !parsed.some((n) => n.kind === 'check' || (n.quiet && !known.has(n.id))))
+      return []
     this.list = list
     await this.save()
     if (added.length) this.onAdded(added)

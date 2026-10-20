@@ -85,12 +85,14 @@ import {
   checkResult,
   deadlineReminders,
   moodleNews,
+  routeNews,
   parseCourseChoices,
   type AppNotification,
   checkBody,
 } from '../src/lib/notifications'
 import { materialCategory, type MoodleSnapshot } from '../src/lib/moodle'
 import { courseInfoNews } from '../src/lib/moodleInfo'
+import { COURSE_TRACKING_META, parseCourseTracking, trackOf } from '../src/lib/courseTracking'
 import { findPlanLinks, type PlanLink } from '../src/lib/examPlan'
 
 const DIST = path.join(__dirname, '..', 'dist')
@@ -496,19 +498,40 @@ async function pollMoodle(contents = true): Promise<MoodleSnapshot> {
   const choices = vault
     ? parseCourseChoices(await vault.read('.notiva/course-choices.json').then(JSON.parse, () => null))
     : {}
+  // How loud each course may be – from the module pages (written by the app, lib/courseTracking).
+  const tracking = vault
+    ? parseCourseTracking(await vault.read(`.notiva/${COURSE_TRACKING_META}`).then(JSON.parse, () => null))
+    : null
+  const levelOf = (id: string) =>
+    trackOf(
+      tracking,
+      choices,
+      snapshot.courses.find((c) => c.id === id),
+      now,
+    )
   const counted = <T>(info: Record<string, T> | undefined) =>
     info && Object.fromEntries(Object.entries(info).filter(([id]) => choices[id] !== 'ignore'))
   const news = [
-    ...moodleNews(previous, snapshot, { now, locale: LOCALE(), choice: (id) => choices[id] }),
-    ...courseInfoNews(
-      counted(previous?.info),
-      counted(snapshot.info),
-      (id) => snapshot.courses.find((c) => c.id === id)?.name ?? 'Moodle',
+    ...routeNews(
+      [
+        ...moodleNews(previous, snapshot, { now, locale: LOCALE(), choice: (id) => choices[id] }),
+        ...courseInfoNews(
+          counted(previous?.info),
+          counted(snapshot.info),
+          (id) => snapshot.courses.find((c) => c.id === id)?.name ?? 'Moodle',
+          now,
+        ),
+      ],
+      levelOf,
       now,
     ),
+    // Reminders only for courses one takes now.
     ...deadlineReminders(
       snapshot.events
-        .filter((e) => !e.course?.id || choices[e.course.id] !== 'ignore')
+        .filter(
+          (e) =>
+            !e.course?.id || (choices[e.course.id] !== 'ignore' && levelOf(e.course.id).level === 'track'),
+        )
         .map((e) => ({
           id: e.id,
           title: e.title,

@@ -60,6 +60,10 @@ Everything beyond the [README](../README.en.md). Deutsch: [ANLEITUNG.md](ANLEITU
 - **Moodle courses of a module**: on the module page choose per course "counts now", "another semester" or "not
   counted" – e.g. for courses you only look into. Nothing comes from "not counted" any more (no files, deadlines,
   announcements); "another semester" reports new files only as a grey note.
+- **Which courses notify** follows your modules: courses of modules you take now (attending, planned, lab open,
+  retake) report everything. Once a module is passed or only the exam is left (registered, grade pending), only
+  forum posts and grades notify. Everything else – other semesters, older courses of a module, courses without a
+  module – arrives only as one quiet note per course ("Nur zur Info"): no counter, no banner, no suggestion to save.
 - **Assignments** from Moodle show their state in _Today_ ("not submitted", "submitted", "graded 1.7"); a new grade
   arrives as a notification with feedback.
 - **Today** (sidebar) opens the daily note with the day overview: sessions, exams, labs, tasks due and overdue,

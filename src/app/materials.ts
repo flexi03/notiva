@@ -388,9 +388,13 @@ export async function moduleNamesOf(
  * in the notifications) with "Speichern" and "Ansehen".
  */
 export async function suggestMaterials(ws: Workspace, snapshot: MoodleSnapshot): Promise<number> {
-  // Courses taken later or not at all: nothing is suggested from them.
+  // Only courses one takes now (lib/courseTracking): passed modules, other semesters and courses
+  // without a module suggest nothing – their files can still be saved under "Ansehen" in Moodle.
   const { courseCounts } = await import('@/app/courseChoices')
-  const missing = (await missingMaterials(ws, snapshot)).filter((m) => courseCounts(m.courseId))
+  const levelOf = (await import('@/app/courseTracking')).courseLevels(ws)
+  const missing = (await missingMaterials(ws, snapshot)).filter(
+    (m) => courseCounts(m.courseId) && levelOf(m.courseId).level === 'track',
+  )
   if (!missing.length) return 0
   // Files already in the folder under the same name are not "new" – they are offered to assign.
   const entries = await loadEntries(ws)

@@ -159,6 +159,9 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
     if (!moodleAvailable()) return
     void useMoodle.getState().refresh()
     void import('@/app/courseChoices').then((m) => m.loadCourseChoices(ws))
+    // Which courses may notify (module pages → .notiva/course-tracking.json for the background check).
+    let stopTracking: (() => void) | undefined
+    void import('@/app/courseTracking').then((m) => (stopTracking = m.watchCourseTracking(ws)))
     // Revoked / expired Git tokens are reported right away (hint + notification).
     void import('@/app/gitTokens').then((m) => m.checkGitTokens()).catch(() => undefined)
     // The last fetch right away – module pages show its infos and links without opening Moodle.
@@ -167,7 +170,7 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
       .then((s) => s && !useMoodle.getState().snapshot && useMoodle.setState({ snapshot: s }))
       .catch(() => undefined)
     // After every Moodle check (also in the background): fresh data, new documents into the vault.
-    return electronBridge()?.moodle?.onPolled(async () => {
+    const offPolled = electronBridge()?.moodle?.onPolled(async () => {
       const snapshot = await electronBridge()!.moodle!.snapshot()
       if (!snapshot) return
       useMoodle.setState({ snapshot })
@@ -176,6 +179,10 @@ export function AppShell({ children, overlays }: { children: ReactNode; overlays
         await suggestMaterials(ws, snapshot).catch(() => undefined)
       if (useApp.getState().settings.studyAutoSync) void autoSyncStudy(ws).catch(() => undefined)
     })
+    return () => {
+      offPolled?.()
+      stopTracking?.()
+    }
   }, [ws])
   const actions = usePageActions(ws)
   // One width for the left side bar, whatever it shows (pages, assistant, Git …) – drag the edge.

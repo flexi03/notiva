@@ -64,6 +64,11 @@ _Hilfe → So funktioniert Notiva_ (bitte beides gemeinsam aktuell halten). Engl
 - **Moodle-Kurse eines Moduls**: Auf der Modulseite wählst du pro Kurs „zählt jetzt“, „anderes Semester“ oder
   „nicht berücksichtigen“ – z. B. für Kurse, in die du nur schon hineinschaust. Aus „nicht berücksichtigen“ kommt
   nichts mehr (keine Dateien, Fristen, Ankündigungen); „anderes Semester“ meldet neue Dateien nur als graue Info.
+- **Welche Kurse sich melden** richtet sich nach deinen Modulen: Kurse von Modulen, die du gerade machst (belegt,
+  geplant, Praktikum offen, Wiederholung), melden alles. Ist ein Modul bestanden oder steht nur noch die Prüfung an
+  (angemeldet, Note ausstehend), melden sich nur noch Forenbeiträge und Noten. Alles andere – andere Semester,
+  ältere Kurse eines Moduls, Kurse ohne Modul – kommt nur noch als stummer Sammelhinweis pro Kurs („Nur zur Info“):
+  ohne Zähler, ohne Banner, ohne Vorschlag zum Speichern.
 - **Abgaben** aus Moodle zeigen in _Heute_ ihren Status („nicht abgegeben“, „abgegeben“, „bewertet 1,7“); eine neue
   Bewertung kommt als Benachrichtigung mit Feedback.
 - **Heute** (Seitenleiste) öffnet die Tagesnotiz mit der Tagesübersicht: Vorlesungen, Prüfungen, Praktika,

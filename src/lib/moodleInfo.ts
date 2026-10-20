@@ -292,6 +292,8 @@ export function courseInfoNews(
       news.push({
         id: `info:${id}:${b.id}:${b.text.length}:${b.modified ?? ''}`,
         kind: important ? 'moved' : 'notice',
+        topic: isNews ? 'forum' : 'page',
+        courseId: id,
         title: isNews
           ? `${important ? (/f(ä|ae)llt|entf|abgesagt|ausfall|cancel/i.test(`${b.title} ${b.text}`) ? 'Ausfall: ' : 'Wichtig: ') : ''}${b.forum && !/ankündig|nachricht|news/i.test(b.forum) ? `${b.forum}: ` : ''}${b.title}`
           : prev

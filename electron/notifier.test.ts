@@ -1,4 +1,8 @@
-import { dueChecks, parseNotifySettings } from './notifier'
+// @vitest-environment node
+import { mkdtempSync, readFileSync } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { dueChecks, NotificationStore, parseNotifySettings } from './notifier'
 
 describe('background check intervals', () => {
   it('reads intervals, keeps the old Moodle interval and allows "only by hand"', () => {
@@ -25,5 +29,27 @@ describe('background check intervals', () => {
         now,
       ),
     ).toEqual(['moodle'])
+  })
+})
+
+describe('notification store', () => {
+  it('keeps quiet notes (as read) without reporting them as news', async () => {
+    const file = path.join(mkdtempSync(path.join(os.tmpdir(), 'notiva-notify-')), 'n.json')
+    const banners: string[] = []
+    const store = new NotificationStore(
+      file,
+      (added) => banners.push(...added.map((n) => n.id)),
+      () => {},
+    )
+    const quiet = {
+      id: 'quiet:course:1:2026-10-20T10:00:00.000Z',
+      kind: 'aside' as const,
+      title: '1 neue Datei',
+      time: '2026-10-20T10:00:00.000Z',
+      quiet: true,
+    }
+    expect(await store.add([quiet])).toEqual([])
+    expect(banners).toEqual([])
+    expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual([{ ...quiet, read: true }])
   })
 })

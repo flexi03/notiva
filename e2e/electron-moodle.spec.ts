@@ -22,6 +22,8 @@ const TOKEN = 'tok1234567890abcdef'
 const news = { on: false }
 /** Switched on later: the lecturer uploads a new version of vl01.pdf. */
 const revised = { on: false }
+/** Switched on last: an old exam in "Lineare Algebra" – after the module is passed. */
+const oldExam = { on: false }
 const day = 86_400
 const now = Math.floor(Date.now() / 1000)
 
@@ -117,6 +119,23 @@ function fakeMoodle(): Promise<{ server: Server; url: string; calls: string[] }>
                                   filename: 'vl02.pdf',
                                   fileurl: `${base}/webservice/pluginfile.php/1/vl02.pdf`,
                                   timemodified: now - 60,
+                                },
+                              ],
+                            },
+                          ]
+                        : []),
+                      ...(oldExam.on
+                        ? [
+                            {
+                              id: 79,
+                              name: 'Altklausur 2025',
+                              modname: 'resource',
+                              contents: [
+                                {
+                                  type: 'file',
+                                  filename: 'altklausur.pdf',
+                                  fileurl: `${base}/webservice/pluginfile.php/1/altklausur.pdf`,
+                                  timemodified: now - 20,
                                 },
                               ],
                             },
@@ -495,4 +514,51 @@ test('legt eine neue Version daneben, vergleicht sie und ersetzt nach Wahl', asy
   )
   await moodle.getByLabel(/Wie zählt „Betriebssysteme“/).selectOption('now')
   await expect(moodle).toContainText('Praktikumsaufgaben (ProjectBase)')
+})
+
+test('ein bestandenes Modul meldet neue Dateien nur noch stumm', async () => {
+  test.setTimeout(90_000)
+  await closeSettings()
+  const page = path.join(folder, 'Studium/Module/Lineare Algebra.md')
+  writeFileSync(
+    page,
+    readFileSync(page, 'utf8')
+      .replace(/^Status: .*$/m, 'Status: Bestanden')
+      .replace(/^Belegung: .*$/m, 'Belegung: []')
+      .replace(/^Praktikum: .*$/m, 'Praktikum: Bestanden'),
+  )
+  // The app notes how loud each course may be – for the background check.
+  const tracking = path.join(folder, '.notiva/course-tracking.json')
+  await expect
+    .poll(
+      () =>
+        existsSync(tracking)
+          ? (JSON.parse(readFileSync(tracking, 'utf8')) as { courses: Record<string, unknown> }).courses[
+              'course:42'
+            ]
+          : null,
+      { timeout: 20_000 },
+    )
+    .toEqual({ level: 'notices', reason: 'done' })
+  const bar = window.getByRole('navigation', { name: 'Werkzeugleiste rechts' })
+  const bell = bar.getByRole('button', { name: /Benachrichtigungen/ })
+  const panel = window.getByRole('complementary', { name: 'Benachrichtigungen' })
+  if (!(await panel.isVisible())) await bell.click()
+  await panel.getByRole('button', { name: 'Alle als gelesen markieren' }).click()
+  oldExam.on = true
+  await window.evaluate(() => (location.hash = '#/moodle'))
+  await window.getByRole('button', { name: 'Aktualisieren' }).click()
+  const list = panel.getByRole('list', { name: 'Benachrichtigungen' })
+  await expect(list).toContainText('Nur zur Info (Modul bestanden oder nur noch Prüfung): „Altklausur 2025“')
+  // Quiet: stored as read – no counter, no suggestion to save it.
+  const stored = JSON.parse(readFileSync(path.join(userData, 'notifications.json'), 'utf8')) as Array<{
+    id: string
+    quiet?: boolean
+    read?: boolean
+    body?: string
+  }>
+  const note = stored.find((n) => n.body?.includes('Altklausur 2025'))
+  expect(note).toMatchObject({ quiet: true, read: true })
+  expect(stored.some((n) => n.id.startsWith('material:') && n.id.includes('altklausur'))).toBe(false)
+  await expect(bell).not.toContainText(/\d/)
 })

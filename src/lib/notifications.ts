@@ -3,6 +3,7 @@
  * deadlines, moved deadlines, new or updated materials, Moodle's own notifications, grades) and
  * from due dates (reminders). Pure logic – the desktop app polls, stores and shows them.
  */
+import type { CourseTrack, QuietReason } from './courseTracking'
 import type { MoodleEvent, MoodleSnapshot } from './moodle'
 
 export type NotificationKind =
@@ -41,8 +42,16 @@ export interface AppNotification {
   /** ISO date-time the news happened (or was found). */
   time: string
   read?: boolean
+  /** Only for information: stored as read, no counter, no banner (courses not taken now). */
+  quiet?: boolean
   target?: NotificationTarget
+  /** While news is sorted by course (routeNews): the Moodle course and what kind of news it is. */
+  courseId?: string
+  topic?: NewsTopic
 }
+
+/** What Moodle news is about – decides how loud it may be for a course (see routeNews). */
+export type NewsTopic = 'files' | 'dates' | 'forum' | 'page' | 'grades'
 
 export const MAX_NOTIFICATIONS = 300
 const DAY = 86_400_000
@@ -72,8 +81,8 @@ export interface NewsOptions {
   /** Notiva pages per Moodle id (imported tasks) – news then opens the page. */
   pages?: Map<string, string>
   /**
-   * The user's choice per Moodle course (.notiva/course-choices.json): "ignore" – nothing from it;
-   * "later" (another semester) – its new files as one grey note per course, never as materials.
+   * The user's choice per Moodle course (.notiva/course-choices.json): "ignore" – nothing from it.
+   * "later" (another semester) and courses not taken now are made quiet by routeNews.
    */
   choice?: (courseId: string) => CourseChoice | undefined
 }
@@ -109,6 +118,8 @@ export function moodleNews(
     news.push({
       id: `graded:${event.id}`,
       kind: 'grade',
+      topic: 'grades',
+      ...(event.course ? { courseId: event.course.id } : {}),
       title: `Bewertet: ${event.title}${event.submission.grade ? ` – ${event.submission.grade}` : ''}`,
       ...(event.submission.feedback ? { body: event.submission.feedback } : {}),
       ...(event.course ? { course: event.course.name } : {}),
@@ -122,10 +133,12 @@ export function moodleNews(
     const old = oldEvents.get(event.id)
     const target = eventTarget(event, pages)
     const course = event.course?.name
+    const tags = { topic: 'dates' as const, ...(event.course ? { courseId: event.course.id } : {}) }
     if (!old)
       news.push({
         id: `deadline:${event.id}`,
         kind: 'deadline',
+        ...tags,
         title: event.title,
         body: dueText(event.due, locale),
         ...(course ? { course } : {}),
@@ -136,6 +149,7 @@ export function moodleNews(
       news.push({
         id: `moved:${event.id}:${event.due}`,
         kind: 'moved',
+        ...tags,
         title: event.title,
         body: `${dueText(old.due, locale)} → ${dueText(event.due, locale)}`,
         ...(course ? { course } : {}),
@@ -146,38 +160,22 @@ export function moodleNews(
   // Materials only if the previous fetch had them (older snapshots/calendar links don't).
   if (previous.materials && next.materials) {
     const oldMaterials = new Map(previous.materials.map((m) => [m.id, m]))
-    const aside = new Map<string, string[]>()
     for (const m of next.materials) {
       const old = oldMaterials.get(m.id)
       const changed = old && m.modified && old.modified && m.modified !== old.modified
       if (old && !changed) continue
-      const mode = choice(m.courseId)
-      if (mode === 'ignore') continue
-      if (mode === 'later') {
-        aside.set(m.courseId, [...(aside.get(m.courseId) ?? []), m.filename ?? m.title])
-        continue
-      }
+      if (choice(m.courseId) === 'ignore') continue
       const course = courseName(next, m.courseId)
       news.push({
         id: `${changed ? 'updated' : 'material'}:${m.id}:${m.modified ?? ''}`,
         kind: changed ? 'updated' : 'material',
+        topic: 'files',
+        courseId: m.courseId,
         title: m.title,
         ...(m.section ? { body: m.section } : {}),
         ...(course ? { course } : {}),
         time: m.modified && !changed && Date.parse(m.modified) > now.getTime() - 7 * DAY ? m.modified : found,
         target: { type: 'material', id: m.id, courseId: m.courseId },
-      })
-    }
-    for (const [courseId, names] of aside) {
-      const course = courseName(next, courseId)
-      news.push({
-        id: `aside:${courseId}:${found}`,
-        kind: 'aside',
-        title: `${names.length} ${names.length === 1 ? 'Datei' : 'Dateien'} – anderes Semester, nicht übernommen`,
-        body: names.slice(0, 3).join(', ') + (names.length > 3 ? ` und ${names.length - 3} weitere` : ''),
-        ...(course ? { course } : {}),
-        time: found,
-        target: { type: 'course', courseId },
       })
     }
   }
@@ -237,6 +235,59 @@ export function deadlineReminders(
     }))
 }
 
+const QUIET_REASONS: Record<QuietReason, string> = {
+  later: 'anderes Semester',
+  done: 'Modul bestanden oder nur noch Prüfung',
+  orga: 'allgemeiner Kurs',
+  other: 'nicht in deinen aktuellen Modulen',
+}
+
+/**
+ * Sorts Moodle news by how loud its course may be (lib/courseTracking): "track" – as it is;
+ * "notices" – forum posts and grades as news, the rest quiet; "quiet" – all quiet. Quiet news of a
+ * course becomes one note ("2 neue Dateien · 1 Mitteilung"), stored as read: no counter, no banner.
+ * News without a course (Moodle's own messages, eCampus grades) stays as it is.
+ */
+export function routeNews(
+  news: AppNotification[],
+  levelOf: (courseId: string) => CourseTrack,
+  now = new Date(),
+): AppNotification[] {
+  const loud: AppNotification[] = []
+  const quiet = new Map<string, { reason?: QuietReason; items: AppNotification[] }>()
+  for (const n of news) {
+    const { level, reason } = n.courseId
+      ? levelOf(n.courseId)
+      : { level: 'track' as const, reason: undefined }
+    const stays = level === 'track' || (level === 'notices' && (n.topic === 'forum' || n.topic === 'grades'))
+    if (stays || !n.courseId) {
+      loud.push(n)
+      continue
+    }
+    const group = quiet.get(n.courseId) ?? { reason, items: [] }
+    group.items.push(n)
+    quiet.set(n.courseId, group)
+  }
+  const found = now.toISOString()
+  const notes = [...quiet].map(([courseId, { reason, items }]): AppNotification => {
+    const titles = items.slice(0, 3).map((n) => `„${n.title.slice(0, 50)}“`)
+    const more = items.length > 3 ? ` und ${items.length - 3} weitere` : ''
+    const course = items.find((n) => n.course)?.course
+    return {
+      id: `quiet:${courseId}:${found}`,
+      kind: 'aside',
+      title: newsSummary(items),
+      body: `Nur zur Info (${QUIET_REASONS[reason ?? 'other']}): ${titles.join(', ')}${more}`,
+      ...(course ? { course } : {}),
+      time: found,
+      quiet: true,
+      read: true,
+      target: { type: 'course', courseId },
+    }
+  })
+  return [...loud, ...notes]
+}
+
 /** Adds what is new (by id), newest first, capped. Returns the list and what was really added. */
 export function mergeNotifications(
   existing: AppNotification[],
@@ -254,11 +305,21 @@ export function mergeNotifications(
   const replaced = new Set([...checks, ...suggestions].map((n) => n.id))
   const rest = existing.filter((n) => !replaced.has(n.id))
   const known = new Set(rest.map((n) => n.id))
-  const added = incoming.filter(
+  const fresh = incoming.filter(
     (n) => n.kind !== 'check' && !n.id.startsWith('suggest:') && !known.has(n.id) && (known.add(n.id), true),
   )
+  // Quiet notes are kept (as read) but are no news: no counter, no banner.
+  const added = fresh.filter((n) => !n.quiet)
+  const quiet = fresh.filter((n) => n.quiet).map((n) => ({ ...n, read: true }))
   const kept = suggestions.filter((n) => !freshSuggestions.includes(n)).map((n) => ({ ...n, read: true }))
-  const list = [...added, ...freshSuggestions, ...kept, ...checks.map((n) => ({ ...n, read: true })), ...rest]
+  const list = [
+    ...added,
+    ...quiet,
+    ...freshSuggestions,
+    ...kept,
+    ...checks.map((n) => ({ ...n, read: true })),
+    ...rest,
+  ]
     .sort((a, b) => b.time.localeCompare(a.time))
     .slice(0, MAX_NOTIFICATIONS)
   return { list, added: [...added, ...freshSuggestions.filter((n) => before.get(n.id)?.body !== n.body)] }
@@ -322,6 +383,7 @@ export function parseNotifications(raw: unknown): AppNotification[] {
       ...(body ? { body } : {}),
       ...(course ? { course } : {}),
       ...(r.read === true ? { read: true } : {}),
+      ...(r.quiet === true ? { quiet: true } : {}),
       ...(target ? { target } : {}),
     })
   }

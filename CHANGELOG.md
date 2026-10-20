@@ -5,6 +5,14 @@ _English: [CHANGELOG.en.md](CHANGELOG.en.md)_
 Alle Versionen mit Downloads: [GitHub Releases](https://github.com/flexi03/notiva/releases).
 Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und installiert sie auf Wunsch selbst.
 
+## 0.2.8 – noch nicht veröffentlicht
+
+- **Moodle meldet sich nur noch für deine Module** – nach dem Status deiner Modulseiten: Kurse von Modulen, die du
+  gerade machst (belegt, geplant, Praktikum offen, Wiederholung), melden alles wie bisher. Bestandene Module und
+  solche, bei denen nur noch die Prüfung ansteht, melden nur noch Forenbeiträge und Noten. Alles andere (andere
+  Semester, ältere Kurse eines Moduls, Kurse ohne Modul) kommt als ein stummer Sammelhinweis pro Kurs – ohne Zähler,
+  ohne Banner, ohne Vorschlag zum Speichern und ohne Frist-Erinnerungen. „Anderes Semester“ ist jetzt ebenfalls stumm.
+
 ## 0.2.7 – 2026-10-18
 
 - **PDFs auf dem iPhone/iPad** ([#49](https://github.com/flexi03/notiva/issues/49)): Die Desktop-App liefert die PDFs

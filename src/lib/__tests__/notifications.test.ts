@@ -6,7 +6,10 @@ import {
   checkResult,
   newsSummary,
   parseCourseChoices,
+  routeNews,
+  type AppNotification,
 } from '../notifications'
+import { trackOf } from '../courseTracking'
 import { parseSubmission } from '../moodle'
 import type { MoodleSnapshot } from '../moodle'
 
@@ -236,16 +239,28 @@ describe('moodleNews with course choices', () => {
     ],
   }
 
-  it('"later": one grey note per course instead of materials', () => {
-    const news = moodleNews(twoCourses, next, {
+  it('"later": one quiet note per course instead of materials and dates', () => {
+    const news = routeNews(
+      moodleNews(twoCourses, next, { now }),
+      (id) =>
+        trackOf(
+          null,
+          { 'course:99': 'later' },
+          twoCourses.courses.find((c) => c.id === id),
+          now,
+        ),
       now,
-      choice: (id) => (id === 'course:99' ? 'later' : undefined),
+    )
+    expect(news.filter((n) => n.courseId === 'course:99')).toEqual([])
+    const quiet = news.filter((n) => n.quiet)
+    expect(quiet).toHaveLength(1)
+    expect(quiet[0]).toMatchObject({
+      kind: 'aside',
+      read: true,
+      target: { type: 'course', courseId: 'course:99' },
     })
-    expect(news.filter((n) => n.kind === 'material')).toEqual([])
-    const aside = news.filter((n) => n.kind === 'aside')
-    expect(aside).toHaveLength(1)
-    expect(aside[0]!.body).toBe('a.pdf, b.pdf')
-    expect(aside[0]!.target).toEqual({ type: 'course', courseId: 'course:99' })
+    expect(quiet[0]!.title).toBe('1 neuer Termin · 2 neue Dateien')
+    expect(quiet[0]!.body).toMatch(/^Nur zur Info \(anderes Semester\): „Abgabe alt“, „A“, „B“$/)
   })
 
   it('"ignore": nothing at all – no files, no deadlines', () => {
@@ -299,5 +314,58 @@ describe('assignment submissions', () => {
       expect.objectContaining({ kind: 'grade', title: 'Bewertet: Blatt 5 – 1,7', body: 'Gut gelöst!' }),
     ])
     expect(moodleNews(after, after, { now }).filter((n) => n.id.startsWith('graded:'))).toEqual([])
+  })
+})
+
+describe('routing news by course', () => {
+  const now = new Date('2026-10-20T10:00:00Z')
+  const item = (id: string, topic: AppNotification['topic'], courseId?: string): AppNotification => ({
+    id,
+    kind: topic === 'forum' ? 'notice' : topic === 'grades' ? 'grade' : 'material',
+    title: id,
+    time: now.toISOString(),
+    topic,
+    ...(courseId ? { courseId } : {}),
+  })
+  const news = [
+    item('file-a', 'files', 'course:1'),
+    item('post-a', 'forum', 'course:1'),
+    item('file-b', 'files', 'course:2'),
+    item('post-b', 'forum', 'course:2'),
+    item('grade-b', 'grades', 'course:2'),
+    item('file-c', 'files', 'course:3'),
+    item('post-c', 'forum', 'course:3'),
+    item('moodle-message', 'forum'),
+  ]
+  const levels = {
+    'course:1': { level: 'track' as const },
+    'course:2': { level: 'notices' as const, reason: 'done' as const },
+    'course:3': { level: 'quiet' as const, reason: 'other' as const },
+  }
+  const routed = routeNews(news, (id) => levels[id as keyof typeof levels], now)
+
+  it('active modules: everything; passed/exam: forum and grades; others: nothing loud', () => {
+    expect(routed.filter((n) => !n.quiet).map((n) => n.id)).toEqual([
+      'file-a',
+      'post-a',
+      'post-b',
+      'grade-b',
+      'moodle-message',
+    ])
+    const quiet = routed.filter((n) => n.quiet)
+    expect(quiet.map((n) => n.target)).toEqual([
+      { type: 'course', courseId: 'course:2' },
+      { type: 'course', courseId: 'course:3' },
+    ])
+    expect(quiet[0]!.body).toMatch(/Modul bestanden oder nur noch Prüfung/)
+    expect(quiet[1]!.title).toBe('1 neue Datei · 1 Mitteilung')
+  })
+
+  it('quiet notes are stored as read and are no news (no counter, no banner)', () => {
+    const { list, added } = mergeNotifications([], routed)
+    expect(added.map((n) => n.id)).not.toContain(routed.find((n) => n.quiet)!.id)
+    expect(added.every((n) => !n.quiet)).toBe(true)
+    expect(list.filter((n) => n.quiet).every((n) => n.read)).toBe(true)
+    expect(parseNotifications(list).filter((n) => n.quiet)).toHaveLength(2)
   })
 })

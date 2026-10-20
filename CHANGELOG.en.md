@@ -5,6 +5,14 @@ _Deutsch: [CHANGELOG.md](CHANGELOG.md)_
 All versions with downloads: [GitHub Releases](https://github.com/flexi03/notiva/releases).
 Notiva checks for a new version on start and every hour and installs it itself if you like.
 
+## 0.2.8 – not released yet
+
+- **Moodle only notifies for your modules** – going by the status of your module pages: courses of modules you take
+  now (attending, planned, lab open, retake) report everything as before. Passed modules and those with only the exam
+  left report only forum posts and grades. Everything else (other semesters, older courses of a module, courses
+  without a module) arrives as one quiet note per course – no counter, no banner, no suggestion to save and no
+  deadline reminders. "Another semester" is quiet now as well.
+
 ## 0.2.7 – 2026-10-18
 
 - **PDFs on the iPhone/iPad** ([#49](https://github.com/flexi03/notiva/issues/49)): the desktop app sends the folder's
