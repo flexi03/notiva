@@ -104,7 +104,7 @@ export function CodeFileView({ path, initial }: { path: string; initial: string 
             label={t('terminal.title')}
             reset={260}
           />
-          <TerminalDock folder={work.folder} onClose={() => setTerminal(false)} />
+          <TerminalDock folder={work.folder} other={work.fileFolder} onClose={() => setTerminal(false)} />
         </div>
       )}
     </div>

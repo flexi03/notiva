@@ -1335,6 +1335,7 @@ export const en: Record<MessageKey, string> = {
   'terminal.clear': 'Clear history',
   'terminal.close': 'Close terminal',
   'terminal.splitRight': 'Split (side by side)',
+  'terminal.otherFolder': 'Terminal next to it in “{folder}”',
   'terminal.newBelow': 'New terminal below',
   'web.title': 'Web page',
   'web.reload': 'Reload',

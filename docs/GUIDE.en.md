@@ -130,7 +130,10 @@ Background checks report in the notifications what they found and what of it is 
 ## Code folders
 
 A page with `code: true` gets a folder next to it: file list, editor, terminal (two side by side if you like), links
-and a web page beside it. Git commits with a progress display. Links to Git projects offer "Get repository into the
+and a web page beside it. The terminal below a lab sheet starts in the module's code folder; the folder button in the
+terminal opens one in the materials folder next to it (and the other way round in the code folder). Git commits with
+a progress display – thousands of files at once, too; new `.venv`, `node_modules` and `__pycache__` folders are not
+listed as changes at all. Links to Git projects offer "Get repository into the
 lab" (`git clone` into the folder).
 
 ## AI

@@ -137,7 +137,10 @@ Hintergrund-Prüfungen melden in den Benachrichtigungen, was sie gefunden haben 
 ## Code-Ordner
 
 Eine Seite mit `code: true` bekommt einen Ordner daneben: Dateiliste, Editor, Terminal (auch zwei nebeneinander),
-Links und eine Webseite daneben. Git-Commits mit Fortschrittsanzeige. Links auf Git-Projekte bieten
+Links und eine Webseite daneben. Das Terminal unter einem Praktikumsblatt startet im Code-Ordner des Moduls; der
+Ordner-Knopf im Terminal öffnet daneben eins im Unterlagen-Ordner (und im Code-Ordner umgekehrt). Git-Commits mit
+Fortschrittsanzeige – auch Tausende Dateien auf einmal; neue `.venv`, `node_modules` und `__pycache__` zeigt Notiva
+gar nicht erst als Änderung. Links auf Git-Projekte bieten
 „Repository ins Praktikum holen“ (`git clone` in den Ordner).
 
 ## KI nutzen

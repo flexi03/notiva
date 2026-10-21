@@ -5,6 +5,7 @@
  */
 import { execFile } from 'node:child_process'
 import { promises as fs } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import type { FsVault } from './vaultFs'
 
@@ -118,7 +119,10 @@ export class GitRepo {
     try {
       await vault.read('.gitignore')
     } catch {
-      await vault.write('.gitignore', '.notiva/trash/\n.notiva/cache/\n.DS_Store\n')
+      await vault.write(
+        '.gitignore',
+        '.notiva/trash/\n.notiva/cache/\n.DS_Store\nnode_modules/\n.venv/\n__pycache__/\n*.pyc\n',
+      )
     }
     const repo = await GitRepo.open(vault)
     if (!repo) throw new GitError('git init fehlgeschlagen')
@@ -132,8 +136,9 @@ export class GitRepo {
   }
 
   private async checked(paths: unknown): Promise<string[]> {
-    if (!Array.isArray(paths) || paths.length === 0 || paths.length > 2000)
-      throw new GitError('Keine Dateien')
+    if (!Array.isArray(paths) || paths.length === 0) throw new GitError('Keine Dateien')
+    if (paths.length > MAX_FILES)
+      throw new GitError(`Zu viele Dateien auf einmal (${paths.length}, höchstens ${MAX_FILES}).`)
     for (const p of paths) await this.vault.resolve(p as string)
     return paths as string[]
   }
@@ -177,6 +182,8 @@ export class GitRepo {
       const path = this.toVault(repoPath)
       // Notiva's trash and caches (PDF texts for the search) are never changes to commit.
       if (path === null || /^\.notiva\/(trash|cache)\//.test(path) || isJunk(path)) continue
+      // A new .venv or node_modules: thousands of installed files, never something to commit.
+      if (xy === '??' && isDependency(path)) continue
       const status: GitStatus =
         xy === '??'
           ? 'untracked'
@@ -247,8 +254,9 @@ export class GitRepo {
     const files = await this.checked(paths)
     return this.writing(async () => {
       // Many large files (e.g. lecture PDFs) take a while – never kill git halfway (stale lock).
-      // Added in batches, so the app can show "12 of 40 files" and the remaining time.
-      const batch = 15
+      // Added in batches, so the app can show "12 of 40 files" and the remaining time (at most
+      // about 100 git calls, also for thousands of files).
+      const batch = Math.max(15, Math.ceil(files.length / 100))
       for (let i = 0; i < files.length; i += batch) {
         onProgress(i, files.length, files[i])
         await run(this.vault.root, ['add', '-A', '--', ...files.slice(i, i + batch).map(spec)], {
@@ -256,9 +264,19 @@ export class GitRepo {
         })
       }
       onProgress(files.length, files.length)
-      await run(this.vault.root, ['commit', '-m', message.trim(), '--', ...files.map(spec)], {
-        timeout: WRITE_TIMEOUT,
-      })
+      // The paths from a file – thousands of them would not fit on a command line.
+      const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'notiva-commit-'))
+      try {
+        const list = path.join(dir, 'paths')
+        await fs.writeFile(list, files.map((f) => `${spec(f)}\0`).join(''))
+        await run(
+          this.vault.root,
+          ['commit', '-m', message.trim(), `--pathspec-from-file=${list}`, '--pathspec-file-nul'],
+          { timeout: WRITE_TIMEOUT },
+        )
+      } finally {
+        await fs.rm(dir, { recursive: true, force: true })
+      }
       return (await run(this.vault.root, ['rev-parse', 'HEAD'])).stdout.trim()
     })
   }
@@ -583,6 +601,13 @@ export function tokenEnv(url: string, token?: string): Record<string, string> {
   }
 }
 
+/** Most files one commit or discard takes (a whole unpacked project, not a runaway list). */
+const MAX_FILES = 50_000
+
+/** Installed dependencies and caches (Python, Node): new ones are never listed as changes. */
+export const isDependency = (p: string) =>
+  /(^|\/)(node_modules|\.venv|venv|__pycache__|\.pytest_cache|\.ipynb_checkpoints)\/|\.py[co]$/.test(p)
+
 /** Finder's folder files: never a change, never committed. */
 export const isJunk = (p: string) => /(^|\/)(\.DS_Store|\._.*|Thumbs\.db|desktop\.ini)$/i.test(p)
 
@@ -668,7 +693,10 @@ export async function repoStatus(dir: string): Promise<{
   const head = /^## (?:No commits yet on )?([^.\s]+)(?:\.\.\.(\S+))?(?: \[(.*)\])?/.exec(lines[0] ?? '')
   const changes = lines
     .slice(1)
-    .filter((l) => !isJunk(l.slice(3).replace(/^"|"$/g, '')))
+    .filter((l) => {
+      const p = l.slice(3).replace(/^"|"$/g, '')
+      return !isJunk(p) && !(l.startsWith('??') && isDependency(p))
+    })
     .map((l) => {
       const xy = l.slice(0, 2)
       const status: GitStatus =

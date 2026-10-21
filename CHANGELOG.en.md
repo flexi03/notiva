@@ -5,6 +5,15 @@ _Deutsch: [CHANGELOG.md](CHANGELOG.md)_
 All versions with downloads: [GitHub Releases](https://github.com/flexi03/notiva/releases).
 Notiva checks for a new version on start and every hour and installs it itself if you like.
 
+## 0.2.9 – not released yet
+
+- **Terminal at a lab sheet in the code folder** – below a lab PDF from "Unterlagen/<module>" the terminal starts in
+  the module's code folder again (since the materials moved, Notiva no longer found it). A new folder button in the
+  terminal opens one in the materials folder next to it – and in the code folder one at the lab materials.
+- **Git: commit thousands of files at once** – a commit of more than 2,000 files stopped with "Keine Dateien".
+  New `.venv`, `node_modules` and `__pycache__` folders (installed packages) are not listed as changes at all; a new
+  Git folder also ignores them in its `.gitignore`.
+
 ## 0.2.8 – 2026-10-20
 
 - **Moodle only notifies for your modules** – going by the status of your module pages: courses of modules you take

@@ -5,6 +5,16 @@ _English: [CHANGELOG.en.md](CHANGELOG.en.md)_
 Alle Versionen mit Downloads: [GitHub Releases](https://github.com/flexi03/notiva/releases).
 Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und installiert sie auf Wunsch selbst.
 
+## 0.2.9 – noch nicht veröffentlicht
+
+- **Terminal am Praktikumsblatt im Code-Ordner** – unter einem Praktikums-PDF aus „Unterlagen/<Modul>“ startet das
+  Terminal wieder im Code-Ordner des Moduls (seit dem Umzug der Unterlagen fand Notiva ihn nicht mehr). Ein neuer
+  Ordner-Knopf im Terminal öffnet daneben eins im Unterlagen-Ordner – und im Code-Ordner umgekehrt eins bei den
+  Praktikumsunterlagen.
+- **Git: Tausende Dateien auf einmal committen** – bisher brach ein Commit mit mehr als 2.000 Dateien mit „Keine
+  Dateien“ ab. Neue `.venv`-, `node_modules`- und `__pycache__`-Ordner (installierte Pakete) erscheinen gar nicht erst
+  als Änderung; ein neuer Git-Ordner ignoriert sie auch in seiner `.gitignore`.
+
 ## 0.2.8 – 2026-10-20
 
 - **Moodle meldet sich nur noch für deine Module** – nach dem Status deiner Modulseiten: Kurse von Modulen, die du

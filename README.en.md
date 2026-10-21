@@ -126,8 +126,8 @@ Work on lab assignments right next to your notes – no switching between editor
   lab"** – Notiva suggests the matching session and clones with progress.
 - **Editor and terminal:** edit files (Python, Java, SQL, JS, HTML, …) with syntax highlighting, a real terminal in
   the folder below – two side by side if you like. History is kept.
-- **Assignment beside it:** the assignment PDF with a terminal below, the course's Moodle pages and links as a web
-  page next to the terminal.
+- **Assignment beside it:** the assignment PDF with a terminal below (in the module's code folder, one click opens
+  one in the materials folder next to it), the course's Moodle pages and links as a web page next to the terminal.
 - **Built-in Git:** see changes, commit, push – with progress.
 - **AI on top:** the assistant can see the open file or PDF page (Claude Code, Codex, Ollama, …).
 

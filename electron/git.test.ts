@@ -108,6 +108,30 @@ describe('GitRepo', () => {
     expect((await repo.state()).changes).toEqual([])
   })
 
+  it('commits thousands of files at once and leaves out a new .venv', async () => {
+    const { root, repo, top } = await setup()
+    const project = path.join(root, 'Studium', 'Projekt mit & Leerzeichen')
+    mkdirSync(path.join(project, 'data'), { recursive: true })
+    mkdirSync(path.join(project, '.venv', 'lib'), { recursive: true })
+    mkdirSync(path.join(project, 'scripts', '__pycache__'), { recursive: true })
+    for (let i = 0; i < 3000; i++) writeFileSync(path.join(project, 'data', `datei-${i}.json`), `${i}\n`)
+    writeFileSync(path.join(project, '.venv', 'lib', 'site.py'), 'x\n')
+    writeFileSync(path.join(project, 'scripts', '__pycache__', 'run.cpython-312.pyc'), 'x\n')
+    const changes = (await repo.state()).changes
+    expect(changes).toHaveLength(3000)
+    await repo.commit(
+      'Projekt',
+      changes.map((c) => c.path),
+    )
+    expect(git(top, 'log', '--format=%s', '-n1').trim()).toBe('Projekt')
+    expect(
+      git(top, 'ls-files')
+        .split('\n')
+        .filter((l) => l.includes('Projekt mit')),
+    ).toHaveLength(3000)
+    expect((await repo.state()).changes).toEqual([])
+  }, 60_000)
+
   it('initialises a repository with a sensible .gitignore', async () => {
     const vault = await FsVault.open(mkdtempSync(path.join(os.tmpdir(), 'notiva-init-')))
     const repo = await GitRepo.init(vault)

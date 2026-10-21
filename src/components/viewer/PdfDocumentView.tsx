@@ -577,6 +577,7 @@ export function PdfDocumentView({
             />
             <TerminalDock
               folder={work.folder}
+              other={work.fileFolder}
               onClose={() => setTerminal(false)}
               onSave={(text) => {
                 const before = notes.note(current)

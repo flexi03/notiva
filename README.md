@@ -127,8 +127,8 @@ wechseln:
   holen“** – Notiva schlägt den passenden Termin vor und klont mit Fortschritt.
 - **Editor und Terminal:** Dateien (Python, Java, SQL, JS, HTML, …) mit Syntaxhervorhebung bearbeiten, darunter ein
   echtes Terminal im Ordner – auch zwei nebeneinander. Verläufe bleiben erhalten.
-- **Aufgabe daneben:** das Aufgabenblatt als PDF mit Terminal darunter, Moodle-Seiten und Links des Kurses als
-  Webseite neben dem Terminal.
+- **Aufgabe daneben:** das Aufgabenblatt als PDF mit Terminal darunter (im Code-Ordner des Moduls, ein Klick öffnet
+  daneben eins im Unterlagen-Ordner), Moodle-Seiten und Links des Kurses als Webseite neben dem Terminal.
 - **Git eingebaut:** Änderungen ansehen, committen, pushen – mit Fortschrittsanzeige.
 - **KI dazu:** Der Assistent sieht auf Wunsch die offene Datei oder PDF-Seite (Claude Code, Codex, Ollama, …).
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useDockRequests } from '@/app/dock'
-import { Columns2, Globe, Rows2 } from 'lucide-react'
+import { Columns2, FolderInput, Globe, Rows2 } from 'lucide-react'
 import { useApp } from '@/app/store'
 import { WebPane } from './WebPane'
 import { t } from '@/i18n'
@@ -9,13 +9,19 @@ import { TerminalPanel } from './TerminalPanel'
 
 type Layout = string[][]
 
-/** Terminals of one folder like in VS Code: rows below each other, up to two side by side per row. */
+/**
+ * Terminals of one folder like in VS Code: rows below each other, up to two side by side per row.
+ * `other`: a second folder (a lab PDF's own folder next to the module's code folder) – terminals
+ * there open with one click.
+ */
 export function TerminalDock({
   folder,
+  other,
   onSave,
   onClose,
 }: {
   folder: string
+  other?: string | undefined
   onSave?: (text: string) => void
   onClose: () => void
 }) {
@@ -38,8 +44,14 @@ export function TerminalDock({
       /* private mode */
     }
   }
-  // Panes: "3" = terminal 3, "w3" = web page 3 (its address is remembered per folder).
-  const fresh = () => String(Math.max(0, ...layout.flat().map((p) => Number(p.replace(/^w/, '')))) + 1)
+  // Panes: "3" = terminal 3, "f3" = terminal 3 in the other folder, "w3" = web page 3 (its address
+  // is remembered per folder).
+  const fresh = () => String(Math.max(0, ...layout.flat().map((p) => Number(p.replace(/^[wf]/, '')))) + 1)
+  const alsoOther = other !== undefined && other !== folder
+  const addPane = (pane: string, r: number) => {
+    const row = layout[r]!
+    setLayout(row.length < 2 ? layout.map((x, i) => (i === r ? [...x, pane] : x)) : [...layout, [pane]])
+  }
   const urlKey = `notiva:web:${folder}`
   const [urls, setUrls] = useState<Record<string, string>>(() => {
     try {
@@ -60,8 +72,7 @@ export function TerminalDock({
   const addWeb = (url: string, r = layout.length - 1) => {
     const pane = `w${fresh()}`
     setUrl(pane, url)
-    const row = layout[r]!
-    setLayout(row.length < 2 ? layout.map((x, i) => (i === r ? [...x, pane] : x)) : [...layout, [pane]])
+    addPane(pane, r)
   }
   // A link clicked elsewhere (code folder: links of the lab) opens here.
   useEffect(() => {
@@ -114,11 +125,23 @@ export function TerminalDock({
               <div key={pane} className="min-w-0 flex-1">
                 <TerminalPanel
                   sessionKey={`${folder}#${pane}`}
-                  folder={folder}
+                  folder={pane.startsWith('f') && alsoOther ? other : folder}
                   {...(onSave ? { onSave } : {})}
                   onClose={() => close(pane)}
                   actions={
                     <>
+                      {alsoOther && (
+                        <IconButton
+                          size="sm"
+                          label={t('terminal.otherFolder', {
+                            folder:
+                              baseName(pane.startsWith('f') ? folder : other) || t('terminal.vaultRoot'),
+                          })}
+                          onClick={() => addPane(pane.startsWith('f') ? fresh() : `f${fresh()}`, r)}
+                        >
+                          <FolderInput size={14} />
+                        </IconButton>
+                      )}
                       {row.length < 2 && (
                         <IconButton
                           size="sm"
@@ -151,3 +174,5 @@ export function TerminalDock({
     </div>
   )
 }
+
+const baseName = (folder: string) => folder.slice(folder.lastIndexOf('/') + 1)

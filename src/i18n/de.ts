@@ -1350,6 +1350,7 @@ export const de = {
   'terminal.clear': 'Verlauf löschen',
   'terminal.close': 'Terminal beenden',
   'terminal.splitRight': 'Teilen (daneben)',
+  'terminal.otherFolder': 'Terminal daneben in „{folder}“',
   'terminal.newBelow': 'Neues Terminal darunter',
   'web.title': 'Webseite',
   'web.reload': 'Neu laden',

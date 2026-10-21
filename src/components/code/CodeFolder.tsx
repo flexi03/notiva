@@ -21,6 +21,7 @@ import { LabDates } from './LabLinks'
 import { useDockRequests } from '@/app/dock'
 import { useMoodle } from '@/app/moodle'
 import { TerminalDock } from '@/components/terminal/TerminalDock'
+import { materialsFor } from '@/lib/codeFolders'
 import { useGit } from '@/app/git'
 import { useAction, useApp, useWorkspace } from '@/app/store'
 import { t } from '@/i18n'
@@ -137,6 +138,7 @@ export function CodeFolder({ page }: { page: Page }) {
         <div className="h-96 overflow-hidden rounded-control border border-line">
           <TerminalDock
             folder={folder}
+            other={materialsFor(ws, page)}
             onClose={() => setTerminal(false)}
             onSave={(text) =>
               void run(async () => {
