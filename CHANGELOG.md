@@ -5,7 +5,7 @@ _English: [CHANGELOG.en.md](CHANGELOG.en.md)_
 Alle Versionen mit Downloads: [GitHub Releases](https://github.com/flexi03/notiva/releases).
 Notiva prüft beim Start und jede Stunde, ob es eine neue Version gibt, und installiert sie auf Wunsch selbst.
 
-## 0.2.9 – noch nicht veröffentlicht
+## 0.2.9 – 2026-10-21
 
 - **Terminal am Praktikumsblatt im Code-Ordner** – unter einem Praktikums-PDF aus „Unterlagen/<Modul>“ startet das
   Terminal wieder im Code-Ordner des Moduls (seit dem Umzug der Unterlagen fand Notiva ihn nicht mehr). Ein neuer

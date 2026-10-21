@@ -5,7 +5,7 @@ _Deutsch: [CHANGELOG.md](CHANGELOG.md)_
 All versions with downloads: [GitHub Releases](https://github.com/flexi03/notiva/releases).
 Notiva checks for a new version on start and every hour and installs it itself if you like.
 
-## 0.2.9 – not released yet
+## 0.2.9 – 2026-10-21
 
 - **Terminal at a lab sheet in the code folder** – below a lab PDF from "Unterlagen/<module>" the terminal starts in
   the module's code folder again (since the materials moved, Notiva no longer found it). A new folder button in the
